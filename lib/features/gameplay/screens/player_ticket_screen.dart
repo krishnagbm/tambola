@@ -1,0 +1,611 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/utils/tambola_audio_caller.dart';
+import '../../../core/utils/tambola_ticket.dart';
+import '../../../models/mpt_called_number.dart';
+import '../../../models/mpt_claim.dart';
+import '../../../models/mpt_ticket.dart';
+import '../../../providers/app_providers.dart';
+
+class PlayerTicketScreen extends ConsumerStatefulWidget {
+  final String gameId;
+
+  const PlayerTicketScreen({super.key, required this.gameId});
+
+  @override
+  ConsumerState<PlayerTicketScreen> createState() => _PlayerTicketScreenState();
+}
+
+class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
+  final Set<int> _markedNumbers = {};
+  bool _isClaiming = false;
+  bool _voiceEnabled = false;
+  int _lastAnnouncedSeq = 0;
+
+  void _toggleMark(int number) {
+    if (number == 0) return;
+    setState(() {
+      if (_markedNumbers.contains(number)) {
+        _markedNumbers.remove(number);
+      } else {
+        _markedNumbers.add(number);
+      }
+    });
+  }
+
+  Future<void> _handleClaimPrize({
+    required String prizeType,
+    required MptTicket ticket,
+    required Set<int> calledSet,
+  }) async {
+    // 1. Strict validation: check for uncalled marked numbers (Bogey)
+    final uncalled = _markedNumbers.where((n) => !calledSet.contains(n)).toList();
+    if (uncalled.isNotEmpty) {
+      _showBogeyDialog('Invalid Claim: You have marked numbers that have not been called yet: ${uncalled.join(', ')}');
+      return;
+    }
+
+    // 2. Strict validation: check pattern is complete (Item 15)
+    final isPatternValid = TambolaTicketHelper.validatePrizePattern(ticket.matrix, _markedNumbers, prizeType);
+    if (!isPatternValid) {
+      _showIncompletePatternDialog(prizeType);
+      return;
+    }
+
+    setState(() => _isClaiming = true);
+    try {
+      final res = await ref.read(gameplayRepositoryProvider).submitClaim(
+            gameId: widget.gameId,
+            prizeType: prizeType,
+            markedNumbers: _markedNumbers.toList(),
+          );
+
+      if (!mounted) return;
+      final status = res['status'] as String? ?? 'UNKNOWN';
+
+      if (status == 'APPROVED') {
+        final refCode = res['claim_reference'] as String? ?? 'N/A';
+        _showWinnerDialog(prizeType, refCode);
+      } else if (status == 'BOGEY') {
+        _showBogeyDialog(res['reason'] as String? ?? 'Invalid claim numbers');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Claim $status: ${res['reason'] ?? ''}'),
+            backgroundColor: AppTheme.accentWarning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Claim error: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    } finally {
+      if (mounted) setState(() => _isClaiming = false);
+    }
+  }
+
+  void _showWinnerDialog(String prizeType, String claimRef) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+            SizedBox(width: 8),
+            Text('WINNER! 🏆', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Congratulations! Your claim for "${Formatters.formatPrizeName(prizeType)}" is APPROVED.',
+                style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 16),
+            const Text('Voucher Claim Reference Code:', style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.secondaryColor),
+              ),
+              child: SelectableText(
+                claimRef,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppTheme.secondaryColor),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentSuccess),
+            child: const Text('Continue Playing (Stay on Game)'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.push('/rewards');
+            },
+            child: const Text('View in Rewards'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showIncompletePatternDialog(String prizeType) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline, color: AppTheme.accentWarning, size: 26),
+            SizedBox(width: 8),
+            Text('Pattern Incomplete', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Your marked numbers do not yet complete "${Formatters.formatPrizeName(prizeType)}".\nPlease ensure all required numbers for this pattern have been called and marked on your ticket.',
+          style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK, Got It'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBogeyDialog(String reason) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: AppTheme.accentDanger, size: 28),
+            SizedBox(width: 8),
+            Text('Bogey Claim ⚠️', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          reason,
+          style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Understood'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ticketAsync = ref.watch(playerTicketProvider(widget.gameId));
+    final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
+    final gameStream = ref.watch(gameStreamProvider(widget.gameId));
+    final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
+    final currentUserId = ref.watch(currentUserProvider).value?.id;
+
+    // Announce number if voice enabled
+    if (_voiceEnabled) {
+      calledStream.whenData((calledNumbers) {
+        if (calledNumbers.isNotEmpty && calledNumbers.length > _lastAnnouncedSeq) {
+          _lastAnnouncedSeq = calledNumbers.length;
+          final latestNum = calledNumbers.last.number;
+          TambolaAudioCaller().announceNumber(latestNum);
+        }
+      });
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Home',
+          onPressed: () => context.go('/'),
+        ),
+        title: const Text('Tambola Ticket'),
+        actions: [
+          IconButton(
+            icon: Icon(_voiceEnabled ? Icons.volume_up : Icons.volume_off, color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey),
+            tooltip: _voiceEnabled ? 'Voice Calling ON' : 'Voice Calling OFF',
+            onPressed: () {
+              setState(() => _voiceEnabled = !_voiceEnabled);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
+            tooltip: 'Live Board',
+            onPressed: () => context.push('/live-display/${widget.gameId}'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.emoji_events_outlined),
+            tooltip: 'My Rewards',
+            onPressed: () => context.push('/rewards'),
+          ),
+        ],
+      ),
+      body: ticketAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Error loading ticket: $err')),
+        data: (ticket) {
+          return calledStream.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (calledNumbers) {
+              final latestCalled = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
+              final calledSet = calledNumbers.map((e) => e.number).toSet();
+              final isGameEnded = gameStream.value?.status == 'COMPLETED' || calledNumbers.length >= 90;
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Game Over Banner if ended (Item 20)
+                    if (isGameEnded) ...[
+                      _buildGameOverBanner(context),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // Latest Called Ball Banner
+                    _buildLatestNumberBanner(latestCalled, calledNumbers.length),
+                    const SizedBox(height: 12),
+
+                    // Recent Calls List
+                    if (calledNumbers.isNotEmpty) ...[
+                      _buildRecentCallsBar(calledNumbers),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // Interactive 3x9 Ticket (Manual marking, no auto-yellow)
+                    _buildTicketMatrix(ticket, calledSet),
+                    const SizedBox(height: 20),
+
+                    // Prize Claims Section (Item 17: Disabled won buttons)
+                    claimsStream.when(
+                      loading: () => _buildPrizeClaimsSection(
+                        gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
+                        {},
+                        currentUserId,
+                        ticket,
+                        calledSet,
+                      ),
+                      error: (_, __) => _buildPrizeClaimsSection(
+                        gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
+                        {},
+                        currentUserId,
+                        ticket,
+                        calledSet,
+                      ),
+                      data: (claims) {
+                        final approvedClaims = <String, MptClaim>{};
+                        for (final c in claims) {
+                          if (c.status == 'APPROVED') {
+                            approvedClaims[c.prizeType] = c;
+                          }
+                        }
+                        return _buildPrizeClaimsSection(
+                          gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
+                          approvedClaims,
+                          currentUserId,
+                          ticket,
+                          calledSet,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGameOverBanner(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.secondaryColor, width: 2),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.celebration, color: AppTheme.secondaryColor, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'GAME COMPLETED 🎉',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'The game has concluded! Thank you for playing.',
+            style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => context.push('/rewards'),
+                icon: const Icon(Icons.emoji_events, size: 18),
+                label: const Text('View My Rewards'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.black),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton(
+                onPressed: () => context.go('/'),
+                child: const Text('Return Home'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLatestNumberBanner(int? latestNumber, int totalCalled) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('CURRENT CALL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.white70)),
+              const SizedBox(height: 4),
+              Text(
+                latestNumber != null ? '$latestNumber' : 'READY',
+                style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: Colors.white),
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Text('$totalCalled / 90', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                const Text('Called', style: TextStyle(fontSize: 11, color: Colors.white70)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentCallsBar(List<MptCalledNumber> called) {
+    final recent = called.reversed.take(6).toList();
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: recent.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (ctx, idx) {
+          final item = recent[idx];
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: idx == 0 ? AppTheme.secondaryColor : AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Text(
+              '${item.number}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: idx == 0 ? Colors.black : Colors.white,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTicketMatrix(MptTicket ticket, Set<int> calledSet) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppTheme.primaryLight, width: 1.5)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('TAMBOLA TICKET #${ticket.ticketNumber}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryLight)),
+                Text('${_markedNumbers.length} / 15 Marked', style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+              ],
+            ),
+            const Divider(color: Color(0xFF2E334D), height: 16),
+            for (int r = 0; r < 3; r++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    for (int c = 0; c < 9; c++)
+                      Expanded(
+                        child: _buildTicketCell(ticket.matrix[r][c], calledSet),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTicketCell(int numVal, Set<int> calledSet) {
+    if (numVal == 0) {
+      return Container(
+        height: 48,
+        margin: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: AppTheme.darkBackground.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(6),
+        ),
+      );
+    }
+
+    final isMarked = _markedNumbers.contains(numVal);
+
+    // Item 10: Manual green marking only (no auto-yellow)
+    Color bgColor = isMarked ? AppTheme.accentSuccess : AppTheme.darkSurface;
+    Color textColor = Colors.white;
+
+    return GestureDetector(
+      onTap: () => _toggleMark(numVal),
+      child: Container(
+        height: 48,
+        margin: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: isMarked ? AppTheme.accentSuccess : const Color(0xFF3B4163),
+            width: isMarked ? 1.5 : 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '$numVal',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrizeClaimsSection(
+    List<String> activePrizes,
+    Map<String, MptClaim> approvedClaims,
+    String? currentUserId,
+    MptTicket ticket,
+    Set<int> calledSet,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Claim Winning Prize',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Tap when you complete a pattern. Server will validate your marked numbers.',
+          style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 2.3,
+          children: activePrizes.map((prize) {
+            final approvedClaim = approvedClaims[prize];
+            final isApproved = approvedClaim != null;
+            final isWonByMe = isApproved && approvedClaim.userId == currentUserId;
+
+            if (isApproved) {
+              return ElevatedButton(
+                onPressed: null, // Disabled
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isWonByMe ? AppTheme.secondaryColor.withOpacity(0.2) : Colors.black26,
+                  disabledBackgroundColor: isWonByMe ? AppTheme.secondaryColor.withOpacity(0.25) : const Color(0xFF222639),
+                  disabledForegroundColor: isWonByMe ? AppTheme.secondaryColor : const Color(0xFF718096),
+                  side: BorderSide(color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFF2E334D)),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      Formatters.formatPrizeName(prize),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      isWonByMe ? '🏆 Won by You!' : '✓ Won (Claimed)',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFFA0AEC0)),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ElevatedButton(
+              onPressed: _isClaiming
+                  ? null
+                  : () => _handleClaimPrize(
+                        prizeType: prize,
+                        ticket: ticket,
+                        calledSet: calledSet,
+                      ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.darkSurface,
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: AppTheme.primaryColor),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              ),
+              child: Text(
+                Formatters.formatPrizeName(prize),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}

@@ -1,0 +1,20 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk
+        - export PATH="$PATH:`pwd`/flutter-sdk/bin"
+        - flutter doctor -v
+    build:
+      commands:
+        - flutter pub get
+        - flutter build web --release
+  artifacts:
+    baseDirectory: build/web
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - flutter-sdk/**/*
+      - .pub-cache/**/*

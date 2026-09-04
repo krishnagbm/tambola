@@ -1,0 +1,56 @@
+# Pending items
+(All test findings from round 2 resolved and verified. Ready for full multi-device test pass.)
+
+# Completed items
+1. Let every admin get 10 free credits to play games by default
+   - Implemented in `MPT_admin_wallets` default, `MPT_upsert_user` RPC, and `WalletRepository` initial transaction ledger.
+2. Before we go to production, remember to remove "Add 200 Mock Credits (testing Mode)" button from admin panel
+   - Implemented with `AppConfig.enableMockCredits` and `AppConfig.isProduction` safeguards in both Organizer Lobby and Wallet screens.
+3. Create New Game - Expected group size is not coming from database capacity_tiers
+   - Implemented in `CreateGameScreen` with dynamic `capacityTiersProvider` fetching directly from `MPT_capacity_tiers`.
+4. When tried to create a first game Admin Game Lobby is ended with error ... Error loading game
+   - Resolved with `20260901000004_mpt_enable_realtime_and_welcome_bonus.sql` (enabling `supabase_realtime` publication on all `MPT_` tables) plus resilient REST polling fallback in `GameRepository` and `GameplayRepository`.
+5. I dont find a way to comeout of Admin Game Lobby screen
+   - Implemented top leading Back button in `OrganizerLobbyScreen` and error recovery view with "Home" and "Retry" options.
+6. Doing a refresh after few minutes / Error recovery
+   - Implemented manual refresh action button and automatic polling fallback without crashing the UI.
+7. "Admin" changed to "Organizer"
+   - Renamed user-facing terminology across the entire app (Organizer Game Lobby, Organizer Wallet, Organizer Game Controls, Organizer Prize Verification, Waiting for Organizer Confirmation).
+8. "Player1" default name changed to "My Name"
+   - Updated `MptUser`, `AuthRepository`, and profile dialog to default to "My Name".
+9. Admin Game Lobby invite code shareable with a link
+   - Integrated `share_plus` with formatted game invite text and direct join link.
+10. Share function sharing with WhatsApp, Telegram, etc. based on user's device settings
+    - Uses system native share sheet via `Share.share(...)`.
+11. Shared link opening the app or taking to playstore/appstore
+    - Configured deep link routes (`/join/:code` and `/join?code=...`) in `AppRouter` with web fallback URL format.
+12. [Item 1 & 2] Game Resumption for Organizer & Live Dashboard Overview:
+    - Added "My Hosted Games (Organizer)" on `HomeScreen` with live status tags (`OPEN`, `IN_PROGRESS`, `COMPLETED`), player registration counts, and 1-tap "Resume Control" (`/admin-control/:id`) or "Open Lobby" (`/admin-lobby/:id`) buttons.
+13. [Item 3 & 4] Scheduled Date & Time and Ad Banners in Waiting Screens:
+    - Added optional Date & Time picker to `CreateGameScreen` passing `scheduledAt` to backend.
+    - Added scheduled date/time badge to `RegistrationStatusScreen`.
+    - Added sponsor/ad banner placeholder slots in `RegistrationStatusScreen` and player waiting screens.
+14. [Item 5] Distinct Male & Female Cartoon Character & Token Avatars:
+    - Replaced numeric placeholders with 12 distinct character and token avatars (🦁, 🐯, 👑, 🧙, 🚀, 🦊, 🐼, 🦄, 🤠, 🌟, 🎯, 🎸) in `ProfileEditDialog` and home/player status screens.
+15. [Item 7] Back Navigation from Registration Waiting Screens:
+    - Added leading back icon in `RegistrationStatusScreen` and `PlayerTicketScreen` with confirmation to return to `HomeScreen` anytime.
+16. [Item 8] Player Registered Games Dashboard:
+    - Added "My Joined Games (Player)" on `HomeScreen` showing seat status (`CONFIRMED` / `WAITING`), game progress, and quick "Play Game" / "Check Status" navigation.
+17. [Item 9] Duplicate Ticket Collision Fix (`SameTicketShowingFor2Players.png`):
+    - Completely replaced static fallback generator in `TambolaTicketHelper` with a robust constraint-satisfaction matrix builder that guarantees 3x9 grid, 15 numbers (5 per row, 1-3 per col), column range boundaries (1-9, 10-19... 80-90), vertical sorting, and guaranteed distinct sequential numbering (`Ticket #1`, `Ticket #2`, etc.). Tested across 200 consecutive generations with 100% uniqueness and zero fallback deadlocks.
+18. [Item 10] Interactive Manual Marking (No Auto-Yellow Filling):
+    - Disabled automatic yellow pre-selection in `PlayerTicketScreen`. Players now interactively tap matching numbers to turn them green, and sound plays when caller announces numbers.
+19. [Item 11] Audio Clarity Improvements for Single Digits and Tricky Numbers:
+    - Updated `TambolaAudioCaller` TTS phonetics for 1–90 (e.g., "Number 2. Single digit 2", "Number 25. Two and five, twenty five").
+20. [Item 13 & 16] Organizer Winner Announcement & Bogey Claims Cleanup:
+    - `AdminGameControlScreen` now displays winner player names next to awarded prizes and filters out rejected/bogey claims so the organizer only sees valid approved claims.
+21. [Item 14] Winner Dialog Action Priority:
+    - Changed default primary button on prize claim dialog from "View Rewards" to "Continue Playing" in `PlayerTicketScreen` so players don't leave their active game.
+22. [Item 15] Strict 5-Number Row & Pattern Validation (Fixing 3/5 Bottom Line Bug):
+    - Added `validatePrizePattern()` to `TambolaTicketHelper`. Claims now strictly require all 5 pattern numbers (e.g. all 5 bottom row numbers) to be present on the ticket and marked before submission. Incomplete rows (e.g., 3/5) are immediately rejected as invalid.
+23. [Item 17] Prize Button State Disabling & Winner Marking:
+    - Won prize buttons are now disabled for all players. If the current player won the prize, the button shows `🏆 Won by You!`; otherwise, it displays `✓ Won (Claimed)`.
+24. [Item 20] Organizer "End Game" & Player Game Over Screen:
+    - Added "End Game & Conclude Event" confirmation dialog and repository action in `AdminGameControlScreen`.
+    - Added celebration Game Over view with stats in `PlayerTicketScreen` when organizer concludes the game.
+
