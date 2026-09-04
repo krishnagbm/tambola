@@ -13,6 +13,8 @@
 migrate_working_dir/
 .env
 /test/screenshots
+docs/generated_200_tickets.json
+
 
 # IntelliJ related
 *.iml
