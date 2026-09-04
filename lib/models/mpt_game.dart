@@ -1,4 +1,4 @@
-﻿class MptGame {
+class MptGame {
   final String id;
   final String adminUserId;
   final String name;
@@ -36,6 +36,7 @@
   });
 
   bool get isOpen => status == 'OPEN' || status == 'READY_TO_START';
+  bool get isLobbyOpen => isOpen;
   bool get isInProgress => status == 'IN_PROGRESS';
   bool get isCompleted => status == 'COMPLETED' || status == 'CLOSED';
 

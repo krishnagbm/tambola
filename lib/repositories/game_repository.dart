@@ -195,6 +195,21 @@ class GameRepository {
     }
   }
 
+  /// Fetches all registrations for a game
+  Future<List<MptRegistration>> getGameRegistrations(String gameId) async {
+    try {
+      final res = await _supabase
+          .from('MPT_game_registrations')
+          .select()
+          .eq('game_id', gameId)
+          .order('registration_seq', ascending: true);
+
+      return (res as List).map((e) => MptRegistration.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Smart Polling stream for live game state changes (2s interval, 0 WebSocket connections)
   Stream<MptGame> watchGame(String gameId) async* {
     while (true) {

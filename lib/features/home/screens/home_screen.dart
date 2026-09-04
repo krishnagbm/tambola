@@ -366,7 +366,7 @@ class HomeScreen extends ConsumerWidget {
                   color: AppTheme.darkSurface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: isLive ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
+                    side: BorderSide(color: isLive ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
