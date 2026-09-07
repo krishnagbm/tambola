@@ -6,7 +6,7 @@ frontend:
         - if [ ! -d "flutter-sdk" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk; fi
         - export PATH="$PATH:`pwd`/flutter-sdk/bin"
         - flutter doctor -v
-        - printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nPURCHASE_ENABLED=%s\nPURCHASE_BASE_URL=%s\nAPP_ENVIRONMENT=%s\nENABLE_MOCK_CREDITS=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-false}" > .env
+        - printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nPURCHASE_ENABLED=%s\nPURCHASE_BASE_URL=%s\nAPP_ENVIRONMENT=%s\nENABLE_MOCK_CREDITS=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-true}" > .env
     build:
       commands:
         - flutter pub get
@@ -17,7 +17,7 @@ frontend:
           --dart-define=PURCHASE_ENABLED="${PURCHASE_ENABLED:-true}"
           --dart-define=PURCHASE_BASE_URL="${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}"
           --dart-define=APP_ENVIRONMENT="${APP_ENVIRONMENT:-production}"
-          --dart-define=ENABLE_MOCK_CREDITS="${ENABLE_MOCK_CREDITS:-false}"
+          --dart-define=ENABLE_MOCK_CREDITS="${ENABLE_MOCK_CREDITS:-true}"
   artifacts:
     baseDirectory: build/web
     files:

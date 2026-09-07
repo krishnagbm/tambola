@@ -25,11 +25,7 @@ class AppConfig {
         _value('PURCHASE_ENABLED', 'true').toLowerCase() == 'true';
     environment = _value('APP_ENVIRONMENT', 'development');
     enableMockCredits =
-        _value(
-          'ENABLE_MOCK_CREDITS',
-          environment.toLowerCase() != 'production' ? 'true' : 'false',
-        ).toLowerCase() ==
-        'true';
+        _value('ENABLE_MOCK_CREDITS', 'true').toLowerCase() == 'true';
   }
 
   static String _value(String name, String fallback) {
