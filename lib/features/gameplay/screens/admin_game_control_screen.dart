@@ -102,6 +102,12 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
   Widget build(BuildContext context) {
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
+    final gameStream = ref.watch(gameStreamProvider(widget.gameId));
+
+    final prizesConfig = gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
+    final approvedPrizeTypes = claimsStream.value?.where((c) => c.status == 'APPROVED').map((c) => c.prizeType).toSet() ?? {};
+    final allPrizesWon = prizesConfig.isNotEmpty && prizesConfig.every((p) => approvedPrizeTypes.contains(p));
+    final isGameCompleted = gameStream.value?.status == 'COMPLETED';
 
     return Scaffold(
       appBar: AppBar(
@@ -133,6 +139,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
             onPressed: () {
               ref.invalidate(calledNumbersStreamProvider(widget.gameId));
               ref.invalidate(claimsStreamProvider(widget.gameId));
+              ref.invalidate(gameStreamProvider(widget.gameId));
             },
           ),
         ],
@@ -143,28 +150,76 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
         data: (calledNumbers) {
           final latest = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
           final calledSet = calledNumbers.map((e) => e.number).toSet();
+          final isMaxNumbers = calledNumbers.length >= 90;
+          final disableCalling = _isCalling || isMaxNumbers || allPrizesWon || isGameCompleted;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // All Prizes Won Alert Banner
+                if (allPrizesWon && !isGameCompleted) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'All Prizes Won! 🏆',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
+                                style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+
                 // Caller Banner
                 _buildCallerHeader(latest, calledNumbers.length),
                 const SizedBox(height: 16),
 
                 // Call Next Number Button
                 ElevatedButton.icon(
-                  onPressed: _isCalling || calledNumbers.length >= 90 ? null : _handleCallNext,
-                  icon: const Icon(Icons.campaign_rounded, size: 28),
+                  onPressed: disableCalling ? null : _handleCallNext,
+                  icon: Icon(
+                    allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
+                    size: 28,
+                  ),
                   label: _isCalling
                       ? const Text('Selecting Number...')
                       : Text(
-                          calledNumbers.length >= 90 ? 'All Numbers Called' : 'CALL NEXT NUMBER',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          isGameCompleted
+                              ? 'Game Completed'
+                              : allPrizesWon
+                                  ? 'All Prizes Won (Conclude Below)'
+                                  : isMaxNumbers
+                                      ? 'All 90 Numbers Called'
+                                      : 'CALL NEXT NUMBER',
+                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentSuccess,
+                    backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                    disabledBackgroundColor: const Color(0xFF222639),
+                    disabledForegroundColor: const Color(0xFF718096),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                   ),
                 ),
@@ -180,11 +235,14 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
                 // End Game Button (Item 20)
                 OutlinedButton.icon(
-                  onPressed: _handleEndGame,
+                  onPressed: isGameCompleted ? null : _handleEndGame,
                   icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
-                  label: const Text('End Game & Conclude Event', style: TextStyle(color: AppTheme.accentDanger)),
+                  label: Text(
+                    isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
+                    style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppTheme.accentDanger),
+                    side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -311,18 +369,38 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                     side: const BorderSide(color: AppTheme.accentSuccess, width: 1.2),
                   ),
                   child: ListTile(
-                    leading: const Icon(
-                      Icons.emoji_events,
-                      color: AppTheme.secondaryColor,
-                      size: 28,
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppTheme.secondaryColor),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        Formatters.getAvatarEmoji(claim.userAvatar),
+                        style: const TextStyle(fontSize: 22),
+                      ),
                     ),
                     title: Text(
                       '🏆 ${Formatters.formatPrizeName(claim.prizeType)}',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    subtitle: Text(
-                      'Winner Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 2),
+                        Text(
+                          'Won by: ${claim.userName ?? "Player"}',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.secondaryColor),
+                        ),
+                        Text(
+                          'Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                        ),
+                      ],
                     ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

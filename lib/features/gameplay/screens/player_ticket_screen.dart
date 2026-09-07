@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
@@ -8,6 +9,7 @@ import '../../../core/utils/tambola_ticket.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_ticket.dart';
+import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
 
 class PlayerTicketScreen extends ConsumerStatefulWidget {
@@ -25,6 +27,30 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   bool _voiceEnabled = false;
   int _lastAnnouncedSeq = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedMarks();
+  }
+
+  Future<void> _loadSavedMarks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = ref.read(currentUserProvider).value?.id;
+      List<String>? saved;
+      if (uid != null) {
+        saved = prefs.getStringList('mpt_marked_${widget.gameId}_$uid');
+      }
+      saved ??= prefs.getStringList('mpt_marked_${widget.gameId}');
+
+      if (saved != null && saved.isNotEmpty && mounted) {
+        setState(() {
+          _markedNumbers.addAll(saved!.map(int.parse));
+        });
+      }
+    } catch (_) {}
+  }
+
   void _toggleMark(int number) {
     if (number == 0) return;
     setState(() {
@@ -34,6 +60,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         _markedNumbers.add(number);
       }
     });
+    _saveMarks();
+  }
+
+  Future<void> _saveMarks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final uid = ref.read(currentUserProvider).value?.id;
+      final list = _markedNumbers.map((n) => n.toString()).toList();
+      if (uid != null) {
+        await prefs.setStringList('mpt_marked_${widget.gameId}_$uid', list);
+      }
+      await prefs.setStringList('mpt_marked_${widget.gameId}', list);
+    } catch (_) {}
   }
 
   Future<void> _handleClaimPrize({
@@ -199,6 +238,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(currentUserProvider, (prev, next) {
+      if (_markedNumbers.isEmpty && next.value != null) {
+        _loadSavedMarks();
+      }
+    });
+
     final ticketAsync = ref.watch(playerTicketProvider(widget.gameId));
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
@@ -261,6 +306,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Player Identity & Ticket Number Card (Item 3 & 4)
+                    _buildPlayerIdentityBanner(ref.watch(currentUserProvider).value, ticket),
+                    const SizedBox(height: 10),
+
                     // Game Over Banner if ended (Item 20)
                     if (isGameEnded) ...[
                       _buildGameOverBanner(context),
@@ -319,6 +368,78 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket) {
+    final emoji = Formatters.getAvatarEmoji(user?.avatar);
+    final name = (user?.displayName != null && user!.displayName.trim().isNotEmpty)
+        ? user.displayName
+        : 'Player';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF2E334D)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppTheme.primaryLight.withOpacity(0.5)),
+            ),
+            alignment: Alignment.center,
+            child: Text(emoji, style: const TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const Text(
+                  'Playing Live Game',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFA0AEC0),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.6)),
+            ),
+            child: Text(
+              'Ticket #${ticket.ticketNumber}',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -575,8 +696,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      isWonByMe ? '🏆 Won by You!' : '✓ Won (Claimed)',
+                      isWonByMe ? '🏆 Won by You!' : '✓ Won by ${approvedClaim.userName ?? "Player"}',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFFA0AEC0)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

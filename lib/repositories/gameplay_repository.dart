@@ -180,7 +180,7 @@ class GameplayRepository {
   Future<void> endGame(String gameId) async {
     await _supabase.from('MPT_games').update({
       'status': 'COMPLETED',
-      'ended_at': DateTime.now().toIso8601String(),
+      'completed_at': DateTime.now().toIso8601String(),
     }).eq('id', gameId);
   }
 
@@ -190,7 +190,7 @@ class GameplayRepository {
       try {
         final res = await _supabase
             .from('MPT_claims')
-            .select()
+            .select('*, user:MPT_users(display_name, avatar)')
             .eq('game_id', gameId)
             .order('submitted_at', ascending: false);
         yield (res as List).map((e) => MptClaim.fromJson(e)).toList();

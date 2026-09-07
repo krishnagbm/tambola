@@ -201,12 +201,13 @@ BEGIN
     WHERE id = p_game_id;
 
     FOR v_reg IN
-        SELECT user_id FROM public."MPT_game_registrations"
+        SELECT user_id, registration_seq FROM public."MPT_game_registrations"
         WHERE game_id = p_game_id AND seat_status = 'ELIGIBLE'
           AND NOT EXISTS (
               SELECT 1 FROM public."MPT_player_tickets" t
               WHERE t.game_id = p_game_id AND t.user_id = public."MPT_game_registrations".user_id
           )
+        ORDER BY registration_seq ASC
     LOOP
         v_ticket_attempts := 0;
         LOOP
@@ -227,7 +228,7 @@ BEGIN
         INSERT INTO public."MPT_player_tickets" (
             game_id, user_id, ticket_matrix, ticket_number
         )
-        VALUES (p_game_id, v_reg.user_id, v_ticket_matrix, 1)
+        VALUES (p_game_id, v_reg.user_id, v_ticket_matrix, v_reg.registration_seq)
         ON CONFLICT (game_id, user_id, ticket_number) DO NOTHING;
     END LOOP;
 

@@ -1,7 +1,25 @@
 # Pending items
-(All test findings from round 2 resolved and verified. Ready for full multi-device test pass.)
+None currently pending. All items verified and implemented.
 
 # Completed items
+1. Marked Numbers Persistence on Return to Active Game (Item 2)
+   - Implemented local persistent storage using `SharedPreferences` (`mpt_marked_${gameId}`) in `PlayerTicketScreen`. When a player navigates to Home or switches screens and returns, all previously marked numbers are automatically restored.
+2. Player Name and Identity Card on Game Screen (Item 3)
+   - Added `_buildPlayerIdentityBanner` in `PlayerTicketScreen` showing the player's selected avatar emoji, display name ("My Name" or custom name), subtitle ("Playing Live Game"), and ticket sequence badge (`Ticket #N`).
+3. Sequential Ticket Numbering (`Ticket #1`, `Ticket #2`, `Ticket #3`) (Item 4)
+   - Fixed SQL RPC `MPT_start_game_and_charge` in `20260905000001_fix_unique_ticket_generation.sql` to populate `ticket_number` with each player's sequential registration number (`registration_seq`) rather than hardcoding `1`.
+4. Winner Player Names in Organizer, Projector, and Player Screens (Item 5 & 7)
+   - Updated `watchClaims` to join `user:MPT_users(display_name, avatar)`.
+   - Updated `MptClaim` model to parse `userName` and `userAvatar`.
+   - `AdminGameControlScreen`: Shows winner's avatar emoji, name, prize type, and verification date in the claims queue.
+   - `LiveGameDisplayScreen` (Projector view): Shows winner's avatar, prize name, and `Won by: [Player Name]`.
+   - `PlayerTicketScreen`: Won prize buttons display `✓ Won by [Player Name]` when claimed by another player, and `🏆 Won by You!` when claimed by current player.
+5. Error Recovery & Auto-reconnect after Idle Long Break (Item 6)
+   - Handled network reconnect gracefully on `callNextNumber` and realtime stream listeners with retry capabilities.
+6. All Prizes Claimed Auto-Disable for "Call Next Number" (Item 8)
+   - Added automatic check in `AdminGameControlScreen` comparing `game.prizesConfig` against approved claims. When all active prizes have been won, "Call Next Number" button is disabled and displays `All Prizes Won (Conclude Below)` alongside an alert banner.
+7. Organizer Able to End & Conclude Game (Item 9)
+   - Fixed column name in `GameplayRepository.endGame` from `'ended_at'` to `'completed_at'` to match the `MPT_games` schema, resolving the update failure.
 1. Let every admin get 10 free credits to play games by default
    - Implemented in `MPT_admin_wallets` default, `MPT_upsert_user` RPC, and `WalletRepository` initial transaction ledger.
 2. Before we go to production, remember to remove "Add 200 Mock Credits (testing Mode)" button from admin panel

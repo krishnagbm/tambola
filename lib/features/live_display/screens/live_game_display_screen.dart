@@ -204,7 +204,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildLiveWinnersPanel(AsyncValue claimsStream) {
+  Widget _buildLiveWinnersPanel(AsyncValue<List<MptClaim>> claimsStream) {
     return Card(
       color: AppTheme.darkSurface,
       child: Padding(
@@ -224,7 +224,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const Text('Unable to load winners'),
               data: (claims) {
-                final winners = (claims as List).where((c) => c.status == 'APPROVED').toList();
+                final winners = claims.where((c) => c.status == 'APPROVED').toList();
                 if (winners.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -234,11 +234,51 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
 
                 return Column(
                   children: winners.map((w) {
-                    return ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.star, color: AppTheme.secondaryColor, size: 18),
-                      title: Text(Formatters.formatPrizeName(w.prizeType), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text('Approved • ${Formatters.formatShortDate(w.submittedAt)}', style: const TextStyle(fontSize: 11)),
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              Formatters.getAvatarEmoji(w.userAvatar),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  Formatters.formatPrizeName(w.prizeType),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                ),
+                                Text(
+                                  'Won by: ${w.userName ?? "Player"}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.secondaryColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            Formatters.formatShortDate(w.submittedAt),
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFA0AEC0)),
+                          ),
+                        ],
+                      ),
                     );
                   }).toList(),
                 );

@@ -1,4 +1,4 @@
-﻿import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 
 class Formatters {
   static String formatDate(DateTime date) {
@@ -31,6 +31,37 @@ class Formatters {
         return 'Second Full House';
       default:
         return prizeType.replaceAll('_', ' ');
+    }
+  }
+
+  static String getAvatarEmoji(String? avatarKey) {
+    switch (avatarKey) {
+      case 'avatar_lion':
+        return '🦁';
+      case 'avatar_tiger':
+        return '🐯';
+      case 'avatar_crown':
+        return '👑';
+      case 'avatar_wizard':
+        return '🧙';
+      case 'avatar_rocket':
+        return '🚀';
+      case 'avatar_fox':
+        return '🦊';
+      case 'avatar_panda':
+        return '🐼';
+      case 'avatar_unicorn':
+        return '🦄';
+      case 'avatar_cowboy':
+        return '🤠';
+      case 'avatar_star':
+        return '🌟';
+      case 'avatar_bullseye':
+        return '🎯';
+      case 'avatar_rocker':
+        return '🎸';
+      default:
+        return '👤';
     }
   }
 }
