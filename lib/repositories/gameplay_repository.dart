@@ -4,6 +4,7 @@ import '../core/utils/tambola_ticket.dart';
 import '../models/mpt_called_number.dart';
 import '../models/mpt_claim.dart';
 import '../models/mpt_ticket.dart';
+import 'package:flutter/foundation.dart';
 
 class GameplayRepository {
   final SupabaseClient _supabase;
@@ -20,17 +21,8 @@ class GameplayRepository {
       });
       return res as Map<String, dynamic>;
     } catch (e) {
-      // Fallback
-      await _supabase.from('MPT_games').update({
-        'status': 'IN_PROGRESS',
-        'started_at': DateTime.now().toIso8601String(),
-      }).eq('id', gameId);
-
-      await _supabase.from('MPT_game_registrations').update({
-        'seat_status': 'ELIGIBLE',
-      }).eq('game_id', gameId).eq('seat_status', 'CONFIRMED');
-
-      return {'status': 'IN_PROGRESS'};
+      debugPrint('MPT_start_game_and_charge failed: $e');
+      rethrow;
     }
   }
 

@@ -180,13 +180,13 @@ class GameRepository {
   Future<List<Map<String, dynamic>>> getMyJoinedGames() async {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) return [];
-
     try {
+      // Fix 2026-09-05: MPT_game_registrations defines joined_at, not registered_at.
       final res = await _supabase
           .from('MPT_game_registrations')
           .select('*, game:MPT_games(*)')
           .eq('user_id', uid)
-          .order('registered_at', ascending: false)
+          .order('joined_at', ascending: false)
           .limit(20);
 
       return List<Map<String, dynamic>>.from(res as List);
