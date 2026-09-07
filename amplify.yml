@@ -3,7 +3,7 @@ frontend:
   phases:
     preBuild:
       commands:
-        - git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk
+        - if [ ! -d "flutter-sdk" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk; fi
         - export PATH="$PATH:`pwd`/flutter-sdk/bin"
         - flutter doctor -v
         - printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nPURCHASE_ENABLED=%s\nPURCHASE_BASE_URL=%s\nAPP_ENVIRONMENT=%s\nENABLE_MOCK_CREDITS=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-false}" > .env
