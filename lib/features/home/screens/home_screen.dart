@@ -360,13 +360,20 @@ class HomeScreen extends ConsumerWidget {
                 final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
 
                 final isLive = gameStatus == 'IN_PROGRESS';
+                final isCompleted = gameStatus == 'COMPLETED';
                 final isConfirmed = seatStatus == 'CONFIRMED' || seatStatus == 'ELIGIBLE';
 
                 return Card(
                   color: AppTheme.darkSurface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
-                    side: BorderSide(color: isLive ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
+                    side: BorderSide(
+                      color: isLive
+                          ? AppTheme.accentSuccess
+                          : isCompleted
+                              ? const Color(0xFF3B4163)
+                              : const Color(0xFF2E334D),
+                    ),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
@@ -388,15 +395,31 @@ class HomeScreen extends ConsumerWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: isLive ? AppTheme.accentSuccess.withOpacity(0.2) : Colors.black26,
+                                      color: isLive
+                                          ? AppTheme.accentSuccess.withOpacity(0.2)
+                                          : isCompleted
+                                              ? const Color(0xFF718096).withOpacity(0.2)
+                                              : Colors.black26,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
-                                      isLive ? '🟢 LIVE' : isConfirmed ? 'CONFIRMED' : 'WAITING',
+                                      isLive
+                                          ? '🟢 LIVE'
+                                          : isCompleted
+                                              ? '🏁 COMPLETED'
+                                              : isConfirmed
+                                                  ? 'CONFIRMED'
+                                                  : 'WAITING',
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
-                                        color: isLive ? AppTheme.accentSuccess : isConfirmed ? AppTheme.primaryLight : AppTheme.accentWarning,
+                                        color: isLive
+                                          ? AppTheme.accentSuccess
+                                          : isCompleted
+                                              ? const Color(0xFFA0AEC0)
+                                              : isConfirmed
+                                                  ? AppTheme.primaryLight
+                                                  : AppTheme.accentWarning,
                                       ),
                                     ),
                                   ),
@@ -409,17 +432,29 @@ class HomeScreen extends ConsumerWidget {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            if (isLive) {
+                            if (isLive || isCompleted) {
                               context.push('/play/$gameId');
                             } else {
                               context.push('/game-status/$gameId');
                             }
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isLive ? AppTheme.accentSuccess : AppTheme.primaryColor,
+                            backgroundColor: isLive
+                                ? AppTheme.accentSuccess
+                                : isCompleted
+                                    ? const Color(0xFF2E334D)
+                                    : AppTheme.primaryColor,
+                            foregroundColor: isCompleted ? AppTheme.secondaryColor : Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           ),
-                          child: Text(isLive ? 'Play Ticket' : 'View Status', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            isLive
+                                ? 'Play Ticket'
+                                : isCompleted
+                                    ? 'View Results'
+                                    : 'View Status',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
                         ),
                       ],
                     ),

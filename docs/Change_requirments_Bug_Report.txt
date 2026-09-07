@@ -2,9 +2,14 @@
 None currently pending. All items verified and implemented.
 
 # Completed items
-1. Share Link Deep Routing Fix (404 Error on AWS Amplify)
-   - Updated invite share links in `CreateGameScreen` and `AdminLobbyScreen` to use hash-based deep link routing: `https://tambola.digitalappstudio.com/#/join/${game.inviteCode}`. This ensures AWS Amplify and static web hosts serve `index.html` (HTTP 200) and `GoRouter` immediately opens `JoinGameScreen` with the invite code pre-filled.
-2. Starter 10-Player Game & 10 Credits Tier Alignment
+1. Game Ended Player UI Interactions Disabled (Item 3)
+   - Updated `PlayerTicketScreen` to pass `isGameEnded` to both `_buildTicketMatrix` and `_buildPrizeClaimsSection`. When the game concludes, unclaimed prize buttons are clearly disabled with `Unclaimed (Game Over)` and ticket cell clicks are disabled to prevent invalid post-game claim attempts.
+2. Ended Game Status & Session Closed Screen (Item 4)
+   - Updated `RegistrationStatusScreen` with `_buildConcludedCard` displaying "Game Session Concluded 🏁", completion timestamp, and direct actions to view the completed ticket, live board & winners, or check rewards.
+   - Updated `HomeScreen._buildJoinedGamesSection` to display the `🏁 COMPLETED` badge and provide a 1-tap `View Results` button that directly opens the completed session ticket/board.
+3. Share Link Deep Routing Fix & Dynamic Game Invite Code (Item 1 & 5 & 6)
+   - Dynamic invite codes are generated uniquely for each game and formatted via hash-based deep links: `https://tambola.digitalappstudio.com/#/join/${game.inviteCode}`. This ensures Amplify / CloudFront SPA web servers deliver `index.html` (HTTP 200) without 404, allowing users to join immediately with the invite code pre-populated.
+4. Starter 10-Player Game & 10 Credits Tier Alignment (Item 2)
    - Updated `MPT_capacity_tiers` in `20260905000001_fix_unique_ticket_generation.sql` with `Starter (1–10 Players)` costing `10 Credits`.
    - Updated `MPT_create_game` to default to 10 seats instead of 25.
    - Updated `MPT_start_game_and_charge` to charge 10 credits for <= 10 confirmed players (or 0 players during lobby tests), allowing new organizers with 10 free welcome credits to start their 10-player game without error.

@@ -327,10 +327,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     ],
 
                     // Interactive 3x9 Ticket (Manual marking, no auto-yellow)
-                    _buildTicketMatrix(ticket, calledSet),
+                    _buildTicketMatrix(ticket, calledSet, isGameEnded: isGameEnded),
                     const SizedBox(height: 20),
 
-                    // Prize Claims Section (Item 17: Disabled won buttons)
+                    // Prize Claims Section (Item 17: Disabled won buttons & disabled when game ended)
                     claimsStream.when(
                       loading: () => _buildPrizeClaimsSection(
                         gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
@@ -338,6 +338,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         currentUserId,
                         ticket,
                         calledSet,
+                        isGameEnded: isGameEnded,
                       ),
                       error: (_, __) => _buildPrizeClaimsSection(
                         gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
@@ -345,6 +346,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         currentUserId,
                         ticket,
                         calledSet,
+                        isGameEnded: isGameEnded,
                       ),
                       data: (claims) {
                         final approvedClaims = <String, MptClaim>{};
@@ -359,6 +361,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           currentUserId,
                           ticket,
                           calledSet,
+                          isGameEnded: isGameEnded,
                         );
                       },
                     ),
@@ -566,7 +569,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildTicketMatrix(MptTicket ticket, Set<int> calledSet) {
+  Widget _buildTicketMatrix(MptTicket ticket, Set<int> calledSet, {bool isGameEnded = false}) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppTheme.primaryLight, width: 1.5)),
@@ -578,7 +581,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('TAMBOLA TICKET #${ticket.ticketNumber}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryLight)),
-                Text('${_markedNumbers.length} / 15 Marked', style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+                Text(
+                  isGameEnded ? '${_markedNumbers.length} / 15 Marked (Final)' : '${_markedNumbers.length} / 15 Marked',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                ),
               ],
             ),
             const Divider(color: Color(0xFF2E334D), height: 16),
@@ -589,7 +595,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   children: [
                     for (int c = 0; c < 9; c++)
                       Expanded(
-                        child: _buildTicketCell(ticket.matrix[r][c], calledSet),
+                        child: _buildTicketCell(ticket.matrix[r][c], calledSet, isGameEnded: isGameEnded),
                       ),
                   ],
                 ),
@@ -600,7 +606,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildTicketCell(int numVal, Set<int> calledSet) {
+  Widget _buildTicketCell(int numVal, Set<int> calledSet, {bool isGameEnded = false}) {
     if (numVal == 0) {
       return Container(
         height: 48,
@@ -619,7 +625,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Color textColor = Colors.white;
 
     return GestureDetector(
-      onTap: () => _toggleMark(numVal),
+      onTap: isGameEnded ? null : () => _toggleMark(numVal),
       child: Container(
         height: 48,
         margin: const EdgeInsets.all(2),
@@ -650,19 +656,40 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Map<String, MptClaim> approvedClaims,
     String? currentUserId,
     MptTicket ticket,
-    Set<int> calledSet,
-  ) {
+    Set<int> calledSet, {
+    bool isGameEnded = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Claim Winning Prize',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Claim Winning Prize',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            if (isGameEnded)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF3B4163)),
+                ),
+                child: const Text(
+                  'GAME CONCLUDED (CLAIMS CLOSED)',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFA0AEC0)),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Tap when you complete a pattern. Server will validate your marked numbers.',
-          style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+        Text(
+          isGameEnded
+              ? 'Game is over. Prize claiming is closed for this session.'
+              : 'Tap when you complete a pattern. Server will validate your marked numbers.',
+          style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
         ),
         const SizedBox(height: 12),
         GridView.count(
@@ -700,6 +727,32 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFFA0AEC0)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (isGameEnded) {
+              return ElevatedButton(
+                onPressed: null, // Disabled when game ended
+                style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: const Color(0xFF1E2235),
+                  disabledForegroundColor: const Color(0xFF64748B),
+                  side: const BorderSide(color: Color(0xFF2E334D)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      Formatters.formatPrizeName(prize),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      'Unclaimed (Game Over)',
+                      style: TextStyle(fontSize: 9, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),

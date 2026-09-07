@@ -102,8 +102,10 @@ class RegistrationStatusScreen extends ConsumerWidget {
                     ],
                     const SizedBox(height: 20),
 
-                    // Unambiguous Status Card (Confirmed vs Waiting)
-                    if (myReg.isConfirmed) ...[
+                    // Unambiguous Status Card (Concluded vs Confirmed vs Waiting)
+                    if (game.isCompleted || game.status == 'COMPLETED') ...[
+                      _buildConcludedCard(context, myReg, game),
+                    ] else if (myReg.isConfirmed) ...[
                       _buildConfirmedCard(context, myReg, game),
                     ] else ...[
                       _buildWaitingCard(context, myReg, game),
@@ -112,7 +114,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // Sponsor / Ad Banner Slot (Item 3)
-                    _buildAdBannerSlot(),
+                    _buildAdBannerSlot(isCompleted: game.isCompleted || game.status == 'COMPLETED'),
                     const SizedBox(height: 20),
 
                     // Live Event Capacity Stats Card
@@ -124,7 +126,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () => context.push('/live-display/$gameId'),
                       icon: const Icon(Icons.tv),
-                      label: const Text('Open Live Display / Caller Screen'),
+                      label: Text(game.isCompleted ? 'View Final Board & Winners' : 'Open Live Display / Caller Screen'),
                     ),
                   ],
                 ),
@@ -136,7 +138,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAdBannerSlot() {
+  Widget _buildAdBannerSlot({bool isCompleted = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -152,25 +154,89 @@ class RegistrationStatusScreen extends ConsumerWidget {
           ],
         ),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.campaign_outlined, color: AppTheme.secondaryColor, size: 28),
-          SizedBox(width: 12),
+          const Icon(Icons.campaign_outlined, color: AppTheme.secondaryColor, size: 28),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Event Sponsor / Game Tip',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                  isCompleted ? 'Game Session Ended' : 'Event Sponsor / Game Tip',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Stay on this screen! Your game ticket will automatically appear the moment the Organizer starts.',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                  isCompleted
+                      ? 'Thank you for playing! Any claimed prizes and vouchers are available in My Rewards.'
+                      : 'Stay on this screen! Your game ticket will automatically appear the moment the Organizer starts.',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConcludedCard(BuildContext context, MptRegistration reg, MptGame game) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF3B4163), width: 1.5),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.emoji_events, size: 54, color: AppTheme.secondaryColor),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'GAME SESSION CONCLUDED 🏁',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This game was completed on ${game.completedAt != null ? Formatters.formatShortDate(game.completedAt!) : "earlier"}.\nRegistration #${reg.registrationSeq}',
+            style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1), height: 1.4),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/play/${game.id}'),
+                  icon: const Icon(Icons.confirmation_number_outlined, size: 18),
+                  label: const Text('View Ticket'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push('/rewards'),
+                  icon: const Icon(Icons.wallet_giftcard, size: 18),
+                  label: const Text('My Rewards'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
