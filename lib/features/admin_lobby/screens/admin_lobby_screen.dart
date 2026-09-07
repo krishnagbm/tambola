@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +31,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleShareInvite(MptGame game) async {
-    final link = 'https://tambola.digitalappstudio.com/join/${game.inviteCode}';
+    final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play Tambola with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap the link below to open the app or download it:\n$link';
@@ -39,14 +39,25 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
-    // Basic tier cost preview: 100 for 1-25, 200 for 26-50, 350 for 51-100, 600 for 101-250
-    final creditsNeeded = confirmedCount <= 25
-        ? 100
-        : confirmedCount <= 50
-            ? 200
-            : confirmedCount <= 100
-                ? 350
-                : 600;
+    final tiers = ref.read(capacityTiersProvider).value;
+    int creditsNeeded = 10;
+    if (tiers != null && tiers.isNotEmpty) {
+      final matchingTier = tiers.firstWhere(
+        (t) => (confirmedCount == 0 && t.minPlayers <= 1) || (confirmedCount > 0 && confirmedCount >= t.minPlayers && confirmedCount <= t.maxPlayers),
+        orElse: () => tiers.firstWhere((t) => t.maxPlayers >= confirmedCount, orElse: () => tiers.first),
+      );
+      creditsNeeded = matchingTier.creditsRequired;
+    } else {
+      creditsNeeded = confirmedCount <= 10
+          ? 10
+          : confirmedCount <= 25
+              ? 25
+              : confirmedCount <= 50
+                  ? 50
+                  : confirmedCount <= 100
+                      ? 100
+                      : 250;
+    }
 
     if (walletCredits < creditsNeeded) {
       _showInsufficientCreditsDialog(creditsNeeded, walletCredits);

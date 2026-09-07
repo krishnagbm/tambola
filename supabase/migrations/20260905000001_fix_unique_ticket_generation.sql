@@ -8,6 +8,92 @@
 -- 1. Drop obsolete 4-parameter MPT_create_game overload to prevent PostgREST HTTP 300
 DROP FUNCTION IF EXISTS public."MPT_create_game"(TEXT, INT, TIMESTAMPTZ, JSONB);
 
+-- 1b. Ensure Starter (1–10 Players) tier exists and sync capacity tiers
+DELETE FROM public."MPT_capacity_tiers";
+INSERT INTO public."MPT_capacity_tiers" (name, min_players, max_players, credits_required, display_order, is_active)
+VALUES
+    ('Starter / Free Tier (1–10 Players)', 1, 10, 10, 1, TRUE),
+    ('Small Party (11–25 Players)', 11, 25, 25, 2, TRUE),
+    ('Standard Event (26–50 Players)', 26, 50, 50, 3, TRUE),
+    ('Large Gala (51–100 Players)', 51, 100, 100, 4, TRUE),
+    ('Mega Event (101–250 Players)', 101, 250, 250, 5, TRUE);
+
+-- 1c. Recreate MPT_create_game with 10-player capacity default and dynamic tier linking
+CREATE OR REPLACE FUNCTION public."MPT_create_game"(
+    p_name TEXT,
+    p_planned_capacity INT DEFAULT 10,
+    p_planned_capacity_tier_id UUID DEFAULT NULL,
+    p_scheduled_at TIMESTAMPTZ DEFAULT NULL,
+    p_prizes_config JSONB DEFAULT NULL
+)
+RETURNS public."MPT_games" AS $$
+DECLARE
+    v_game public."MPT_games";
+    v_invite_code TEXT;
+    v_attempts INT := 0;
+    v_uid UUID := auth.uid();
+    v_tier_id UUID;
+    v_final_cap INT;
+BEGIN
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'AUTH_REQUIRED: Must be logged in to create a game';
+    END IF;
+
+    -- Generate a unique 6-character uppercase alphanumeric code
+    LOOP
+        v_invite_code := UPPER(SUBSTRING(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT) FROM 1 FOR 6));
+        EXIT WHEN NOT EXISTS (SELECT 1 FROM public."MPT_games" WHERE invite_code = v_invite_code);
+        v_attempts := v_attempts + 1;
+        IF v_attempts > 10 THEN
+            v_invite_code := 'TAMB' || (FLOOR(RANDOM() * 9000 + 1000)::TEXT);
+            EXIT;
+        END IF;
+    END LOOP;
+
+    -- Find matching capacity tier if not provided directly
+    IF p_planned_capacity_tier_id IS NOT NULL THEN
+        v_tier_id := p_planned_capacity_tier_id;
+        SELECT max_players INTO v_final_cap
+        FROM public."MPT_capacity_tiers"
+        WHERE id = v_tier_id;
+    ELSE
+        SELECT id, max_players INTO v_tier_id, v_final_cap
+        FROM public."MPT_capacity_tiers"
+        WHERE p_planned_capacity BETWEEN min_players AND max_players
+        ORDER BY display_order ASC
+        LIMIT 1;
+    END IF;
+
+    v_final_cap := COALESCE(v_final_cap, p_planned_capacity, 10);
+
+    INSERT INTO public."MPT_games" (
+        admin_user_id,
+        name,
+        invite_code,
+        status,
+        planned_capacity_tier_id,
+        initial_funded_capacity,
+        funded_capacity,
+        scheduled_at,
+        prizes_config
+    )
+    VALUES (
+        v_uid,
+        p_name,
+        v_invite_code,
+        'OPEN',
+        v_tier_id,
+        v_final_cap,
+        v_final_cap,
+        p_scheduled_at,
+        COALESCE(p_prizes_config, '["EARLY_FIVE", "TOP_LINE", "MIDDLE_LINE", "BOTTOM_LINE", "FOUR_CORNERS", "FULL_HOUSE"]'::jsonb)
+    )
+    RETURNING * INTO v_game;
+
+    RETURN v_game;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- 2. Generate a valid randomized 3x9 Tambola ticket matrix per eligible player.
 --    Fix: Uses `FROM generate_series(...)` in the FROM clause with high-entropy ordering
 --    so PostgreSQL evaluates the random sort across all generated numbers rather than
@@ -97,7 +183,7 @@ DECLARE
     v_game public."MPT_games";
     v_confirmed_count INT;
     v_tier public."MPT_capacity_tiers";
-    v_credits_needed INT := 100;
+    v_credits_needed INT := 10;
     v_wallet public."MPT_admin_wallets";
     v_new_balance INT;
     v_reg RECORD;
@@ -130,29 +216,21 @@ BEGIN
     FROM public."MPT_game_registrations"
     WHERE game_id = p_game_id AND seat_status = 'CONFIRMED';
 
+    -- Find tier matching confirmed player count, or minimum tier if 0 confirmed
     SELECT * INTO v_tier
     FROM public."MPT_capacity_tiers"
-    WHERE v_confirmed_count BETWEEN min_players AND max_players
-      AND is_active = TRUE
+    WHERE (v_confirmed_count = 0 AND min_players = 1)
+       OR (v_confirmed_count > 0 AND v_confirmed_count BETWEEN min_players AND max_players)
+       OR (v_confirmed_count > 0 AND max_players >= v_confirmed_count)
     ORDER BY credits_required ASC
     LIMIT 1;
 
     IF FOUND THEN
         v_credits_needed := v_tier.credits_required;
     ELSE
-        SELECT * INTO v_tier
+        SELECT COALESCE(MIN(credits_required), 10) INTO v_credits_needed
         FROM public."MPT_capacity_tiers"
-        WHERE max_players >= v_confirmed_count AND is_active = TRUE
-        ORDER BY credits_required ASC
-        LIMIT 1;
-
-        IF FOUND THEN
-            v_credits_needed := v_tier.credits_required;
-        ELSE
-            SELECT COALESCE(MIN(credits_required), 10) INTO v_credits_needed
-            FROM public."MPT_capacity_tiers"
-            WHERE is_active = TRUE;
-        END IF;
+        WHERE is_active = TRUE;
     END IF;
 
     SELECT * INTO v_wallet

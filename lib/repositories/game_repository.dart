@@ -10,7 +10,7 @@ class GameRepository {
   /// Creates a new game room
   Future<MptGame> createGame({
     required String name,
-    int plannedCapacity = 25,
+    int plannedCapacity = 10,
     String? plannedCapacityTierId,
     DateTime? scheduledAt,
     List<String>? prizesConfig,

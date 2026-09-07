@@ -17,7 +17,7 @@ class CreateGameScreen extends ConsumerStatefulWidget {
 class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController(text: 'Family Tambola Night');
-  int _selectedCapacity = 25;
+  int _selectedCapacity = 10;
   String? _selectedTierId;
   bool _isLoading = false;
 
@@ -68,7 +68,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Future<void> _handleShare(MptGame game) async {
-    final link = 'https://tambola.digitalappstudio.com/join/${game.inviteCode}';
+    final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play Tambola in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap to join or download the app:\n$link';
@@ -336,10 +336,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildStaticCapacityOptions() {
     final options = [
-      {'capacity': 25, 'label': '1–25 Players', 'desc': 'Small Party • 100 Credits'},
-      {'capacity': 50, 'label': '26–50 Players', 'desc': 'Standard Event • 200 Credits'},
-      {'capacity': 100, 'label': '51–100 Players', 'desc': 'Large Gala • 350 Credits'},
-      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Gathering • 600 Credits'},
+      {'capacity': 10, 'label': '1–10 Players', 'desc': 'Starter / Free Trial • 10 Credits'},
+      {'capacity': 25, 'label': '11–25 Players', 'desc': 'Small Party • 25 Credits'},
+      {'capacity': 50, 'label': '26–50 Players', 'desc': 'Standard Event • 50 Credits'},
+      {'capacity': 100, 'label': '51–100 Players', 'desc': 'Large Gala • 100 Credits'},
+      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 250 Credits'},
     ];
 
     return Column(

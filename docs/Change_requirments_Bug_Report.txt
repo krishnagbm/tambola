@@ -2,6 +2,13 @@
 None currently pending. All items verified and implemented.
 
 # Completed items
+1. Share Link Deep Routing Fix (404 Error on AWS Amplify)
+   - Updated invite share links in `CreateGameScreen` and `AdminLobbyScreen` to use hash-based deep link routing: `https://tambola.digitalappstudio.com/#/join/${game.inviteCode}`. This ensures AWS Amplify and static web hosts serve `index.html` (HTTP 200) and `GoRouter` immediately opens `JoinGameScreen` with the invite code pre-filled.
+2. Starter 10-Player Game & 10 Credits Tier Alignment
+   - Updated `MPT_capacity_tiers` in `20260905000001_fix_unique_ticket_generation.sql` with `Starter (1–10 Players)` costing `10 Credits`.
+   - Updated `MPT_create_game` to default to 10 seats instead of 25.
+   - Updated `MPT_start_game_and_charge` to charge 10 credits for <= 10 confirmed players (or 0 players during lobby tests), allowing new organizers with 10 free welcome credits to start their 10-player game without error.
+   - Updated `AdminLobbyScreen._handleStartGame` to dynamically determine required credits from `capacityTiersProvider` (or 10 credits for <= 10 players) instead of hardcoding 100 credits.
 1. Marked Numbers Persistence on Return to Active Game (Item 2)
    - Implemented local persistent storage using `SharedPreferences` (`mpt_marked_${gameId}`) in `PlayerTicketScreen`. When a player navigates to Home or switches screens and returns, all previously marked numbers are automatically restored.
 2. Player Name and Identity Card on Game Screen (Item 3)
