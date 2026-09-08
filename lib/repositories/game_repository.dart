@@ -70,6 +70,16 @@ class GameRepository {
     return MptGame.fromJson(res);
   }
 
+  /// Updates the event name of a game
+  Future<void> updateGameName(String gameId, String newName) async {
+    final cleanName = newName.trim();
+    if (cleanName.isEmpty) return;
+    await _supabase
+        .from('MPT_games')
+        .update({'name': cleanName})
+        .eq('id', gameId);
+  }
+
   /// Registers player with server-authoritative sequence & overflow capacity logic
   Future<MptRegistration> registerPlayer({
     required String gameId,

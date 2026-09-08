@@ -15,8 +15,23 @@ class CreateGameScreen extends ConsumerStatefulWidget {
 }
 
 class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
+  static const _suggestedNames = [
+    'Friday Tambola Fiesta 🎊',
+    'Weekend Housefull Mania 🏠',
+    'Bollywood Housie Night 🎬',
+    'Diwali Tambola Dhamaka 🪔',
+    'Friends & Family Blast 🎉',
+    'Super Sunday Housie Party 🌟',
+    'Office Chai & Tambola Break ☕',
+    'Monsoon Tambola Carnival 🌧️',
+    'Kitty Party Tambola Bonanza 💃',
+    'Late Night Tambola Chill 🌙',
+    'Festive Housie Extravaganza 🎈',
+    'Clubhouse Tambola League 🏆',
+  ];
+
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController(text: 'Family Tambola Night');
+  late final TextEditingController _nameController;
   int _selectedCapacity = 10;
   String? _selectedTierId;
   bool _isLoading = false;
@@ -32,6 +47,18 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'FULL_HOUSE': true,
     'SECOND_FULL_HOUSE': false,
   };
+
+  @override
+  void initState() {
+    super.initState();
+    final initialName = (List<String>.from(_suggestedNames)..shuffle()).first;
+    _nameController = TextEditingController(text: initialName);
+  }
+
+  void _randomizeName() {
+    final nextName = (List<String>.from(_suggestedNames)..shuffle()).first;
+    _nameController.text = nextName;
+  }
 
   @override
   void dispose() {
@@ -173,10 +200,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Game / Event Name',
-                  hintText: 'e.g. Diwalli Party Tambola',
-                  prefixIcon: Icon(Icons.celebration),
+                  hintText: 'e.g. Diwali Party Tambola',
+                  prefixIcon: const Icon(Icons.celebration),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.casino_outlined, color: AppTheme.secondaryColor),
+                    tooltip: 'Shuffle Event Name',
+                    onPressed: _randomizeName,
+                  ),
                 ),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Please enter game name' : null,
               ),

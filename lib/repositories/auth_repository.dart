@@ -93,6 +93,29 @@ class AuthRepository {
     );
   }
 
+  /// Signs in or links with Google OAuth
+  Future<void> signInWithGoogle({String? redirectTo}) async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: redirectTo ?? 'https://tambola.digitalappstudio.com/#/',
+    );
+  }
+
+  /// Sends a magic sign-in link (OTP) to the given email
+  Future<void> signInWithEmail(String email, {String? redirectTo}) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) throw Exception('Please enter a valid email address');
+    await _supabase.auth.signInWithOtp(
+      email: cleanEmail,
+      emailRedirectTo: redirectTo ?? 'https://tambola.digitalappstudio.com/#/',
+    );
+  }
+
+  /// Signs out of current account and starts a fresh session
+  Future<void> signOut() async {
+    await _supabase.auth.signOut();
+  }
+
   /// Checks if current user has protected identity (email/oauth linked)
   bool isProtectedIdentity() {
     final user = _supabase.auth.currentUser;

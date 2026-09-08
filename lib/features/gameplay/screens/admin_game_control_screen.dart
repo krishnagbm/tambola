@@ -98,16 +98,69 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     }
   }
 
+  void _showEditGameNameDialog(String currentGameName) {
+    final controller = TextEditingController(text: currentGameName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Event Name', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Event Name',
+            hintText: 'e.g. Saturday Family Tambola',
+            prefixIcon: Icon(Icons.edit),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty && newName != currentGameName) {
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(gameRepositoryProvider).updateGameName(widget.gameId, newName);
+                  ref.invalidate(gameStreamProvider(widget.gameId));
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Event name updated successfully!')),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update event name: $e'), backgroundColor: AppTheme.accentDanger),
+                  );
+                }
+              } else {
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
 
-    final prizesConfig = gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
-    final approvedPrizeTypes = claimsStream.value?.where((c) => c.status == 'APPROVED').map((c) => c.prizeType).toSet() ?? {};
-    final allPrizesWon = prizesConfig.isNotEmpty && prizesConfig.every((p) => approvedPrizeTypes.contains(p));
-    final isGameCompleted = gameStream.value?.status == 'COMPLETED';
+    final game = gameStream.value;
+    final isGameCompleted = game?.status == 'COMPLETED';
+    final activePrizes = game?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
+    final claims = claimsStream.value ?? [];
+    final approvedClaimPrizes = claims.where((c) => c.status == 'APPROVED').map((c) => c.prizeType).toSet();
+    final allPrizesWon = activePrizes.isNotEmpty && activePrizes.every((p) => approvedClaimPrizes.contains(p));
 
     return Scaffold(
       appBar: AppBar(
@@ -158,6 +211,51 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Event Name Banner with Edit Button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCard,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF2E334D)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.celebration, size: 20, color: AppTheme.secondaryColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          game?.name ?? 'Tambola Event',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 16, color: AppTheme.primaryLight),
+                        tooltip: 'Edit Event Name',
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isGameCompleted ? const Color(0xFF718096).withOpacity(0.2) : AppTheme.accentSuccess.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isGameCompleted ? const Color(0xFFA0AEC0) : AppTheme.accentSuccess,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 // All Prizes Won Alert Banner
                 if (allPrizesWon && !isGameCompleted) ...[
                   Container(

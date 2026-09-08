@@ -337,6 +337,57 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     );
   }
 
+  void _showEditGameNameDialog(MptGame game) {
+    final controller = TextEditingController(text: game.name);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Event Name', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Event Name',
+            hintText: 'e.g. Saturday Family Tambola',
+            prefixIcon: Icon(Icons.edit),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isNotEmpty && newName != game.name) {
+                Navigator.pop(ctx);
+                try {
+                  await ref.read(gameRepositoryProvider).updateGameName(game.id, newName);
+                  ref.invalidate(gameStreamProvider(game.id));
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Event name updated successfully!')),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to update event name: $e'), backgroundColor: AppTheme.accentDanger),
+                  );
+                }
+              } else {
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGameHeaderCard(MptGame game) {
     return Card(
       child: Padding(
@@ -348,9 +399,23 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    game.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          game.name,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 16, color: AppTheme.primaryLight),
+                        tooltip: 'Edit Event Name',
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _showEditGameNameDialog(game),
+                      ),
+                    ],
                   ),
                 ),
                 Container(

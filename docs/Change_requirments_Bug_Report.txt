@@ -1,7 +1,32 @@
 # Pending items
-None currently pending. All items verified and implemented.
 
 # Completed items
+9/8/2026 Items:
+1. Bottom Navigation Bar Architecture (Items 2 & 3):
+   - Separated the vertically growing `HomeScreen` into a modern 4-tab `NavigationBar`:
+     * Tab 0 - **Dashboard**: Player identity strip, active live game banner, Hero action cards, 4-card USP showcase, App Store / Google Play download badges, and "How to Play" guide.
+     * Tab 1 - **Player Hub**: Quick invite code entry, "My Joined Games" with filter chips (`ALL`, `LIVE`, `WAITING`, `COMPLETED`), and Rewards shortcut.
+     * Tab 2 - **Organizer Hub**: "Create New Game" button, Organizer Wallet preview (+200 test credits & Top Up), "My Hosted Games" with filter chips (`ALL`, `LIVE`, `LOBBY`, `COMPLETED`), and Prize Verification card.
+     * Tab 3 - **Profile & Settings**: Avatar/display name card, Google & Email Social Sign-In section, and Rapid Games / Digital App Studio branding footer.
+2. Intelligent Randomized Default Event Names & Shuffle Button (Item 4):
+   - Added rotating list of intelligent event names in `CreateGameScreen` (e.g., "Weekend Tambola Blitz ⚡", "Family Housie Bonanza 🏠", "Friday Night Housie Fiesta 🎉", "Grand Tambola Jackpot 🏆").
+   - Added a 🎲 Shuffle suffix button in the Game Name text field to generate names on-demand.
+3. Event Name Editable Anytime Post-Creation (Item 5):
+   - Added `GameRepository.updateGameName` to update `MPT_games` dynamically.
+   - Added edit pencil icon button and modal dialog in `OrganizerLobbyScreen` (Organizer Lobby).
+   - Added edit pencil icon button and modal dialog in `AdminGameControlScreen` (Live Gameplay Controls).
+4. Web Landing / Home Page with USP Showcase & Store Badges (Items 6, 7 & 8):
+   - Added top "Home" navigation button on `JoinGameScreen` so visitors coming via shared deep links can explore the full web platform.
+   - Created a dedicated USP showcase on `HomeScreen` (Tab 0) highlighting:
+     * ⚡ Zero Wait & Instant Play
+     * 🎲 Guaranteed Unique Tickets
+     * 🎙️ Smart Audio Caller & Auto-Verification
+     * 👥 Live Real-Time Multiplayer
+   - Added App Store & Google Play download badges styled like `https://games.rapidcfl.com`.
+5. Social Sign-In (Google & Email) via Supabase Auth (Item 9):
+   - Added `signInWithGoogle` and `signInWithEmail` (OTP/Magic Link) in `AuthRepository`.
+   - Built a dedicated Social Sign-In card in `HomeScreen` Profile tab (Tab 3) allowing players/organizers to back up their account and wallet across devices.
+
 1. Game Ended Player UI Interactions Disabled (Item 3)
    - Updated `PlayerTicketScreen` to pass `isGameEnded` to both `_buildTicketMatrix` and `_buildPrizeClaimsSection`. When the game concludes, unclaimed prize buttons are clearly disabled with `Unclaimed (Game Over)` and ticket cell clicks are disabled to prevent invalid post-game claim attempts.
 2. Ended Game Status & Session Closed Screen (Item 4)
