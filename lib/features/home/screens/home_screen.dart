@@ -395,25 +395,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         'icon': Icons.bolt_rounded,
         'color': AppTheme.secondaryColor,
         'title': 'Zero-Lag Multiplayer',
-        'desc': 'Synchronized realtime caller & board for up to 100+ players simultaneously.',
+        'desc': 'Synchronized realtime caller & live board for 100+ players.',
       },
       {
         'icon': Icons.grid_view_rounded,
         'color': AppTheme.primaryLight,
-        'title': '100% Unique 3x9 Tickets',
-        'desc': 'Authentic mathematical algorithms ensuring distinct tickets with 15 numbers across 9 columns.',
+        'title': '100% Unique Tickets',
+        'desc': 'Authentic 3x9 tickets with 15 numbers across 9 columns.',
       },
       {
         'icon': Icons.tv_rounded,
         'color': AppTheme.accentInfo,
-        'title': 'Voice Caller & Big TV Board',
-        'desc': 'Automated crystal-clear voice announcements with widescreen projector mode for parties & streams.',
+        'title': 'Voice Caller & TV Board',
+        'desc': 'Voice announcements with widescreen TV projector mode.',
       },
       {
         'icon': Icons.verified_rounded,
         'color': AppTheme.accentSuccess,
-        'title': 'Instant Anti-Bogey Validation',
-        'desc': 'Automated server verification for Early 5, Lines, 4 Corners, and Full House prize claims.',
+        'title': 'Anti-Bogey Validation',
+        'desc': 'Automated instant verification for lines & Full House.',
       },
     ];
 
@@ -421,60 +421,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(Icons.stars, color: AppTheme.secondaryColor, size: 20),
-            SizedBox(width: 8),
+            Row(
+              children: [
+                Icon(Icons.stars, color: AppTheme.secondaryColor, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Why Play Tambola Multiplayer?',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ],
+            ),
             Text(
-              'Why Play Tambola Multiplayer?',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
+              'Swipe →',
+              style: TextStyle(fontSize: 11, color: Color(0xFF718096)),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.3,
-          ),
-          itemCount: usps.length,
-          itemBuilder: (ctx, idx) {
-            final item = usps[idx];
-            final color = item['color'] as Color;
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.darkCard,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFF2E334D)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(item['icon'] as IconData, color: color, size: 22),
-                  const SizedBox(height: 8),
-                  Text(
-                    item['title'] as String,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Expanded(
-                    child: Text(
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 84,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: usps.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (ctx, idx) {
+              final item = usps[idx];
+              final color = item['color'] as Color;
+              return Container(
+                width: 200,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(item['icon'] as IconData, color: color, size: 18),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            item['title'] as String,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
                       item['desc'] as String,
-                      style: const TextStyle(fontSize: 10, color: Color(0xFFA0AEC0), height: 1.3),
-                      maxLines: 3,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFFA0AEC0), height: 1.2),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
@@ -522,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   title: 'Google Play',
                   subtitle: 'Android App',
                   icon: Icons.play_arrow_rounded,
-                  onTap: () => _launchURL('https://games.rapidcfl.com'),
+                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -531,7 +543,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   title: 'App Store',
                   subtitle: 'iOS / iPhone',
                   icon: Icons.apple,
-                  onTap: () => _launchURL('https://games.rapidcfl.com'),
+                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
                 ),
               ),
             ],
@@ -1280,9 +1292,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               children: [
                 InkWell(
-                  onTap: () => _launchURL('https://games.rapidcfl.com'),
+                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
                   child: const Text(
-                    'Developed by Rapid Consulting Firm LLC & Digital App Studio',
+                    'Developed by Digital App Studio',
                     style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0), decoration: TextDecoration.underline),
                     textAlign: TextAlign.center,
                   ),

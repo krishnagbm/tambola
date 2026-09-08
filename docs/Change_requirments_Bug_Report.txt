@@ -7,7 +7,7 @@
      * Tab 0 - **Dashboard**: Player identity strip, active live game banner, Hero action cards, 4-card USP showcase, App Store / Google Play download badges, and "How to Play" guide.
      * Tab 1 - **Player Hub**: Quick invite code entry, "My Joined Games" with filter chips (`ALL`, `LIVE`, `WAITING`, `COMPLETED`), and Rewards shortcut.
      * Tab 2 - **Organizer Hub**: "Create New Game" button, Organizer Wallet preview (+200 test credits & Top Up), "My Hosted Games" with filter chips (`ALL`, `LIVE`, `LOBBY`, `COMPLETED`), and Prize Verification card.
-     * Tab 3 - **Profile & Settings**: Avatar/display name card, Google & Email Social Sign-In section, and Rapid Games / Digital App Studio branding footer.
+     * Tab 3 - **Profile & Settings**: Avatar/display name card, Google & Email Social Sign-In section, and Digital App Studio branding footer.
 2. Intelligent Randomized Default Event Names & Shuffle Button (Item 4):
    - Added rotating list of intelligent event names in `CreateGameScreen` (e.g., "Weekend Tambola Blitz ⚡", "Family Housie Bonanza 🏠", "Friday Night Housie Fiesta 🎉", "Grand Tambola Jackpot 🏆").
    - Added a 🎲 Shuffle suffix button in the Game Name text field to generate names on-demand.
@@ -17,15 +17,15 @@
    - Added edit pencil icon button and modal dialog in `AdminGameControlScreen` (Live Gameplay Controls).
 4. Web Landing / Home Page with USP Showcase & Store Badges (Items 6, 7 & 8):
    - Added top "Home" navigation button on `JoinGameScreen` so visitors coming via shared deep links can explore the full web platform.
-   - Created a dedicated USP showcase on `HomeScreen` (Tab 0) highlighting:
-     * ⚡ Zero Wait & Instant Play
-     * 🎲 Guaranteed Unique Tickets
-     * 🎙️ Smart Audio Caller & Auto-Verification
-     * 👥 Live Real-Time Multiplayer
-   - Added App Store & Google Play download badges styled like `https://games.rapidcfl.com`.
+   - Created a dedicated USP showcase on `HomeScreen` (Tab 0) with compact horizontal swipe cards taking minimal vertical height.
+   - Added App Store & Google Play download badges linked to `https://tambola.digitalappstudio.com`.
 5. Social Sign-In (Google & Email) via Supabase Auth (Item 9):
    - Added `signInWithGoogle` and `signInWithEmail` (OTP/Magic Link) in `AuthRepository`.
    - Built a dedicated Social Sign-In card in `HomeScreen` Profile tab (Tab 3) allowing players/organizers to back up their account and wallet across devices.
+6. Pure Digital App Studio Branding (Item 6):
+   - Removed all references to Rapid Consulting Firm across footer, store links, and docs to keep exclusive Digital App Studio branding.
+7. Compact Horizontal USP Cards (Item 7):
+   - Converted the 4 USP cards on `HomeScreen` Dashboard from a tall 2x2 grid to a compact horizontal scroll card list (`height: 84`), saving over 50% vertical space on mobile and dashboard views.
 
 1. Game Ended Player UI Interactions Disabled (Item 3)
    - Updated `PlayerTicketScreen` to pass `isGameEnded` to both `_buildTicketMatrix` and `_buildPrizeClaimsSection`. When the game concludes, unclaimed prize buttons are clearly disabled with `Unclaimed (Game Over)` and ticket cell clicks are disabled to prevent invalid post-game claim attempts.
