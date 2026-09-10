@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +10,13 @@ import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
+import '../widgets/dashboard_footer.dart';
+import '../widgets/dashboard_hero_section.dart';
+import '../widgets/how_it_works_section.dart';
+import '../widgets/opening_screen.dart';
+import '../widgets/organizer_player_split.dart';
+import '../widgets/perfect_for_chips_section.dart';
+import '../widgets/usp_grid_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -88,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: userState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const OpeningScreen(),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (user) => RefreshIndicator(
           onRefresh: () async => _refreshAll(),
@@ -158,10 +164,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Player Identity Bar
-          _buildUserProfileStrip(context, user, walletState),
-          const SizedBox(height: 16),
-
           // Live Game in Progress Alert Banner
           if (liveJoined != null) ...[
             _buildLiveGameBanner(
@@ -181,46 +183,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
           ],
 
-          // Quick Action Cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildHeroCard(
-                  context: context,
-                  title: 'Join Game',
-                  subtitle: 'Enter invite code',
-                  icon: Icons.login_rounded,
-                  color: AppTheme.primaryColor,
-                  onTap: () => context.push('/join'),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: _buildHeroCard(
-                  context: context,
-                  title: 'Create Game',
-                  subtitle: 'Host new event',
-                  icon: Icons.add_circle_outline_rounded,
-                  color: AppTheme.secondaryColor,
-                  isSecondary: true,
-                  onTap: () => context.push('/create-game'),
-                ),
-              ),
-            ],
-          ),
+          // 1. Dashboard Hero Section
+          const DashboardHeroSection(),
+          const SizedBox(height: 20),
+
+          // Player Identity Bar
+          _buildUserProfileStrip(context, user, walletState),
+          const SizedBox(height: 20),
+
+          // 2. Organizer vs. Player Split
+          const OrganizerPlayerSplit(),
           const SizedBox(height: 24),
 
-          // USP Showcase: Why Play DebHousie?
-          _buildUspShowcaseSection(context),
+          // 3. USP Grid ("Why DebHousie?")
+          const UspGridSection(),
           const SizedBox(height: 24),
 
-          // Mobile Apps Download Badges Section
+          // 4. How It Works (3-step flow)
+          const HowItWorksSection(),
+          const SizedBox(height: 24),
+
+          // 5. Perfect For (Chip row)
+          const PerfectForChipsSection(),
+          const SizedBox(height: 24),
+
+          // 6. Mobile Apps Download Badges Section
           _buildAppDownloadSection(context),
           const SizedBox(height: 20),
 
-          // Quick Rules & How to Win Helper
+          // 7. Quick Rules & How to Win Helper
           _buildHowToPlayCard(context),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
+
+          // 8. Dashboard Footer Tagline
+          const DashboardFooter(),
         ],
       ),
     );
@@ -347,155 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeroCard({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-    bool isSecondary = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.darkCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.4), width: 1.5),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withOpacity(0.18),
-              AppTheme.darkCard,
-            ],
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 30, color: color),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildUspShowcaseSection(BuildContext context) {
-    final usps = [
-      {
-        'icon': Icons.bolt_rounded,
-        'color': AppTheme.secondaryColor,
-        'title': 'Zero-Lag Multiplayer',
-        'desc': 'Synchronized realtime caller & live board for 100+ players.',
-      },
-      {
-        'icon': Icons.grid_view_rounded,
-        'color': AppTheme.primaryLight,
-        'title': '100% Unique Tickets',
-        'desc': 'Authentic 3x9 tickets with 15 numbers across 9 columns.',
-      },
-      {
-        'icon': Icons.tv_rounded,
-        'color': AppTheme.accentInfo,
-        'title': 'Voice Caller & TV Board',
-        'desc': 'Voice announcements with widescreen TV projector mode.',
-      },
-      {
-        'icon': Icons.verified_rounded,
-        'color': AppTheme.accentSuccess,
-        'title': 'Anti-Bogey Validation',
-        'desc': 'Automated instant verification for lines & Full House.',
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.stars, color: AppTheme.secondaryColor, size: 18),
-                SizedBox(width: 8),
-                Text(
-                  'Why Play DebHousie?',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ],
-            ),
-            Text(
-              'Swipe →',
-              style: TextStyle(fontSize: 11, color: Color(0xFF718096)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 84,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: usps.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (ctx, idx) {
-              final item = usps[idx];
-              final color = item['color'] as Color;
-              return Container(
-                width: 200,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCard,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2E334D)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(item['icon'] as IconData, color: color, size: 18),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            item['title'] as String,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item['desc'] as String,
-                      style: const TextStyle(fontSize: 10, color: Color(0xFFA0AEC0), height: 1.2),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildAppDownloadSection(BuildContext context) {
     return Container(

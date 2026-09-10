@@ -40,7 +40,7 @@ void main() {
             }
           }
 
-          expect(colNums.length >= 1 && colNums.length <= 3, isTrue,
+          expect(colNums.isNotEmpty && colNums.length <= 3, isTrue,
               reason: 'Column $col has ${colNums.length} numbers, expected 1-3');
 
           // Vertically sorted

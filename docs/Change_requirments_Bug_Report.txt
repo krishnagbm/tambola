@@ -17,6 +17,18 @@
    - Updated Android `MainActivity.kt` package to `com.digitalappstudio.debhousie`.
    - Updated iOS `PRODUCT_BUNDLE_IDENTIFIER` to `com.digitalappstudio.debhousie` across all Xcode build configurations in `project.pbxproj`.
    - Aligned app title to **`DebHousie: Live Tambola Party`** (29 characters, compliant with the 30-character limit on Google Play & App Store).
+3. "Party Mode" Theme Foundation & Button System:
+   - Updated `AppTheme` with Navy `#0B3D91`, Golden Yellow `#FFC107`, Brand Green `#2ECC71`, Brand Red `#E63946`, and Rotating Purple `#8E44AD`.
+   - Elevated buttons styled with Golden Yellow fill, Navy text, 16px radius, and w800 bold typography for unmistakable CTA clarity.
+   - Outlined buttons styled with Navy/Light borders and 16px radius.
+4. Web & Mobile Dashboard Overhaul (Tab 0) & Native Launch Experience:
+   - Built `DashboardHeroSection` with eyebrow, headline, subhead, dual CTAs ("Host a Game — Free", "Have a Code? Join Now"), and 4-point trust strip.
+   - Built `OrganizerPlayerSplit` dual-card split with distinct Navy and Yellow accent borders.
+   - Built `UspGridSection` with 6 proof-based USP cards in a 2-col/3-col responsive layout with rotating party accent badges.
+   - Built `HowItWorksSection` 3-step stepper with numbered badges.
+   - Built `PerfectForChipsSection` with 7 celebration use cases.
+   - Built `OpeningScreen` with Navy full-bleed background, centered logo, tagline fade-in, 4-dot pulsing animation, and cycling tips.
+   - Generated native splash screens for Android (including Android 12+ safe-zone monogram), iOS, and Web via `flutter_native_splash`.
 
 9/8/2026 Items:
 1. Bottom Navigation Bar Architecture (Items 2 & 3):

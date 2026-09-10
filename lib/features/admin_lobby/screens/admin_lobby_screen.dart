@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';

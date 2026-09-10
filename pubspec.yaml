@@ -54,6 +54,16 @@ dev_dependencies:
     sdk: flutter
   mocktail: ^1.0.4
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.1
+
+flutter_native_splash:
+  color: "#0B3D91"
+  image: assets/branding/splash_logo.png
+  android_12:
+    image: assets/branding/splash_icon_mono.png
+    color: "#0B3D91"
+  web: true
+  web_image_mode: center
 
 flutter:
   uses-material-design: true

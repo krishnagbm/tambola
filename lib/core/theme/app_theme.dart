@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Vibrant Brand Colors suitable for a celebratory party/event game
-  static const Color primaryColor = Color(0xFF6C47FF);
-  static const Color primaryDark = Color(0xFF4C2CD9);
-  static const Color primaryLight = Color(0xFF8F71FF);
+  // DebHousie Brand Identity ("Party Mode" Palette)
+  static const Color primaryColor = Color(0xFF0B3D91);     // Navy Blue (Structural chrome)
+  static const Color primaryDark = Color(0xFF072A66);      // Deep Navy
+  static const Color primaryLight = Color(0xFF1B54B8);     // Lighter Navy
 
-  static const Color secondaryColor = Color(0xFFFFB800);
-  static const Color secondaryDark = Color(0xFFE09F00);
+  static const Color secondaryColor = Color(0xFFFFC107);   // Golden Yellow (Primary Action CTA fill)
+  static const Color secondaryDark = Color(0xFFE0A800);    // Darker Gold
 
-  static const Color accentSuccess = Color(0xFF10B981);
+  static const Color accentSuccess = Color(0xFF2ECC71);    // Brand Green (Game Ball / Success)
+  static const Color accentDanger = Color(0xFFE63946);     // Brand Red (Game Ball / Error)
+  static const Color accentPartyPurple = Color(0xFF8E44AD);// Brand Purple (Game Ball / Rotating Accent)
   static const Color accentWarning = Color(0xFFF59E0B);
-  static const Color accentDanger = Color(0xFFEF4444);
   static const Color accentInfo = Color(0xFF3B82F6);
 
   static const Color darkBackground = Color(0xFF0F111A);
@@ -31,7 +32,7 @@ class AppTheme {
         primary: primaryColor,
         onPrimary: Colors.white,
         secondary: secondaryColor,
-        onSecondary: Colors.black,
+        onSecondary: primaryColor,
         surface: darkCard,
         onSurface: Colors.white,
         error: accentDanger,
@@ -40,7 +41,7 @@ class AppTheme {
         color: darkCard,
         elevation: 2,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           side: const BorderSide(color: Color(0xFF2A2E44), width: 1),
         ),
       ),
@@ -57,16 +58,16 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 2,
+          backgroundColor: secondaryColor,
+          foregroundColor: primaryDark,
+          elevation: 3,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w800,
             letterSpacing: 0.3,
           ),
         ),
@@ -74,14 +75,14 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
-          side: const BorderSide(color: Color(0xFF3B4163), width: 1.5),
+          side: const BorderSide(color: primaryLight, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -89,16 +90,16 @@ class AppTheme {
         filled: true,
         fillColor: darkSurface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFF2E334D), width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: secondaryColor, width: 2),
         ),
         labelStyle: const TextStyle(color: Color(0xFFA0AEC0)),
         hintStyle: const TextStyle(color: Color(0xFF718096)),
