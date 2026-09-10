@@ -68,7 +68,7 @@ class UspGridSection extends StatelessWidget {
             final isDesktop = constraints.maxWidth > 840;
             final isTablet = constraints.maxWidth > 580;
             final crossAxisCount = isDesktop ? 3 : (isTablet ? 3 : 2);
-            final childAspectRatio = isDesktop ? 1.85 : (isTablet ? 1.55 : 1.35);
+            final childAspectRatio = isDesktop ? 2.55 : (isTablet ? 2.15 : 1.45);
 
             return GridView.builder(
               shrinkWrap: true,
@@ -85,7 +85,7 @@ class UspGridSection extends StatelessWidget {
                 final color = item['color'] as Color;
 
                 return Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: AppTheme.darkCard,
                     borderRadius: BorderRadius.circular(14),
@@ -93,18 +93,19 @@ class UspGridSection extends StatelessWidget {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Accent Top Badge
                       Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(5),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: color.withOpacity(0.35)),
+                          color: color.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(7),
+                          border: Border.all(color: color.withValues(alpha: 0.35)),
                         ),
-                        child: Icon(item['icon'] as IconData, color: color, size: 16),
+                        child: Icon(item['icon'] as IconData, color: color, size: 15),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 5),
 
                       // Title
                       Text(
@@ -113,12 +114,12 @@ class UspGridSection extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          height: 1.2,
+                          height: 1.15,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
 
                       // Description
                       Expanded(
@@ -127,9 +128,9 @@ class UspGridSection extends StatelessWidget {
                           style: const TextStyle(
                             fontSize: 10.5,
                             color: Color(0xFFCBD5E1),
-                            height: 1.25,
+                            height: 1.2,
                           ),
-                          maxLines: 3,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

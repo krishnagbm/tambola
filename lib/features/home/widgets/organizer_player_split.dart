@@ -36,13 +36,15 @@ class OrganizerPlayerSplit extends StatelessWidget {
         );
 
         if (isWide) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: card1),
-              const SizedBox(width: 12),
-              Expanded(child: card2),
-            ],
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: card1),
+                const SizedBox(width: 12),
+                Expanded(child: card2),
+              ],
+            ),
           );
         } else {
           return Column(
@@ -73,7 +75,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor.withOpacity(0.5), width: 1.5),
+        border: Border.all(color: borderColor.withValues(alpha: 0.5), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +85,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.15),
+                  color: iconColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: iconColor, size: 20),
@@ -111,6 +113,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          const Spacer(),
           SizedBox(
             width: double.infinity,
             child: isPrimaryCta

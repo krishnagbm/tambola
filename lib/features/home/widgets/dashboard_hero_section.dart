@@ -19,12 +19,12 @@ class DashboardHeroSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppTheme.darkCard,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.primaryLight.withOpacity(0.35)),
+            border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
             gradient: RadialGradient(
               center: Alignment.topRight,
               radius: 1.4,
               colors: [
-                AppTheme.primaryColor.withOpacity(0.35),
+                AppTheme.primaryColor.withValues(alpha: 0.35),
                 AppTheme.darkCard,
               ],
             ),
@@ -36,9 +36,9 @@ class DashboardHeroSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withOpacity(0.18),
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
                 ),
                 child: const Text(
                   '🎉 Multiplayer Tambola, Housie & Bingo — Live',
