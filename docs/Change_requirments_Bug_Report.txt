@@ -1,6 +1,34 @@
 # Pending items
 
 # Completed items
+9/10/2026 Items:
+1. DebHousie Header Logo Locked to Left Corner with Dynamic Tab Indicators:
+   - Configured `HomeScreen` `AppBar` with `centerTitle: false` and `titleSpacing: 16`.
+   - Anchored `AppAssets.horizontalLogo` (`height: 42px`) strictly to the top-left edge across all 4 navigation tabs (`Dashboard`, `Player`, `Organizer`, `Profile`).
+   - Retained the dedicated tab pill badges (`Player`, `Organizer`, `Profile`) positioned cleanly to the right of the logo without shifting or moving the logo's anchored left coordinate.
+2. Player & Organizer Tab Rectifications (Compact Cards & Wrapped Filters):
+   - **Player Tab**:
+     * Quick join invite code box condensed (`padding: 12`) with QR icon and compact action button.
+     * Replaced any horizontal scrolling filter list with a responsive `Wrap(spacing: 8, runSpacing: 8)` layout for game status filters (`All Games`, `🟢 Live`, `⏳ Upcoming`, `🏁 Completed`).
+     * Condensed joined game cards (`padding: 12px horizontal, 10px vertical`) with compact live/waiting status pills and action buttons (`Play Ticket`, `View Status`, `View Results`).
+     * Streamlined empty state to compact height (`padding: 20px`).
+   - **Organizer Hub**:
+     * "Create New Game Event" Hero button streamlined to compact vertical height (`13px vertical, 16px horizontal`).
+     * Filter chips wrapped with `Wrap(spacing: 8, runSpacing: 8)` for all event filters (`All Events`, `🟢 Live Controls`, `🚪 Lobby Open`, `🏁 Concluded`) with no horizontal scrolling.
+     * Streamlined hosted game cards (`padding: 12px horizontal, 10px vertical`) with compact status pills and responsive quick-action buttons (`Live Controls`, `Lobby`, `Results`).
+     * Resolved syntax bracket nesting so Organizer & Profile tabs are cleanly part of `_HomeScreenState`.
+     * Responsive `_buildWalletPreviewCard` using `LayoutBuilder` so credit balances and action buttons (+200 mock credit & Top Up) wrap gracefully on narrow screens (<360px) with zero overflow.
+3. Full Screen Width & Responsive Web/Mobile Containers:
+   - Wrapped all tabs (Dashboard, Player Hub, Organizer Hub, Profile & Settings) in `_buildResponsiveContainer` with max-width constraints (`1080px` on Dashboard, `860px` on Hub tabs) to prevent wide ribbon stretching on web/desktop monitors.
+   - Optimized mobile margins to `14px horizontal, 12px vertical` for clean native edge-to-edge feel.
+4. Card Height & Vertical Real Estate Optimization:
+   - `UspGridSection`: Replaced `0.88` aspect ratio on mobile with compact `1.35 - 1.45` ratio (and `1.85` on desktop), condensed copy, smaller badges (`18px`), and reduced padding to save over 50% vertical space.
+   - `OrganizerPlayerSplit`: Reduced padding to `14px`, streamlined copy, and compacted button heights.
+   - `DashboardHeroSection`: Streamlined padding to `16px/20px`, tightened headline and subhead, and placed CTAs side-by-side.
+   - `_buildAppDownloadSection`: Reduced padding to `14px` and styled compact side-by-side store buttons.
+5. Celebration Chips Wrapping Layout (Zero Horizontal Scroll):
+   - Replaced horizontal-scrolling `ListView` in `PerfectForChipsSection` with a responsive `Wrap` layout (`spacing: 8, runSpacing: 8`). All celebration chips now wrap naturally across rows on mobile screens without requiring any horizontal scrolling.
+
 9/9/2026 Items:
 1. DebHousie Brand Identity & Visual Asset Integration:
    - Extracted and registered DebHousie brand assets in `assets/branding/` and `pubspec.yaml`.

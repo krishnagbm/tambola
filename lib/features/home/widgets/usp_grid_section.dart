@@ -8,43 +8,37 @@ class UspGridSection extends StatelessWidget {
     {
       'icon': Icons.shield_outlined,
       'title': 'Fair Play, Guaranteed',
-      'desc':
-          'Every prize claim is checked against the official called-numbers list on our server — not the honor system. No more disputed wins.',
+      'desc': 'Server validates every claim against called numbers automatically. Zero disputes.',
       'color': AppTheme.secondaryColor, // Yellow
     },
     {
       'icon': Icons.confirmation_number_outlined,
-      'title': 'Every Ticket Truly Unique',
-      'desc':
-          'Our ticket generator was stress-tested across 200 consecutive tickets with zero duplicates — so no two players ever share a winning pattern.',
+      'title': '100% Unique Tickets',
+      'desc': 'Stress-tested across 200 tickets with zero duplicate winning combinations.',
       'color': AppTheme.accentDanger, // Red
     },
     {
       'icon': Icons.bolt_outlined,
-      'title': 'Join in Seconds',
-      'desc':
-          'Players never create an account. Pick a name and avatar, enter the invite code, and you\'re playing — on any phone, tablet, or laptop.',
+      'title': 'Instant Guest Join',
+      'desc': 'No app download or account needed. Just enter code & pick an avatar.',
       'color': AppTheme.accentSuccess, // Green
     },
     {
       'icon': Icons.qr_code_rounded,
-      'title': 'QR Prize Pickup',
-      'desc':
-          'Winners get a scannable voucher. Organizers verify it with one tap — perfect for handing out real prizes at in-person parties.',
+      'title': 'QR Prize Vouchers',
+      'desc': 'Winners get instant scannable claims for easy organizer prize payout.',
       'color': AppTheme.accentPartyPurple, // Purple
     },
     {
       'icon': Icons.tv_rounded,
-      'title': 'Big-Screen Caller Mode',
-      'desc':
-          'Cast the live board and number caller to a TV or projector so the whole room follows along together.',
+      'title': 'Big-Screen Caller Cast',
+      'desc': 'Cast live board & numbers to TV or projector for room-wide excitement.',
       'color': AppTheme.primaryLight, // Navy
     },
     {
       'icon': Icons.event_seat_rounded,
-      'title': 'Never Turn Guests Away',
-      'desc':
-          'More people show up than planned? Waiting-list players are auto-promoted the moment you add capacity — first come, first served.',
+      'title': 'Smart Auto-Waitlist',
+      'desc': 'Late arrivals auto-promote to active seats as soon as capacity is added.',
       'color': AppTheme.secondaryColor, // Yellow
     },
   ];
@@ -56,24 +50,25 @@ class UspGridSection extends StatelessWidget {
       children: [
         Row(
           children: const [
-            Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 22),
+            Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 20),
             SizedBox(width: 8),
             Text(
               'Why DebHousie?',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
         LayoutBuilder(
           builder: (ctx, constraints) {
-            final isDesktop = constraints.maxWidth > 720;
-            final crossAxisCount = isDesktop ? 3 : 2;
-            final childAspectRatio = isDesktop ? 1.55 : 0.88;
+            final isDesktop = constraints.maxWidth > 840;
+            final isTablet = constraints.maxWidth > 580;
+            final crossAxisCount = isDesktop ? 3 : (isTablet ? 3 : 2);
+            final childAspectRatio = isDesktop ? 1.85 : (isTablet ? 1.55 : 1.35);
 
             return GridView.builder(
               shrinkWrap: true,
@@ -81,8 +76,8 @@ class UspGridSection extends StatelessWidget {
               itemCount: _uspItems.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
                 childAspectRatio: childAspectRatio,
               ),
               itemBuilder: (ctx, idx) {
@@ -90,10 +85,10 @@ class UspGridSection extends StatelessWidget {
                 final color = item['color'] as Color;
 
                 return Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: AppTheme.darkCard,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0xFF2E334D)),
                   ),
                   child: Column(
@@ -101,40 +96,41 @@ class UspGridSection extends StatelessWidget {
                     children: [
                       // Accent Top Badge
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.16),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: color.withOpacity(0.35)),
                         ),
-                        child: Icon(item['icon'] as IconData, color: color, size: 20),
+                        child: Icon(item['icon'] as IconData, color: color, size: 16),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 6),
 
                       // Title
                       Text(
                         item['title'] as String,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           height: 1.2,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
 
                       // Description
                       Expanded(
                         child: Text(
                           item['desc'] as String,
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 10.5,
                             color: Color(0xFFCBD5E1),
-                            height: 1.35,
+                            height: 1.25,
                           ),
-                          overflow: TextOverflow.fade,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],

@@ -41,9 +41,9 @@ void main() {
 
     expect(find.text('🎉 Multiplayer Tambola, Housie & Bingo — Live'), findsOneWidget);
     expect(find.text('Real Tambola Nights.\nZero Fuss. Zero Cheating.'), findsOneWidget);
-    expect(find.text('🎟️ Host a Game — Free'), findsOneWidget);
-    expect(find.text('🔑 Have a Code? Join Now'), findsOneWidget);
-    expect(find.text('✅ 200/200 test tickets — zero duplicates'), findsOneWidget);
+    expect(find.text('🎟️ Host Free'), findsOneWidget);
+    expect(find.text('🔑 Join Game'), findsOneWidget);
+    expect(find.text('✅ 0 duplicate tickets'), findsOneWidget);
   });
 
   testWidgets('OrganizerPlayerSplit renders dual split cards', (tester) async {
@@ -70,11 +70,11 @@ void main() {
 
     expect(find.text('Why DebHousie?'), findsOneWidget);
     expect(find.text('Fair Play, Guaranteed'), findsOneWidget);
-    expect(find.text('Every Ticket Truly Unique'), findsOneWidget);
-    expect(find.text('Join in Seconds'), findsOneWidget);
-    expect(find.text('QR Prize Pickup'), findsOneWidget);
-    expect(find.text('Big-Screen Caller Mode'), findsOneWidget);
-    expect(find.text('Never Turn Guests Away'), findsOneWidget);
+    expect(find.text('100% Unique Tickets'), findsOneWidget);
+    expect(find.text('Instant Guest Join'), findsOneWidget);
+    expect(find.text('QR Prize Vouchers'), findsOneWidget);
+    expect(find.text('Big-Screen Caller Cast'), findsOneWidget);
+    expect(find.text('Smart Auto-Waitlist'), findsOneWidget);
   });
 
   testWidgets('HowItWorksSection and PerfectForChipsSection render properly', (tester) async {

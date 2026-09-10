@@ -9,7 +9,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (ctx, constraints) {
-        final isWide = constraints.maxWidth > 600;
+        final isWide = constraints.maxWidth > 580;
 
         final card1 = _buildSplitCard(
           context: context,
@@ -17,8 +17,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
           iconColor: AppTheme.primaryLight,
           borderColor: AppTheme.primaryLight,
           title: 'Hosting a Party or Event?',
-          description:
-              'Create a game in 30 seconds, share one invite code or link, and let up to 250 guests join instantly. We handle capacity, waitlists, number calling, and prize verification — you just enjoy the party.',
+          description: 'Host up to 250 guests in 30 seconds. We manage capacity, number calling & automated prize validation.',
           ctaText: 'Create Your Game →',
           onTap: () => context.push('/create-game'),
           isPrimaryCta: true,
@@ -30,8 +29,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
           iconColor: AppTheme.secondaryColor,
           borderColor: AppTheme.secondaryColor,
           title: 'Got an Invite Code?',
-          description:
-              'Jump straight in — no downloads, no sign-up, no email. Pick a name and avatar, get your ticket, and start dabbing the moment numbers are called.',
+          description: 'Instant guest access — zero app download or sign-up. Grab a ticket and dab numbers live.',
           ctaText: 'Join a Game →',
           onTap: () => context.push('/join'),
           isPrimaryCta: false,
@@ -42,7 +40,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: card1),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(child: card2),
             ],
           );
@@ -50,7 +48,7 @@ class OrganizerPlayerSplit extends StatelessWidget {
           return Column(
             children: [
               card1,
-              const SizedBox(height: 14),
+              const SizedBox(height: 10),
               card2,
             ],
           );
@@ -71,10 +69,10 @@ class OrganizerPlayerSplit extends StatelessWidget {
     required bool isPrimaryCta,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor.withOpacity(0.5), width: 1.5),
       ),
       child: Column(
@@ -83,19 +81,19 @@ class OrganizerPlayerSplit extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -103,27 +101,33 @@ class OrganizerPlayerSplit extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             description,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: Color(0xFFCBD5E1),
-              height: 1.4,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: isPrimaryCta
                 ? ElevatedButton(
                     onPressed: onTap,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                    ),
                     child: Text(ctaText),
                   )
                 : OutlinedButton(
                     onPressed: onTap,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: borderColor, width: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                     ),
                     child: Text(ctaText),
                   ),

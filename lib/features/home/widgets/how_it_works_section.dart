@@ -8,27 +8,27 @@ class HowItWorksSection extends StatelessWidget {
     {
       'num': '1',
       'title': 'Create your game',
-      'desc': 'Name it, set capacity, pick your prizes, get an invite code.',
+      'desc': 'Name it, set capacity, pick prizes, get instant invite code.',
     },
     {
       'num': '2',
       'title': 'Guests join free',
-      'desc': 'Code or link, no app, no account — ticket in hand instantly.',
+      'desc': 'Code or link, zero app download — ticket ready in 5 seconds.',
     },
     {
       'num': '3',
       'title': 'Call numbers live',
-      'desc': 'Claims are verified automatically. Winners get their voucher on the spot.',
+      'desc': 'Wins verified on server instantly. Winners get QR vouchers.',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF2E334D)),
       ),
       child: Column(
@@ -36,22 +36,22 @@ class HowItWorksSection extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.checklist_rounded, color: AppTheme.secondaryColor, size: 22),
+              Icon(Icons.checklist_rounded, color: AppTheme.secondaryColor, size: 20),
               SizedBox(width: 8),
               Text(
                 'How It Works',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           LayoutBuilder(
             builder: (ctx, constraints) {
-              final isWide = constraints.maxWidth > 600;
+              final isWide = constraints.maxWidth > 580;
 
               if (isWide) {
                 return Row(
@@ -61,8 +61,8 @@ class HowItWorksSection extends StatelessWidget {
                       Expanded(child: _buildStepItem(_steps[i])),
                       if (i < _steps.length - 1)
                         const Padding(
-                          padding: EdgeInsets.only(top: 14),
-                          child: Icon(Icons.arrow_forward_rounded, color: Color(0xFF718096), size: 18),
+                          padding: EdgeInsets.only(top: 10),
+                          child: Icon(Icons.arrow_forward_rounded, color: Color(0xFF718096), size: 16),
                         ),
                     ],
                   ],
@@ -74,8 +74,8 @@ class HowItWorksSection extends StatelessWidget {
                       _buildStepItem(_steps[i]),
                       if (i < _steps.length - 1)
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          child: Icon(Icons.arrow_downward_rounded, color: Color(0xFF718096), size: 16),
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: Icon(Icons.arrow_downward_rounded, color: Color(0xFF718096), size: 14),
                         ),
                     ],
                   ],
@@ -93,16 +93,16 @@ class HowItWorksSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 32,
-          height: 32,
+          width: 26,
+          height: 26,
           decoration: BoxDecoration(
             color: AppTheme.primaryColor,
             shape: BoxShape.circle,
-            border: Border.all(color: AppTheme.secondaryColor, width: 2),
+            border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.secondaryColor.withOpacity(0.3),
-                blurRadius: 6,
+                color: AppTheme.secondaryColor.withOpacity(0.25),
+                blurRadius: 4,
               ),
             ],
           ),
@@ -110,13 +110,13 @@ class HowItWorksSection extends StatelessWidget {
           child: Text(
             step['num']!,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
               color: AppTheme.secondaryColor,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,18 +124,18 @@ class HowItWorksSection extends StatelessWidget {
               Text(
                 step['title']!,
                 style: const TextStyle(
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 step['desc']!,
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: Color(0xFFCBD5E1),
-                  height: 1.35,
+                  height: 1.3,
                 ),
               ),
             ],
