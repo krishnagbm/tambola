@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.digitalappstudio.tambola" "\0"
-            VALUE "FileDescription", "tambola" "\0"
+            VALUE "CompanyName", "com.digitalappstudio.debhousie" "\0"
+            VALUE "FileDescription", "DebHousie" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "tambola" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.digitalappstudio.tambola. All rights reserved." "\0"
-            VALUE "OriginalFilename", "tambola.exe" "\0"
-            VALUE "ProductName", "tambola" "\0"
+            VALUE "InternalName", "DebHousie" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.digitalappstudio.debhousie. All rights reserved." "\0"
+            VALUE "OriginalFilename", "debhousie.exe" "\0"
+            VALUE "ProductName", "DebHousie" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

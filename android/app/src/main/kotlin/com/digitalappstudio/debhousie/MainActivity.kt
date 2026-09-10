@@ -1,4 +1,4 @@
-package com.digitalappstudio.tambola.tambola
+package com.digitalappstudio.debhousie
 
 import io.flutter.embedding.android.FlutterActivity
 

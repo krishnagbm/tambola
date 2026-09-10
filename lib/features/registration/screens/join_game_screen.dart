@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
@@ -104,7 +105,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             }
           },
         ),
-        title: const Text('Join Tambola Game'),
+        title: const Text('Join DebHousie Game'),
         actions: [
           TextButton.icon(
             onPressed: () => context.go('/'),
@@ -118,8 +119,18 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Image.asset(
+                  AppAssets.horizontalLogo,
+                  height: 48,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
             const Text(
-              'Enter the 6-character invite code provided by your Game Admin:',
+              'Enter the 6-character invite code provided by your Game Organizer:',
               style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
             ),
             const SizedBox(height: 14),

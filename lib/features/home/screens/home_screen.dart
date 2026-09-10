@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_game.dart';
@@ -47,23 +48,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.casino, color: AppTheme.secondaryColor),
-            const SizedBox(width: 8),
-            Text(
-              _currentTabIndex == 0
-                  ? 'Tambola Multiplayer'
-                  : _currentTabIndex == 1
-                      ? 'Player Hub'
-                      : _currentTabIndex == 2
-                          ? 'Organizer Hub'
-                          : 'Profile & Settings',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
+        title: _currentTabIndex == 0
+            ? Image.asset(
+                AppAssets.horizontalLogo,
+                height: 32,
+                fit: BoxFit.contain,
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(AppAssets.monogramDH, height: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    _currentTabIndex == 1
+                        ? 'Player Hub'
+                        : _currentTabIndex == 2
+                            ? 'Organizer Hub'
+                            : 'Profile & Settings',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -205,7 +210,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 24),
 
-          // USP Showcase: Why Play Tambola Multiplayer?
+          // USP Showcase: Why Play DebHousie?
           _buildUspShowcaseSection(context),
           const SizedBox(height: 24),
 
@@ -428,7 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Icon(Icons.stars, color: AppTheme.secondaryColor, size: 18),
                 SizedBox(width: 8),
                 Text(
-                  'Why Play Tambola Multiplayer?',
+                  'Why Play DebHousie?',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ],
@@ -523,7 +528,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Enjoy Tambola seamlessly in your web browser or download the native mobile apps.',
+            'Enjoy DebHousie seamlessly in your web browser or download the native mobile apps.',
             style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
           ),
           const SizedBox(height: 14),
@@ -776,7 +781,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final reg = filtered[idx];
                   final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                   final gameId = (reg['game_id'] ?? '').toString();
-                  final gameName = (gameData['name'] ?? 'Tambola Game').toString();
+                  final gameName = (gameData['name'] ?? 'DebHousie Game').toString();
                   final gameStatus = (gameData['status'] ?? 'OPEN').toString();
                   final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
 
@@ -1300,7 +1305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text('Tambola Multiplayer v1.0.4', style: TextStyle(fontSize: 10, color: Color(0xFF718096))),
+                const Text('DebHousie v1.0.4', style: TextStyle(fontSize: 10, color: Color(0xFF718096))),
               ],
             ),
           ),

@@ -32,10 +32,10 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
 
   Future<void> _handleShareInvite(MptGame game) async {
     final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play Tambola with me in "${game.name}"!\n\n'
+    final text = '🎉 You are invited to play DebHousie with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap the link below to open the app or download it:\n$link';
-    await Share.share(text, subject: 'Join Tambola: ${game.name}');
+    await Share.share(text, subject: 'Join DebHousie: ${game.name}');
   }
 
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
@@ -350,7 +350,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           autofocus: true,
           decoration: const InputDecoration(
             labelText: 'Event Name',
-            hintText: 'e.g. Saturday Family Tambola',
+            hintText: 'e.g. Saturday Family DebHousie',
             prefixIcon: Icon(Icons.edit),
           ),
         ),

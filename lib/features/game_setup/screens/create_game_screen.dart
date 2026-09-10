@@ -16,18 +16,18 @@ class CreateGameScreen extends ConsumerStatefulWidget {
 
 class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   static const _suggestedNames = [
-    'Friday Tambola Fiesta 🎊',
+    'Friday DebHousie Fiesta 🎊',
     'Weekend Housefull Mania 🏠',
     'Bollywood Housie Night 🎬',
-    'Diwali Tambola Dhamaka 🪔',
+    'Diwali DebHousie Dhamaka 🪔',
     'Friends & Family Blast 🎉',
-    'Super Sunday Housie Party 🌟',
-    'Office Chai & Tambola Break ☕',
-    'Monsoon Tambola Carnival 🌧️',
-    'Kitty Party Tambola Bonanza 💃',
-    'Late Night Tambola Chill 🌙',
-    'Festive Housie Extravaganza 🎈',
-    'Clubhouse Tambola League 🏆',
+    'Super Sunday DebHousie Party 🌟',
+    'Office Chai & DebHousie Break ☕',
+    'Monsoon DebHousie Carnival 🌧️',
+    'Kitty Party DebHousie Bonanza 💃',
+    'Late Night DebHousie Chill 🌙',
+    'Festive DebHousie Extravaganza 🎈',
+    'Clubhouse DebHousie League 🏆',
   ];
 
   final _formKey = GlobalKey<FormState>();
@@ -96,10 +96,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Future<void> _handleShare(MptGame game) async {
     final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play Tambola in "${game.name}"!\n\n'
+    final text = '🎉 You are invited to play DebHousie in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap to join or download the app:\n$link';
-    await Share.share(text, subject: 'Join Tambola Game: ${game.name}');
+    await Share.share(text, subject: 'Join DebHousie: ${game.name}');
   }
 
   void _showSuccessDialog(MptGame game) {
@@ -189,7 +189,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create New Game'),
+        title: const Text('Create DebHousie Game'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -202,7 +202,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Game / Event Name',
-                  hintText: 'e.g. Diwali Party Tambola',
+                  hintText: 'e.g. Diwali Party DebHousie',
                   prefixIcon: const Icon(Icons.celebration),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.casino_outlined, color: AppTheme.secondaryColor),

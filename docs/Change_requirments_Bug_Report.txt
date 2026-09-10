@@ -1,6 +1,23 @@
 # Pending items
 
 # Completed items
+9/9/2026 Items:
+1. DebHousie Brand Identity & Visual Asset Integration:
+   - Extracted and registered DebHousie brand assets in `assets/branding/` and `pubspec.yaml`.
+   - Created `AppAssets` constant helper class (`debhousie_horizontal_logo.png`, `debhousie_monogram_DH.png`, `debhousie_main_logo.png`, `debhousie_app_icon_1024.png`, etc.).
+   - Updated `HomeScreen` AppBar (Tab 0) with `AppAssets.horizontalLogo` and sub-tabs with DH monogram.
+   - Updated USP showcase heading to "Why Play DebHousie?" and app download banner text.
+   - Added DebHousie branded logo header to `JoinGameScreen` and updated screen title.
+   - Updated `CreateGameScreen` suggested names with DebHousie themes and updated share invite text to DebHousie.
+   - Updated `AdminLobbyScreen` share invite text, `PlayerTicketScreen` ticket matrix header to `DEBHOUSIE TICKET #`, and `LiveGameDisplayScreen` projector banner.
+   - Updated `web/index.html`, `web/manifest.json`, and web icons/favicons (`favicon.png`, `Icon-192.png`, `Icon-512.png`).
+   - Updated platform native bundle metadata (Android `AndroidManifest.xml`, iOS `Info.plist`, Windows `main.cpp` & `Runner.rc`).
+2. Package Identifier & 30-Character Store Title Alignment:
+   - Configured Android `applicationId` and namespace to `com.digitalappstudio.debhousie` in `build.gradle.kts`.
+   - Updated Android `MainActivity.kt` package to `com.digitalappstudio.debhousie`.
+   - Updated iOS `PRODUCT_BUNDLE_IDENTIFIER` to `com.digitalappstudio.debhousie` across all Xcode build configurations in `project.pbxproj`.
+   - Aligned app title to **`DebHousie: Live Tambola Party`** (29 characters, compliant with the 30-character limit on Google Play & App Store).
+
 9/8/2026 Items:
 1. Bottom Navigation Bar Architecture (Items 2 & 3):
    - Separated the vertically growing `HomeScreen` into a modern 4-tab `NavigationBar`:

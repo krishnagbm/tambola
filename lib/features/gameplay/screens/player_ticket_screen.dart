@@ -268,7 +268,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           tooltip: 'Back to Home',
           onPressed: () => context.go('/'),
         ),
-        title: const Text('Tambola Ticket'),
+        title: const Text('DebHousie Ticket'),
         actions: [
           IconButton(
             icon: Icon(_voiceEnabled ? Icons.volume_up : Icons.volume_off, color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey),
@@ -580,7 +580,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('TAMBOLA TICKET #${ticket.ticketNumber}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryLight)),
+                Text('DEBHOUSIE TICKET #${ticket.ticketNumber}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryLight)),
                 Text(
                   isGameEnded ? '${_markedNumbers.length} / 15 Marked (Final)' : '${_markedNumbers.length} / 15 Marked',
                   style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),

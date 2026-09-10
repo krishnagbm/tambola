@@ -64,7 +64,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           ],
         ),
         content: const Text(
-          'Are you sure you want to conclude this Tambola game?\n\nThis will mark the game as COMPLETED and display final results to all players.',
+          'Are you sure you want to conclude this DebHousie game?\n\nThis will mark the game as COMPLETED and display final results to all players.',
           style: TextStyle(fontSize: 14),
         ),
         actions: [
@@ -111,7 +111,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           autofocus: true,
           decoration: const InputDecoration(
             labelText: 'Event Name',
-            hintText: 'e.g. Saturday Family Tambola',
+            hintText: 'e.g. Saturday Family DebHousie',
             prefixIcon: Icon(Icons.edit),
           ),
         ),
@@ -226,7 +226,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          game?.name ?? 'Tambola Event',
+                          game?.name ?? 'DebHousie Event',
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           overflow: TextOverflow.ellipsis,
                         ),

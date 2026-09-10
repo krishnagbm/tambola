@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
@@ -42,7 +43,14 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Live Tambola Display (Projector View)'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(AppAssets.horizontalLogo, height: 28, fit: BoxFit.contain),
+            const SizedBox(width: 10),
+            const Text('• Projector View', style: TextStyle(fontSize: 15, color: Color(0xFFA0AEC0))),
+          ],
+        ),
         actions: [
           IconButton(
             icon: Icon(_isMuted ? Icons.volume_off : Icons.volume_up, color: _isMuted ? Colors.grey : AppTheme.secondaryColor),
