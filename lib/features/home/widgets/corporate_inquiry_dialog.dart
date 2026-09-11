@@ -21,7 +21,7 @@ class CorporateInquiryDialog extends StatelessWidget {
   Future<void> _launchEmail(BuildContext context) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'support@pocketbull.net',
+      path: 'contact@digitalappstudio.com',
       query: 'subject=DebHousie Corporate & Mega-X Event Inquiry: $initialTopic&body=Hi DebHousie Team,%0D%0A%0D%0AI am interested in organizing a large event with the following requirements:%0D%0A- Event Type: $initialTopic%0D%0A- Expected Player Count: %0D%0A- Event Date: %0D%0A- Custom Requirements / Winning Patterns: %0D%0A%0D%0AThanks!',
     );
 
@@ -41,10 +41,10 @@ class CorporateInquiryDialog extends StatelessWidget {
   }
 
   void _copyEmailToClipboard(BuildContext context) {
-    Clipboard.setData(const ClipboardData(text: 'support@pocketbull.net'));
+    Clipboard.setData(const ClipboardData(text: 'contact@digitalappstudio.com'));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Support email copied to clipboard (support@pocketbull.net)'),
+        content: Text('Email copied to clipboard (contact@digitalappstudio.com)'),
         backgroundColor: AppTheme.accentSuccess,
         duration: Duration(seconds: 3),
       ),
@@ -155,7 +155,7 @@ class CorporateInquiryDialog extends StatelessWidget {
                   _copyEmailToClipboard(context);
                 },
                 icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFFA0AEC0)),
-                label: const Text('Copy Email: support@pocketbull.net', style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
+                label: const Text('Copy Email: contact@digitalappstudio.com', style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   side: const BorderSide(color: Color(0xFF2E334D)),
