@@ -88,9 +88,9 @@ class DashboardHeroSection extends StatelessWidget {
                         label: const Text('Free Family Play (0 Credits)', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentSuccess,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
@@ -135,9 +135,9 @@ class DashboardHeroSection extends StatelessWidget {
                         label: const Text('Free Family Play (1–5 Players · 0 Credits)'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentSuccess,
-                          foregroundColor: Colors.white,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                          textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+                          textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
