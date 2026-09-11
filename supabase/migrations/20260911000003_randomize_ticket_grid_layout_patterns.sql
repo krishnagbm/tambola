@@ -31,28 +31,20 @@ BEGIN
         -- Determine number of items in this column based on the selected template
         CASE v_pattern
             WHEN 1 THEN
-                -- Col capacities: [2, 1, 2, 1, 2, 2, 1, 2, 2]
                 v_count := CASE WHEN v_col IN (1, 3, 5, 6, 8, 9) THEN 2 ELSE 1 END;
             WHEN 2 THEN
-                -- Col capacities: [2, 2, 1, 2, 2, 2, 1, 2, 1]
                 v_count := CASE WHEN v_col IN (1, 2, 4, 5, 6, 8) THEN 2 ELSE 1 END;
             WHEN 3 THEN
-                -- Col capacities: [2, 2, 2, 1, 1, 2, 2, 1, 2]
                 v_count := CASE WHEN v_col IN (1, 2, 3, 6, 7, 9) THEN 2 ELSE 1 END;
             WHEN 4 THEN
-                -- Col capacities: [2, 2, 1, 2, 2, 1, 2, 2, 1]
                 v_count := CASE WHEN v_col IN (1, 2, 4, 5, 7, 8) THEN 2 ELSE 1 END;
             WHEN 5 THEN
-                -- Col capacities: [1, 2, 2, 2, 1, 2, 1, 2, 2]
                 v_count := CASE WHEN v_col IN (2, 3, 4, 6, 8, 9) THEN 2 ELSE 1 END;
             WHEN 6 THEN
-                -- Col capacities: [2, 2, 1, 2, 2, 1, 2, 2, 1]
                 v_count := CASE WHEN v_col IN (1, 2, 4, 5, 7, 8) THEN 2 ELSE 1 END;
             WHEN 7 THEN
-                -- Col capacities: [2, 1, 2, 2, 1, 2, 2, 1, 2]
                 v_count := CASE WHEN v_col IN (1, 3, 4, 6, 7, 9) THEN 2 ELSE 1 END;
-            ELSE
-                -- Col capacities: [2, 2, 1, 2, 2, 2, 1, 2, 1]
+            WHEN 8 THEN
                 v_count := CASE WHEN v_col IN (1, 2, 4, 5, 6, 8) THEN 2 ELSE 1 END;
         END CASE;
 
@@ -78,7 +70,7 @@ BEGIN
                     WHEN 6 THEN v_matrix[2][6] := v_values[1]; v_matrix[3][6] := v_values[2];
                     WHEN 7 THEN v_matrix[1][7] := v_values[1];
                     WHEN 8 THEN v_matrix[2][8] := v_values[1]; v_matrix[3][8] := v_values[2];
-                    ELSE        v_matrix[1][9] := v_values[1]; v_matrix[2][9] := v_values[2];
+                    WHEN 9 THEN v_matrix[1][9] := v_values[1]; v_matrix[2][9] := v_values[2];
                 END CASE;
             WHEN 2 THEN
                 CASE v_col
@@ -89,8 +81,8 @@ BEGIN
                     WHEN 5 THEN v_matrix[2][5] := v_values[1]; v_matrix[3][5] := v_values[2];
                     WHEN 6 THEN v_matrix[1][6] := v_values[1]; v_matrix[3][6] := v_values[2];
                     WHEN 7 THEN v_matrix[2][7] := v_values[1];
-                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[3][8] := v_values[2];
-                    ELSE        v_matrix[2][9] := v_values[1];
+                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[2][8] := v_values[2];
+                    WHEN 9 THEN v_matrix[3][9] := v_values[1];
                 END CASE;
             WHEN 3 THEN
                 CASE v_col
@@ -98,71 +90,71 @@ BEGIN
                     WHEN 2 THEN v_matrix[2][2] := v_values[1]; v_matrix[3][2] := v_values[2];
                     WHEN 3 THEN v_matrix[1][3] := v_values[1]; v_matrix[3][3] := v_values[2];
                     WHEN 4 THEN v_matrix[1][4] := v_values[1];
-                    WHEN 5 THEN v_matrix[2][5] := v_values[1];
-                    WHEN 6 THEN v_matrix[2][6] := v_values[1]; v_matrix[3][6] := v_values[2];
-                    WHEN 7 THEN v_matrix[1][7] := v_values[1]; v_matrix[3][7] := v_values[2];
+                    WHEN 5 THEN v_matrix[3][5] := v_values[1];
+                    WHEN 6 THEN v_matrix[1][6] := v_values[1]; v_matrix[2][6] := v_values[2];
+                    WHEN 7 THEN v_matrix[2][7] := v_values[1]; v_matrix[3][7] := v_values[2];
                     WHEN 8 THEN v_matrix[1][8] := v_values[1];
-                    ELSE        v_matrix[2][9] := v_values[1]; v_matrix[3][9] := v_values[2];
+                    WHEN 9 THEN v_matrix[2][9] := v_values[1]; v_matrix[3][9] := v_values[2];
                 END CASE;
             WHEN 4 THEN
                 CASE v_col
-                    WHEN 1 THEN v_matrix[2][1] := v_values[1]; v_matrix[3][1] := v_values[2];
+                    WHEN 1 THEN v_matrix[1][1] := v_values[1]; v_matrix[2][1] := v_values[2];
                     WHEN 2 THEN v_matrix[1][2] := v_values[1]; v_matrix[3][2] := v_values[2];
                     WHEN 3 THEN v_matrix[2][3] := v_values[1];
-                    WHEN 4 THEN v_matrix[1][4] := v_values[1]; v_matrix[2][4] := v_values[2];
-                    WHEN 5 THEN v_matrix[1][5] := v_values[1]; v_matrix[3][5] := v_values[2];
-                    WHEN 6 THEN v_matrix[2][6] := v_values[1];
-                    WHEN 7 THEN v_matrix[1][7] := v_values[1]; v_matrix[3][7] := v_values[2];
-                    WHEN 8 THEN v_matrix[2][8] := v_values[1]; v_matrix[3][8] := v_values[2];
-                    ELSE        v_matrix[1][9] := v_values[1];
-                END CASE;
-            WHEN 5 THEN
-                CASE v_col
-                    WHEN 1 THEN v_matrix[1][1] := v_values[1];
-                    WHEN 2 THEN v_matrix[1][2] := v_values[1]; v_matrix[2][2] := v_values[2];
-                    WHEN 3 THEN v_matrix[1][3] := v_values[1]; v_matrix[3][3] := v_values[2];
-                    WHEN 4 THEN v_matrix[2][4] := v_values[1]; v_matrix[3][4] := v_values[2];
-                    WHEN 5 THEN v_matrix[2][5] := v_values[1];
-                    WHEN 6 THEN v_matrix[1][6] := v_values[1]; v_matrix[3][6] := v_values[2];
-                    WHEN 7 THEN v_matrix[2][7] := v_values[1];
-                    WHEN 8 THEN v_matrix[2][8] := v_values[1]; v_matrix[3][8] := v_values[2];
-                    ELSE        v_matrix[1][9] := v_values[1]; v_matrix[3][9] := v_values[2];
-                END CASE;
-            WHEN 6 THEN
-                CASE v_col
-                    WHEN 1 THEN v_matrix[1][1] := v_values[1]; v_matrix[2][1] := v_values[2];
-                    WHEN 2 THEN v_matrix[2][2] := v_values[1]; v_matrix[3][2] := v_values[2];
-                    WHEN 3 THEN v_matrix[1][3] := v_values[1];
                     WHEN 4 THEN v_matrix[2][4] := v_values[1]; v_matrix[3][4] := v_values[2];
                     WHEN 5 THEN v_matrix[1][5] := v_values[1]; v_matrix[3][5] := v_values[2];
                     WHEN 6 THEN v_matrix[1][6] := v_values[1];
                     WHEN 7 THEN v_matrix[2][7] := v_values[1]; v_matrix[3][7] := v_values[2];
-                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[3][8] := v_values[2];
-                    ELSE        v_matrix[2][9] := v_values[1];
+                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[2][8] := v_values[2];
+                    WHEN 9 THEN v_matrix[3][9] := v_values[1];
                 END CASE;
-            WHEN 7 THEN
+            WHEN 5 THEN
                 CASE v_col
-                    WHEN 1 THEN v_matrix[2][1] := v_values[1]; v_matrix[3][1] := v_values[2];
-                    WHEN 2 THEN v_matrix[1][2] := v_values[1];
-                    WHEN 3 THEN v_matrix[1][3] := v_values[1]; v_matrix[3][3] := v_values[2];
-                    WHEN 4 THEN v_matrix[2][4] := v_values[1]; v_matrix[3][4] := v_values[2];
-                    WHEN 5 THEN v_matrix[1][5] := v_values[1];
-                    WHEN 6 THEN v_matrix[2][6] := v_values[1]; v_matrix[3][6] := v_values[2];
-                    WHEN 7 THEN v_matrix[2][7] := v_values[1]; v_matrix[3][7] := v_values[2];
-                    WHEN 8 THEN v_matrix[1][8] := v_values[1];
-                    ELSE        v_matrix[1][9] := v_values[1]; v_matrix[2][9] := v_values[2];
+                    WHEN 1 THEN v_matrix[2][1] := v_values[1];
+                    WHEN 2 THEN v_matrix[1][2] := v_values[1]; v_matrix[3][2] := v_values[2];
+                    WHEN 3 THEN v_matrix[2][3] := v_values[1]; v_matrix[3][3] := v_values[2];
+                    WHEN 4 THEN v_matrix[1][4] := v_values[1]; v_matrix[2][4] := v_values[2];
+                    WHEN 5 THEN v_matrix[3][5] := v_values[1];
+                    WHEN 6 THEN v_matrix[1][6] := v_values[1]; v_matrix[3][6] := v_values[2];
+                    WHEN 7 THEN v_matrix[1][7] := v_values[1];
+                    WHEN 8 THEN v_matrix[2][8] := v_values[1]; v_matrix[3][8] := v_values[2];
+                    WHEN 9 THEN v_matrix[1][9] := v_values[1]; v_matrix[2][9] := v_values[2];
                 END CASE;
-            ELSE
+            WHEN 6 THEN
                 CASE v_col
                     WHEN 1 THEN v_matrix[1][1] := v_values[1]; v_matrix[3][1] := v_values[2];
                     WHEN 2 THEN v_matrix[2][2] := v_values[1]; v_matrix[3][2] := v_values[2];
-                    WHEN 3 THEN v_matrix[2][3] := v_values[1];
+                    WHEN 3 THEN v_matrix[1][3] := v_values[1];
+                    WHEN 4 THEN v_matrix[1][4] := v_values[1]; v_matrix[2][4] := v_values[2];
+                    WHEN 5 THEN v_matrix[2][5] := v_values[1]; v_matrix[3][5] := v_values[2];
+                    WHEN 6 THEN v_matrix[3][6] := v_values[1];
+                    WHEN 7 THEN v_matrix[1][7] := v_values[1]; v_matrix[2][7] := v_values[2];
+                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[3][8] := v_values[2];
+                    WHEN 9 THEN v_matrix[2][9] := v_values[1];
+                END CASE;
+            WHEN 7 THEN
+                CASE v_col
+                    WHEN 1 THEN v_matrix[1][1] := v_values[1]; v_matrix[3][1] := v_values[2];
+                    WHEN 2 THEN v_matrix[2][2] := v_values[1];
+                    WHEN 3 THEN v_matrix[1][3] := v_values[1]; v_matrix[3][3] := v_values[2];
+                    WHEN 4 THEN v_matrix[2][4] := v_values[1]; v_matrix[3][4] := v_values[2];
+                    WHEN 5 THEN v_matrix[1][5] := v_values[1];
+                    WHEN 6 THEN v_matrix[1][6] := v_values[1]; v_matrix[2][6] := v_values[2];
+                    WHEN 7 THEN v_matrix[2][7] := v_values[1]; v_matrix[3][7] := v_values[2];
+                    WHEN 8 THEN v_matrix[3][8] := v_values[1];
+                    WHEN 9 THEN v_matrix[1][9] := v_values[1]; v_matrix[2][9] := v_values[2];
+                END CASE;
+            WHEN 8 THEN
+                CASE v_col
+                    WHEN 1 THEN v_matrix[2][1] := v_values[1]; v_matrix[3][1] := v_values[2];
+                    WHEN 2 THEN v_matrix[1][2] := v_values[1]; v_matrix[2][2] := v_values[2];
+                    WHEN 3 THEN v_matrix[3][3] := v_values[1];
                     WHEN 4 THEN v_matrix[1][4] := v_values[1]; v_matrix[3][4] := v_values[2];
                     WHEN 5 THEN v_matrix[1][5] := v_values[1]; v_matrix[2][5] := v_values[2];
                     WHEN 6 THEN v_matrix[2][6] := v_values[1]; v_matrix[3][6] := v_values[2];
                     WHEN 7 THEN v_matrix[1][7] := v_values[1];
-                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[2][8] := v_values[2];
-                    ELSE        v_matrix[3][9] := v_values[1];
+                    WHEN 8 THEN v_matrix[1][8] := v_values[1]; v_matrix[3][8] := v_values[2];
+                    WHEN 9 THEN v_matrix[2][9] := v_values[1];
                 END CASE;
         END CASE;
     END LOOP;
@@ -170,3 +162,6 @@ BEGIN
     RETURN to_jsonb(v_matrix);
 END;
 $$ LANGUAGE plpgsql VOLATILE SECURITY DEFINER;
+
+COMMENT ON FUNCTION public."MPT_generate_ticket_matrix"() IS 
+'Generates a valid 3x9 Tambola ticket matrix with 8 randomized structural layout templates and cryptographically random number distribution.';

@@ -86,7 +86,7 @@ class TambolaTicketHelper {
             case 5: matrix[0][5] = chosen[0]; matrix[2][5] = chosen[1]; break;
             case 6: matrix[1][6] = chosen[0]; break;
             case 7: matrix[0][7] = chosen[0]; matrix[1][7] = chosen[1]; break;
-            case 8: matrix[1][8] = chosen[0]; break;
+            case 8: matrix[2][8] = chosen[0]; break;
           }
           break;
         case 3:
@@ -143,8 +143,8 @@ class TambolaTicketHelper {
           break;
         case 7:
           switch (col) {
-            case 0: matrix[0][0] = chosen[0]; matrix[1][0] = chosen[1]; break;
-            case 1: matrix[2][1] = chosen[0]; break;
+            case 0: matrix[0][0] = chosen[0]; matrix[2][0] = chosen[1]; break;
+            case 1: matrix[1][1] = chosen[0]; break;
             case 2: matrix[0][2] = chosen[0]; matrix[2][2] = chosen[1]; break;
             case 3: matrix[1][3] = chosen[0]; matrix[2][3] = chosen[1]; break;
             case 4: matrix[0][4] = chosen[0]; break;
@@ -164,8 +164,9 @@ class TambolaTicketHelper {
             case 5: matrix[1][5] = chosen[0]; matrix[2][5] = chosen[1]; break;
             case 6: matrix[0][6] = chosen[0]; break;
             case 7: matrix[0][7] = chosen[0]; matrix[2][7] = chosen[1]; break;
-            case 8: matrix[2][8] = chosen[0]; break;
+            case 8: matrix[1][8] = chosen[0]; break;
           }
+          break;
       }
     }
     return matrix;
