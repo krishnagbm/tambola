@@ -246,8 +246,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
                     trailing: Text(
-                      '${tier.creditsRequired} Credits',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                      tier.creditsRequired == 0 ? 'FREE (0 Credits)' : '${tier.creditsRequired} Credits',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                      ),
                     ),
                   ),
                 );

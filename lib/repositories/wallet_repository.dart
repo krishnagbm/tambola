@@ -127,12 +127,12 @@ class WalletRepository {
           .order('display_order', ascending: true);
 
       return (res as List).map((e) => MptCapacityTier.fromJson(e)).toList();
-    } catch (_) {
       return [
-        MptCapacityTier(id: '1', name: 'Small Party (1–25 Players)', minPlayers: 1, maxPlayers: 25, creditsRequired: 100),
-        MptCapacityTier(id: '2', name: 'Standard Event (26–50 Players)', minPlayers: 26, maxPlayers: 50, creditsRequired: 200),
-        MptCapacityTier(id: '3', name: 'Large Gala (51–100 Players)', minPlayers: 51, maxPlayers: 100, creditsRequired: 350),
-        MptCapacityTier(id: '4', name: 'Mega Event (101–250 Players)', minPlayers: 101, maxPlayers: 250, creditsRequired: 600),
+        MptCapacityTier(id: '1', name: 'Family Pack (1–5 Players)', minPlayers: 1, maxPlayers: 5, creditsRequired: 0),
+        MptCapacityTier(id: '2', name: 'Small Party (6–15 Players)', minPlayers: 6, maxPlayers: 15, creditsRequired: 50),
+        MptCapacityTier(id: '3', name: 'Standard Event (16–25 Players)', minPlayers: 16, maxPlayers: 25, creditsRequired: 100),
+        MptCapacityTier(id: '4', name: 'Large Gala (26–100 Players)', minPlayers: 26, maxPlayers: 100, creditsRequired: 250),
+        MptCapacityTier(id: '5', name: 'Mega Event (101–250 Players)', minPlayers: 101, maxPlayers: 250, creditsRequired: 500),
       ];
     }
   }

@@ -34,7 +34,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  int _selectedCapacity = 10;
+  int _selectedCapacity = 5;
   String? _selectedTierId;
   bool _isLoading = false;
 
@@ -508,8 +508,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           children: [
                             Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                             Text(
-                              '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
-                              style: const TextStyle(fontSize: 12, color: AppTheme.secondaryColor),
+                              tier.creditsRequired == 0
+                                  ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
+                                  : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: tier.creditsRequired == 0 ? FontWeight.bold : FontWeight.normal,
+                                color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                              ),
                             ),
                           ],
                         ),
@@ -538,11 +544,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildStaticCapacityOptions() {
     final options = [
-      {'capacity': 10, 'label': '1–10 Players', 'desc': 'Starter / Free Trial • 10 Credits'},
-      {'capacity': 25, 'label': '11–25 Players', 'desc': 'Small Party • 25 Credits'},
-      {'capacity': 50, 'label': '26–50 Players', 'desc': 'Standard Event • 50 Credits'},
-      {'capacity': 100, 'label': '51–100 Players', 'desc': 'Large Gala • 100 Credits'},
-      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 250 Credits'},
+      {'capacity': 5, 'label': '1–5 Players', 'desc': 'Family Pack • Always Free (0 Credits)'},
+      {'capacity': 15, 'label': '6–15 Players', 'desc': 'Small Party • 50 Credits'},
+      {'capacity': 25, 'label': '16–25 Players', 'desc': 'Standard Event • 100 Credits'},
+      {'capacity': 100, 'label': '26–100 Players', 'desc': 'Large Gala • 250 Credits'},
+      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 500 Credits'},
     ];
 
     return Column(
