@@ -291,7 +291,38 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       ),
       body: ticketAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error loading ticket: $err')),
+        error: (err, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: AppTheme.accentDanger, size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  'Unable to load your ticket',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Please tap retry to fetch your assigned ticket for this room.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.7)),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => ref.refresh(playerTicketProvider(widget.gameId)),
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Retry Ticket'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryLight,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (ticket) {
           return calledStream.when(
             loading: () => const Center(child: CircularProgressIndicator()),
