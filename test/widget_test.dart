@@ -39,10 +39,11 @@ void main() {
       ),
     );
 
-    expect(find.text('🎉 Multiplayer Tambola & Housie — For Parties & Corporate Events'), findsOneWidget);
-    expect(find.text('Multiplayer Tambola & Housie.\nFrom Family Celebrations to 250+ Mega Events.'), findsOneWidget);
-    expect(find.text('🎟️ Host Free'), findsOneWidget);
-    expect(find.text('🔑 Join Game'), findsOneWidget);
+    expect(find.text('🎉 Multiplayer Tambola, Housie & 90-Ball Bingo — Family, Kitty Parties & Events'), findsOneWidget);
+    expect(find.text('Multiplayer Tambola, Housie & 90-Ball Bingo.\nAlways Free for Families, Built for Kitty Parties & Events.'), findsOneWidget);
+    expect(find.textContaining('Free Family Play'), findsOneWidget);
+    expect(find.textContaining('Host Party'), findsOneWidget);
+    expect(find.text('Join Game'), findsOneWidget);
     expect(find.text('✅ 100K+ Unique tickets (8.1T space)'), findsOneWidget);
   });
 
@@ -54,9 +55,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Hosting a Party or Corporate Event?'), findsOneWidget);
+    expect(find.text('Hosting a Family Night, Kitty Party, or Event?'), findsOneWidget);
     expect(find.text('Got an Invite Code?'), findsOneWidget);
-    expect(find.text('Create Your Game →'), findsOneWidget);
+    expect(find.text('Create Your Game (Free 1–5) →'), findsOneWidget);
     expect(find.text('Join a Game →'), findsOneWidget);
   });
 
@@ -100,7 +101,8 @@ void main() {
     expect(find.text('Guests join free'), findsOneWidget);
     expect(find.text('Call numbers live'), findsOneWidget);
     expect(find.text('Perfect For Every Celebration'), findsOneWidget);
-    expect(find.text('Family Get-Togethers'), findsOneWidget);
+    expect(find.text('Kitty Parties & Socials'), findsOneWidget);
+    expect(find.text('Free Family Nights (1–5)'), findsOneWidget);
     expect(find.text('Play • Connect • Win'), findsOneWidget);
   });
 

@@ -42,7 +42,7 @@ class DashboardHeroSection extends StatelessWidget {
                   border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
                 ),
                 child: const Text(
-                  '🎉 Multiplayer Tambola & Housie — For Parties & Corporate Events',
+                  '🎉 Multiplayer Tambola, Housie & 90-Ball Bingo — Family, Kitty Parties & Events',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -54,12 +54,12 @@ class DashboardHeroSection extends StatelessWidget {
 
               // Headline
               Text(
-                'Multiplayer Tambola & Housie.\nFrom Family Celebrations to 250+ Mega Events.',
+                'Multiplayer Tambola, Housie & 90-Ball Bingo.\nAlways Free for Families, Built for Kitty Parties & Events.',
                 style: TextStyle(
-                  fontSize: isWide ? 25 : 20,
+                  fontSize: isWide ? 24 : 19,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  height: 1.18,
+                  height: 1.2,
                   letterSpacing: -0.3,
                 ),
               ),
@@ -67,7 +67,7 @@ class DashboardHeroSection extends StatelessWidget {
 
               // Subhead
               Text(
-                'Host 10 to 250 players online or scale to 100,000+ for enterprise events with automated server win verification. Perfect for family parties, festivals, and corporate team-building.',
+                'Host 100% Free Family games (1–5 players), weekly Kitty Parties (6–15), or scale to 250+ corporate events with instant digital tickets and automated server win verification.',
                 style: TextStyle(
                   fontSize: isWide ? 13.5 : 12.5,
                   color: const Color(0xFFCBD5E1),
@@ -76,32 +76,104 @@ class DashboardHeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // CTAs: Side-by-side or stacked cleanly
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => context.push('/create-game'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                        textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              // CTAs: Responsive 3-button layout
+              if (isWide) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/create-game'),
+                        icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
+                        label: const Text('Free Family Play (0 Credits)', overflow: TextOverflow.ellipsis),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                        ),
                       ),
-                      child: const Text('🎟️ Host Free', overflow: TextOverflow.ellipsis),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => context.push('/join'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                        textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/create-game'),
+                        icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
+                        label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryLight,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
+                        ),
                       ),
-                      child: const Text('🔑 Join Game', overflow: TextOverflow.ellipsis),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 3,
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push('/join'),
+                        icon: const Text('🔑', style: TextStyle(fontSize: 15)),
+                        label: const Text('Join Game', overflow: TextOverflow.ellipsis),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/create-game'),
+                        icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
+                        label: const Text('Free Family Play (1–5 Players · 0 Credits)'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                          textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () => context.push('/create-game'),
+                            icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
+                            label: const Text('Host Party (6–250+)', overflow: TextOverflow.ellipsis),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryLight,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+                              textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => context.push('/join'),
+                            icon: const Text('🔑', style: TextStyle(fontSize: 15)),
+                            label: const Text('Join Game', overflow: TextOverflow.ellipsis),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+                              textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 10),
 
               // Corporate & Mega-X Callout Button
@@ -144,17 +216,17 @@ class DashboardHeroSection extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 4,
                 children: const [
+                  Text('👨‍👩‍👧‍👦 Family Pack always free (1–5)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('💃 Instant for Kitty Parties', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🏢 Mega-X scale on request', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🎯 Custom winning patterns', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('🏢 250+ to 100K enterprise scale', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🙅 No sign-up for guests', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🌍 100% Free for players', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('🙅 Zero app download for guests', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                 ],
               ),
             ],

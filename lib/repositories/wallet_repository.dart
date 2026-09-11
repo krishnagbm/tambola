@@ -127,6 +127,7 @@ class WalletRepository {
           .order('display_order', ascending: true);
 
       return (res as List).map((e) => MptCapacityTier.fromJson(e)).toList();
+    } catch (e) {
       return [
         MptCapacityTier(id: '1', name: 'Family Pack (1–5 Players)', minPlayers: 1, maxPlayers: 5, creditsRequired: 0),
         MptCapacityTier(id: '2', name: 'Small Party (6–15 Players)', minPlayers: 6, maxPlayers: 15, creditsRequired: 50),
