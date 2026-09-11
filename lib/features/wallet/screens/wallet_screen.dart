@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
 import '../../../providers/app_providers.dart';
+import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -182,20 +183,46 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => const Text('Unable to load tiers'),
           data: (tiers) => Column(
-            children: tiers.map((tier) {
-              return Card(
+            children: [
+              ...tiers.map((tier) {
+                return Card(
+                  color: AppTheme.darkSurface,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
+                    trailing: Text(
+                      '${tier.creditsRequired} Credits',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                    ),
+                  ),
+                );
+              }),
+              Card(
                 color: AppTheme.darkSurface,
                 margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                ),
                 child: ListTile(
-                  title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
-                  trailing: Text(
-                    '${tier.creditsRequired} Credits',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                  leading: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.corporate_fare_rounded, color: AppTheme.secondaryColor, size: 18),
+                  ),
+                  title: const Text('Mega-X Corporate (250 to 100K+ Players)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                  subtitle: const Text('Custom capacity up to 100,000+ players, dedicated server scale & volume pricing', style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1))),
+                  trailing: TextButton(
+                    onPressed: () => CorporateInquiryDialog.show(context, initialTopic: 'Mega-X Event (250 to 100,000+ Players)'),
+                    child: const Text('Contact Us →', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
                   ),
                 ),
-              );
-            }).toList(),
+              ),
+            ],
           ),
         ),
       ],

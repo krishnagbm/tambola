@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
+import 'corporate_inquiry_dialog.dart';
+
 class UspGridSection extends StatelessWidget {
   const UspGridSection({super.key});
 
@@ -10,36 +12,42 @@ class UspGridSection extends StatelessWidget {
       'title': 'Fair Play, Guaranteed',
       'desc': 'Server validates every claim against called numbers automatically. Zero disputes.',
       'color': AppTheme.secondaryColor, // Yellow
+      'actionTopic': null,
     },
     {
       'icon': Icons.confirmation_number_outlined,
-      'title': '100% Unique Tickets',
-      'desc': 'Stress-tested across 200 tickets with zero duplicate winning combinations.',
+      'title': '100K+ Unique Tickets',
+      'desc': 'Stress-tested across 100,000+ tickets with zero duplicates from an 8.1 Trillion space.',
       'color': AppTheme.accentDanger, // Red
+      'actionTopic': null,
     },
     {
-      'icon': Icons.bolt_outlined,
-      'title': 'Instant Guest Join',
-      'desc': 'No app download or account needed. Just enter code & pick an avatar.',
+      'icon': Icons.corporate_fare_rounded,
+      'title': 'Mega-X Enterprise Scale',
+      'desc': 'Host up to 250 players standard, or scale to 100,000+ players for enterprise townhalls.',
       'color': AppTheme.accentSuccess, // Green
+      'actionTopic': 'Mega-X Event (250+ Players)',
     },
     {
-      'icon': Icons.qr_code_rounded,
-      'title': 'QR Prize Vouchers',
-      'desc': 'Winners get instant scannable claims for easy organizer prize payout.',
+      'icon': Icons.auto_awesome_rounded,
+      'title': 'Custom Winning Patterns',
+      'desc': 'Standard Jaldi 5, Lines, Full House, or bespoke corporate patterns on demand.',
       'color': AppTheme.accentPartyPurple, // Purple
+      'actionTopic': 'Custom Winning Patterns',
     },
     {
       'icon': Icons.tv_rounded,
       'title': 'Big-Screen Caller Cast',
       'desc': 'Cast live board & numbers to TV or projector for room-wide excitement.',
       'color': AppTheme.primaryLight, // Navy
+      'actionTopic': null,
     },
     {
-      'icon': Icons.event_seat_rounded,
-      'title': 'Smart Auto-Waitlist',
-      'desc': 'Late arrivals auto-promote to active seats as soon as capacity is added.',
+      'icon': Icons.bolt_outlined,
+      'title': 'Instant Guest Join',
+      'desc': 'No app download or account needed. Just enter code & pick an avatar.',
       'color': AppTheme.secondaryColor, // Yellow
+      'actionTopic': null,
     },
   ];
 
@@ -83,58 +91,76 @@ class UspGridSection extends StatelessWidget {
               itemBuilder: (ctx, idx) {
                 final item = _uspItems[idx];
                 final color = item['color'] as Color;
+                final actionTopic = item['actionTopic'] as String?;
 
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkCard,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFF2E334D)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Accent Top Badge
-                      Container(
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(7),
-                          border: Border.all(color: color.withValues(alpha: 0.35)),
-                        ),
-                        child: Icon(item['icon'] as IconData, color: color, size: 15),
+                return InkWell(
+                  onTap: actionTopic != null
+                      ? () => CorporateInquiryDialog.show(context, initialTopic: actionTopic)
+                      : null,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkCard,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: actionTopic != null
+                            ? color.withValues(alpha: 0.4)
+                            : const Color(0xFF2E334D),
                       ),
-                      const SizedBox(height: 5),
-
-                      // Title
-                      Text(
-                        item['title'] as String,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.15,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Accent Top Badge
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(7),
+                                border: Border.all(color: color.withValues(alpha: 0.35)),
+                              ),
+                              child: Icon(item['icon'] as IconData, color: color, size: 15),
+                            ),
+                            if (actionTopic != null)
+                              const Icon(Icons.arrow_forward_rounded, color: Color(0xFFA0AEC0), size: 13),
+                          ],
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 3),
+                        const SizedBox(height: 5),
 
-                      // Description
-                      Expanded(
-                        child: Text(
-                          item['desc'] as String,
+                        // Title
+                        Text(
+                          item['title'] as String,
                           style: const TextStyle(
-                            fontSize: 10.5,
-                            color: Color(0xFFCBD5E1),
-                            height: 1.2,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.15,
                           ),
-                          maxLines: 2,
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 3),
+
+                        // Description
+                        Expanded(
+                          child: Text(
+                            item['desc'] as String,
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              color: Color(0xFFCBD5E1),
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

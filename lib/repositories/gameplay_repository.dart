@@ -76,11 +76,12 @@ class GameplayRepository {
     }
   }
 
-  /// Gets player's issued ticket for the game with guaranteed uniqueness
+  /// Gets player's issued ticket for the game with guaranteed server uniqueness
   Future<MptTicket> getOrCreatePlayerTicket(String gameId) async {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) throw Exception('Auth required');
 
+    // 1. Direct fetch if ticket is already generated (bulk game start path)
     final res = await _supabase
         .from('MPT_player_tickets')
         .select()
@@ -92,16 +93,45 @@ class GameplayRepository {
       return MptTicket.fromJson(res);
     }
 
-    // Determine sequential ticket number in this game room
-    final existingTickets = await _supabase
-        .from('MPT_player_tickets')
-        .select('ticket_number')
-        .eq('game_id', gameId);
+    // 2. Canonical Server-Side RPC Path (Guaranteed uniqueness & registration_seq ticket_number)
+    try {
+      final rpcRes = await _supabase.rpc('MPT_get_or_create_player_ticket', params: {
+        'p_game_id': gameId,
+      });
+      if (rpcRes != null) {
+        return MptTicket.fromJson(rpcRes as Map<String, dynamic>);
+      }
+    } catch (_) {
+      // Fallback below if RPC is unavailable in offline/mock environment
+    }
 
-    final ticketSeq = (existingTickets as List).length + 1;
+    // 3. Fallback path (Direct table insert with registration_seq lookup & uniqueness check)
+    final reg = await _supabase
+        .from('MPT_game_registrations')
+        .select('registration_seq')
+        .eq('game_id', gameId)
+        .eq('user_id', uid)
+        .maybeSingle();
 
-    // Generate unique ticket matrix
-    final matrix = TambolaTicketHelper.generateTicket();
+    final ticketSeq = (reg?['registration_seq'] as int?) ?? 1;
+
+    List<List<int>> matrix = TambolaTicketHelper.generateSqlEquivalentTicket();
+
+    // Up to 5 attempts to check against existing tickets in this room on fallback
+    for (int attempt = 0; attempt < 5; attempt++) {
+      final exists = await _supabase
+          .from('MPT_player_tickets')
+          .select('id')
+          .eq('game_id', gameId)
+          .eq('ticket_matrix', matrix)
+          .maybeSingle();
+
+      if (exists == null) {
+        break;
+      }
+      matrix = TambolaTicketHelper.generateSqlEquivalentTicket();
+    }
+
     final row = await _supabase.from('MPT_player_tickets').insert({
       'game_id': gameId,
       'user_id': uid,

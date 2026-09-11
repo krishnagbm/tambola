@@ -20,6 +20,59 @@ class TambolaTicketHelper {
     return _generateSeededTicket(rng.nextInt(1000000));
   }
 
+  /// Generates a valid standard 3x9 Tambola ticket matrix matching PostgreSQL public.MPT_generate_ticket_matrix()
+  /// Standard 3x9 grid: exactly 5 numbers in each row, 15 numbers total, strictly sorted vertically.
+  static List<List<int>> generateSqlEquivalentTicket([Random? random]) {
+    final rng = random ?? Random();
+    final matrix = List.generate(3, (_) => List.filled(9, 0));
+
+    for (int col = 0; col < 9; col++) {
+      final minVal = col == 0 ? 1 : col * 10;
+      final maxVal = col == 8 ? 90 : (col * 10 + 9);
+      final count = (col == 0 || col == 2 || col == 4 || col == 5 || col == 7 || col == 8) ? 2 : 1;
+
+      final range = List.generate(maxVal - minVal + 1, (i) => minVal + i)..shuffle(rng);
+      final chosen = range.take(count).toList()..sort();
+
+      switch (col) {
+        case 0:
+          matrix[0][col] = chosen[0];
+          matrix[2][col] = chosen[1];
+          break;
+        case 1:
+          matrix[1][col] = chosen[0];
+          break;
+        case 2:
+          matrix[0][col] = chosen[0];
+          matrix[2][col] = chosen[1];
+          break;
+        case 3:
+          matrix[1][col] = chosen[0];
+          break;
+        case 4:
+          matrix[0][col] = chosen[0];
+          matrix[2][col] = chosen[1];
+          break;
+        case 5:
+          matrix[1][col] = chosen[0];
+          matrix[2][col] = chosen[1];
+          break;
+        case 6:
+          matrix[0][col] = chosen[0];
+          break;
+        case 7:
+          matrix[1][col] = chosen[0];
+          matrix[2][col] = chosen[1];
+          break;
+        case 8:
+          matrix[0][col] = chosen[0];
+          matrix[1][col] = chosen[1];
+          break;
+      }
+    }
+    return matrix;
+  }
+
   static List<List<int>>? _tryGenerateSingleTicket(Random rng) {
     // 1. Determine number of items per column (sum = 15, each between 1 and 3)
     final colCounts = List.filled(9, 1);

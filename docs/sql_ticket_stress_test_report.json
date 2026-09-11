@@ -1,0 +1,57 @@
+{
+  "title": "DebHousie SQL Ticket Generation Stress Test & Combinatorial Analysis",
+  "generatedAt": "2026-09-10T22:43:12.017569",
+  "mathematicalCombinations": {
+    "column1_combinations_C9_2": 36,
+    "column2_combinations_C10_1": 10,
+    "column3_combinations_C10_2": 45,
+    "column4_combinations_C10_1": 10,
+    "column5_combinations_C10_2": 45,
+    "column6_combinations_C10_2": 45,
+    "column7_combinations_C10_1": 10,
+    "column8_combinations_C10_2": 45,
+    "column9_combinations_C11_2": 55,
+    "totalTheoreticalUniqueTickets": 8119237500000,
+    "theoreticalSpaceFormatted": "8.119 Trillion Unique Tickets",
+    "birthdayCollisionProbabilityAt250Players": "3.85 x 10^-9 (0.00000038%)"
+  },
+  "empiricalStressTestBenchmarks": {
+    "250": {
+      "requestedTickets": 250,
+      "uniqueTickets": 250,
+      "duplicateCount": 0,
+      "collisionRatePercent": 0.0,
+      "elapsedSeconds": 0.0215,
+      "ticketsPerSecond": 11633.16,
+      "allRulesPassed": true
+    },
+    "1000": {
+      "requestedTickets": 1000,
+      "uniqueTickets": 1000,
+      "duplicateCount": 0,
+      "collisionRatePercent": 0.0,
+      "elapsedSeconds": 0.0688,
+      "ticketsPerSecond": 14535.05,
+      "allRulesPassed": true
+    },
+    "10000": {
+      "requestedTickets": 10000,
+      "uniqueTickets": 10000,
+      "duplicateCount": 0,
+      "collisionRatePercent": 0.0,
+      "elapsedSeconds": 0.6761,
+      "ticketsPerSecond": 14789.95,
+      "allRulesPassed": true
+    },
+    "100000": {
+      "requestedTickets": 100000,
+      "uniqueTickets": 100000,
+      "duplicateCount": 0,
+      "collisionRatePercent": 0.0,
+      "elapsedSeconds": 6.452,
+      "ticketsPerSecond": 15499.07,
+      "allRulesPassed": true
+    }
+  },
+  "conclusion": "The SQL generator possesses 8.12 Trillion unique ticket combinations. At the 250-seat event tier, the collision probability is under 1 in 260 million, and PostgreSQL server-side retry loop guarantees 100% collision-free uniqueness."
+}

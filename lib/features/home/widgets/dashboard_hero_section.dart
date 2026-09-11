@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import 'corporate_inquiry_dialog.dart';
 
 class DashboardHeroSection extends StatelessWidget {
   const DashboardHeroSection({super.key});
@@ -41,7 +42,7 @@ class DashboardHeroSection extends StatelessWidget {
                   border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
                 ),
                 child: const Text(
-                  '🎉 Multiplayer Tambola, Housie & Bingo — Live',
+                  '🎉 Multiplayer Tambola & Housie — For Parties & Corporate Events',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -53,9 +54,9 @@ class DashboardHeroSection extends StatelessWidget {
 
               // Headline
               Text(
-                'Real Tambola Nights.\nZero Fuss. Zero Cheating.',
+                'Multiplayer Tambola & Housie.\nFrom Family Celebrations to 250+ Mega Events.',
                 style: TextStyle(
-                  fontSize: isWide ? 26 : 21,
+                  fontSize: isWide ? 25 : 20,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
                   height: 1.18,
@@ -66,7 +67,7 @@ class DashboardHeroSection extends StatelessWidget {
 
               // Subhead
               Text(
-                'Host up to 250 players online with automated server win verification. No paper tickets, no app download for guests.',
+                'Host 10 to 250 players online or scale to 100,000+ for enterprise events with automated server win verification. Perfect for family parties, festivals, and corporate team-building.',
                 style: TextStyle(
                   fontSize: isWide ? 13.5 : 12.5,
                   color: const Color(0xFFCBD5E1),
@@ -101,6 +102,39 @@ class DashboardHeroSection extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+
+              // Corporate & Mega-X Callout Button
+              InkWell(
+                onTap: () => CorporateInquiryDialog.show(context),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.35)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.business_center_rounded, color: AppTheme.secondaryColor, size: 15),
+                      SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          'Planning 250 to 100K+ Guests or Custom Rules? Contact for Enterprise Pricing →',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.secondaryColor,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
 
               // Trust Strip
@@ -110,7 +144,11 @@ class DashboardHeroSection extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 4,
                 children: const [
-                  Text('✅ 0 duplicate tickets', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('🏢 Mega-X scale on request', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('🎯 Custom winning patterns', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),

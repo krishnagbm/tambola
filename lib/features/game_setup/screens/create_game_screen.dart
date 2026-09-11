@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
+import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class CreateGameScreen extends ConsumerStatefulWidget {
   const CreateGameScreen({super.key});
@@ -270,7 +271,46 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 8),
+
+              // Custom Winning Patterns Enterprise Callout
+              InkWell(
+                onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Need Custom Winning Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
+                            SizedBox(height: 2),
+                            Text('Star, Breakfast, King/Queen & branded corporate rules on request →', style: TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1))),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 13),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleCreate,
@@ -313,54 +353,58 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         }
 
         return Column(
-          children: tiers.map((tier) {
-            final isSelected = _selectedTierId == tier.id || (_selectedTierId == null && _selectedCapacity == tier.maxPlayers);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: InkWell(
-                onTap: () => setState(() {
-                  _selectedTierId = tier.id;
-                  _selectedCapacity = tier.maxPlayers;
-                }),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
-                      width: isSelected ? 1.5 : 1,
+          children: [
+            ...tiers.map((tier) {
+              final isSelected = _selectedTierId == tier.id || (_selectedTierId == null && _selectedCapacity == tier.maxPlayers);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  onTap: () => setState(() {
+                    _selectedTierId = tier.id;
+                    _selectedCapacity = tier.maxPlayers;
+                  }),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            Text(
+                              '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.secondaryColor),
+                            ),
+                          ],
+                        ),
+                        Radio<String>(
+                          value: tier.id,
+                          groupValue: _selectedTierId ?? tiers.first.id,
+                          activeColor: AppTheme.primaryColor,
+                          onChanged: (val) => setState(() {
+                            _selectedTierId = val;
+                            _selectedCapacity = tier.maxPlayers;
+                          }),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                          Text(
-                            '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
-                            style: const TextStyle(fontSize: 12, color: AppTheme.secondaryColor),
-                          ),
-                        ],
-                      ),
-                      Radio<String>(
-                        value: tier.id,
-                        groupValue: _selectedTierId ?? tiers.first.id,
-                        activeColor: AppTheme.primaryColor,
-                        onChanged: (val) => setState(() {
-                          _selectedTierId = val;
-                          _selectedCapacity = tier.maxPlayers;
-                        }),
-                      ),
-                    ],
-                  ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }),
+            const SizedBox(height: 4),
+            _buildMegaXCallout(),
+          ],
         );
       },
     );
@@ -376,46 +420,90 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     ];
 
     return Column(
-      children: options.map((opt) {
-        final cap = opt['capacity'] as int;
-        final isSelected = _selectedCapacity == cap;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: InkWell(
-            onTap: () => setState(() => _selectedCapacity = cap),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
-                  width: isSelected ? 1.5 : 1,
+      children: [
+        ...options.map((opt) {
+          final cap = opt['capacity'] as int;
+          final isSelected = _selectedCapacity == cap;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              onTap: () => setState(() => _selectedCapacity = cap),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(opt['label'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(opt['desc'] as String, style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+                      ],
+                    ),
+                    Radio<int>(
+                      value: cap,
+                      groupValue: _selectedCapacity,
+                      activeColor: AppTheme.primaryColor,
+                      onChanged: (val) => setState(() => _selectedCapacity = val!),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+          );
+        }),
+        const SizedBox(height: 4),
+        _buildMegaXCallout(),
+      ],
+    );
+  }
+
+  Widget _buildMegaXCallout() {
+    return InkWell(
+      onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Mega-X Event (250 to 100,000+ Players)'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(top: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.corporate_fare_rounded, color: AppTheme.secondaryColor, size: 18),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(opt['label'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text(opt['desc'] as String, style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
-                    ],
-                  ),
-                  Radio<int>(
-                    value: cap,
-                    groupValue: _selectedCapacity,
-                    activeColor: AppTheme.primaryColor,
-                    onChanged: (val) => setState(() => _selectedCapacity = val!),
-                  ),
+                  Text('Planning 250 to 100K+ Players (Mega-X)?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                  SizedBox(height: 2),
+                  Text('Custom pricing, dedicated high-concurrency scale & corporate support →', style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1))),
                 ],
               ),
             ),
-          ),
-        );
-      }).toList(),
+            const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.secondaryColor, size: 14),
+          ],
+        ),
+      ),
     );
   }
 

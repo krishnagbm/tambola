@@ -5,11 +5,11 @@ class PerfectForChipsSection extends StatelessWidget {
   const PerfectForChipsSection({super.key});
 
   static const _scenarios = [
+    {'title': 'Corporate & Townhalls', 'icon': '🏢'},
+    {'title': 'Team Offsites & Meets', 'icon': '💼'},
     {'title': 'Family Get-Togethers', 'icon': '👨‍👩‍👧‍👦'},
-    {'title': 'Kitty Parties', 'icon': '💃'},
-    {'title': 'Diwali & Festivals', 'icon': '🪔'},
-    {'title': 'Housing Societies', 'icon': '🏢'},
-    {'title': 'Office Team Nights', 'icon': '💼'},
+    {'title': 'Kitty Parties & Socials', 'icon': '💃'},
+    {'title': 'Festivals & Galas', 'icon': '🪔'},
     {'title': 'Weddings & Sangeet', 'icon': '🎊'},
   ];
 
