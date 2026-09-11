@@ -7,11 +7,10 @@ class PerfectForChipsSection extends StatelessWidget {
   static const _scenarios = [
     {'title': 'Family Get-Togethers', 'icon': '👨‍👩‍👧‍👦'},
     {'title': 'Kitty Parties', 'icon': '💃'},
-    {'title': 'Diwali & Festival Nights', 'icon': '🪔'},
-    {'title': 'Housing Society Events', 'icon': '🏢'},
+    {'title': 'Diwali & Festivals', 'icon': '🪔'},
+    {'title': 'Housing Societies', 'icon': '🏢'},
     {'title': 'Office Team Nights', 'icon': '💼'},
-    {'title': 'Wedding Sangeet Games', 'icon': '🎊'},
-    {'title': 'School & College Fests', 'icon': '🎓'},
+    {'title': 'Weddings & Sangeet', 'icon': '🎊'},
   ];
 
   @override
@@ -33,35 +32,54 @@ class PerfectForChipsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _scenarios.map((item) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: AppTheme.darkSurface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF2E334D)),
+        const SizedBox(height: 10),
+        LayoutBuilder(
+          builder: (ctx, constraints) {
+            final isDesktop = constraints.maxWidth > 600;
+            final crossAxisCount = isDesktop ? 3 : 2;
+            final childAspectRatio = isDesktop ? 3.8 : 2.8;
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _scenarios.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: childAspectRatio,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(item['icon']!, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 6),
-                  Text(
-                    item['title']!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+              itemBuilder: (ctx, idx) {
+                final item = _scenarios[idx];
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF2E334D)),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(item['icon']!, style: const TextStyle(fontSize: 15)),
+                      const SizedBox(width: 7),
+                      Flexible(
+                        child: Text(
+                          item['title']!,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
-          }).toList(),
+          },
         ),
       ],
     );
