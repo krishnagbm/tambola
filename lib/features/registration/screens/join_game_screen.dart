@@ -94,6 +94,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 64,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back to Home',
@@ -105,34 +106,66 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             }
           },
         ),
-        title: const Text('Join DebHousie Game'),
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              AppAssets.horizontalLogo,
+              height: 38,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
+              ),
+              child: const Text(
+                'Join',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton.icon(
             onPressed: () => context.go('/'),
             icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
             label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Image.asset(
-                  AppAssets.horizontalLogo,
-                  height: 48,
-                  fit: BoxFit.contain,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Image.asset(
+                      AppAssets.horizontalLogo,
+                      height: 48,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const Text(
-              'Enter the 6-character invite code provided by your Game Organizer:',
-              style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
-            ),
+                const Text(
+                  'Enter the 6-character invite code provided by your Game Organizer:',
+                  style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
+                ),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -198,8 +231,10 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Text('Register & Get Ticket', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-            ],
-          ],
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

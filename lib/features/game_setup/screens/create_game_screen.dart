@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
@@ -190,138 +191,263 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create DebHousie Game'),
+        toolbarHeight: 64,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Home',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              AppAssets.horizontalLogo,
+              height: 38,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
+              ),
+              child: const Text(
+                'Host',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
+            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Game / Event Name',
-                  hintText: 'e.g. Diwali Party DebHousie',
-                  prefixIcon: const Icon(Icons.celebration),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.casino_outlined, color: AppTheme.secondaryColor),
-                    tooltip: 'Shuffle Event Name',
-                    onPressed: _randomizeName,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildBrandingHeader(),
+                  const SizedBox(height: 24),
+
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Game / Event Name',
+                      hintText: 'e.g. Diwali Party DebHousie',
+                      prefixIcon: const Icon(Icons.celebration),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.casino_outlined, color: AppTheme.secondaryColor),
+                        tooltip: 'Shuffle Event Name',
+                        onPressed: _randomizeName,
+                      ),
+                    ),
+                    validator: (val) => val == null || val.trim().isEmpty ? 'Please enter game name' : null,
                   ),
-                ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter game name' : null,
-              ),
-              const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-              _buildSchedulePicker(),
-              const SizedBox(height: 24),
+                  _buildSchedulePicker(),
+                  const SizedBox(height: 24),
 
-              const Text('Expected Group Size (Capacity)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
-              const Text(
-                'Choose initial seats. If more join, they will be queued in the Waiting List.',
-                style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
-              ),
-              const SizedBox(height: 12),
-              _buildCapacitySelector(),
-              const SizedBox(height: 24),
-
-              const Text('Winning Patterns / Prizes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column(
-                    children: _prizes.keys.map((key) {
-                      String label;
-                      switch (key) {
-                        case 'EARLY_FIVE':
-                          label = 'Early 5 (Jaldi 5)';
-                          break;
-                        case 'TOP_LINE':
-                          label = 'Top Line';
-                          break;
-                        case 'MIDDLE_LINE':
-                          label = 'Middle Line';
-                          break;
-                        case 'BOTTOM_LINE':
-                          label = 'Bottom Line';
-                          break;
-                        case 'FOUR_CORNERS':
-                          label = 'Four Corners';
-                          break;
-                        case 'FULL_HOUSE':
-                          label = 'Full House (First Winner)';
-                          break;
-                        case 'SECOND_FULL_HOUSE':
-                          label = 'Second Full House';
-                          break;
-                        default:
-                          label = key;
-                      }
-                      return CheckboxListTile(
-                        title: Text(label, style: const TextStyle(fontSize: 14)),
-                        value: _prizes[key],
-                        activeColor: AppTheme.primaryColor,
-                        onChanged: (val) => setState(() => _prizes[key] = val ?? false),
-                      );
-                    }).toList(),
+                  const Text('Expected Group Size (Capacity)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Choose initial seats. If more join, they will be queued in the Waiting List.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
                   ),
-                ),
-              ),
-              const SizedBox(height: 8),
+                  const SizedBox(height: 12),
+                  _buildCapacitySelector(),
+                  const SizedBox(height: 24),
 
-              // Custom Winning Patterns Enterprise Callout
-              InkWell(
-                onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkSurface,
+                  const Text('Winning Patterns / Prizes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        children: _prizes.keys.map((key) {
+                          String label;
+                          switch (key) {
+                            case 'EARLY_FIVE':
+                              label = 'Early 5 (Jaldi 5)';
+                              break;
+                            case 'TOP_LINE':
+                              label = 'Top Line';
+                              break;
+                            case 'MIDDLE_LINE':
+                              label = 'Middle Line';
+                              break;
+                            case 'BOTTOM_LINE':
+                              label = 'Bottom Line';
+                              break;
+                            case 'FOUR_CORNERS':
+                              label = 'Four Corners';
+                              break;
+                            case 'FULL_HOUSE':
+                              label = 'Full House (First Winner)';
+                              break;
+                            case 'SECOND_FULL_HOUSE':
+                              label = 'Second Full House';
+                              break;
+                            default:
+                              label = key;
+                          }
+                          return CheckboxListTile(
+                            title: Text(label, style: const TextStyle(fontSize: 14)),
+                            value: _prizes[key],
+                            activeColor: AppTheme.primaryColor,
+                            onChanged: (val) => setState(() => _prizes[key] = val ?? false),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Custom Winning Patterns Enterprise Callout
+                  InkWell(
+                    onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
                       ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Need Custom Winning Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
-                            SizedBox(height: 2),
-                            Text('Star, Breakfast, King/Queen & branded corporate rules on request →', style: TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1))),
-                          ],
-                        ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Need Custom Winning Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
+                                SizedBox(height: 2),
+                                Text('Star, Breakfast, King/Queen & branded corporate rules on request →', style: TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1))),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 13),
+                        ],
                       ),
-                      const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 13),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleCreate,
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                child: _isLoading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Create Game & Generate Invite Code', style: TextStyle(fontSize: 16)),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _handleCreate,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Create Game & Generate Invite Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBrandingHeader() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryColor.withValues(alpha: 0.25),
+            AppTheme.darkSurface,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+            ),
+            child: Image.asset(
+              AppAssets.monogramDH,
+              height: 36,
+              width: 36,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.celebration, color: AppTheme.secondaryColor, size: 30),
+            ),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'DebHousie Game Setup',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Text('✨', style: TextStyle(fontSize: 15)),
+                  ],
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Host your live Housie party, set seats, and invite players.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

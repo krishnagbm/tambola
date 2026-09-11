@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_capacity_tier.dart';
@@ -59,45 +61,97 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Organizer Credit Wallet'),
+        toolbarHeight: 64,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Back to Home',
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              AppAssets.horizontalLogo,
+              height: 38,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
+              ),
+              child: const Text(
+                'Wallet',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Balance',
             onPressed: () {
               ref.invalidate(walletProvider);
               ref.invalidate(creditTransactionsProvider);
             },
           ),
+          TextButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
+            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: walletState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (wallet) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Wallet Balance Card
-                _buildBalanceCard(wallet),
-                const SizedBox(height: 20),
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Wallet Balance Card
+                    _buildBalanceCard(wallet),
+                    const SizedBox(height: 20),
 
-                // Web Purchase & Mock Buttons
-                _buildPurchaseActions(),
-                const SizedBox(height: 24),
+                    // Web Purchase & Mock Buttons
+                    _buildPurchaseActions(),
+                    const SizedBox(height: 24),
 
-                // Pricing & Capacity Tiers
-                _buildPricingTiersSection(tiersState),
-                const SizedBox(height: 24),
+                    // Pricing & Capacity Tiers
+                    _buildPricingTiersSection(tiersState),
+                    const SizedBox(height: 24),
 
-                // Credit Validity & Policy Notice
-                _buildPolicyNotice(),
-                const SizedBox(height: 24),
+                    // Credit Validity & Policy Notice
+                    _buildPolicyNotice(),
+                    const SizedBox(height: 24),
 
-                // Transaction Ledger
-                _buildTransactionsList(),
-              ],
+                    // Transaction Ledger
+                    _buildTransactionsList(),
+                  ],
+                ),
+              ),
             ),
           );
         },
