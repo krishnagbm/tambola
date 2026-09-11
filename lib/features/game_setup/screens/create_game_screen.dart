@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
@@ -97,7 +98,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Future<void> _handleShare(MptGame game) async {
-    final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DebHousie in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap to join or download the app:\n$link';
@@ -372,6 +373,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: _isLoading

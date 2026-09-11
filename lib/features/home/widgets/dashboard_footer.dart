@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 
 class DashboardFooter extends StatelessWidget {
@@ -30,7 +31,7 @@ class DashboardFooter extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             InkWell(
-              onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
+              onTap: () => _launchURL(AppConfig.appBaseUrl),
               child: const Text(
                 'DebHousie by Digital App Studio',
                 style: TextStyle(

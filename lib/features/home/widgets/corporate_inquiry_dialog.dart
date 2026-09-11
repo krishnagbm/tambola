@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 
 class CorporateInquiryDialog extends StatelessWidget {
@@ -21,7 +22,7 @@ class CorporateInquiryDialog extends StatelessWidget {
   Future<void> _launchEmail(BuildContext context) async {
     final uri = Uri(
       scheme: 'mailto',
-      path: 'contact@digitalappstudio.com',
+      path: AppConfig.supportEmail,
       query: 'subject=DebHousie Corporate & Mega-X Event Inquiry: $initialTopic&body=Hi DebHousie Team,%0D%0A%0D%0AI am interested in organizing a large event with the following requirements:%0D%0A- Event Type: $initialTopic%0D%0A- Expected Player Count: %0D%0A- Event Date: %0D%0A- Custom Requirements / Winning Patterns: %0D%0A%0D%0AThanks!',
     );
 
@@ -41,12 +42,12 @@ class CorporateInquiryDialog extends StatelessWidget {
   }
 
   void _copyEmailToClipboard(BuildContext context) {
-    Clipboard.setData(const ClipboardData(text: 'contact@digitalappstudio.com'));
+    Clipboard.setData(ClipboardData(text: AppConfig.supportEmail));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Email copied to clipboard (contact@digitalappstudio.com)'),
+      SnackBar(
+        content: Text('Email copied to clipboard (${AppConfig.supportEmail})'),
         backgroundColor: AppTheme.accentSuccess,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -155,7 +156,7 @@ class CorporateInquiryDialog extends StatelessWidget {
                   _copyEmailToClipboard(context);
                 },
                 icon: const Icon(Icons.copy_rounded, size: 16, color: Color(0xFFA0AEC0)),
-                label: const Text('Copy Email: contact@digitalappstudio.com', style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
+                label: Text('Copy Email: ${AppConfig.supportEmail}', style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1))),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   side: const BorderSide(color: Color(0xFF2E334D)),

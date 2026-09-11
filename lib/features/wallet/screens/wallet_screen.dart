@@ -209,6 +209,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           label: const Text('Buy Credits on Web Store', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),

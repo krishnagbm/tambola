@@ -74,7 +74,10 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentDanger),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('End & Finalize Game'),
           ),
         ],
@@ -316,6 +319,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                         ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                    foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
                     disabledBackgroundColor: const Color(0xFF222639),
                     disabledForegroundColor: const Color(0xFF718096),
                     padding: const EdgeInsets.symmetric(vertical: 18),

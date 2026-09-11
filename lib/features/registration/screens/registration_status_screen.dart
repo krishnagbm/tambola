@@ -221,6 +221,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
                   label: const Text('View Ticket'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),

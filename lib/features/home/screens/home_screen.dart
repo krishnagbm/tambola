@@ -428,7 +428,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   title: 'Google Play',
                   subtitle: 'Android App',
                   icon: Icons.play_arrow_rounded,
-                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
+                  onTap: () => _launchURL(AppConfig.appBaseUrl),
                 ),
               ),
               const SizedBox(width: 8),
@@ -437,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   title: 'App Store',
                   subtitle: 'iOS / iPhone',
                   icon: Icons.apple,
-                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
+                  onTap: () => _launchURL(AppConfig.appBaseUrl),
                 ),
               ),
             ],
@@ -573,6 +573,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onPressed: () => context.push('/join'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                     ),
@@ -1000,6 +1001,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: const Text('Live Controls'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.accentSuccess,
+                                      foregroundColor: Colors.white,
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                                       minimumSize: Size.zero,
@@ -1170,6 +1172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onPressed: _isSigningIn ? null : _handleEmailSignIn,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
                       child: const Text('Send Link'),
@@ -1216,7 +1219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               children: [
                 InkWell(
-                  onTap: () => _launchURL('https://tambola.digitalappstudio.com'),
+                  onTap: () => _launchURL(AppConfig.appBaseUrl),
                   child: const Text(
                     'Developed by Digital App Studio',
                     style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0), decoration: TextDecoration.underline),

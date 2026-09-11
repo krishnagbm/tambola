@@ -1,6 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../core/config/app_config.dart';
 import '../models/mpt_user.dart';
 
 class AuthRepository {
@@ -97,7 +98,7 @@ class AuthRepository {
   Future<void> signInWithGoogle({String? redirectTo}) async {
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: redirectTo ?? 'https://tambola.digitalappstudio.com/#/',
+      redirectTo: redirectTo ?? '${AppConfig.appBaseUrl}/#/',
     );
   }
 
@@ -107,7 +108,7 @@ class AuthRepository {
     if (cleanEmail.isEmpty) throw Exception('Please enter a valid email address');
     await _supabase.auth.signInWithOtp(
       email: cleanEmail,
-      emailRedirectTo: redirectTo ?? 'https://tambola.digitalappstudio.com/#/',
+      emailRedirectTo: redirectTo ?? '${AppConfig.appBaseUrl}/#/',
     );
   }
 

@@ -225,6 +225,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                     onPressed: _isRegistering ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentSuccess,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: _isRegistering

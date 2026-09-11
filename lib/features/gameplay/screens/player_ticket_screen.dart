@@ -167,7 +167,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentSuccess),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentSuccess,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Continue Playing (Stay on Game)'),
           ),
           TextButton(
@@ -316,6 +319,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   label: const Text('Retry Ticket'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryLight,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
                 ),

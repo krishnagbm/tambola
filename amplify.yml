@@ -6,7 +6,7 @@ frontend:
         - if [ ! -d "flutter-sdk" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk; fi
         - export PATH="$PATH:`pwd`/flutter-sdk/bin"
         - flutter doctor -v
-        - printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nPURCHASE_ENABLED=%s\nPURCHASE_BASE_URL=%s\nAPP_ENVIRONMENT=%s\nENABLE_MOCK_CREDITS=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-true}" > .env
+        - printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_BASE_URL=%s\nSUPPORT_EMAIL=%s\nPURCHASE_ENABLED=%s\nPURCHASE_BASE_URL=%s\nAPP_ENVIRONMENT=%s\nENABLE_MOCK_CREDITS=%s\n' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${APP_BASE_URL:-https://www.dabhousie.com}" "${SUPPORT_EMAIL:-contact@dabhousie.com}" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://www.dabhousie.com/#/wallet}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-true}" > .env
     build:
       commands:
         - flutter pub get
@@ -14,8 +14,10 @@ frontend:
           flutter build web --release
           --dart-define=SUPABASE_URL="$SUPABASE_URL"
           --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+          --dart-define=APP_BASE_URL="${APP_BASE_URL:-https://www.dabhousie.com}"
+          --dart-define=SUPPORT_EMAIL="${SUPPORT_EMAIL:-contact@dabhousie.com}"
           --dart-define=PURCHASE_ENABLED="${PURCHASE_ENABLED:-true}"
-          --dart-define=PURCHASE_BASE_URL="${PURCHASE_BASE_URL:-https://digitalappstudio.com/tambola/buy-credits}"
+          --dart-define=PURCHASE_BASE_URL="${PURCHASE_BASE_URL:-https://www.dabhousie.com/#/wallet}"
           --dart-define=APP_ENVIRONMENT="${APP_ENVIRONMENT:-production}"
           --dart-define=ENABLE_MOCK_CREDITS="${ENABLE_MOCK_CREDITS:-true}"
   artifacts:

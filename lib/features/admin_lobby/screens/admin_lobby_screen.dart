@@ -30,7 +30,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleShareInvite(MptGame game) async {
-    final link = 'https://tambola.digitalappstudio.com/#/join/${game.inviteCode}';
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DebHousie with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap the link below to open the app or download it:\n$link';
@@ -78,7 +78,10 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentSuccess),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentSuccess,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Confirm & Start Game'),
           ),
         ],
@@ -574,6 +577,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           label: const Text('Start Game & Deduct Credits', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.accentSuccess,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
