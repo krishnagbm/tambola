@@ -724,7 +724,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildSchedulePicker() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppTheme.darkSurface,
         borderRadius: BorderRadius.circular(16),
@@ -732,36 +732,43 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFF2E334D),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isHorizontal = constraints.maxWidth >= 520;
+          final infoColumn = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.calendar_month,
-                size: 20,
-                color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
+              Row(
+                children: [
+                  Icon(
+                    Icons.calendar_month,
+                    size: 20,
+                    color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Scheduled Game Time (Optional)',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Text(
-                'Scheduled Game Time (Optional)',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              const SizedBox(height: 4),
+              Text(
+                _scheduledDateTime == null
+                    ? 'Game will be playable immediately when you start the lobby.'
+                    : 'Scheduled for: ${_formatDateTime(_scheduledDateTime!)}',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
+                  fontWeight: _scheduledDateTime != null ? FontWeight.w600 : FontWeight.normal,
+                ),
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            _scheduledDateTime == null
-                ? 'Game will be playable immediately when you start the lobby.'
-                : 'Scheduled for: ${_formatDateTime(_scheduledDateTime!)}',
-            style: TextStyle(
-              fontSize: 13,
-              color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
-              fontWeight: _scheduledDateTime != null ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
+          );
+
+          final actionsRow = Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               OutlinedButton.icon(
                 onPressed: _pickScheduleDateTime,
@@ -770,18 +777,43 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppTheme.secondaryColor,
                   side: const BorderSide(color: AppTheme.secondaryColor),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),
               ),
               if (_scheduledDateTime != null) ...[
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 TextButton(
                   onPressed: () => setState(() => _scheduledDateTime = null),
-                  child: const Text('Clear (Start Now)', style: TextStyle(color: AppTheme.accentDanger)),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                  ),
+                  child: const Text('Clear', style: TextStyle(color: AppTheme.accentDanger, fontWeight: FontWeight.bold)),
                 ),
               ],
             ],
-          ),
-        ],
+          );
+
+          if (isHorizontal) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: infoColumn),
+                const SizedBox(width: 16),
+                actionsRow,
+              ],
+            );
+          } else {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                infoColumn,
+                const SizedBox(height: 12),
+                actionsRow,
+              ],
+            );
+          }
+        },
       ),
     );
   }
