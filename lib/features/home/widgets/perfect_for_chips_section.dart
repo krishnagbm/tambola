@@ -6,7 +6,7 @@ class PerfectForChipsSection extends StatelessWidget {
 
   static const _scenarios = [
     {'title': 'Kitty Parties & Socials', 'icon': '💃'},
-    {'title': 'Free Family Nights (1–5)', 'icon': '👨‍👩‍👧‍👦'},
+    {'title': 'Family Game Nights', 'icon': '👨‍👩‍👧‍👦'},
     {'title': 'Apartment & Club Meetups', 'icon': '🏘️'},
     {'title': 'Corporate & Townhalls', 'icon': '🏢'},
     {'title': 'Festivals & Holiday Galas', 'icon': '🪔'},

@@ -41,9 +41,12 @@ void main() {
 
     expect(find.text('🎉 Multiplayer Tambola, Housie & 90-Ball Bingo — Family, Kitty Parties & Events'), findsOneWidget);
     expect(find.text('Multiplayer Tambola, Housie & 90-Ball Bingo.\nAlways Free for Families, Built for Kitty Parties & Events.'), findsOneWidget);
+    expect(find.text('Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests.'), findsOneWidget);
     expect(find.textContaining('Free Family Play'), findsOneWidget);
     expect(find.textContaining('Host Party'), findsOneWidget);
     expect(find.text('Join Game'), findsOneWidget);
+    expect(find.text('📺 Live Projector & TV Mode'), findsOneWidget);
+    expect(find.text('⚡ Smart Waitlist Auto-Promotion'), findsOneWidget);
     expect(find.text('✅ 100K+ Unique tickets (8.1T space)'), findsOneWidget);
   });
 
@@ -102,7 +105,7 @@ void main() {
     expect(find.text('Call numbers live'), findsOneWidget);
     expect(find.text('Perfect For Every Celebration'), findsOneWidget);
     expect(find.text('Kitty Parties & Socials'), findsOneWidget);
-    expect(find.text('Free Family Nights (1–5)'), findsOneWidget);
+    expect(find.text('Family Game Nights'), findsOneWidget);
     expect(find.text('Play • Connect • Win'), findsOneWidget);
   });
 

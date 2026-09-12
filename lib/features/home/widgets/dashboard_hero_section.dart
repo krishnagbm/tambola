@@ -67,7 +67,7 @@ class DashboardHeroSection extends StatelessWidget {
 
               // Subhead
               Text(
-                'Host 100% Free Family games (1–5 players), weekly Kitty Parties (6–15), or scale to 250+ corporate events with instant digital tickets and automated server win verification.',
+                'Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests.',
                 style: TextStyle(
                   fontSize: isWide ? 13.5 : 12.5,
                   color: const Color(0xFFCBD5E1),
@@ -85,7 +85,7 @@ class DashboardHeroSection extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () => context.push('/create-game'),
                         icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
-                        label: const Text('Free Family Play (0 Credits)', overflow: TextOverflow.ellipsis),
+                        label: const Text('Free Family Play', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentSuccess,
                           foregroundColor: Colors.black,
@@ -132,7 +132,7 @@ class DashboardHeroSection extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () => context.push('/create-game'),
                         icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
-                        label: const Text('Free Family Play (1–5 Players · 0 Credits)'),
+                        label: const Text('Free Family Play'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.accentSuccess,
                           foregroundColor: Colors.black,
@@ -148,7 +148,7 @@ class DashboardHeroSection extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: () => context.push('/create-game'),
                             icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
-                            label: const Text('Host Party (6–250+)', overflow: TextOverflow.ellipsis),
+                            label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryLight,
                               foregroundColor: Colors.white,
@@ -216,13 +216,13 @@ class DashboardHeroSection extends StatelessWidget {
                 spacing: 10,
                 runSpacing: 4,
                 children: const [
-                  Text('👨‍👩‍👧‍👦 Family Pack always free (1–5)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('💃 Instant for Kitty Parties', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('📺 Live Projector & TV Mode', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🏢 250+ to 100K enterprise scale', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('⚡ Smart Waitlist Auto-Promotion', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
