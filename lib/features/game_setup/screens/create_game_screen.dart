@@ -286,7 +286,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                             ),
                             const SizedBox(width: 24),
                             Expanded(
-                              child: _buildWinningPatternsSection(),
+                              child: _buildWinningPatternsSection(includeCreateButton: true),
                             ),
                           ],
                         );
@@ -296,25 +296,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           children: [
                             _buildGroupSizeSection(),
                             const SizedBox(height: 24),
-                            _buildWinningPatternsSection(),
+                            _buildWinningPatternsSection(includeCreateButton: false),
+                            const SizedBox(height: 24),
+                            _buildCreateButton(),
                           ],
                         );
                       }
                     },
-                  ),
-                  const SizedBox(height: 28),
-
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleCreate,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Create Game & Generate Invite Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -344,7 +332,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
-  Widget _buildWinningPatternsSection() {
+  Widget _buildWinningPatternsSection({bool includeCreateButton = true}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -441,7 +429,44 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ),
           ),
         ),
+        if (includeCreateButton) ...[
+          const SizedBox(height: 14),
+          _buildCreateButton(),
+        ],
       ],
+    );
+  }
+
+  Widget _buildCreateButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _handleCreate,
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: AppTheme.primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 3,
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.rocket_launch_rounded, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Create Game & Generate Invite Code',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
