@@ -244,7 +244,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 680),
+          constraints: const BoxConstraints(maxWidth: 920),
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             child: Form(
@@ -274,99 +274,35 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   _buildSchedulePicker(),
                   const SizedBox(height: 24),
 
-                  const Text('Expected Group Size (Capacity)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Choose initial seats. If more join, they will be queued in the Waiting List.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCapacitySelector(),
-                  const SizedBox(height: 24),
-
-                  const Text('Winning Patterns / Prizes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Column(
-                        children: _prizes.keys.map((key) {
-                          String label;
-                          switch (key) {
-                            case 'EARLY_FIVE':
-                              label = 'Early 5 (Jaldi 5)';
-                              break;
-                            case 'TOP_LINE':
-                              label = 'Top Line';
-                              break;
-                            case 'MIDDLE_LINE':
-                              label = 'Middle Line';
-                              break;
-                            case 'BOTTOM_LINE':
-                              label = 'Bottom Line';
-                              break;
-                            case 'FOUR_CORNERS':
-                              label = 'Four Corners';
-                              break;
-                            case 'FULL_HOUSE':
-                              label = 'Full House (First Winner)';
-                              break;
-                            case 'SECOND_FULL_HOUSE':
-                              label = 'Second Full House';
-                              break;
-                            default:
-                              label = key;
-                          }
-                          return CheckboxListTile(
-                            title: Text(label, style: const TextStyle(fontSize: 14)),
-                            value: _prizes[key],
-                            activeColor: AppTheme.primaryColor,
-                            onChanged: (val) => setState(() => _prizes[key] = val ?? false),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Custom Winning Patterns Enterprise Callout
-                  InkWell(
-                    onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isTwoColumn = constraints.maxWidth >= 640;
+                      if (isTwoColumn) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _buildGroupSizeSection(),
                             ),
-                            child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
-                          ),
-                          const SizedBox(width: 10),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Need Custom Winning Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white)),
-                                SizedBox(height: 2),
-                                Text('Star, Breakfast, King/Queen & branded corporate rules on request →', style: TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1))),
-                              ],
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: _buildWinningPatternsSection(),
                             ),
-                          ),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 13),
-                        ],
-                      ),
-                    ),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildGroupSizeSection(),
+                            const SizedBox(height: 24),
+                            _buildWinningPatternsSection(),
+                          ],
+                        );
+                      }
+                    },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 28),
 
                   ElevatedButton(
                     onPressed: _isLoading ? null : _handleCreate,
@@ -386,6 +322,126 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGroupSizeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Expected Group Size (Capacity)',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Choose initial seats. If more join, they will be queued in the Waiting List.',
+          style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
+        ),
+        const SizedBox(height: 12),
+        _buildCapacitySelector(),
+      ],
+    );
+  }
+
+  Widget _buildWinningPatternsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Winning Patterns / Prizes',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Select winning combinations eligible for prize claims during the game.',
+          style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              children: _prizes.keys.map((key) {
+                String label;
+                switch (key) {
+                  case 'EARLY_FIVE':
+                    label = 'Early 5 (Jaldi 5)';
+                    break;
+                  case 'TOP_LINE':
+                    label = 'Top Line';
+                    break;
+                  case 'MIDDLE_LINE':
+                    label = 'Middle Line';
+                    break;
+                  case 'BOTTOM_LINE':
+                    label = 'Bottom Line';
+                    break;
+                  case 'FOUR_CORNERS':
+                    label = 'Four Corners';
+                    break;
+                  case 'FULL_HOUSE':
+                    label = 'Full House (First Winner)';
+                    break;
+                  case 'SECOND_FULL_HOUSE':
+                    label = 'Second Full House';
+                    break;
+                  default:
+                    label = key;
+                }
+                return CheckboxListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                  title: Text(label, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                  value: _prizes[key],
+                  activeColor: AppTheme.primaryColor,
+                  onChanged: (val) => setState(() => _prizes[key] = val ?? false),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Custom Winning Patterns Enterprise Callout
+        InkWell(
+          onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Need Custom Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                      SizedBox(height: 2),
+                      Text('Star, Breakfast, King/Queen & custom rules →', style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1))),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 12),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
