@@ -17,7 +17,7 @@ class UspGridSection extends StatelessWidget {
     {
       'icon': Icons.confirmation_number_outlined,
       'title': '100K+ Unique Tickets',
-      'desc': 'Stress-tested across 100,000+ tickets with zero duplicates from an 8.1 Trillion space.',
+      'desc': 'Built on an 8.1 trillion-combination ticket space designed to eliminate duplicate tickets.',
       'color': AppTheme.accentDanger, // Red
       'actionTopic': null,
     },

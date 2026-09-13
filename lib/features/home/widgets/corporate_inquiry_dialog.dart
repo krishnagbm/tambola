@@ -116,7 +116,7 @@ class CorporateInquiryDialog extends StatelessWidget {
                       icon: Icons.groups_rounded,
                       color: AppTheme.secondaryColor,
                       title: 'Mega-X Scale (250 to 100,000+ Players)',
-                      desc: 'Engineered for massive enterprise concurrency with 8.1 Trillion unique combinations, stress-tested to 100,000+ tickets without collisions.',
+                      desc: 'Engineered for massive enterprise concurrency, built on an 8.1 trillion-combination ticket space designed to scale to enterprise-level events.',
                     ),
                     const Divider(color: Color(0xFF2E334D), height: 18),
                     _buildFeatureItem(
