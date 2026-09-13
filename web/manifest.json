@@ -1,11 +1,11 @@
 {
-    "name": "DebHousie",
-    "short_name": "DebHousie",
+    "name": "DabHousie",
+    "short_name": "DabHousie",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0F111A",
     "theme_color": "#0B3D91",
-    "description": "DebHousie - Multiplayer Tambola & Housie Game",
+    "description": "DabHousie - Multiplayer Tambola & Housie Game",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

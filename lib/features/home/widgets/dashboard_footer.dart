@@ -33,7 +33,7 @@ class DashboardFooter extends StatelessWidget {
             InkWell(
               onTap: () => _launchURL(AppConfig.appBaseUrl),
               child: const Text(
-                'DebHousie by Digital App Studio',
+                'DabHousie by Digital App Studio',
                 style: TextStyle(
                   fontSize: 12,
                   color: Color(0xFFA0AEC0),

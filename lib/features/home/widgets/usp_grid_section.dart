@@ -61,7 +61,7 @@ class UspGridSection extends StatelessWidget {
             Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 20),
             SizedBox(width: 8),
             Text(
-              'Why DebHousie?',
+              'Why DabHousie?',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,

@@ -30,7 +30,7 @@ class TambolaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'DebHousie: Live Tambola Party',
+      title: 'DabHousie: Live Tambola Party',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: appRouter,

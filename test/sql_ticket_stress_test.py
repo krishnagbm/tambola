@@ -151,7 +151,7 @@ if __name__ == "__main__":
     # Save 250 tickets sample
     with open("docs/sql_generated_250_tickets.json", "w") as f:
         json.dump({
-            "title": "DebHousie Production SQL Ticket Generation Output (250 Mega Event Tickets)",
+            "title": "DabHousie Production SQL Ticket Generation Output (250 Mega Event Tickets)",
             "generatedAt": datetime.now().isoformat(),
             "algorithm": "PostgreSQL public.MPT_generate_ticket_matrix()",
             "validation": {
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     # Save comprehensive report
     with open("docs/sql_ticket_stress_test_report.json", "w") as f:
         json.dump({
-            "title": "DebHousie SQL Ticket Generation Stress Test & Combinatorial Analysis",
+            "title": "DabHousie SQL Ticket Generation Stress Test & Combinatorial Analysis",
             "generatedAt": datetime.now().isoformat(),
             "mathematicalCombinations": {
                 "column1_combinations_C9_2": 36,

@@ -19,18 +19,18 @@ class CreateGameScreen extends ConsumerStatefulWidget {
 
 class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   static const _suggestedNames = [
-    'Friday DebHousie Fiesta 🎊',
+    'Friday DabHousie Fiesta 🎊',
     'Weekend Housefull Mania 🏠',
     'Bollywood Housie Night 🎬',
-    'Diwali DebHousie Dhamaka 🪔',
+    'Diwali DabHousie Dhamaka 🪔',
     'Friends & Family Blast 🎉',
-    'Super Sunday DebHousie Party 🌟',
-    'Office Chai & DebHousie Break ☕',
-    'Monsoon DebHousie Carnival 🌧️',
-    'Kitty Party DebHousie Bonanza 💃',
-    'Late Night DebHousie Chill 🌙',
-    'Festive DebHousie Extravaganza 🎈',
-    'Clubhouse DebHousie League 🏆',
+    'Super Sunday DabHousie Party 🌟',
+    'Office Chai & DabHousie Break ☕',
+    'Monsoon DabHousie Carnival 🌧️',
+    'Kitty Party DabHousie Bonanza 💃',
+    'Late Night DabHousie Chill 🌙',
+    'Festive DabHousie Extravaganza 🎈',
+    'Clubhouse DabHousie League 🏆',
   ];
 
   final _formKey = GlobalKey<FormState>();
@@ -99,10 +99,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Future<void> _handleShare(MptGame game) async {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play DebHousie in "${game.name}"!\n\n'
+    final text = '🎉 You are invited to play DabHousie in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap to join or download the app:\n$link';
-    await Share.share(text, subject: 'Join DebHousie: ${game.name}');
+    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
   void _showSuccessDialog(MptGame game) {
@@ -259,7 +259,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     controller: _nameController,
                     decoration: InputDecoration(
                       labelText: 'Game / Event Name',
-                      hintText: 'e.g. Diwali Party DebHousie',
+                      hintText: 'e.g. Diwali Party DabHousie',
                       prefixIcon: const Icon(Icons.celebration),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.casino_outlined, color: AppTheme.secondaryColor),
@@ -510,7 +510,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 Row(
                   children: [
                     Text(
-                      'DebHousie Game Setup',
+                      'DabHousie Game Setup',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,

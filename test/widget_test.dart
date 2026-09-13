@@ -21,14 +21,14 @@ void main() {
     expect(AppTheme.accentPartyPurple, const Color(0xFF8E44AD)); // Brand Purple
   });
 
-  test('DebHousie brand assets paths verification', () {
-    expect(AppAssets.horizontalLogo, contains('debhousie_horizontal_logo.png'));
-    expect(AppAssets.mainLogo, contains('debhousie_main_logo.png'));
-    expect(AppAssets.monogramDH, contains('debhousie_monogram_DH.png'));
-    expect(AppAssets.appIcon1024, contains('debhousie_app_icon_1024.png'));
-    expect(AppAssets.androidIcon512, contains('debhousie_android_icon_512.png'));
-    expect(AppAssets.iosIcon1024, contains('debhousie_ios_icon_1024.png'));
-    expect(AppAssets.favicon192, contains('debhousie_favicon_192.png'));
+  test('DabHousie brand assets paths verification', () {
+    expect(AppAssets.horizontalLogo, contains('dabhousie_horizontal_logo.png'));
+    expect(AppAssets.mainLogo, contains('dabhousie_main_logo.png'));
+    expect(AppAssets.monogramDH, contains('dabhousie_monogram_DH.png'));
+    expect(AppAssets.appIcon1024, contains('dabhousie_app_icon_1024.png'));
+    expect(AppAssets.androidIcon512, contains('dabhousie_android_icon_512.png'));
+    expect(AppAssets.iosIcon1024, contains('dabhousie_ios_icon_1024.png'));
+    expect(AppAssets.favicon192, contains('dabhousie_favicon_192.png'));
   });
 
   testWidgets('DashboardHeroSection renders eyebrow, headline, subhead, and trust badges', (tester) async {
@@ -72,7 +72,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Why DebHousie?'), findsOneWidget);
+    expect(find.text('Why DabHousie?'), findsOneWidget);
     expect(find.text('Fair Play, Guaranteed'), findsOneWidget);
     expect(find.text('100K+ Unique Tickets'), findsOneWidget);
     expect(find.text('Mega-X Enterprise Scale'), findsOneWidget);
@@ -109,7 +109,7 @@ void main() {
     expect(find.text('Play • Connect • Win'), findsOneWidget);
   });
 
-  testWidgets('OpeningScreen renders with DebHousie tagline and pulsing indicators', (tester) async {
+  testWidgets('OpeningScreen renders with DabHousie tagline and pulsing indicators', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.darkTheme,

@@ -237,7 +237,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const OrganizerPlayerSplit(),
             const SizedBox(height: 14),
 
-            // 3. USP Grid ("Why DebHousie?")
+            // 3. USP Grid ("Why DabHousie?")
             const UspGridSection(),
             const SizedBox(height: 14),
 
@@ -417,7 +417,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Enjoy DebHousie seamlessly in your web browser or download the native mobile apps.',
+            'Enjoy DabHousie seamlessly in your web browser or download the native mobile apps.',
             style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
           ),
           const SizedBox(height: 12),
@@ -680,7 +680,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final reg = filtered[idx];
                     final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                     final gameId = (reg['game_id'] ?? '').toString();
-                    final gameName = (gameData['name'] ?? 'DebHousie Game').toString();
+                    final gameName = (gameData['name'] ?? 'DabHousie Game').toString();
                     final gameStatus = (gameData['status'] ?? 'OPEN').toString();
                     final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
 
@@ -1227,7 +1227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text('DebHousie v1.0.4', style: TextStyle(fontSize: 10, color: Color(0xFF718096))),
+                const Text('DabHousie v1.0.4', style: TextStyle(fontSize: 10, color: Color(0xFF718096))),
               ],
             ),
           ),

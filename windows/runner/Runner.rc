@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.digitalappstudio.debhousie" "\0"
-            VALUE "FileDescription", "DebHousie" "\0"
+            VALUE "CompanyName", "com.digitalappstudio.dabhousie" "\0"
+            VALUE "FileDescription", "DabHousie" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "DebHousie" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.digitalappstudio.debhousie. All rights reserved." "\0"
-            VALUE "OriginalFilename", "debhousie.exe" "\0"
-            VALUE "ProductName", "DebHousie" "\0"
+            VALUE "InternalName", "DabHousie" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.digitalappstudio.dabhousie. All rights reserved." "\0"
+            VALUE "OriginalFilename", "dabhousie.exe" "\0"
+            VALUE "ProductName", "DabHousie" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

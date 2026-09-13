@@ -23,7 +23,7 @@ class CorporateInquiryDialog extends StatelessWidget {
     final uri = Uri(
       scheme: 'mailto',
       path: AppConfig.supportEmail,
-      query: 'subject=DebHousie Corporate & Mega-X Event Inquiry: $initialTopic&body=Hi DebHousie Team,%0D%0A%0D%0AI am interested in organizing a large event with the following requirements:%0D%0A- Event Type: $initialTopic%0D%0A- Expected Player Count: %0D%0A- Event Date: %0D%0A- Custom Requirements / Winning Patterns: %0D%0A%0D%0AThanks!',
+      query: 'subject=DabHousie Corporate & Mega-X Event Inquiry: $initialTopic&body=Hi DabHousie Team,%0D%0A%0D%0AI am interested in organizing a large event with the following requirements:%0D%0A- Event Type: $initialTopic%0D%0A- Expected Player Count: %0D%0A- Event Date: %0D%0A- Custom Requirements / Winning Patterns: %0D%0A%0D%0AThanks!',
     );
 
     try {
