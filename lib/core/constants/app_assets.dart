@@ -10,4 +10,11 @@ class AppAssets {
   static const String favicon192 = 'assets/branding/dabhousie_favicon_192.png';
   static const String brandIdentitySheet = 'assets/branding/dabhousie_brand_identity_sheet.png';
   static const String marketingBanner = 'assets/branding/dabhousie_marketing_banner.png';
+
+  // Game Balls
+  static const String ballGreen = 'assets/branding/game_balls/ball_green_256x256.png';
+  static const String ballNavy = 'assets/branding/game_balls/ball_navy_blue_256x256.png';
+  static const String ballPurple = 'assets/branding/game_balls/ball_purple_256x256.png';
+  static const String ballRed = 'assets/branding/game_balls/ball_red_256x256.png';
+  static const String ballYellow = 'assets/branding/game_balls/ball_yellow_256x256.png';
 }
