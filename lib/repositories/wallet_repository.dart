@@ -117,7 +117,9 @@ class WalletRepository {
     return 0;
   }
 
-  /// Fetches available capacity tiers
+  static List<MptCapacityTier> _cachedTiers = MptCapacityTier.defaultTiers;
+
+  /// Fetches available capacity tiers with instant fallback and in-memory cache
   Future<List<MptCapacityTier>> getCapacityTiers() async {
     try {
       final res = await _supabase
@@ -126,17 +128,17 @@ class WalletRepository {
           .eq('is_active', true)
           .order('display_order', ascending: true);
 
-      return (res as List).map((e) => MptCapacityTier.fromJson(e)).toList();
-    } catch (e) {
-      return [
-        MptCapacityTier(id: '1', name: 'Family Pack (1–5 Players)', minPlayers: 1, maxPlayers: 5, creditsRequired: 0),
-        MptCapacityTier(id: '2', name: 'Small Party (6–15 Players)', minPlayers: 6, maxPlayers: 15, creditsRequired: 50),
-        MptCapacityTier(id: '3', name: 'Standard Event (16–25 Players)', minPlayers: 16, maxPlayers: 25, creditsRequired: 100),
-        MptCapacityTier(id: '4', name: 'Large Gala (26–100 Players)', minPlayers: 26, maxPlayers: 100, creditsRequired: 250),
-        MptCapacityTier(id: '5', name: 'Mega Event (101–250 Players)', minPlayers: 101, maxPlayers: 250, creditsRequired: 500),
-      ];
+      final remoteTiers = (res as List).map((e) => MptCapacityTier.fromJson(e)).toList();
+      if (remoteTiers.isNotEmpty) {
+        _cachedTiers = remoteTiers;
+        return remoteTiers;
+      }
+    } catch (_) {
+      // Fallback to cache or defaults
     }
+    return _cachedTiers;
   }
+
 
   /// Launches external web checkout for purchasing credits
   Future<bool> launchWebPurchaseHandoff({String? adminEmail}) async {

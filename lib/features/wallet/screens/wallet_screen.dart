@@ -229,34 +229,33 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
   }
 
   Widget _buildPricingTiersSection(AsyncValue<List<MptCapacityTier>> tiersState) {
+    final tiers = tiersState.value ?? MptCapacityTier.defaultTiers;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Capacity Tiers & Credit Cost', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
-        tiersState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Text('Unable to load tiers'),
-          data: (tiers) => Column(
-            children: [
-              ...tiers.map((tier) {
-                return Card(
-                  color: AppTheme.darkSurface,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
-                    trailing: Text(
-                      tier.creditsRequired == 0 ? 'FREE (0 Credits)' : '${tier.creditsRequired} Credits',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
-                      ),
+        Column(
+          children: [
+            ...tiers.map((tier) {
+              return Card(
+                color: AppTheme.darkSurface,
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
+                  trailing: Text(
+                    tier.creditsRequired == 0 ? 'FREE (0 Credits)' : '${tier.creditsRequired} Credits',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
                     ),
                   ),
-                );
-              }),
+                ),
+              );
+            }),
+
               Card(
                 color: AppTheme.darkSurface,
                 margin: const EdgeInsets.only(bottom: 8),

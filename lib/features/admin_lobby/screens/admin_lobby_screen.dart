@@ -38,25 +38,28 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
-    final tiers = ref.read(capacityTiersProvider).value;
-    int creditsNeeded = 10;
-    if (tiers != null && tiers.isNotEmpty) {
+    final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
+    int creditsNeeded = 0;
+    if (tiers.isNotEmpty) {
       final matchingTier = tiers.firstWhere(
         (t) => (confirmedCount == 0 && t.minPlayers <= 1) || (confirmedCount > 0 && confirmedCount >= t.minPlayers && confirmedCount <= t.maxPlayers),
-        orElse: () => tiers.firstWhere((t) => t.maxPlayers >= confirmedCount, orElse: () => tiers.first),
+        orElse: () => tiers.firstWhere((t) => t.maxPlayers >= confirmedCount, orElse: () => tiers.last),
       );
       creditsNeeded = matchingTier.creditsRequired;
     } else {
-      creditsNeeded = confirmedCount <= 10
-          ? 10
-          : confirmedCount <= 25
-              ? 25
-              : confirmedCount <= 50
-                  ? 50
-                  : confirmedCount <= 100
-                      ? 100
-                      : 250;
+      creditsNeeded = confirmedCount <= 5
+          ? 0
+          : confirmedCount <= 15
+              ? 15
+              : confirmedCount <= 25
+                  ? 25
+                  : confirmedCount <= 50
+                      ? 50
+                      : confirmedCount <= 100
+                          ? 100
+                          : 250;
     }
+
 
     if (walletCredits < creditsNeeded) {
       _showInsufficientCreditsDialog(creditsNeeded, walletCredits);

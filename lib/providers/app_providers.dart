@@ -83,10 +83,35 @@ final creditTransactionsProvider = FutureProvider.autoDispose<List<MptCreditTran
   return ref.watch(walletRepositoryProvider).getTransactions();
 });
 
-// Capacity Tiers Provider
-final capacityTiersProvider = FutureProvider.autoDispose<List<MptCapacityTier>>((ref) async {
-  return ref.watch(walletRepositoryProvider).getCapacityTiers();
+// Capacity Tiers State Notifier (instant synchronous default load, 0ms latency)
+class CapacityTiersNotifier extends StateNotifier<AsyncValue<List<MptCapacityTier>>> {
+  final WalletRepository _walletRepo;
+
+  CapacityTiersNotifier(this._walletRepo)
+      : super(const AsyncValue.data(MptCapacityTier.defaultTiers)) {
+    loadTiers();
+  }
+
+  Future<void> loadTiers() async {
+    try {
+      final tiers = await _walletRepo.getCapacityTiers();
+      if (tiers.isNotEmpty && mounted) {
+        state = AsyncValue.data(tiers);
+      }
+    } catch (_) {
+      // Keep existing default data on error
+    }
+  }
+
+  Future<void> refresh() async {
+    await loadTiers();
+  }
+}
+
+final capacityTiersProvider = StateNotifierProvider<CapacityTiersNotifier, AsyncValue<List<MptCapacityTier>>>((ref) {
+  return CapacityTiersNotifier(ref.watch(walletRepositoryProvider));
 });
+
 
 // Live Game Stream Provider
 final gameStreamProvider = StreamProvider.autoDispose.family<MptGame, String>((ref, gameId) {

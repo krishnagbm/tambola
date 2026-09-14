@@ -36,7 +36,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   int _selectedCapacity = 5;
-  String? _selectedTierId;
+  String? _selectedTierId = 'tier_1_5';
   bool _isLoading = false;
 
   DateTime? _scheduledDateTime;
@@ -537,101 +537,91 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildCapacitySelector() {
     final tiersState = ref.watch(capacityTiersProvider);
+    final tiers = tiersState.value ?? MptCapacityTier.defaultTiers;
+    return _buildTiersList(tiers);
+  }
 
-    return tiersState.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(12),
-          child: CircularProgressIndicator(),
-        ),
-      ),
-      error: (_, __) => _buildStaticCapacityOptions(),
-      data: (tiers) {
-        if (tiers.isEmpty) return _buildStaticCapacityOptions();
+  Widget _buildTiersList(List<MptCapacityTier> tiers) {
+    if (tiers.isEmpty) return _buildStaticCapacityOptions();
 
-        // If not set yet, pick the first tier
-        if (_selectedTierId == null && tiers.isNotEmpty) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              setState(() {
-                _selectedTierId = tiers.first.id;
-                _selectedCapacity = tiers.first.maxPlayers;
-              });
-            }
-          });
-        }
+    // Default to the first tier if unset
+    if (_selectedTierId == null && tiers.isNotEmpty) {
+      _selectedTierId = tiers.first.id;
+      _selectedCapacity = tiers.first.maxPlayers;
+    }
 
-        return Column(
-          children: [
-            ...tiers.map((tier) {
-              final isSelected = _selectedTierId == tier.id || (_selectedTierId == null && _selectedCapacity == tier.maxPlayers);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: InkWell(
-                  onTap: () => setState(() {
-                    _selectedTierId = tier.id;
-                    _selectedCapacity = tier.maxPlayers;
-                  }),
+    return Column(
+      children: [
+        ...tiers.map((tier) {
+          final isSelected = _selectedTierId == tier.id ||
+              (_selectedTierId == null && _selectedCapacity == tier.maxPlayers) ||
+              (_selectedCapacity == tier.maxPlayers);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: InkWell(
+              onTap: () => setState(() {
+                _selectedTierId = tier.id;
+                _selectedCapacity = tier.maxPlayers;
+              }),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  border: Border.all(
+                    color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            Text(
-                              tier.creditsRequired == 0
-                                  ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
-                                  : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: tier.creditsRequired == 0 ? FontWeight.bold : FontWeight.normal,
-                                color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Radio<String>(
-                          value: tier.id,
-                          groupValue: _selectedTierId ?? tiers.first.id,
-                          activeColor: AppTheme.primaryColor,
-                          onChanged: (val) => setState(() {
-                            _selectedTierId = val;
-                            _selectedCapacity = tier.maxPlayers;
-                          }),
+                        Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(
+                          tier.creditsRequired == 0
+                              ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
+                              : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: tier.creditsRequired == 0 ? FontWeight.bold : FontWeight.normal,
+                            color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                          ),
                         ),
                       ],
                     ),
-                  ),
+                    Radio<String>(
+                      value: tier.id,
+                      groupValue: isSelected ? tier.id : null,
+                      activeColor: AppTheme.primaryColor,
+                      onChanged: (val) => setState(() {
+                        _selectedTierId = tier.id;
+                        _selectedCapacity = tier.maxPlayers;
+                      }),
+                    ),
+                  ],
                 ),
-              );
-            }),
-            const SizedBox(height: 4),
-            _buildMegaXCallout(),
-          ],
-        );
-      },
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 4),
+        _buildMegaXCallout(),
+      ],
     );
   }
 
   Widget _buildStaticCapacityOptions() {
     final options = [
       {'capacity': 5, 'label': '1–5 Players', 'desc': 'Family Pack • Always Free (0 Credits)'},
-      {'capacity': 15, 'label': '6–15 Players', 'desc': 'Small Party • 50 Credits'},
-      {'capacity': 25, 'label': '16–25 Players', 'desc': 'Standard Event • 100 Credits'},
-      {'capacity': 100, 'label': '26–100 Players', 'desc': 'Large Gala • 250 Credits'},
-      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 500 Credits'},
+      {'capacity': 15, 'label': '6–15 Players', 'desc': 'Small Party • 15 Credits'},
+      {'capacity': 25, 'label': '16–25 Players', 'desc': 'Medium Group • 25 Credits'},
+      {'capacity': 50, 'label': '26–50 Players', 'desc': 'Large Group • 50 Credits'},
+      {'capacity': 100, 'label': '51–100 Players', 'desc': 'Club Event • 100 Credits'},
+      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 250 Credits'},
     ];
 
     return Column(

@@ -1,6 +1,6 @@
 -- =====================================================================
--- Migration: 20260911000002_family_pack_and_adjusted_capacity_tiers.sql
--- Description: Update capacity tiers:
+-- Migration: 20260914000001_sync_custom_capacity_tiers.sql
+-- Description: Sets the exact 6 capacity tiers and credit costs:
 --              1. Family Pack (1–5 Players): Always Free (0 Credits)
 --              2. Small Party (6–15 Players): 15 Credits
 --              3. Medium Group (16–25 Players): 25 Credits
@@ -9,7 +9,6 @@
 --              6. Mega Event (101–250 Players): 250 Credits
 -- =====================================================================
 
--- Cleanly refresh the capacity tiers table with the updated tiers structure
 TRUNCATE TABLE public."MPT_capacity_tiers" CASCADE;
 
 INSERT INTO public."MPT_capacity_tiers" (name, min_players, max_players, credits_required, display_order, is_active)
@@ -20,4 +19,3 @@ VALUES
     ('Large Group (26–50 Players)', 26, 50, 50, 4, true),
     ('Club Event (51–100 Players)', 51, 100, 100, 5, true),
     ('Mega Event (101–250 Players)', 101, 250, 250, 6, true);
-
