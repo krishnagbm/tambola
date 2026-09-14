@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tambola/core/config/app_config.dart';
 import 'package:tambola/core/constants/app_assets.dart';
 import 'package:tambola/core/theme/app_theme.dart';
 import 'package:tambola/features/home/widgets/dashboard_footer.dart';
@@ -119,5 +120,16 @@ void main() {
 
     expect(find.text('Play • Connect • Win'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 400));
+  });
+
+  test('AppConfig and invite share links resolve to dabhousie.com', () async {
+    await AppConfig.initialize();
+    expect(AppConfig.appBaseUrl, equals('https://www.dabhousie.com'));
+    expect(AppConfig.supportEmail, equals('contact@dabhousie.com'));
+    expect(AppConfig.purchaseBaseUrl, equals('https://www.dabhousie.com/#/wallet'));
+
+    const testCode = 'DAB888';
+    final inviteLink = '${AppConfig.appBaseUrl}/#/join/$testCode';
+    expect(inviteLink, equals('https://www.dabhousie.com/#/join/DAB888'));
   });
 }
