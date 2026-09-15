@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../providers/app_providers.dart';
@@ -314,11 +316,59 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Legal Note
+              Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text(
+                      'By signing in, you agree to our ',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
+                    InkWell(
+                      onTap: () => _launchLegalUrl('${AppConfig.appBaseUrl}/terms-conditions.html'),
+                      child: const Text(
+                        'Terms',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.primaryColor,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      ' & ',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
+                    InkWell(
+                      onTap: () => _launchLegalUrl('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                      child: const Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.primaryColor,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _launchLegalUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Widget _buildGoogleGLogo() {
