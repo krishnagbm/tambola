@@ -88,6 +88,17 @@ class GameRepository {
         .eq('id', gameId);
   }
 
+  /// Cancels an open or scheduled game
+  Future<void> cancelGame(String gameId) async {
+    await _supabase
+        .from('MPT_games')
+        .update({
+          'status': 'CANCELLED',
+          'completed_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', gameId);
+  }
+
   /// Registers player with server-authoritative sequence & overflow capacity logic
   Future<MptRegistration> registerPlayer({
     required String gameId,

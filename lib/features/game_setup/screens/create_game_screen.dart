@@ -122,6 +122,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     }
   }
 
+  void _handleCopyLink(MptGame game) {
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Direct join link copied to clipboard!')),
+    );
+  }
+
   Future<void> _handleShare(MptGame game) async {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DabHousie in "${game.name}"!\n\n'
@@ -169,14 +177,19 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.copy, color: AppTheme.primaryLight),
-                        tooltip: 'Copy Code',
+                        icon: const Icon(Icons.copy, size: 18, color: AppTheme.primaryLight),
+                        tooltip: 'Copy Code Only',
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: game.inviteCode));
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Invite code copied to clipboard!')),
                           );
                         },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.link, size: 20, color: AppTheme.primaryLight),
+                        tooltip: 'Copy Direct Join Link',
+                        onPressed: () => _handleCopyLink(game),
                       ),
                       IconButton(
                         icon: const Icon(Icons.share, color: AppTheme.secondaryColor),
@@ -197,9 +210,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
         actions: [
           TextButton.icon(
+            onPressed: () => _handleCopyLink(game),
+            icon: const Icon(Icons.link, size: 16, color: AppTheme.primaryLight),
+            label: const Text('Copy Link', style: TextStyle(color: AppTheme.primaryLight)),
+          ),
+          TextButton.icon(
             onPressed: () => _handleShare(game),
             icon: const Icon(Icons.share, size: 16, color: AppTheme.secondaryColor),
-            label: const Text('Share Link', style: TextStyle(color: AppTheme.secondaryColor)),
+            label: const Text('Share Invite', style: TextStyle(color: AppTheme.secondaryColor)),
           ),
           ElevatedButton(
             onPressed: () {

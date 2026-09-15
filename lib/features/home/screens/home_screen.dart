@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
@@ -45,6 +47,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.invalidate(walletProvider);
     ref.invalidate(myHostedGamesProvider);
     ref.invalidate(myJoinedGamesProvider);
+  }
+
+  void _handleCopyLink(MptGame game) {
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Direct join link copied to clipboard!')),
+    );
+  }
+
+  Future<void> _handleShareInvite(MptGame game) async {
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
+        '🔑 Invite Code: ${game.inviteCode}\n\n'
+        '👉 Tap the link below to open the app or download it:\n$link';
+    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
+  }
+
+  Future<void> _handleCancelGameFromHome(MptGame game) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger),
+            SizedBox(width: 8),
+            Text('Cancel Event?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to cancel "${game.name}"?\n\n'
+          'This will close the lobby and deactivate the invite code (${game.inviteCode}). Any players currently in the waiting room will be notified. No credits will be charged.',
+          style: const TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Event'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Cancel Event'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).cancelGame(game.id);
+      ref.invalidate(myHostedGamesProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Game event cancelled successfully.'),
+          backgroundColor: AppTheme.accentSuccess,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to cancel event: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    }
   }
 
   @override
@@ -1078,7 +1154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final filtered = games.where((g) {
                   if (_organizerFilter == 'LIVE') return g.isInProgress;
                   if (_organizerFilter == 'LOBBY') return g.isLobbyOpen;
-                  if (_organizerFilter == 'COMPLETED') return g.isCompleted;
+                  if (_organizerFilter == 'COMPLETED') return g.isCompleted || g.isCancelled;
                   return true;
                 }).toList();
 
@@ -1111,21 +1187,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final game = filtered[idx];
                     final isLive = game.isInProgress;
                     final isLobby = game.isLobbyOpen;
+                    final isCancelled = game.isCancelled;
 
                     Color statusColor = isLive
-                        ? AppTheme.accentSuccess
+                        ? const Color(0xFF10B981)
                         : isLobby
-                            ? AppTheme.primaryLight
-                            : Colors.grey;
+                            ? const Color(0xFF38BDF8)
+                            : isCancelled
+                                ? const Color(0xFFEF4444)
+                                : const Color(0xFF94A3B8);
+
+                    Color statusBg = isLive
+                        ? const Color(0xFF10B981).withValues(alpha: 0.18)
+                        : isLobby
+                            ? const Color(0xFF0284C7).withValues(alpha: 0.22)
+                            : isCancelled
+                                ? const Color(0xFFEF4444).withValues(alpha: 0.18)
+                                : const Color(0xFF475569).withValues(alpha: 0.25);
 
                     String statusLabel = isLive
                         ? '🟢 LIVE'
                         : isLobby
-                            ? '🚪 LOBBY'
-                            : '🏁 COMPLETED';
+                            ? '🚪 LOBBY OPEN'
+                            : isCancelled
+                                ? '🚫 CANCELLED'
+                                : '🏁 CONCLUDED';
 
                     return Card(
-                      color: isLive ? AppTheme.accentSuccess.withOpacity(0.08) : AppTheme.darkSurface,
+                      color: isLive ? AppTheme.accentSuccess.withValues(alpha: 0.08) : AppTheme.darkSurface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
@@ -1149,15 +1238,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                                   decoration: BoxDecoration(
-                                    color: statusColor.withOpacity(0.15),
+                                    color: statusBg,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: statusColor.withOpacity(0.4)),
+                                    border: Border.all(color: statusColor.withValues(alpha: 0.6)),
                                   ),
                                   child: Text(
                                     statusLabel,
-                                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: statusColor),
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                                   ),
                                 ),
                               ],
@@ -1182,7 +1271,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 if (isLive) ...[
                                   ElevatedButton.icon(
                                     onPressed: () => context.push('/admin-control/${game.id}'),
-                                    icon: const Icon(Icons.play_circle_filled, size: 15),
+                                    icon: const Icon(Icons.play_circle_filled, size: 14),
                                     label: const Text('Live Controls'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.accentSuccess,
@@ -1193,20 +1282,84 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     ),
                                   ),
                                 ] else if (isLobby) ...[
-                                  ElevatedButton.icon(
-                                    onPressed: () => context.push('/admin-lobby/${game.id}'),
-                                    icon: const Icon(Icons.meeting_room, size: 15),
-                                    label: const Text('Lobby'),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                                      minimumSize: Size.zero,
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: () => context.push('/admin-lobby/${game.id}'),
+                                        icon: const Icon(Icons.meeting_room_outlined, size: 14),
+                                        label: const Text('Open Lobby'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.primaryLight,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                          textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                          minimumSize: Size.zero,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFFA0AEC0)),
+                                        tooltip: 'Event Options',
+                                        color: AppTheme.darkCard,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          side: const BorderSide(color: Color(0xFF2E334D)),
+                                        ),
+                                        onSelected: (val) {
+                                          if (val == 'copy') {
+                                            _handleCopyLink(game);
+                                          } else if (val == 'share') {
+                                            _handleShareInvite(game);
+                                          } else if (val == 'cancel') {
+                                            _handleCancelGameFromHome(game);
+                                          }
+                                        },
+                                        itemBuilder: (ctx) => [
+                                          const PopupMenuItem(
+                                            value: 'copy',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.link, size: 16, color: AppTheme.primaryLight),
+                                                SizedBox(width: 8),
+                                                Text('Copy Join Link', style: TextStyle(fontSize: 13)),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'share',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.share, size: 16, color: AppTheme.secondaryColor),
+                                                SizedBox(width: 8),
+                                                Text('Share Invite', style: TextStyle(fontSize: 13)),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuDivider(),
+                                          const PopupMenuItem(
+                                            value: 'cancel',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.cancel_outlined, size: 16, color: AppTheme.accentDanger),
+                                                SizedBox(width: 8),
+                                                Text('Cancel Event', style: TextStyle(fontSize: 13, color: AppTheme.accentDanger)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ] else if (isCancelled) ...[
+                                  const Text(
+                                    'Event Cancelled',
+                                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
                                   ),
                                 ] else ...[
                                   OutlinedButton.icon(
                                     onPressed: () => context.push('/live-display/${game.id}'),
-                                    icon: const Icon(Icons.tv, size: 15),
+                                    icon: const Icon(Icons.tv, size: 14),
                                     label: const Text('Results'),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

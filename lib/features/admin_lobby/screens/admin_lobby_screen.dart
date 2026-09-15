@@ -30,12 +30,85 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     }
   }
 
+  void _handleCopyLink(MptGame game) {
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Direct join link copied to clipboard!')),
+    );
+  }
+
   Future<void> _handleShareInvite(MptGame game) async {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
         '👉 Tap the link below to open the app or download it:\n$link';
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
+  }
+
+  Future<void> _handleCancelGame(MptGame game) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger),
+            SizedBox(width: 8),
+            Text('Cancel Event?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to cancel "${game.name}"?\n\n'
+          'This will close the lobby and deactivate the invite code (${game.inviteCode}). Any players currently in the lobby will be notified. No credits will be charged.',
+          style: const TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Event'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Yes, Cancel Event'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(gameRepositoryProvider).cancelGame(widget.gameId);
+      ref.invalidate(hostedGamesProvider);
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      ref.invalidate(registrationsStreamProvider(widget.gameId));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Game event cancelled successfully.'),
+          backgroundColor: AppTheme.accentSuccess,
+        ),
+      );
+      context.go('/');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to cancel event: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
   }
 
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
@@ -287,20 +360,65 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           ),
         ),
         data: (game) {
+          if (game.isCancelled) {
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.cancel_outlined, size: 64, color: AppTheme.accentDanger),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Event Cancelled',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'This game event ("${game.name}") has been cancelled by the host. The lobby and invite code are deactivated.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: _handleGoBack,
+                        icon: const Icon(Icons.home),
+                        label: const Text('Return to Home'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          foregroundColor: AppTheme.primaryDark,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+
           if (game.isInProgress) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.play_circle_outline, size: 56, color: AppTheme.accentSuccess),
-                  const SizedBox(height: 12),
-                  const Text('Game is already in progress!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.go('/admin-control/${widget.gameId}'),
-                    child: const Text('Open Game Controls & Number Caller'),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.play_circle_outline, size: 56, color: AppTheme.accentSuccess),
+                      const SizedBox(height: 12),
+                      const Text('Game is already in progress!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => context.go('/admin-control/${widget.gameId}'),
+                        child: const Text('Open Game Controls & Number Caller'),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             );
           }
@@ -313,27 +431,32 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
               final waiting = registrations.where((r) => r.isWaiting).toList();
               final walletCredits = walletState.value?.availableCredits ?? 0;
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildGameHeaderCard(game),
-                    const SizedBox(height: 16),
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildGameHeaderCard(game),
+                        const SizedBox(height: 16),
 
-                    _buildMetricsGrid(game, registrations.length, confirmed.length, waiting.length, walletCredits),
-                    const SizedBox(height: 16),
+                        _buildMetricsGrid(game, registrations.length, confirmed.length, waiting.length, walletCredits),
+                        const SizedBox(height: 16),
 
-                    if (waiting.isNotEmpty) ...[
-                      _buildCapacityWarningBanner(waiting.length),
-                      const SizedBox(height: 16),
-                    ],
+                        if (waiting.isNotEmpty) ...[
+                          _buildCapacityWarningBanner(waiting.length),
+                          const SizedBox(height: 16),
+                        ],
 
-                    _buildActionButtons(game, confirmed.length, waiting.length, walletCredits),
-                    const SizedBox(height: 24),
+                        _buildActionButtons(game, confirmed.length, waiting.length, walletCredits),
+                        const SizedBox(height: 24),
 
-                    _buildRegistrationsSection(registrations),
-                  ],
+                        _buildRegistrationsSection(registrations),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -454,8 +577,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.copy, size: 20, color: AppTheme.primaryLight),
-                    tooltip: 'Copy Code',
+                    icon: const Icon(Icons.copy, size: 18, color: AppTheme.primaryLight),
+                    tooltip: 'Copy Code Only',
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: game.inviteCode));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -464,8 +587,13 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                     },
                   ),
                   IconButton(
+                    icon: const Icon(Icons.link, size: 20, color: AppTheme.primaryLight),
+                    tooltip: 'Copy Direct Join Link',
+                    onPressed: () => _handleCopyLink(game),
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.share, size: 20, color: AppTheme.secondaryColor),
-                    tooltip: 'Share with WhatsApp/Telegram',
+                    tooltip: 'Share Invite',
                     onPressed: () => _handleShareInvite(game),
                   ),
                 ],
@@ -614,6 +742,16 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             label: const Text('+25 Seats Capacity'),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _isProcessing ? null : () => _handleCancelGame(game),
+          icon: const Icon(Icons.cancel_outlined, size: 18, color: AppTheme.accentDanger),
+          label: const Text('Cancel Event', style: TextStyle(color: AppTheme.accentDanger, fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppTheme.accentDanger),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
       ],
     );
   }

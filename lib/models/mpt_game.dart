@@ -39,6 +39,7 @@ class MptGame {
   bool get isLobbyOpen => isOpen;
   bool get isInProgress => status == 'IN_PROGRESS';
   bool get isCompleted => status == 'COMPLETED' || status == 'CLOSED';
+  bool get isCancelled => status == 'CANCELLED';
 
   factory MptGame.fromJson(Map<String, dynamic> json) {
     List<String> parsePrizes(dynamic val) {
