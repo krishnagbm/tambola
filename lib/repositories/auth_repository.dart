@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -18,6 +19,39 @@ class AuthRepository {
 
   /// Stream of Supabase auth state changes for real-time reactivity
   Stream<AuthState> get onAuthStateChange => _supabase.auth.onAuthStateChange;
+
+  String _getEffectiveRedirectUrl(String? customRedirect) {
+    if (customRedirect != null && customRedirect.isNotEmpty) {
+      return customRedirect;
+    }
+    if (kIsWeb) {
+      try {
+        final origin = Uri.base.origin;
+        if (origin.isNotEmpty && origin != 'null') {
+          return origin;
+        }
+      } catch (_) {}
+    }
+    return AppConfig.appBaseUrl;
+  }
+
+  /// Signs in or links with Google OAuth
+  Future<void> signInWithGoogle({String? redirectTo}) async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: _getEffectiveRedirectUrl(redirectTo),
+    );
+  }
+
+  /// Sends a magic sign-in link (OTP) to the given email
+  Future<void> signInWithEmail(String email, {String? redirectTo}) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) throw Exception('Please enter a valid email address');
+    await _supabase.auth.signInWithOtp(
+      email: cleanEmail,
+      emailRedirectTo: _getEffectiveRedirectUrl(redirectTo),
+    );
+  }
 
   /// Ensures an authentication session exists and syncs user profile
   Future<MptUser> initializeAuth() async {
@@ -126,24 +160,6 @@ class AuthRepository {
       isAnonymous: isAnon,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-    );
-  }
-
-  /// Signs in or links with Google OAuth
-  Future<void> signInWithGoogle({String? redirectTo}) async {
-    await _supabase.auth.signInWithOAuth(
-      OAuthProvider.google,
-      redirectTo: redirectTo ?? '${AppConfig.appBaseUrl}/#/',
-    );
-  }
-
-  /// Sends a magic sign-in link (OTP) to the given email
-  Future<void> signInWithEmail(String email, {String? redirectTo}) async {
-    final cleanEmail = email.trim();
-    if (cleanEmail.isEmpty) throw Exception('Please enter a valid email address');
-    await _supabase.auth.signInWithOtp(
-      email: cleanEmail,
-      emailRedirectTo: redirectTo ?? '${AppConfig.appBaseUrl}/#/',
     );
   }
 
