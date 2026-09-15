@@ -1,0 +1,10 @@
+# Robots.txt for DabHousie (https://www.dabhousie.com)
+User-agent: *
+Allow: /
+Allow: /privacy-policy.html
+Allow: /terms-conditions.html
+Allow: /sitemap.xml
+Allow: /google5312c9216a923b34.html
+
+# Sitemap Location
+Sitemap: https://www.dabhousie.com/sitemap.xml
