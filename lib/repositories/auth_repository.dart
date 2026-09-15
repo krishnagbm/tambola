@@ -102,12 +102,30 @@ class AuthRepository {
     final isAnon = user?.isAnonymous ?? true;
     final email = user?.email;
     final metadata = user?.userMetadata ?? {};
-    final googleName = metadata['full_name'] as String? ?? metadata['name'] as String?;
+    
+    String? resolvedName;
+    if (metadata['full_name'] is String) {
+      resolvedName = metadata['full_name'] as String;
+    } else if (metadata['full_name'] is Map) {
+      final nameMap = metadata['full_name'] as Map;
+      final first = nameMap['firstName'] ?? '';
+      final last = nameMap['lastName'] ?? '';
+      resolvedName = '$first $last'.trim();
+    } else if (metadata['name'] is String) {
+      resolvedName = metadata['name'] as String;
+    } else if (metadata['custom_claims'] is Map && (metadata['custom_claims'] as Map)['name'] is String) {
+      resolvedName = (metadata['custom_claims'] as Map)['name'] as String;
+    }
+
+    if ((resolvedName == null || resolvedName.isEmpty) && email != null && email.isNotEmpty) {
+      resolvedName = email.split('@').first;
+    }
+
     final avatarUrl = metadata['avatar_url'] as String? ?? metadata['picture'] as String?;
     final provider = user?.appMetadata['provider'] as String? ?? (isAnon ? 'anonymous' : 'email');
 
-    if (!isAnon && googleName != null && (cachedName == 'My Name' || cachedName.isEmpty)) {
-      cachedName = googleName;
+    if (!isAnon && resolvedName != null && resolvedName.isNotEmpty && (cachedName == 'My Name' || cachedName.isEmpty)) {
+      cachedName = resolvedName;
       await prefs.setString(_prefKeyName, cachedName);
     }
 
