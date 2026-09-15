@@ -39,7 +39,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
   int _selectedCapacity = 5;
-  String? _selectedTierId = 'tier_1_5';
+  String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
   bool _isLoading = false;
 
   DateTime? _scheduledDateTime;
@@ -86,10 +86,26 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       final activePrizes = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
       final gameRepo = ref.read(gameRepositoryProvider);
 
+      // Resolve tier UUID from loaded tiers
+      String? tierUuid = _selectedTierId;
+      final loadedTiers = ref.read(capacityTiersProvider).value;
+      if (loadedTiers != null && loadedTiers.isNotEmpty) {
+        final match = loadedTiers.firstWhere(
+          (t) => t.id == _selectedTierId || t.maxPlayers == _selectedCapacity,
+          orElse: () => loadedTiers.first,
+        );
+        tierUuid = match.id;
+      }
+      if (tierUuid != null &&
+          !RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+              .hasMatch(tierUuid)) {
+        tierUuid = null;
+      }
+
       final game = await gameRepo.createGame(
         name: _nameController.text.trim(),
         plannedCapacity: _selectedCapacity,
-        plannedCapacityTierId: _selectedTierId,
+        plannedCapacityTierId: tierUuid,
         scheduledAt: _scheduledDateTime,
         prizesConfig: activePrizes,
       );
@@ -243,6 +259,44 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ],
         ),
         actions: [
+          // Live Credit Balance chip
+          Consumer(
+            builder: (context, ref, _) {
+              final walletAsync = ref.watch(walletProvider);
+              final credits = walletAsync.value?.availableCredits ?? 0;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                child: InkWell(
+                  onTap: () => context.push('/wallet'),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 16),
+                        const SizedBox(width: 5),
+                        Text(
+                          '$credits C',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 4),
           TextButton.icon(
             onPressed: () => context.go('/'),
             icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
@@ -368,12 +422,43 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildGroupSizeSection() {
+    final walletAsync = ref.watch(walletProvider);
+    final availableCredits = walletAsync.value?.availableCredits ?? 0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Expected Group Size (Capacity)',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Expected Group Size (Capacity)',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.secondaryColor, size: 14),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Balance: $availableCredits Credits',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 6),
         const Text(

@@ -15,13 +15,21 @@ class GameRepository {
     DateTime? scheduledAt,
     List<String>? prizesConfig,
   }) async {
+    // Validate UUID format; pass null if not a valid UUID string
+    String? effectiveTierId = plannedCapacityTierId;
+    if (effectiveTierId != null &&
+        !RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+            .hasMatch(effectiveTierId)) {
+      effectiveTierId = null;
+    }
+
     try {
       final res = await _supabase.rpc('MPT_create_game', params: {
         'p_name': name,
         'p_planned_capacity': plannedCapacity,
         'p_scheduled_at': scheduledAt?.toIso8601String(),
         'p_prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
-        'p_planned_capacity_tier_id': plannedCapacityTierId,
+        'p_planned_capacity_tier_id': effectiveTierId,
       });
 
       if (res is Map<String, dynamic>) {
@@ -37,7 +45,7 @@ class GameRepository {
         'name': name,
         'invite_code': inviteCode,
         'status': 'OPEN',
-        'planned_capacity_tier_id': plannedCapacityTierId,
+        'planned_capacity_tier_id': effectiveTierId,
         'initial_funded_capacity': plannedCapacity,
         'funded_capacity': plannedCapacity,
         'scheduled_at': scheduledAt?.toIso8601String(),
