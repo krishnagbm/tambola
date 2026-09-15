@@ -43,6 +43,22 @@ class AuthRepository {
     );
   }
 
+  /// Signs in or links with Apple OAuth
+  Future<void> signInWithApple({String? redirectTo}) async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.apple,
+      redirectTo: _getEffectiveRedirectUrl(redirectTo),
+    );
+  }
+
+  /// Signs in or links with Microsoft (Azure) OAuth
+  Future<void> signInWithMicrosoft({String? redirectTo}) async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.azure,
+      redirectTo: _getEffectiveRedirectUrl(redirectTo),
+    );
+  }
+
   /// Sends a magic sign-in link (OTP) to the given email
   Future<void> signInWithEmail(String email, {String? redirectTo}) async {
     final cleanEmail = email.trim();

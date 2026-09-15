@@ -37,9 +37,14 @@ class AuthDialog extends ConsumerStatefulWidget {
 class _AuthDialogState extends ConsumerState<AuthDialog> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
+  String? _loadingProvider;
   bool _showEmailOption = false;
   String? _statusMessage;
   bool _isSuccess = false;
+
+  /// Control flag to reveal Apple and Microsoft buttons when ready.
+  /// Kept false for now per user request.
+  static const bool _showAppleAndMicrosoft = false;
 
   @override
   void dispose() {
@@ -47,15 +52,15 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     super.dispose();
   }
 
-  Future<void> _handleGoogleSignIn() async {
+  Future<void> _handleOAuthSignIn(String provider, Future<void> Function() signInAction) async {
     setState(() {
       _isLoading = true;
+      _loadingProvider = provider;
       _statusMessage = null;
     });
 
     try {
-      final authRepo = ref.read(authRepositoryProvider);
-      await authRepo.signInWithGoogle();
+      await signInAction();
       if (mounted) {
         Navigator.pop(context);
         widget.onAuthenticated?.call();
@@ -64,11 +69,27 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _statusMessage = 'Google Sign-In failed: $e';
+          _loadingProvider = null;
+          _statusMessage = '$provider sign-in failed: $e';
           _isSuccess = false;
         });
       }
     }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Google', () => authRepo.signInWithGoogle());
+  }
+
+  Future<void> _handleMicrosoftSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Microsoft', () => authRepo.signInWithMicrosoft());
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Apple', () => authRepo.signInWithApple());
   }
 
   Future<void> _handleEmailSignIn() async {
@@ -83,6 +104,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
 
     setState(() {
       _isLoading = true;
+      _loadingProvider = 'email';
       _statusMessage = null;
     });
 
@@ -92,6 +114,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _loadingProvider = null;
           _statusMessage = '✨ Magic link sent to $email! Please check your inbox.';
           _isSuccess = true;
         });
@@ -100,6 +123,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _loadingProvider = null;
           _statusMessage = 'Failed to send login link: $e';
           _isSuccess = false;
         });
@@ -200,40 +224,62 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                 const SizedBox(height: 18),
               ],
 
-              // Google Sign-In Button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleGoogleSignIn,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: const Color(0xFF1F2937),
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 2,
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1F2937)),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildGoogleGLogo(),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                        ],
+              // OAuth Buttons Section (PocketBull style)
+              if (_showAppleAndMicrosoft) ...[
+                // Multi-provider grid layout
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildOAuthButton(
+                        icon: const CustomPaint(
+                          size: Size(20, 20),
+                          painter: GoogleLogoPainter(),
+                        ),
+                        title: 'Google',
+                        subtitle: 'Gmail, Workspace',
+                        isLoading: _isLoading && _loadingProvider == 'Google',
+                        onTap: _isLoading ? null : _handleGoogleSignIn,
                       ),
-              ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _buildOAuthButton(
+                        icon: const CustomPaint(
+                          size: Size(20, 20),
+                          painter: MicrosoftLogoPainter(),
+                        ),
+                        title: 'Microsoft',
+                        subtitle: 'Outlook, Hotmail',
+                        isLoading: _isLoading && _loadingProvider == 'Microsoft',
+                        onTap: _isLoading ? null : _handleMicrosoftSignIn,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                _buildOAuthButton(
+                  icon: const CustomPaint(
+                    size: Size(20, 20),
+                    painter: AppleLogoPainter(),
+                  ),
+                  title: 'Apple',
+                  subtitle: 'iCloud, Apple ID',
+                  isLoading: _isLoading && _loadingProvider == 'Apple',
+                  onTap: _isLoading ? null : _handleAppleSignIn,
+                ),
+              ] else ...[
+                // Single prominent official Google Button
+                _buildOAuthButton(
+                  icon: const CustomPaint(
+                    size: Size(22, 22),
+                    painter: GoogleLogoPainter(),
+                  ),
+                  title: 'Google',
+                  subtitle: 'Continue with your Google Account',
+                  isLoading: _isLoading && _loadingProvider == 'Google',
+                  onTap: _isLoading ? null : _handleGoogleSignIn,
+                ),
+              ],
               const SizedBox(height: 16),
 
               // Divider
@@ -364,32 +410,215 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     );
   }
 
+  Widget _buildOAuthButton({
+    required Widget icon,
+    required String title,
+    required String subtitle,
+    required bool isLoading,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: const Color(0xFF0F172A),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: const Color(0xFF1E293B),
+        splashColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF2E334D), width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : icon,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: Color(0xFF64748B),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _launchLegalUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
+}
 
-  Widget _buildGoogleGLogo() {
-    return Container(
-      width: 22,
-      height: 22,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-      ),
-      child: Center(
-        child: Text(
-          'G',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'Roboto',
-            color: const Color(0xFF4285F4),
-          ),
-        ),
-      ),
-    );
+/// Official 4-color Google vector logo painter
+class GoogleLogoPainter extends CustomPainter {
+  const GoogleLogoPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 24.0;
+    canvas.scale(scale, scale);
+
+    // Blue (#4285F4)
+    final bluePaint = Paint()..color = const Color(0xFF4285F4)..style = PaintingStyle.fill;
+    final bluePath = Path()
+      ..moveTo(22.56, 12.25)
+      ..cubicTo(22.56, 11.47, 22.49, 10.72, 22.36, 10.0)
+      ..lineTo(12.0, 10.0)
+      ..lineTo(12.0, 14.26)
+      ..lineTo(17.92, 14.26)
+      ..cubicTo(17.66, 15.63, 16.88, 16.79, 15.71, 17.57)
+      ..lineTo(15.71, 20.34)
+      ..lineTo(19.28, 20.34)
+      ..cubicTo(21.36, 18.42, 22.56, 15.6, 22.56, 12.25)
+      ..close();
+    canvas.drawPath(bluePath, bluePaint);
+
+    // Green (#34A853)
+    final greenPaint = Paint()..color = const Color(0xFF34A853)..style = PaintingStyle.fill;
+    final greenPath = Path()
+      ..moveTo(12.0, 23.0)
+      ..cubicTo(14.97, 23.0, 17.46, 22.02, 19.28, 20.34)
+      ..lineTo(15.71, 17.57)
+      ..cubicTo(14.73, 18.23, 13.48, 18.63, 12.0, 18.63)
+      ..cubicTo(9.14, 18.63, 6.71, 16.7, 5.84, 14.1)
+      ..lineTo(2.18, 14.1)
+      ..lineTo(2.18, 16.94)
+      ..cubicTo(3.99, 20.53, 7.7, 23.0, 12.0, 23.0)
+      ..close();
+    canvas.drawPath(greenPath, greenPaint);
+
+    // Yellow (#FBBC05)
+    final yellowPaint = Paint()..color = const Color(0xFFFBBC05)..style = PaintingStyle.fill;
+    final yellowPath = Path()
+      ..moveTo(5.84, 14.09)
+      ..cubicTo(5.62, 13.43, 5.49, 12.73, 5.49, 12.0)
+      ..cubicTo(5.49, 11.27, 5.62, 10.57, 5.84, 9.91)
+      ..lineTo(5.84, 7.07)
+      ..lineTo(2.18, 7.07)
+      ..cubicTo(1.43, 8.55, 1.0, 10.22, 1.0, 12.0)
+      ..cubicTo(1.0, 13.78, 1.43, 15.45, 2.18, 16.93)
+      ..lineTo(5.84, 14.09)
+      ..close();
+    canvas.drawPath(yellowPath, yellowPaint);
+
+    // Red (#EA4335)
+    final redPaint = Paint()..color = const Color(0xFFEA4335)..style = PaintingStyle.fill;
+    final redPath = Path()
+      ..moveTo(12.0, 5.38)
+      ..cubicTo(13.62, 5.38, 15.06, 5.94, 16.21, 7.02)
+      ..lineTo(19.36, 3.87)
+      ..cubicTo(17.45, 2.09, 14.97, 1.0, 12.0, 1.0)
+      ..cubicTo(7.7, 1.0, 3.99, 3.47, 2.18, 7.07)
+      ..lineTo(5.84, 9.91)
+      ..cubicTo(6.71, 7.31, 9.14, 5.38, 12.0, 5.38)
+      ..close();
+    canvas.drawPath(redPath, redPaint);
   }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// Official Microsoft 4-square vector logo painter
+class MicrosoftLogoPainter extends CustomPainter {
+  const MicrosoftLogoPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 24.0;
+    canvas.scale(scale, scale);
+
+    canvas.drawRect(const Rect.fromLTWH(2, 2, 9.4, 9.4), Paint()..color = const Color(0xFFF25022));
+    canvas.drawRect(const Rect.fromLTWH(12.6, 2, 9.4, 9.4), Paint()..color = const Color(0xFF7FBA00));
+    canvas.drawRect(const Rect.fromLTWH(2, 12.6, 9.4, 9.4), Paint()..color = const Color(0xFF00A4EF));
+    canvas.drawRect(const Rect.fromLTWH(12.6, 12.6, 9.4, 9.4), Paint()..color = const Color(0xFFFFB900));
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// Official Apple monochrome vector logo painter
+class AppleLogoPainter extends CustomPainter {
+  const AppleLogoPainter({this.color = Colors.white});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 24.0;
+    canvas.scale(scale, scale);
+    final paint = Paint()..color = color..style = PaintingStyle.fill;
+
+    final path = Path()
+      ..moveTo(18.71, 19.5)
+      ..cubicTo(17.88, 20.74, 17.0, 21.95, 15.66, 21.97)
+      ..cubicTo(14.32, 22.0, 13.89, 21.18, 12.37, 21.18)
+      ..cubicTo(10.84, 21.18, 10.37, 21.95, 9.1, 22.0)
+      ..cubicTo(7.79, 22.05, 6.8, 20.68, 5.96, 19.47)
+      ..cubicTo(4.25, 17.0, 2.94, 12.45, 4.7, 9.39)
+      ..cubicTo(5.57, 7.87, 7.13, 6.91, 8.82, 6.88)
+      ..cubicTo(10.1, 6.86, 11.32, 7.75, 12.11, 7.75)
+      ..cubicTo(12.89, 7.75, 14.37, 6.68, 15.91, 6.84)
+      ..cubicTo(16.56, 6.87, 18.38, 7.1, 19.55, 8.82)
+      ..cubicTo(19.46, 8.88, 17.38, 10.1, 17.4, 12.63)
+      ..cubicTo(17.43, 15.65, 20.05, 16.66, 20.08, 16.67)
+      ..cubicTo(20.05, 16.74, 19.66, 18.11, 18.71, 19.5)
+      ..close()
+      ..moveTo(13.0, 3.5)
+      ..cubicTo(13.73, 2.67, 14.94, 2.04, 15.94, 2.0)
+      ..cubicTo(16.07, 3.17, 15.6, 4.35, 14.9, 5.19)
+      ..cubicTo(14.21, 6.04, 13.07, 6.7, 11.95, 6.61)
+      ..cubicTo(11.8, 5.46, 12.36, 4.26, 13.0, 3.5)
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
