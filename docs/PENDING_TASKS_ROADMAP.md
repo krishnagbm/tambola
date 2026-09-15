@@ -104,14 +104,15 @@ This document captures the remaining feature backlog, authentication integration
 
 | Task Area | Feature / Goal | Status |
 | :--- | :--- | :--- |
-| **Auth** | Google OAuth Implementation & Profile Sync | ✅ Completed (App Codebase) |
+| **Auth** | Google OAuth Implementation & Profile Sync | ✅ Completed & Live |
+| **Auth** | Google Cloud OAuth Branding & Privacy Approval | ✅ 100% Approved by Google |
 | **Auth** | Host Permission Guard (Registered Users Only) | ✅ Completed & Guarded |
-| **Auth** | Apple OAuth Sign-In (Services ID / Apple Key) | ⏳ Next in Queue |
+| **Auth** | Apple OAuth Sign-In (Services ID / Apple Key) | ⏳ Ready to Implement |
 | **Auth** | Frictionless Anonymous Joining for Players | ✅ Completed & Live |
 | **Capacity** | Instant 0ms Group Size Selector (6 Confirmed Tiers) | ✅ Completed & Live |
 | **Brand** | DabHousie Logo, Dark Mode UI & OpenGraph Preview | ✅ Completed & Live |
 | **Domain** | Custom Domain (`dabhousie.com`) Live on Amplify | ✅ Completed & Live |
-| **Payments** | Web Checkout Handoff & Edge Function Webhooks | ⏳ Backlog |
-| **Audio** | Sound Effects & Bingo Call Synthesizer | ⏳ Backlog |
+| **Payments** | Web Checkout Handoff & Edge Function Webhooks | ⏳ Ready to Plan |
+| **Audio** | Sound Effects & Bingo Call Synthesizer | ⏳ Ready to Plan |
 | **Patterns** | Custom Enterprise Winning Patterns | ⏳ Backlog |
 | **Mobile** | Native iOS & Android App Store Packaging | ⏳ Backlog |
