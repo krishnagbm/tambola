@@ -44,7 +44,7 @@ class DashboardHeroSection extends ConsumerWidget {
                   border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
                 ),
                 child: const Text(
-                  '🎉 Multiplayer Tambola, Housie & 90-Ball Bingo — Family, Kitty Parties & Events',
+                  '🎉 DabHousie — Live Tambola, Housie & 90-Ball Bingo',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Headline
               Text(
-                'Multiplayer Tambola, Housie & 90-Ball Bingo.\nAlways Free for Families, Built for Kitty Parties & Events.',
+                'DabHousie: Multiplayer Tambola & Housie.\nAlways Free for Families, Built for Kitty Parties & Events.',
                 style: TextStyle(
                   fontSize: isWide ? 24 : 19,
                   fontWeight: FontWeight.w900,
