@@ -47,6 +47,9 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
   /// Kept false for now per user request.
   static const bool _showAppleAndMicrosoft = false;
 
+  /// Control flag for email magic link. Disabled to avoid unbranded/junk email issues.
+  static const bool _enableEmailMagicLink = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -299,64 +302,65 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   onTap: _isLoading ? null : _handleGoogleSignIn,
                 ),
               ],
-              const SizedBox(height: 16),
+              if (_enableEmailMagicLink) ...[
+                const SizedBox(height: 16),
+                // Divider
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: Color(0xFF2E334D))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'OR',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500),
+                      ),
+                    ),
+                    const Expanded(child: Divider(color: Color(0xFF2E334D))),
+                  ],
+                ),
+                const SizedBox(height: 14),
 
-              // Divider
-              Row(
-                children: [
-                  const Expanded(child: Divider(color: Color(0xFF2E334D))),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500),
+                // Email Magic Link Toggle / Input
+                if (!_showEmailOption)
+                  OutlinedButton.icon(
+                    onPressed: () => setState(() => _showEmailOption = true),
+                    icon: const Icon(Icons.email_outlined, size: 18, color: AppTheme.secondaryColor),
+                    label: const Text('Sign in with Email Link', style: TextStyle(color: AppTheme.secondaryColor)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: Color(0xFF2E334D)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  )
+                else ...[
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Email Address',
+                      hintText: 'you@example.com',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.send_rounded, color: AppTheme.primaryColor),
+                        onPressed: _isLoading ? null : _handleEmailSignIn,
+                      ),
+                    ),
+                    onSubmitted: (_) => _handleEmailSignIn(),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _handleEmailSignIn,
+                    icon: const Icon(Icons.send_rounded, size: 16),
+                    label: const Text('Send Magic Link'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
-                  const Expanded(child: Divider(color: Color(0xFF2E334D))),
                 ],
-              ),
-              const SizedBox(height: 14),
-
-              // Email Magic Link Toggle / Input
-              if (!_showEmailOption)
-                OutlinedButton.icon(
-                  onPressed: () => setState(() => _showEmailOption = true),
-                  icon: const Icon(Icons.email_outlined, size: 18, color: AppTheme.secondaryColor),
-                  label: const Text('Sign in with Email Link', style: TextStyle(color: AppTheme.secondaryColor)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    side: const BorderSide(color: Color(0xFF2E334D)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                )
-              else ...[
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    hintText: 'you@example.com',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: AppTheme.primaryColor),
-                      onPressed: _isLoading ? null : _handleEmailSignIn,
-                    ),
-                  ),
-                  onSubmitted: (_) => _handleEmailSignIn(),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _handleEmailSignIn,
-                  icon: const Icon(Icons.send_rounded, size: 16),
-                  label: const Text('Send Magic Link'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
               ],
               const SizedBox(height: 20),
 

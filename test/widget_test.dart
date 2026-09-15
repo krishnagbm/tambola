@@ -85,7 +85,8 @@ void main() {
 
     expect(find.text('Sign in to Host & Schedule'), findsOneWidget);
     expect(find.text('Google'), findsOneWidget);
-    expect(find.text('Sign in with Email Link'), findsOneWidget);
+    expect(find.text('Terms'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.textContaining('Playing as a guest?'), findsOneWidget);
   });
 
