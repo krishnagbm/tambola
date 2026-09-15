@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
@@ -119,12 +120,30 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
           _isSuccess = true;
         });
       }
-    } catch (e) {
+    } on AuthException catch (e) {
       if (mounted) {
+        String msg = e.message;
+        if (msg.toLowerCase().contains('email logins are disabled') ||
+            e.statusCode == '422') {
+          msg = 'Email sign-in is disabled in Supabase. Please use Google Sign-In.';
+        }
         setState(() {
           _isLoading = false;
           _loadingProvider = null;
-          _statusMessage = 'Failed to send login link: $e';
+          _statusMessage = msg;
+          _isSuccess = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        var msg = e.toString().replaceFirst('Exception: ', '');
+        if (msg.toLowerCase().contains('email logins are disabled')) {
+          msg = 'Email sign-in is disabled in Supabase. Please use Google Sign-In.';
+        }
+        setState(() {
+          _isLoading = false;
+          _loadingProvider = null;
+          _statusMessage = msg;
           _isSuccess = false;
         });
       }
@@ -372,31 +391,51 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   children: [
                     const Text(
                       'By signing in, you agree to our ',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCBD5E1),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                     InkWell(
                       onTap: () => _launchLegalUrl('${AppConfig.appBaseUrl}/terms-conditions.html'),
-                      child: const Text(
-                        'Terms',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.primaryColor,
-                          decoration: TextDecoration.underline,
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                        child: Text(
+                          'Terms',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF60A5FA),
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFF60A5FA),
+                          ),
                         ),
                       ),
                     ),
                     const Text(
                       ' & ',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCBD5E1),
+                        fontWeight: FontWeight.w400,
+                      ),
                     ),
                     InkWell(
                       onTap: () => _launchLegalUrl('${AppConfig.appBaseUrl}/privacy-policy.html'),
-                      child: const Text(
-                        'Privacy Policy',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.primaryColor,
-                          decoration: TextDecoration.underline,
+                      borderRadius: BorderRadius.circular(4),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                        child: Text(
+                          'Privacy Policy',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF60A5FA),
+                            fontWeight: FontWeight.w600,
+                            decoration: TextDecoration.underline,
+                            decorationColor: Color(0xFF60A5FA),
+                          ),
                         ),
                       ),
                     ),

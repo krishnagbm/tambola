@@ -51,9 +51,10 @@ class DashboardFooter extends StatelessWidget {
                   child: const Text(
                     'Privacy Policy',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF94A3B8),
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
                       decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
                     ),
                   ),
                 ),
@@ -66,9 +67,10 @@ class DashboardFooter extends StatelessWidget {
                   child: const Text(
                     'Terms & Conditions',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF94A3B8),
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
                       decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
                     ),
                   ),
                 ),

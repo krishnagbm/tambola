@@ -1471,18 +1471,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
                       child: const Text(
                         'Privacy Policy',
-                        style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
+                        style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), decoration: TextDecoration.underline, decorationColor: Color(0xFFCBD5E1)),
                       ),
                     ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 6),
-                      child: Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 10.5)),
+                      child: Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                     ),
                     InkWell(
                       onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html'),
                       child: const Text(
                         'Terms & Conditions',
-                        style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
+                        style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), decoration: TextDecoration.underline, decorationColor: Color(0xFFCBD5E1)),
                       ),
                     ),
                   ],
