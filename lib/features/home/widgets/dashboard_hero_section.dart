@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_guard.dart';
 import 'corporate_inquiry_dialog.dart';
 
-class DashboardHeroSection extends StatelessWidget {
+class DashboardHeroSection extends ConsumerWidget {
   const DashboardHeroSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final isWide = constraints.maxWidth > 600;
@@ -83,7 +85,11 @@ class DashboardHeroSection extends StatelessWidget {
                     Expanded(
                       flex: 4,
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
+                        onPressed: () => AuthGuard.requireHostAuth(
+                          context,
+                          ref,
+                          () => context.push('/create-game'),
+                        ),
                         icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
                         label: const Text('Free Family Play', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
@@ -98,7 +104,11 @@ class DashboardHeroSection extends StatelessWidget {
                     Expanded(
                       flex: 3,
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
+                        onPressed: () => AuthGuard.requireHostAuth(
+                          context,
+                          ref,
+                          () => context.push('/create-game'),
+                        ),
                         icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
                         label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
@@ -130,7 +140,11 @@ class DashboardHeroSection extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
+                        onPressed: () => AuthGuard.requireHostAuth(
+                          context,
+                          ref,
+                          () => context.push('/create-game'),
+                        ),
                         icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
                         label: const Text('Free Family Play'),
                         style: ElevatedButton.styleFrom(
@@ -146,7 +160,11 @@ class DashboardHeroSection extends StatelessWidget {
                       children: [
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => context.push('/create-game'),
+                            onPressed: () => AuthGuard.requireHostAuth(
+                              context,
+                              ref,
+                              () => context.push('/create-game'),
+                            ),
                             icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
                             label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
                             style: ElevatedButton.styleFrom(

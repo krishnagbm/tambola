@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:tambola/models/mpt_game.dart';
 import 'package:tambola/models/mpt_registration.dart';
 import 'package:tambola/models/mpt_reward.dart';
@@ -7,8 +7,8 @@ import 'package:tambola/models/mpt_wallet.dart';
 
 void main() {
   group('Model Serialization & Logic', () {
-    test('MptUser serialization', () {
-      final user = MptUser(
+    test('MptUser serialization and registration status', () {
+      final anonymousUser = MptUser(
         id: 'u-123',
         displayName: 'Aarav',
         avatar: 'avatar_2',
@@ -17,13 +17,32 @@ void main() {
         updatedAt: DateTime.parse('2026-09-01T10:00:00Z'),
       );
 
-      final json = user.toJson();
+      expect(anonymousUser.isAnonymous, isTrue);
+      expect(anonymousUser.isRegistered, isFalse);
+      expect(anonymousUser.email, isNull);
+
+      final registeredUser = MptUser(
+        id: 'u-456',
+        displayName: 'Priya Sharma',
+        avatar: 'avatar_1',
+        isAnonymous: false,
+        email: 'priya@example.com',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/test-avatar',
+        provider: 'google',
+        createdAt: DateTime.parse('2026-09-01T10:00:00Z'),
+        updatedAt: DateTime.parse('2026-09-01T10:00:00Z'),
+      );
+
+      final json = registeredUser.toJson();
       final fromJson = MptUser.fromJson(json);
 
-      expect(fromJson.id, 'u-123');
-      expect(fromJson.displayName, 'Aarav');
-      expect(fromJson.avatar, 'avatar_2');
-      expect(fromJson.isAnonymous, isTrue);
+      expect(fromJson.id, 'u-456');
+      expect(fromJson.displayName, 'Priya Sharma');
+      expect(fromJson.isAnonymous, isFalse);
+      expect(fromJson.isRegistered, isTrue);
+      expect(fromJson.email, 'priya@example.com');
+      expect(fromJson.avatarUrl, 'https://lh3.googleusercontent.com/a/test-avatar');
+      expect(fromJson.provider, 'google');
     });
 
     test('MptGame state logic', () {

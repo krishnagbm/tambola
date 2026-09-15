@@ -5,10 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
+import '../../auth/widgets/auth_dialog.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 import '../widgets/dashboard_footer.dart';
 import '../widgets/dashboard_hero_section.dart';
@@ -51,6 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final walletState = ref.watch(walletProvider);
     final hostedGamesState = ref.watch(myHostedGamesProvider);
     final joinedGamesState = ref.watch(myJoinedGamesProvider);
+    final user = userState.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -107,20 +110,128 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             tooltip: 'Organizer Wallet',
             onPressed: () => context.push('/wallet'),
           ),
+          // User / Auth Action Button
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, left: 4),
+              child: user.isRegistered
+                  ? PopupMenuButton<String>(
+                      tooltip: 'Account Menu',
+                      offset: const Offset(0, 48),
+                      color: AppTheme.darkCard,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: const BorderSide(color: Color(0xFF2E334D)),
+                      ),
+                      icon: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
+                        backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                        child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
+                            ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 16))
+                            : null,
+                      ),
+                      itemBuilder: (ctx) => [
+                        PopupMenuItem(
+                          value: 'profile',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person, size: 18, color: AppTheme.secondaryColor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    if (user.email != null)
+                                      Text(user.email!, style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                          value: 'wallet',
+                          child: Row(
+                            children: [
+                              Icon(Icons.account_balance_wallet_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Organizer Wallet', style: TextStyle(fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'signout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout, size: 18, color: AppTheme.accentDanger),
+                              SizedBox(width: 8),
+                              Text('Sign Out', style: TextStyle(fontSize: 13, color: AppTheme.accentDanger)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (val) {
+                        if (val == 'profile') {
+                          setState(() => _currentTabIndex = 3);
+                        } else if (val == 'wallet') {
+                          context.push('/wallet');
+                        } else if (val == 'signout') {
+                          _handleSignOut();
+                        }
+                      },
+                    )
+                  : TextButton.icon(
+                      onPressed: () => AuthDialog.show(context),
+                      icon: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Center(
+                          child: Text(
+                            'G',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'Roboto',
+                              color: Color(0xFF4285F4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      label: const Text(
+                        'Sign In',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                    ),
+            ),
         ],
       ),
       body: userState.when(
         loading: () => const OpeningScreen(),
         error: (err, _) => Center(child: Text('Error: $err')),
-        data: (user) => RefreshIndicator(
+        data: (currentUser) => RefreshIndicator(
           onRefresh: () async => _refreshAll(),
           child: IndexedStack(
             index: _currentTabIndex,
             children: [
-              _buildDashboardTab(context, user, walletState, hostedGamesState, joinedGamesState),
+              _buildDashboardTab(context, currentUser, walletState, hostedGamesState, joinedGamesState),
               _buildPlayerTab(context, joinedGamesState),
-              _buildOrganizerTab(context, hostedGamesState, walletState),
-              _buildProfileTab(context, user, walletState),
+              _buildOrganizerTab(context, currentUser, hostedGamesState, walletState),
+              _buildProfileTab(context, currentUser, walletState),
             ],
           ),
         ),
@@ -266,6 +377,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildUserProfileStrip(BuildContext context, MptUser user, AsyncValue walletState) {
+    final isRegistered = user.isRegistered;
+    final hasAvatarUrl = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -277,8 +391,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           CircleAvatar(
             radius: 18,
-            backgroundColor: AppTheme.primaryLight.withOpacity(0.25),
-            child: Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 18)),
+            backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
+            backgroundImage: hasAvatarUrl ? NetworkImage(user.avatarUrl!) : null,
+            child: !hasAvatarUrl
+                ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 18))
+                : null,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -291,12 +408,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  user.isAnonymous ? 'Guest Player • Tap Profile to backup' : 'Verified Player',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0)),
+                  isRegistered
+                      ? (user.email != null ? '✓ ${user.email}' : '✓ Registered Account')
+                      : 'Guest Player • Sign in to save games',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: isRegistered ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                  ),
                 ),
               ],
             ),
           ),
+          if (!isRegistered) ...[
+            OutlinedButton.icon(
+              onPressed: () => AuthDialog.show(context),
+              icon: const Icon(Icons.login, size: 14, color: AppTheme.secondaryColor),
+              label: const Text('Sign In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
           InkWell(
             onTap: () => context.push('/wallet'),
             borderRadius: BorderRadius.circular(8),
@@ -801,7 +937,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // ==========================================
   // TAB 2: ORGANIZER HUB
   // ==========================================
-  Widget _buildOrganizerTab(BuildContext context, AsyncValue<List<MptGame>> hostedState, AsyncValue walletState) {
+  Widget _buildOrganizerTab(BuildContext context, MptUser user, AsyncValue<List<MptGame>> hostedState, AsyncValue walletState) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: _buildResponsiveContainer(
@@ -810,9 +946,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Create New Game Hero Button
+            // Create New Game Hero Button (Guarded)
             ElevatedButton.icon(
-              onPressed: () => context.push('/create-game'),
+              onPressed: () => AuthGuard.requireHostAuth(
+                context,
+                ref,
+                () => context.push('/create-game'),
+              ),
               icon: const Icon(Icons.add_circle, color: Colors.black, size: 20),
               label: const Text(
                 'Create New Game Event',
@@ -825,6 +965,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(height: 14),
+
+            if (!user.isRegistered) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 22),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Host & Organizer Authentication',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            'Sign in with Google to schedule games, manage tickets, and preserve organizer credits across devices.',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => AuthDialog.show(context, isHostContext: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                        minimumSize: Size.zero,
+                      ),
+                      child: const Text('Sign In'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
 
             // Organizer Wallet Preview Card
             _buildWalletPreviewCard(context, ref, walletState),
@@ -1055,7 +1240,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // TAB 3: PROFILE & SETTINGS
   // ==========================================
   Widget _buildProfileTab(BuildContext context, MptUser user, AsyncValue walletState) {
-    final isProtected = ref.read(authRepositoryProvider).isProtectedIdentity();
+    final isRegistered = user.isRegistered;
+    final hasAvatarUrl = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -1065,124 +1251,175 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-          // Profile Card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppTheme.primaryLight.withOpacity(0.25),
-                    child: Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 36)),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    user.displayName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: isProtected ? AppTheme.accentSuccess.withOpacity(0.2) : AppTheme.secondaryColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      isProtected ? '✓ Cloud Account Linked' : 'Guest Account',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isProtected ? AppTheme.accentSuccess : AppTheme.secondaryColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (_) => ProfileEditDialog(currentUser: user),
-                    ),
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Change Display Name & Avatar'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Social Sign-In / Account Protection Section
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppTheme.darkCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF2E334D)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
+            // Profile Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                    Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 22),
-                    SizedBox(width: 8),
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
+                      backgroundImage: hasAvatarUrl ? NetworkImage(user.avatarUrl!) : null,
+                      child: !hasAvatarUrl
+                          ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 36))
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
                     Text(
-                      'Account Backup & Social Sign-In',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                      user.displayName,
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Link your account with Google or Email to save your organizer credits, tickets, and game history across devices.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-                ),
-                const SizedBox(height: 16),
-
-                // Google Sign In Button
-                ElevatedButton.icon(
-                  onPressed: _isSigningIn ? null : _handleGoogleSignIn,
-                  icon: const Icon(Icons.g_mobiledata_rounded, size: 24, color: Colors.white),
-                  label: const Text('Continue with Google', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4285F4),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Email Sign In Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter email address',
-                          prefixIcon: Icon(Icons.email_outlined),
-                          isDense: true,
+                    if (user.email != null && user.email!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email!,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isRegistered
+                            ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                            : AppTheme.secondaryColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isRegistered
+                            ? '✓ Registered Account (${user.provider ?? "Google"})'
+                            : 'Guest Account',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isRegistered ? AppTheme.accentSuccess : AppTheme.secondaryColor,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: _isSigningIn ? null : _handleEmailSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      ),
-                      child: const Text('Send Link'),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => showDialog(
+                            context: context,
+                            builder: (_) => ProfileEditDialog(currentUser: user),
+                          ),
+                          icon: const Icon(Icons.edit, size: 16),
+                          label: const Text('Edit Display Name'),
+                        ),
+                        if (isRegistered)
+                          OutlinedButton.icon(
+                            onPressed: _handleSignOut,
+                            icon: const Icon(Icons.logout, size: 16, color: AppTheme.accentDanger),
+                            label: const Text('Sign Out', style: TextStyle(color: AppTheme.accentDanger)),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppTheme.accentDanger),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 20),
+
+            // Social Sign-In / Account Protection Section (Show when not registered)
+            if (!isRegistered) ...[
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 22),
+                        SizedBox(width: 8),
+                        Text(
+                          'Account Backup & Google Sign-In',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Link your account with Google or Email to save your organizer credits, tickets, and game history across devices.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Google Sign In Button
+                    ElevatedButton(
+                      onPressed: _isSigningIn ? null : _handleGoogleSignIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF1F2937),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isSigningIn
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  width: 22,
+                                  height: 22,
+                                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                  child: const Center(
+                                    child: Text(
+                                      'G',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF4285F4)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                const Text('Continue with Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                              ],
+                            ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Email Sign In Row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter email address',
+                              prefixIcon: Icon(Icons.email_outlined),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: _isSigningIn ? null : _handleEmailSignIn,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          ),
+                          child: const Text('Send Link'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
 
           // Wallet & Verification Shortcuts
           Card(
@@ -1413,6 +1650,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSigningIn = false);
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Sign Out?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Are you sure you want to sign out? You will return to a guest session, and will need to sign in again to host games.',
+          style: TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      _refreshAll();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signed out successfully. You are now in a guest session.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign out error: $e'), backgroundColor: AppTheme.accentDanger),
+      );
     }
   }
 

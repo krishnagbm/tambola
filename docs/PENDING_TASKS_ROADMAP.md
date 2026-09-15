@@ -104,8 +104,9 @@ This document captures the remaining feature backlog, authentication integration
 
 | Task Area | Feature / Goal | Status |
 | :--- | :--- | :--- |
-| **Auth** | Google & Apple OAuth Setup | ⏳ Ready for Implementation |
-| **Auth** | Host Permission Guard (Registered Users Only) | ⏳ Ready for Implementation |
+| **Auth** | Google OAuth Implementation & Profile Sync | ✅ Completed (App Codebase) |
+| **Auth** | Host Permission Guard (Registered Users Only) | ✅ Completed & Guarded |
+| **Auth** | Apple OAuth Sign-In (Services ID / Apple Key) | ⏳ Next in Queue |
 | **Auth** | Frictionless Anonymous Joining for Players | ✅ Completed & Live |
 | **Capacity** | Instant 0ms Group Size Selector (6 Confirmed Tiers) | ✅ Completed & Live |
 | **Brand** | DabHousie Logo, Dark Mode UI & OpenGraph Preview | ✅ Completed & Live |

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mpt_called_number.dart';
@@ -44,34 +45,62 @@ final rewardsRepositoryProvider = Provider<RewardsRepository>((ref) {
 // Current User State Notifier
 class CurrentUserNotifier extends StateNotifier<AsyncValue<MptUser>> {
   final AuthRepository _authRepo;
+  StreamSubscription<AuthState>? _authSubscription;
 
   CurrentUserNotifier(this._authRepo) : super(const AsyncValue.loading()) {
     init();
+    _authSubscription = _authRepo.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.signedIn ||
+          data.event == AuthChangeEvent.signedOut ||
+          data.event == AuthChangeEvent.userUpdated ||
+          data.event == AuthChangeEvent.tokenRefreshed) {
+        init();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> init() async {
-    state = const AsyncValue.loading();
     try {
       final user = await _authRepo.initializeAuth();
-      state = AsyncValue.data(user);
+      if (mounted) {
+        state = AsyncValue.data(user);
+      }
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (mounted) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
   Future<void> updateProfile({required String displayName, required String avatar}) async {
     try {
       final updated = await _authRepo.updateProfile(displayName: displayName, avatar: avatar);
-      state = AsyncValue.data(updated);
+      if (mounted) {
+        state = AsyncValue.data(updated);
+      }
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (mounted) {
+        state = AsyncValue.error(e, st);
+      }
     }
+  }
+
+  Future<void> signOut() async {
+    await _authRepo.signOut();
+    await init();
   }
 }
 
 final currentUserProvider = StateNotifierProvider<CurrentUserNotifier, AsyncValue<MptUser>>((ref) {
   return CurrentUserNotifier(ref.watch(authRepositoryProvider));
 });
+
 
 // Wallet Provider
 final walletProvider = FutureProvider.autoDispose<MptWallet>((ref) async {

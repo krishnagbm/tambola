@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tambola/core/config/app_config.dart';
 import 'package:tambola/core/constants/app_assets.dart';
 import 'package:tambola/core/theme/app_theme.dart';
+import 'package:tambola/features/auth/widgets/auth_dialog.dart';
 import 'package:tambola/features/home/widgets/dashboard_footer.dart';
 import 'package:tambola/features/home/widgets/dashboard_hero_section.dart';
 import 'package:tambola/features/home/widgets/how_it_works_section.dart';
@@ -34,9 +36,11 @@ void main() {
 
   testWidgets('DashboardHeroSection renders eyebrow, headline, subhead, and trust badges', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.darkTheme,
-        home: const Scaffold(body: DashboardHeroSection()),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const Scaffold(body: DashboardHeroSection()),
+        ),
       ),
     );
 
@@ -53,9 +57,11 @@ void main() {
 
   testWidgets('OrganizerPlayerSplit renders dual split cards', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.darkTheme,
-        home: const Scaffold(body: SingleChildScrollView(child: OrganizerPlayerSplit())),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const Scaffold(body: SingleChildScrollView(child: OrganizerPlayerSplit())),
+        ),
       ),
     );
 
@@ -63,6 +69,24 @@ void main() {
     expect(find.text('Got an Invite Code?'), findsOneWidget);
     expect(find.text('Create Your Game (Free 1–5) →'), findsOneWidget);
     expect(find.text('Join a Game →'), findsOneWidget);
+  });
+
+  testWidgets('AuthDialog renders in host context and standard context', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const Scaffold(
+            body: AuthDialog(isHostContext: true),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Sign in to Host & Schedule'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Sign in with Email Link'), findsOneWidget);
+    expect(find.textContaining('Playing as a guest?'), findsOneWidget);
   });
 
   testWidgets('UspGridSection renders all 6 proof-based cards', (tester) async {

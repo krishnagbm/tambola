@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_guard.dart';
 
-class OrganizerPlayerSplit extends StatelessWidget {
+class OrganizerPlayerSplit extends ConsumerWidget {
   const OrganizerPlayerSplit({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return LayoutBuilder(
       builder: (ctx, constraints) {
         final isWide = constraints.maxWidth > 580;
@@ -19,7 +21,11 @@ class OrganizerPlayerSplit extends StatelessWidget {
           title: 'Hosting a Family Night, Kitty Party, or Event?',
           description: 'Always free for 1–5 players (Family Pack), or host up to 250+ for kitty parties & corporate galas with automated prize verification.',
           ctaText: 'Create Your Game (Free 1–5) →',
-          onTap: () => context.push('/create-game'),
+          onTap: () => AuthGuard.requireHostAuth(
+            context,
+            ref,
+            () => context.push('/create-game'),
+          ),
           isPrimaryCta: true,
         );
 

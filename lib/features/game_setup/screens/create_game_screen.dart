@@ -6,9 +6,11 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_guard.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
+import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class CreateGameScreen extends ConsumerStatefulWidget {
@@ -71,6 +73,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Future<void> _handleCreate() async {
+    final user = ref.read(currentUserProvider).value;
+    if (user == null || !user.isRegistered) {
+      AuthGuard.requireHostAuth(context, ref, () => _handleCreate());
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -254,7 +262,52 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildBrandingHeader(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+
+                  if (ref.watch(currentUserProvider).value?.isRegistered != true) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 24),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Host Account Required',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                Text(
+                                  'Please sign in with Google or Email to create rooms, schedule parties, and manage player seats.',
+                                  style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            onPressed: () => AuthDialog.show(context, isHostContext: true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              minimumSize: Size.zero,
+                            ),
+                            child: const Text('Sign In'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   TextFormField(
                     controller: _nameController,
