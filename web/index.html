@@ -25,6 +25,26 @@
   <link rel="canonical" href="https://www.dabhousie.com/">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
+  <!-- Google tag (gtag.js) - Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-E46BLPH29F');
+
+    // Helper for tracking route changes in Flutter SPA
+    window.logPageView = function(pagePath, pageTitle) {
+      if (typeof gtag === 'function') {
+        gtag('event', 'page_view', {
+          page_path: pagePath,
+          page_title: pageTitle || document.title,
+          page_location: window.location.href
+        });
+      }
+    };
+  </script>
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
