@@ -114,93 +114,44 @@
       right: 0;
     }
   </style>
+  <!-- JSON-LD Structured Data for Google OAuth Verification & Search Crawlers -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "DabHousie",
+    "alternateName": "DabHousie: Live Tambola, Housie & 90-Ball Bingo",
+    "url": "https://www.dabhousie.com",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "All",
+    "description": "DabHousie is a modern social multiplayer entertainment platform created by Digital App Studio. Designed for family game nights, kitty parties, club gatherings, and corporate events, DabHousie makes it easy to host and play live 90-ball Tambola (also known as Housie or Indian Bingo) with digital cards, automated number calling, and server-side prize claim verification.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Digital App Studio",
+      "url": "https://www.dabhousie.com"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Free for family games up to 5 players"
+    }
+  }
+  </script>
+
   <style id="seo-landing-style">
-    .seo-landing-content {
+    /* Hidden behind Flutter Canvas so it never blocks the interactive Flutter App */
+    .seo-crawler-content {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      min-height: 100vh;
-      background-color: #0B1026;
-      color: #F8FAFC;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      padding: 40px 20px;
-      box-sizing: border-box;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-    }
-    .seo-container {
-      max-width: 800px;
-      width: 100%;
-      background: #151B38;
-      border: 1px solid #2E334D;
-      border-radius: 16px;
-      padding: 32px 28px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    }
-    .seo-logo {
-      font-size: 28px;
-      font-weight: 900;
-      color: #FFD700;
-      margin-bottom: 8px;
-      display: inline-block;
-      text-decoration: none;
-    }
-    .seo-heading {
-      font-size: 24px;
-      color: #FFFFFF;
-      margin-bottom: 12px;
-      font-weight: 800;
-    }
-    .seo-subhead {
-      font-size: 15px;
-      color: #CBD5E1;
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
-    .seo-features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin: 20px 0;
-    }
-    .seo-card {
-      background: #0B1026;
-      border: 1px solid #2E334D;
-      border-radius: 12px;
-      padding: 16px;
-    }
-    .seo-card h3 {
-      font-size: 15px;
-      color: #FFD700;
-      margin-bottom: 6px;
-    }
-    .seo-card p {
-      font-size: 13px;
-      color: #94A3B8;
-      line-height: 1.5;
-      margin: 0;
-    }
-    .seo-footer-links {
-      margin-top: 28px;
-      padding-top: 16px;
-      border-top: 1px solid #2E334D;
-      text-align: center;
-      font-size: 13px;
-      color: #94A3B8;
-    }
-    .seo-footer-links a {
-      color: #4895EF;
-      margin: 0 10px;
-      text-decoration: underline;
-    }
-    .seo-footer-links a:hover {
-      color: #FFD700;
+      z-index: -1;
+      opacity: 0.001;
+      pointer-events: none;
     }
   </style>
+
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
       document.getElementById("splash")?.remove();
@@ -208,50 +159,50 @@
       document.getElementById("app-landing-info")?.remove();
       document.body.style.background = "transparent";
     }
+
+    // Automatically remove any splash overlays when Flutter renders its first frame
+    window.addEventListener('flutter-first-frame', function() {
+      removeSplashFromWeb();
+    });
   </script>
 </head>
 <body>
-  <!-- Semantic App Identity and Purpose Description for Google OAuth Verification & SEO -->
-  <div id="app-landing-info" class="seo-landing-content">
-    <div class="seo-container">
-      <a href="https://www.dabhousie.com" class="seo-logo">🎉 DabHousie</a>
-      <h1 class="seo-heading">DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
-      <p class="seo-subhead">
+  <!-- Fallback for Web Crawlers & Bots (without JavaScript) -->
+  <noscript>
+    <div style="background:#0B1026; color:#F8FAFC; padding:40px 20px; font-family:sans-serif; max-width:800px; margin:0 auto;">
+      <h1 style="color:#FFD700; font-size:28px;">🎉 DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
+      <p style="font-size:16px; line-height:1.6; color:#CBD5E1;">
         <strong>DabHousie</strong> is a modern social multiplayer entertainment platform created by <strong>Digital App Studio</strong>. Designed for family game nights, kitty parties, club gatherings, and corporate events, DabHousie makes it easy to host and play live 90-ball Tambola (also known as Housie or Indian Bingo) with digital cards, automated number calling, and server-side prize claim verification.
       </p>
-
-      <div class="seo-features">
-        <div class="seo-card">
-          <h3>🎮 Zero-Friction Play</h3>
-          <p>Players and guests can join any live room instantly via invite link or room code with no registration required.</p>
-        </div>
-        <div class="seo-card">
-          <h3>🎙️ Host &amp; Schedule</h3>
-          <p>Organizers can sign in with Google to schedule game nights, host private parties, and manage player capacities.</p>
-        </div>
-        <div class="seo-card">
-          <h3>⚡ Automated Verification</h3>
-          <p>Instant server-side validation for Early Five, Lines, Four Corners, and Full House eliminates party disputes.</p>
-        </div>
-        <div class="seo-card">
-          <h3>👨‍👩‍👧‍👦 Free Family Fun</h3>
-          <p>Always 100% free for small family games up to 5 players with unlimited play and full feature access.</p>
-        </div>
-      </div>
-
-      <div class="seo-footer-links">
-        <a href="https://www.dabhousie.com">Home</a> •
-        <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a> •
-        <a href="https://www.dabhousie.com/terms-conditions.html">Terms &amp; Conditions</a>
-        <p style="margin-top: 10px; font-size: 12px; color: #64748B;">&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
-      </div>
+      <h2 style="color:#FFD700; font-size:20px; margin-top:20px;">Platform Features</h2>
+      <ul style="color:#CBD5E1; line-height:1.8;">
+        <li><strong>Zero-Friction Play:</strong> Guests and players join games instantly via invite links with no sign-up required.</li>
+        <li><strong>Host &amp; Schedule Parties:</strong> Organizers sign in with Google to schedule game nights, host private rooms, and manage ticket capacities.</li>
+        <li><strong>Automated Server Verification:</strong> Instant rule validation for Early Five, Lines, Four Corners, and Full House.</li>
+        <li><strong>Free Family Games:</strong> Permanently free for 1–5 players with full feature access.</li>
+      </ul>
+      <p style="margin-top:24px;">
+        <a href="https://www.dabhousie.com/privacy-policy.html" style="color:#4895EF;">Privacy Policy</a> • 
+        <a href="https://www.dabhousie.com/terms-conditions.html" style="color:#4895EF;">Terms &amp; Conditions</a>
+      </p>
+      <p style="font-size:12px; color:#64748B;">&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
     </div>
+  </noscript>
+
+  <!-- Crawler & Bot readable DOM container (positioned behind canvas so it never obstructs Flutter) -->
+  <div id="app-landing-info" class="seo-crawler-content" aria-hidden="true">
+    <h1>DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
+    <p>DabHousie is a modern social multiplayer entertainment platform created by Digital App Studio for hosting and playing live 90-ball Tambola with digital tickets, automated calling, and server prize verification.</p>
+    <p>Application Name: DabHousie</p>
+    <p>Developer: Digital App Studio</p>
+    <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a>
+    <a href="https://www.dabhousie.com/terms-conditions.html">Terms and Conditions</a>
   </div>
 
   <picture id="splash">
       <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
       <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo" style="display:none;">
+      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo">
   </picture>
   
   <script src="flutter_bootstrap.js" async=""></script>
