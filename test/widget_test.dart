@@ -85,9 +85,11 @@ void main() {
 
     expect(find.text('Sign in to Host & Schedule'), findsOneWidget);
     expect(find.text('Google'), findsOneWidget);
+    expect(find.text('Apple'), findsOneWidget);
     expect(find.text('Terms'), findsOneWidget);
     expect(find.text('Privacy Policy'), findsOneWidget);
     expect(find.textContaining('Playing as a guest?'), findsOneWidget);
+    expect(find.text('Join Game'), findsOneWidget);
   });
 
   testWidgets('UspGridSection renders all 6 proof-based cards', (tester) async {

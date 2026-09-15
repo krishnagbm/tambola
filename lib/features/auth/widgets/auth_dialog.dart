@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
@@ -43,9 +44,11 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
   String? _statusMessage;
   bool _isSuccess = false;
 
-  /// Control flag to reveal Apple and Microsoft buttons when ready.
-  /// Kept false for now per user request.
-  static const bool _showAppleAndMicrosoft = false;
+  /// Control flag to reveal Apple button.
+  static const bool _showApple = true;
+
+  /// Control flag to reveal Microsoft button.
+  static const bool _showMicrosoft = false;
 
   /// Control flag for email magic link. Disabled to avoid unbranded/junk email issues.
   static const bool _enableEmailMagicLink = false;
@@ -247,59 +250,40 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
               ],
 
               // OAuth Buttons Section (PocketBull style)
-              if (_showAppleAndMicrosoft) ...[
-                // Multi-provider grid layout
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildOAuthButton(
-                        icon: const CustomPaint(
-                          size: Size(20, 20),
-                          painter: GoogleLogoPainter(),
-                        ),
-                        title: 'Google',
-                        subtitle: 'Gmail, Workspace',
-                        isLoading: _isLoading && _loadingProvider == 'Google',
-                        onTap: _isLoading ? null : _handleGoogleSignIn,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildOAuthButton(
-                        icon: const CustomPaint(
-                          size: Size(20, 20),
-                          painter: MicrosoftLogoPainter(),
-                        ),
-                        title: 'Microsoft',
-                        subtitle: 'Outlook, Hotmail',
-                        isLoading: _isLoading && _loadingProvider == 'Microsoft',
-                        onTap: _isLoading ? null : _handleMicrosoftSignIn,
-                      ),
-                    ),
-                  ],
+              _buildOAuthButton(
+                icon: const CustomPaint(
+                  size: Size(22, 22),
+                  painter: GoogleLogoPainter(),
                 ),
+                title: 'Google',
+                subtitle: 'Continue with your Google Account',
+                isLoading: _isLoading && _loadingProvider == 'Google',
+                onTap: _isLoading ? null : _handleGoogleSignIn,
+              ),
+              if (_showApple) ...[
                 const SizedBox(height: 10),
                 _buildOAuthButton(
                   icon: const CustomPaint(
-                    size: Size(20, 20),
+                    size: Size(22, 22),
                     painter: AppleLogoPainter(),
                   ),
                   title: 'Apple',
-                  subtitle: 'iCloud, Apple ID',
+                  subtitle: 'Continue with your Apple ID',
                   isLoading: _isLoading && _loadingProvider == 'Apple',
                   onTap: _isLoading ? null : _handleAppleSignIn,
                 ),
-              ] else ...[
-                // Single prominent official Google Button
+              ],
+              if (_showMicrosoft) ...[
+                const SizedBox(height: 10),
                 _buildOAuthButton(
                   icon: const CustomPaint(
                     size: Size(22, 22),
-                    painter: GoogleLogoPainter(),
+                    painter: MicrosoftLogoPainter(),
                   ),
-                  title: 'Google',
-                  subtitle: 'Continue with your Google Account',
-                  isLoading: _isLoading && _loadingProvider == 'Google',
-                  onTap: _isLoading ? null : _handleGoogleSignIn,
+                  title: 'Microsoft',
+                  subtitle: 'Continue with Microsoft Account',
+                  isLoading: _isLoading && _loadingProvider == 'Microsoft',
+                  onTap: _isLoading ? null : _handleMicrosoftSignIn,
                 ),
               ],
               if (_enableEmailMagicLink) ...[
@@ -362,32 +346,9 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   ),
                 ],
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Guest Reassurance Callout
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkSurface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2E334D)),
-                ),
-                child: const Row(
-                  children: [
-                    Text('🎉', style: TextStyle(fontSize: 16)),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Playing as a guest? You can join and play games with invite links without signing in.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Legal Note
+              // Legal Note (Positioned above guest card)
               Center(
                 child: Wrap(
                   alignment: WrapAlignment.center,
@@ -444,6 +405,79 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Interactive Guest Reassurance & Direct Join Game Card
+              Material(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context, rootNavigator: true).pop();
+                    context.push('/join');
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  hoverColor: const Color(0xFF1E293B),
+                  splashColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF2E334D)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('🎉', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Playing as a guest?',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Join a game with an invite code without signing in.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFFA0AEC0),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Join Game',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 14,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],
