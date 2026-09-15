@@ -17,8 +17,14 @@ class AppConfig {
       // Local development may use .env, while hosted/CI builds use dart-define.
     }
 
-    supabaseUrl = _value('SUPABASE_URL', 'https://placeholder.supabase.co');
-    supabaseAnonKey = _value('SUPABASE_ANON_KEY', 'placeholder-key');
+    supabaseUrl = _value(
+      'SUPABASE_URL',
+      'https://itfcnurjrnyalauwwdkj.supabase.co',
+    );
+    supabaseAnonKey = _value(
+      'SUPABASE_ANON_KEY',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI',
+    );
     appBaseUrl = _value('APP_BASE_URL', 'https://www.dabhousie.com');
     supportEmail = _value('SUPPORT_EMAIL', 'contact@dabhousie.com');
     purchaseBaseUrl = _value(
