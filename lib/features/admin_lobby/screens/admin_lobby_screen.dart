@@ -86,7 +86,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     setState(() => _isProcessing = true);
     try {
       await ref.read(gameRepositoryProvider).cancelGame(widget.gameId);
-      ref.invalidate(hostedGamesProvider);
+      ref.invalidate(myHostedGamesProvider);
       ref.invalidate(gameStreamProvider(widget.gameId));
       ref.invalidate(registrationsStreamProvider(widget.gameId));
 
