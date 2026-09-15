@@ -41,6 +41,39 @@ class DashboardFooter extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                  child: const Text(
+                    'Privacy Policy',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF94A3B8),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                ),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html'),
+                  child: const Text(
+                    'Terms & Conditions',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF94A3B8),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

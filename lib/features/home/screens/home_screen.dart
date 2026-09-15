@@ -1463,7 +1463,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                      child: const Text(
+                        'Privacy Policy',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
+                      child: Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 10.5)),
+                    ),
+                    InkWell(
+                      onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html'),
+                      child: const Text(
+                        'Terms & Conditions',
+                        style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 const Text('DabHousie v1.0.4', style: TextStyle(fontSize: 10, color: Color(0xFF718096))),
               ],
             ),
