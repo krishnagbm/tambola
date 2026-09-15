@@ -1,0 +1,302 @@
+2026-09-14T22:51:54.824Z [INFO]: # Build environment configured with Standard build compute type: 8GiB Memory, 4vCPUs, 128GB Disk Space
+2026-09-14T22:51:55.281Z [INFO]: # Cloning repository: git@github.com:krishnagbm/tambola.git
+2026-09-14T22:51:57.167Z [INFO]: 
+2026-09-14T22:51:57.167Z [INFO]: Cloning into 'tambola'...
+2026-09-14T22:51:57.168Z [INFO]: # Switching to commit: 9cb6c292e5f4c6308c54e497dc4440e506a959cd
+2026-09-14T22:51:57.234Z [INFO]: Note: switching to '9cb6c292e5f4c6308c54e497dc4440e506a959cd'.
+                                 You are in 'detached HEAD' state. You can look around, make experimental
+                                 changes and commit them, and you can discard any commits you make in this
+                                 state without impacting any branches by switching back to a branch.
+                                 If you want to create a new branch to retain commits you create, you may
+                                 do so (now or later) by using -c with the switch command. Example:
+                                 git switch -c <new-branch-name>
+                                 Or undo this operation with:
+                                 git switch -
+                                 Turn off this advice by setting config variable advice.detachedHead to false
+                                 HEAD is now at 9cb6c29 fix(capacity): eliminate 5s load latency with instant default tiers cache and lock 6 custom credit tiers
+2026-09-14T22:51:57.297Z [INFO]: Successfully cleaned up Git credentials
+2026-09-14T22:51:57.298Z [INFO]: # Checking for Git submodules at: /codebuild/output/src1674860966/src/tambola/.gitmodules
+2026-09-14T22:51:57.302Z [INFO]: # Retrieving environment cache...
+2026-09-14T22:51:57.351Z [INFO]: # Retrieved environment cache
+2026-09-14T22:51:57.352Z [INFO]: ---- Setting Up SSM Secrets ----
+2026-09-14T22:51:57.352Z [INFO]: SSM params {"Path":"/amplify/d13l8s9a1nqce7/main/","WithDecryption":true}
+2026-09-14T22:51:57.395Z [WARNING]: !Failed to set up process.env.secrets
+2026-09-14T22:51:58.009Z [INFO]: # No package override configuration found.
+2026-09-14T22:51:58.092Z [INFO]: # Retrieving cache...
+2026-09-14T22:52:09.818Z [INFO]: # Extracting cache...
+2026-09-14T22:52:13.856Z [INFO]: # Extraction completed
+2026-09-14T22:52:14.025Z [INFO]: # Retrieved cache
+2026-09-14T22:52:18.254Z [INFO]: ## Starting Backend Build
+                                 ## Checking for associated backend environment...
+                                 ## No backend environment association found, continuing...
+                                 ## Completed Backend Build
+2026-09-14T22:52:18.259Z [INFO]: {"backendDuration": 0}
+                                 ## Starting Frontend Build
+                                 # Starting phase: preBuild
+                                 # Executing command: if [ ! -d "flutter-sdk" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter-sdk; fi
+                                 # Executing command: export PATH="$PATH:`pwd`/flutter-sdk/bin"
+                                 # Executing command: flutter doctor -v
+2026-09-14T22:52:22.885Z [INFO]: [✓] Flutter (Channel stable, 3.47.3, on Amazon Linux 2023.8.20250804 4.14.355-284.742.amzn2.x86_64, locale en_US) [24ms]
+2026-09-14T22:52:22.891Z [INFO]: • Flutter version 3.47.3 on channel stable at /codebuild/output/src1674860966/src/tambola/flutter-sdk
+                                 • Upstream repository https://github.com/flutter/flutter.git
+                                 • Framework revision e8113bf456 (10 days ago), 2026-09-04 13:20:08 -0700
+                                 • Engine revision 06a2e2a110
+                                 • Dart version 3.13.3
+                                 • DevTools version 2.60.0
+                                 • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-record-use, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+                                 [✗] Android toolchain - develop for Android devices [17ms]
+                                 ✗ Unable to locate Android SDK.
+                                 Install Android Studio from: https://developer.android.com/studio/index.html
+                                 On first launch it will assist you in installing the Android SDK components.
+                                 (or visit https://flutter.dev/to/linux-android-setup for detailed instructions).
+                                 If the Android SDK has been installed to a custom location, please use
+                                 `flutter config --android-sdk` to update to that location.
+                                 [✗] Chrome - develop for the web (Cannot find Chrome executable at google-chrome) [8ms]
+                                 ! Cannot find Chrome. Try setting CHROME_EXECUTABLE to a Chrome executable.
+2026-09-14T22:52:24.315Z [INFO]: [✗] Linux toolchain - develop for Linux desktop [1,442ms]
+2026-09-14T22:52:24.315Z [INFO]: ✗ clang++ is required for Linux development.
+                                 It is likely available from your distribution (e.g.: apt install clang), or can be downloaded from https://releases.llvm.org/
+                                 • cmake version 3.22.2
+                                 ✗ ninja is required for Linux development.
+                                 It is likely available from your distribution (e.g.: apt install ninja-build), or can be downloaded from https://github.com/ninja-build/ninja/releases
+                                 • pkg-config version 1.8.0
+                                 ! Unable to access driver information using 'eglinfo'.
+                                 It is likely available from your distribution (e.g.: apt install mesa-utils)
+                                 [✓] Connected device (1 available) [18ms]
+                                 • Linux (desktop) • linux • linux-x64 • Amazon Linux 2023.8.20250804 4.14.355-284.742.amzn2.x86_64
+                                 [✓] Network resources [244ms]
+                                 • All expected network resources are available.
+2026-09-14T22:52:24.315Z [INFO]: ! Doctor found issues in 3 categories.
+2026-09-14T22:52:24.320Z [INFO]: # Executing command: printf 'SUPABASE_URL=%s
+                                 SUPABASE_ANON_KEY=%s
+                                 APP_BASE_URL=%s
+                                 SUPPORT_EMAIL=%s
+                                 PURCHASE_ENABLED=%s
+                                 PURCHASE_BASE_URL=%s
+                                 APP_ENVIRONMENT=%s
+                                 ENABLE_MOCK_CREDITS=%s
+                                 ' "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "${APP_BASE_URL:-https://www.dabhousie.com}" "${SUPPORT_EMAIL:-contact@dabhousie.com}" "${PURCHASE_ENABLED:-true}" "${PURCHASE_BASE_URL:-https://www.dabhousie.com/#/wallet}" "${APP_ENVIRONMENT:-production}" "${ENABLE_MOCK_CREDITS:-true}" > .env
+2026-09-14T22:52:24.320Z [INFO]: # Completed phase: preBuild
+                                 # Starting phase: build
+                                 # Executing command: flutter pub get
+2026-09-14T22:52:24.456Z [INFO]: Resolving dependencies...
+2026-09-14T22:52:25.233Z [INFO]: Downloading packages...
+2026-09-14T22:52:27.598Z [INFO]: app_links 7.0.0 (7.2.1 available)
+                                 app_links_platform_interface 2.0.2 (2.0.4 available)
+                                 archive 4.2.0 (4.3.0 available)
+                                 > characters 1.4.1 (was 1.4.0)
+                                 clock 1.1.2 (1.1.3 available)
+                                 code_assets 1.2.1 (2.0.0 available)
+                                 flutter_dotenv 5.2.1 (6.0.1 available)
+                                 flutter_native_splash 2.4.7 (2.4.8 available)
+                                 flutter_riverpod 2.6.1 (3.4.3 available)
+                                 go_router 14.8.1 (18.0.1 available)
+                                 hooks 2.0.2 (2.2.0 available)
+                                 image 4.9.2 (4.10.1 available)
+                                 > matcher 0.12.20 (was 0.12.17)
+                                 > material_color_utilities 0.13.0 (was 0.11.1) (0.13.1 available)
+                                 > meta 1.19.0 (was 1.17.0)
+                                 objective_c 9.5.0 (9.6.0 available)
+                                 package_config 2.2.0 (3.0.0 available)
+                                 passkeys_platform_interface 2.9.0 (2.10.0 available)
+2026-09-14T22:52:27.602Z [INFO]: platform 3.1.6 (3.2.0 available)
+                                 qr 3.0.2 (4.0.0 available)
+                                 record_use 0.6.0 (1.1.1 available)
+                                 riverpod 2.6.1 (3.4.3 available)
+                                 share_plus 10.1.4 (13.3.0 available)
+                                 share_plus_platform_interface 5.0.2 (7.2.0 available)
+                                 shared_preferences_android 2.4.23 (2.4.28 available)
+                                 stack_trace 1.12.1 (1.12.2 available)
+                                 > test_api 0.7.12 (was 0.7.7) (0.7.14 available)
+                                 url_launcher_android 6.3.30 (6.3.33 available)
+                                 > vector_math 2.4.2 (was 2.2.0)
+                                 win32 5.15.0 (6.4.0 available)
+                                 xml 6.6.1 (7.0.1 available)
+                                 Changed 6 dependencies!
+                                 27 packages have newer versions incompatible with dependency constraints.
+                                 Try `flutter pub outdated` for more information.
+2026-09-14T22:52:27.749Z [INFO]: Upgrading analysis_options.yaml to exclude build and platform directories.
+2026-09-14T22:52:27.940Z [INFO]: # Executing command: flutter build web --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" --dart-define=APP_BASE_URL="${APP_BASE_URL:-https://www.dabhousie.com}" --dart-define=SUPPORT_EMAIL="${SUPPORT_EMAIL:-contact@dabhousie.com}" --dart-define=PURCHASE_ENABLED="${PURCHASE_ENABLED:-true}" --dart-define=PURCHASE_BASE_URL="${PURCHASE_BASE_URL:-https://www.dabhousie.com/#/wallet}" --dart-define=APP_ENVIRONMENT="${APP_ENVIRONMENT:-production}" --dart-define=ENABLE_MOCK_CREDITS="${ENABLE_MOCK_CREDITS:-true}"
+2026-09-14T22:52:28.396Z [INFO]: Compiling lib/main.dart for the Web...
+2026-09-14T22:53:08.319Z [INFO]: 
+2026-09-14T22:53:08.325Z [WARNING]: Wasm dry run failed:
+                                    Found incompatibilities with WebAssembly.
+                                    file:///root/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5/lib/flutter_tts_web.dart 104:23 - invalid_runtime_check_with_js_interop_types lint violation: Cast from 'JSAny?' to 'int' casts a JS interop value to a Dart type, which might not be platform-consistent. (8)
+                                    file:///root/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5/lib/flutter_tts_web.dart 105:21 - invalid_runtime_check_with_js_interop_types lint violation: Cast from 'JSAny?' to 'String' casts a JS interop value to a Dart type, which might not be platform-consistent. (8)
+                                    file:///root/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5/lib/flutter_tts_web.dart 107:21 - invalid_runtime_check_with_js_interop_types lint violation: Cast from 'JSAny?' to 'String' casts a JS interop value to a Dart type, which might not be platform-consistent. (8)
+                                    'record-use' is now enabled by default; this flag is no longer required.
+                                    'record-use' is now enabled by default; this flag is no longer required.
+                                    Use --no-wasm-dry-run to disable these warnings.
+2026-09-14T22:53:08.331Z [WARNING]: Target dart2js failed: ProcessException: Process exited abnormally with exit code 1:
+                                    lib/features/game_setup/screens/create_game_screen.dart:544:31:
+                                    Error: Type 'MptCapacityTier' not found.
+                                    Widget _buildTiersList(List<MptCapacityTier> tiers) {
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/admin_lobby/screens/admin_lobby_screen.dart:41:60:
+                                    Error: The getter 'MptCapacityTier' isn't defined for the type '_AdminLobbyScreenState'.
+                                    - '_AdminLobbyScreenState' is from 'package:tambola/features/admin_lobby/screens/admin_lobby_screen.dart' ('lib/features/admin_lobby/screens/admin_lobby_screen.dart').
+                                    final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:540:39:
+                                    Error: The getter 'MptCapacityTier' isn't defined for the type '_CreateGameScreenState'.
+                                    - '_CreateGameScreenState' is from 'package:tambola/features/game_setup/screens/create_game_screen.dart' ('lib/features/game_setup/screens/create_game_screen.dart').
+                                    final tiers = tiersState.value ?? MptCapacityTier.defaultTiers;
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:544:31:
+                                    Error: 'MptCapacityTier' isn't a type.
+                                    Widget _buildTiersList(List<MptCapacityTier> tiers) {
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:556:54:
+                                    Error: The getter 'id' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    final isSelected = _selectedTierId == tier.id ||
+                                    ^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:557:69:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    (_selectedTierId == null && _selectedCapacity == tier.maxPlayers) ||
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:558:42:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    (_selectedCapacity == tier.maxPlayers);
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:583:35:
+                                    Error: The getter 'name' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                    ^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:585:32:
+                                    Error: The getter 'creditsRequired' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    tier.creditsRequired == 0
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:586:41:
+                                    Error: The getter 'minPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:586:60:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:587:41:
+                                    Error: The getter 'minPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:587:60:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:587:89:
+                                    Error: The getter 'creditsRequired' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:590:46:
+                                    Error: The getter 'creditsRequired' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    fontWeight: tier.creditsRequired == 0 ? FontWeight.bold : FontWeight.normal,
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:591:41:
+                                    Error: The getter 'creditsRequired' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                                    ^^^^^^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:597:35:
+                                    Error: The getter 'id' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    value: tier.id,
+                                    ^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:598:53:
+                                    Error: The getter 'id' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    groupValue: isSelected ? tier.id : null,
+                                    ^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:601:48:
+                                    Error: The getter 'id' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    _selectedTierId = tier.id;
+                                    ^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:602:50:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    _selectedCapacity = tier.maxPlayers;
+                                    ^^^^^^^^^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:563:40:
+                                    Error: The getter 'id' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    _selectedTierId = tier.id;
+                                    ^^
+                                    lib/features/game_setup/screens/create_game_screen.dart:564:42:
+                                    Error: The getter 'maxPlayers' isn't defined for the type 'Object?'.
+                                    - 'Object' is from 'dart:core'.
+                                    _selectedCapacity = tier.maxPlayers;
+                                    ^^^^^^^^^^
+                                    lib/features/wallet/screens/wallet_screen.dart:285:9:
+                                    Error: Expected an identifier, but got ')'.
+                                    ),
+                                    ^
+                                    lib/features/wallet/screens/wallet_screen.dart:285:9:
+                                    Error: Expected ']' before this.
+                                    ),
+                                    ^
+                                    Error: Compilation failed.
+                                    Command: /codebuild/output/src1674860966/src/tambola/flutter-sdk/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/codebuild/output/src1674860966/src/tambola/flutter-sdk/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DSUPABASE_URL= -DSUPABASE_ANON_KEY= -DAPP_BASE_URL=https://www.dabhousie.com -DSUPPORT_EMAIL=contact@dabhousie.com -DPURCHASE_ENABLED=true -DPURCHASE_BASE_URL=https://www.dabhousie.com/#/wallet -DAPP_ENVIRONMENT=production -DENABLE_MOCK_CREDITS=true -DFLUTTER_BUILD_NAME=1.0.0 -DFLUTTER_BUILD_NUMBER=1 -DFLUTTER_VERSION=3.47.3 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=e8113bf456 -DFLUTTER_ENGINE_REVISION=06a2e2a110 -DFLUTTER_DART_VERSION=3.13.3 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/06a2e2a110089dff50fe635cffd2a61e1b24fbcd/ --write-resources --enable-experiment=record-use --native-null-assertions --no-source-maps -O4 --minify -o /codebuild/output/src1674860966/src/tambola/.dart_tool/flutter_build/d520a9cc3d318daff2f50d3364848ca9/app.dill --packages=/codebuild/output/src1674860966/src/tambola/.dart_tool/package_config.json --cfe-only /codebuild/output/src1674860966/src/tambola/.dart_tool/flutter_build/d520a9cc3d318daff2f50d3364848ca9/main.dart
+                                    #0      RunResult.throwException (package:flutter_tools/src/base/process.dart:153:5)
+                                    #1      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:379:19)
+                                    <asynchronous suspension>
+                                    #2      Dart2JSTarget.build (package:flutter_tools/src/build_system/targets/web.dart:225:5)
+                                    <asynchronous suspension>
+                                    #3      _BuildInstance._invokeInternal (package:flutter_tools/src/build_system/build_system.dart:937:9)
+                                    <asynchronous suspension>
+                                    #4      Future.wait.<anonymous closure> (dart:async/future.dart:567:21)
+                                    <asynchronous suspension>
+                                    #5      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:875:32)
+                                    <asynchronous suspension>
+                                    #6      Future.wait.<anonymous closure> (dart:async/future.dart:567:21)
+                                    <asynchronous suspension>
+                                    #7      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:875:32)
+                                    <asynchronous suspension>
+                                    #8      Future.wait.<anonymous closure> (dart:async/future.dart:567:21)
+                                    <asynchronous suspension>
+                                    #9      _BuildInstance.invokeTarget (package:flutter_tools/src/build_system/build_system.dart:875:32)
+                                    <asynchronous suspension>
+                                    #10     FlutterBuildSystem.build (package:flutter_tools/src/build_system/build_system.dart:684:16)
+                                    <asynchronous suspension>
+                                    #11     WebBuilder.buildWeb (package:flutter_tools/src/web/compile.dart:107:34)
+                                    <asynchronous suspension>
+                                    #12     BuildWebCommand.runCommand (package:flutter_tools/src/commands/build_web.dart:293:5)
+                                    <asynchronous suspension>
+                                    #13     FlutterCommand.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command.dart:1663:27)
+                                    <asynchronous suspension>
+                                    #14     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+                                    <asynchronous suspension>
+                                    #15     CommandRunner.runCommand (package:args/command_runner.dart:212:13)
+                                    <asynchronous suspension>
+                                    #16     FlutterCommandRunner.runCommand.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:496:9)
+                                    <asynchronous suspension>
+                                    #17     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+                                    <asynchronous suspension>
+                                    #18     FlutterCommandRunner.runCommand (package:flutter_tools/src/runner/flutter_command_runner.dart:431:5)
+                                    <asynchronous suspension>
+                                    #19     FlutterCommandRunner.run.<anonymous closure> (package:flutter_tools/src/runner/flutter_command_runner.dart:307:33)
+                                    <asynchronous suspension>
+                                    #20     run.<anonymous closure>.<anonymous closure> (package:flutter_tools/runner.dart:104:11)
+                                    <asynchronous suspension>
+                                    #21     AppContext.run.<anonymous closure> (package:flutter_tools/src/base/context.dart:154:19)
+                                    <asynchronous suspension>
+                                    #22     main (package:flutter_tools/executable.dart:103:3)
+                                    <asynchronous suspension>
+2026-09-14T22:53:08.333Z [INFO]: Compiling lib/main.dart for the Web...                             39.9s
+2026-09-14T22:53:08.333Z [WARNING]: Error: Failed to compile application for the Web.
+2026-09-14T22:53:08.399Z [ERROR]: !!! Build failed
+2026-09-14T22:53:08.399Z [ERROR]: !!! Error: Command failed with exit code 1
+2026-09-14T22:53:08.399Z [INFO]: # Starting environment caching...
+2026-09-14T22:53:08.399Z [INFO]: # Uploading environment cache artifact...
+2026-09-14T22:53:08.469Z [INFO]: # Uploaded environment cache artifact
+2026-09-14T22:53:08.469Z [INFO]: # Environment caching completed
+
