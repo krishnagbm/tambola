@@ -152,16 +152,6 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Image.asset(
-                      AppAssets.horizontalLogo,
-                      height: 48,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
                 const Text(
                   'Enter the 6-character invite code provided by your Game Organizer:',
                   style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
