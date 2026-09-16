@@ -214,7 +214,11 @@ class WalletRepository {
     final uri = Uri.parse(AppConfig.purchaseBaseUrl).replace(queryParameters: queryParams);
 
     if (await canLaunchUrl(uri)) {
-      return await launchUrl(uri, mode: LaunchMode.platformDefault);
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_self',
+      );
     }
     return false;
   }
