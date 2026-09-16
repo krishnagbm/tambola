@@ -142,7 +142,7 @@
     getQueryParams: getQueryParams,
   };
 
-  // Auto-bind click handlers to buttons with [data-plan]
+  // Auto-bind click handlers to buttons with [data-plan] and auto-trigger if plan in query
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-plan]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -151,5 +151,12 @@
         initiateCheckout(plan);
       });
     });
+
+    // Auto-initiate if plan and credentials are passed in query params
+    const qp = getQueryParams();
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('plan') && (qp.userId || qp.email)) {
+      initiateCheckout(urlParams.get('plan'));
+    }
   });
 })();
