@@ -898,6 +898,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     final isLive = gameStatus == 'IN_PROGRESS';
                     final isCompleted = gameStatus == 'COMPLETED';
+                    final isCancelled = gameStatus == 'CANCELLED';
                     final isConfirmed = seatStatus == 'CONFIRMED' || seatStatus == 'ELIGIBLE';
 
                     return Card(
@@ -907,9 +908,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: BorderSide(
                           color: isLive
                               ? AppTheme.accentSuccess
-                              : isCompleted
-                                  ? const Color(0xFF3B4163)
-                                  : const Color(0xFF2E334D),
+                              : isCancelled
+                                  ? AppTheme.accentDanger.withOpacity(0.5)
+                                  : isCompleted
+                                      ? const Color(0xFF3B4163)
+                                      : const Color(0xFF2E334D),
                           width: isLive ? 1.5 : 1,
                         ),
                       ),
@@ -935,29 +938,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         decoration: BoxDecoration(
                                           color: isLive
                                               ? AppTheme.accentSuccess.withOpacity(0.2)
-                                              : isCompleted
-                                                  ? const Color(0xFF718096).withOpacity(0.2)
-                                                  : Colors.black26,
+                                              : isCancelled
+                                                  ? AppTheme.accentDanger.withOpacity(0.2)
+                                                  : isCompleted
+                                                      ? const Color(0xFF718096).withOpacity(0.2)
+                                                      : Colors.black26,
                                           borderRadius: BorderRadius.circular(5),
                                         ),
                                         child: Text(
                                           isLive
                                               ? '🟢 LIVE'
-                                              : isCompleted
-                                                  ? '🏁 COMPLETED'
-                                                  : isConfirmed
-                                                      ? 'CONFIRMED'
-                                                      : 'WAITING',
+                                              : isCancelled
+                                                  ? '🚫 CANCELLED'
+                                                  : isCompleted
+                                                      ? '🏁 COMPLETED'
+                                                      : isConfirmed
+                                                          ? 'CONFIRMED'
+                                                          : 'WAITING',
                                           style: TextStyle(
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.bold,
                                             color: isLive
                                                 ? AppTheme.accentSuccess
-                                                : isCompleted
-                                                    ? const Color(0xFFA0AEC0)
-                                                    : isConfirmed
-                                                        ? AppTheme.primaryLight
-                                                        : AppTheme.accentWarning,
+                                                : isCancelled
+                                                    ? AppTheme.accentDanger
+                                                    : isCompleted
+                                                        ? const Color(0xFFA0AEC0)
+                                                        : isConfirmed
+                                                            ? AppTheme.primaryLight
+                                                            : AppTheme.accentWarning,
                                           ),
                                         ),
                                       ),
@@ -980,19 +989,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: isLive
                                     ? AppTheme.accentSuccess
-                                    : isCompleted
+                                    : isCancelled
                                         ? const Color(0xFF2E334D)
-                                        : AppTheme.primaryColor,
-                                foregroundColor: isCompleted ? AppTheme.secondaryColor : Colors.white,
+                                        : isCompleted
+                                            ? const Color(0xFF2E334D)
+                                            : AppTheme.primaryColor,
+                                foregroundColor: (isCompleted || isCancelled) ? AppTheme.secondaryColor : Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                                 textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
                               ),
                               child: Text(
                                 isLive
                                     ? 'Play Ticket'
-                                    : isCompleted
-                                        ? 'View Results'
-                                        : 'View Status',
+                                    : isCancelled
+                                        ? 'Cancelled'
+                                        : isCompleted
+                                            ? 'View Results'
+                                            : 'View Status',
                               ),
                             ),
                           ],

@@ -105,6 +105,14 @@ class GameRepository {
     required String displayName,
     required String avatar,
   }) async {
+    final game = await getGame(gameId);
+    if (game.isCancelled) {
+      throw Exception('This game event has been cancelled by the host.');
+    }
+    if (game.isCompleted) {
+      throw Exception('This game event has already concluded.');
+    }
+
     try {
       final res = await _supabase.rpc('MPT_register_player', params: {
         'p_game_id': gameId,

@@ -56,6 +56,32 @@ class RegistrationStatusScreen extends ConsumerWidget {
             data: (registrations) {
               final myReg = registrations.where((r) => r.userId == user?.id).firstOrNull;
 
+              if (game.isCancelled) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        game.name,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Invite Code: ${game.inviteCode}',
+                        style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                      _buildCancelledCard(context, myReg, game),
+                      const SizedBox(height: 20),
+                      _buildAdBannerSlot(isCancelled: true),
+                    ],
+                  ),
+                );
+              }
+
               if (myReg == null) {
                 return _buildNotRegisteredState(context);
               }
@@ -102,8 +128,10 @@ class RegistrationStatusScreen extends ConsumerWidget {
                     ],
                     const SizedBox(height: 20),
 
-                    // Unambiguous Status Card (Concluded vs Confirmed vs Waiting)
-                    if (game.isCompleted || game.status == 'COMPLETED') ...[
+                    // Unambiguous Status Card (Cancelled vs Concluded vs Confirmed vs Waiting)
+                    if (game.isCancelled) ...[
+                      _buildCancelledCard(context, myReg, game),
+                    ] else if (game.isCompleted || game.status == 'COMPLETED') ...[
                       _buildConcludedCard(context, myReg, game),
                     ] else if (myReg.isConfirmed) ...[
                       _buildConfirmedCard(context, myReg, game),
@@ -114,7 +142,10 @@ class RegistrationStatusScreen extends ConsumerWidget {
                     const SizedBox(height: 20),
 
                     // Sponsor / Ad Banner Slot (Item 3)
-                    _buildAdBannerSlot(isCompleted: game.isCompleted || game.status == 'COMPLETED'),
+                    _buildAdBannerSlot(
+                      isCompleted: game.isCompleted || game.status == 'COMPLETED',
+                      isCancelled: game.isCancelled,
+                    ),
                     const SizedBox(height: 20),
 
                     // Live Event Capacity Stats Card
@@ -138,7 +169,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildAdBannerSlot({bool isCompleted = false}) {
+  Widget _buildAdBannerSlot({bool isCompleted = false, bool isCancelled = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -163,17 +194,84 @@ class RegistrationStatusScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isCompleted ? 'Game Session Ended' : 'Event Sponsor / Game Tip',
+                  isCancelled
+                      ? 'Game Event Cancelled'
+                      : isCompleted
+                          ? 'Game Session Ended'
+                          : 'Event Sponsor / Game Tip',
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  isCompleted
-                      ? 'Thank you for playing! Any claimed prizes and vouchers are available in My Rewards.'
-                      : 'Stay on this screen! Your game ticket will automatically appear the moment the Organizer starts.',
+                  isCancelled
+                      ? 'This game is no longer active. You can browse and join other upcoming events from the Home screen.'
+                      : isCompleted
+                          ? 'Thank you for playing! Any claimed prizes and vouchers are available in My Rewards.'
+                          : 'Stay on this screen! Your game ticket will automatically appear the moment the Organizer starts.',
                   style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelledCard(BuildContext context, MptRegistration? reg, MptGame game) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.accentDanger.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.accentDanger, width: 2),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.accentDanger.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.cancel_outlined, size: 54, color: AppTheme.accentDanger),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'EVENT CANCELLED 🚫',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.accentDanger, letterSpacing: 0.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This game event ("${game.name}") has been cancelled by the Organizer.\nNo tickets will be issued for this room.',
+            style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1), height: 1.4),
+            textAlign: TextAlign.center,
+          ),
+          if (reg != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF2E334D)),
+              ),
+              child: Text(
+                'Registration #${reg.registrationSeq} Voided',
+                style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.home_outlined, size: 18),
+            label: const Text('Back to Home'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
         ],

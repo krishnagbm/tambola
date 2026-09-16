@@ -53,6 +53,16 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
       final game = await ref.read(gameRepositoryProvider).getGameByInviteCode(cleanCode);
       if (game == null) {
         setState(() => _errorMessage = 'Game not found. Please verify the invite code.');
+      } else if (game.isCancelled) {
+        setState(() {
+          _errorMessage = 'This game event ("${game.name}") was CANCELLED by the organizer and is no longer accepting players.';
+          _previewGame = null;
+        });
+      } else if (game.isCompleted) {
+        setState(() {
+          _errorMessage = 'This game event ("${game.name}") has already concluded.';
+          _previewGame = null;
+        });
       } else {
         setState(() => _previewGame = game);
       }
@@ -65,6 +75,15 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
 
   Future<void> _handleRegister() async {
     if (_previewGame == null) return;
+    if (_previewGame!.isCancelled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot register: This game has been cancelled.'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+      return;
+    }
     final user = ref.read(currentUserProvider).value;
     if (user == null) return;
 
