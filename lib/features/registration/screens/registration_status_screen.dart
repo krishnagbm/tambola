@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_game.dart';
@@ -20,12 +21,47 @@ class RegistrationStatusScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 64,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back to Home',
-          onPressed: () => context.go('/'),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
-        title: const Text('Registration Status'),
+        titleSpacing: 0,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              AppAssets.horizontalLogo,
+              height: 38,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
+              ),
+              child: const Text(
+                'Status',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -35,6 +71,12 @@ class RegistrationStatusScreen extends ConsumerWidget {
               ref.invalidate(registrationsStreamProvider(gameId));
             },
           ),
+          TextButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
+            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: gameStream.when(
@@ -50,119 +92,124 @@ class RegistrationStatusScreen extends ConsumerWidget {
             });
           }
 
-          return regStream.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error loading registration: $err')),
-            data: (registrations) {
-              final myReg = registrations.where((r) => r.userId == user?.id).firstOrNull;
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: regStream.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, _) => Center(child: Text('Error loading registration: $err')),
+                data: (registrations) {
+                  final myReg = registrations.where((r) => r.userId == user?.id).firstOrNull;
 
-              if (game.isCancelled) {
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        game.name,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                        textAlign: TextAlign.center,
+                  if (game.isCancelled) {
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            game.name,
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Invite Code: ${game.inviteCode}',
+                            style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          _buildCancelledCard(context, myReg, game),
+                          const SizedBox(height: 20),
+                          _buildAdBannerSlot(isCancelled: true),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Invite Code: ${game.inviteCode}',
-                        style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      _buildCancelledCard(context, myReg, game),
-                      const SizedBox(height: 20),
-                      _buildAdBannerSlot(isCancelled: true),
-                    ],
-                  ),
-                );
-              }
+                    );
+                  }
 
-              if (myReg == null) {
-                return _buildNotRegisteredState(context);
-              }
+                  if (myReg == null) {
+                    return _buildNotRegisteredState(context);
+                  }
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Header Game Info
-                    Text(
-                      game.name,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Invite Code: ${game.inviteCode}',
-                      style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (game.scheduledAt != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppTheme.primaryLight.withOpacity(0.4)),
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header Game Info
+                        Text(
+                          game.name,
+                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                          textAlign: TextAlign.center,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.access_time, size: 16, color: AppTheme.primaryLight),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Scheduled: ${Formatters.formatShortDate(game.scheduledAt!)}',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryLight),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Invite Code: ${game.inviteCode}',
+                          style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (game.scheduledAt != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.access_time, size: 16, color: AppTheme.primaryLight),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Scheduled: ${Formatters.formatShortDate(game.scheduledAt!)}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryLight),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+
+                        // Unambiguous Status Card (Cancelled vs Concluded vs Confirmed vs Waiting)
+                        if (game.isCancelled) ...[
+                          _buildCancelledCard(context, myReg, game),
+                        ] else if (game.isCompleted || game.status == 'COMPLETED') ...[
+                          _buildConcludedCard(context, myReg, game),
+                        ] else if (myReg.isConfirmed) ...[
+                          _buildConfirmedCard(context, myReg, game),
+                        ] else ...[
+                          _buildWaitingCard(context, myReg, game),
+                        ],
+
+                        const SizedBox(height: 20),
+
+                        // Sponsor / Ad Banner Slot (Item 3)
+                        _buildAdBannerSlot(
+                          isCompleted: game.isCompleted || game.status == 'COMPLETED',
+                          isCancelled: game.isCancelled,
                         ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                    // Unambiguous Status Card (Cancelled vs Concluded vs Confirmed vs Waiting)
-                    if (game.isCancelled) ...[
-                      _buildCancelledCard(context, myReg, game),
-                    ] else if (game.isCompleted || game.status == 'COMPLETED') ...[
-                      _buildConcludedCard(context, myReg, game),
-                    ] else if (myReg.isConfirmed) ...[
-                      _buildConfirmedCard(context, myReg, game),
-                    ] else ...[
-                      _buildWaitingCard(context, myReg, game),
-                    ],
+                        // Live Event Capacity Stats Card
+                        _buildCapacitySummary(game, registrations),
 
-                    const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                    // Sponsor / Ad Banner Slot (Item 3)
-                    _buildAdBannerSlot(
-                      isCompleted: game.isCompleted || game.status == 'COMPLETED',
-                      isCancelled: game.isCancelled,
+                        // Live Projector/Display Link
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/live-display/$gameId'),
+                          icon: const Icon(Icons.tv),
+                          label: Text(game.isCompleted ? 'View Final Board & Winners' : 'Open Live Display / Caller Screen'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-
-                    // Live Event Capacity Stats Card
-                    _buildCapacitySummary(game, registrations),
-
-                    const SizedBox(height: 20),
-
-                    // Live Projector/Display Link
-                    OutlinedButton.icon(
-                      onPressed: () => context.push('/live-display/$gameId'),
-                      icon: const Icon(Icons.tv),
-                      label: Text(game.isCompleted ? 'View Final Board & Winners' : 'Open Live Display / Caller Screen'),
-                    ),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           );
         },
       ),
