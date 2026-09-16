@@ -36,13 +36,143 @@
       flex-direction: column;
     }
 
-    header {
-      padding: 16px 32px;
+    /* Sticky Frozen App Top Header */
+    header.app-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 14, 23, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 12px 28px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
+      gap: 16px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-badge {
+      padding: 3px 8px;
+      background: rgba(29, 78, 216, 0.3);
+      border: 1px solid rgba(29, 78, 216, 0.6);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .balance-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 193, 7, 0.12);
+      border: 1px solid rgba(255, 193, 7, 0.35);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #121826;
+      border: 1px solid #1E293B;
+      padding: 5px 12px 5px 6px;
+      border-radius: 24px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(29, 78, 216, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .user-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-email {
+      font-size: 10.5px;
+      color: #94A3B8;
+      max-width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .signin-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(29, 78, 216, 0.25);
+      border: 1px solid rgba(29, 78, 216, 0.5);
+      color: #FFFFFF;
+      text-decoration: none;
+      font-size: 12.5px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .signin-pill:hover {
+      background: rgba(29, 78, 216, 0.45);
+    }
+
+    .signin-pill .g-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      background: #FFFFFF;
+      color: #4285F4;
+      border-radius: 50%;
+      font-weight: 900;
+      font-size: 10px;
+      font-family: Roboto, sans-serif;
     }
 
     .brand {
@@ -66,6 +196,9 @@
       border-radius: 8px;
       border: 1px solid var(--card-border);
       transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .back-btn:hover {
@@ -404,11 +537,41 @@
 </head>
 <body>
 
-  <header>
-    <a href="/#/" class="brand">
-      <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" onerror="this.onerror=null; this.src='assets/branding/dabhousie_horizontal_logo.png';">
-    </a>
-    <a href="/#/wallet" class="back-btn">← Back to App Wallet</a>
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <a href="/#/" class="brand">
+        <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" onerror="this.onerror=null; this.src='assets/branding/dabhousie_horizontal_logo.png';">
+      </a>
+      <span class="topbar-badge">Store</span>
+    </div>
+
+    <div class="topbar-right">
+      <!-- Live Wallet Balance Pill -->
+      <div id="topbar-balance" class="balance-pill" style="display: none;">
+        <span>🪙</span>
+        <span id="balance-amount">0</span>
+        <span style="font-size: 11px; opacity: 0.9;">Credits</span>
+      </div>
+
+      <!-- Logged-in User Profile Header Card -->
+      <div id="user-profile-menu" class="user-profile" style="display: none;">
+        <div class="user-avatar" id="avatar-container">🦁</div>
+        <div class="user-info">
+          <div class="user-name" id="user-display-name">Host</div>
+          <div class="user-email" id="user-display-email">user@example.com</div>
+        </div>
+      </div>
+
+      <!-- Guest Sign In Button -->
+      <a href="/#/" id="guest-signin-btn" class="signin-pill" style="display: none;">
+        <span class="g-icon">G</span> Sign In
+      </a>
+
+      <!-- Back to App Button -->
+      <a href="/#/wallet" class="back-btn">
+        <span>←</span> App Wallet
+      </a>
+    </div>
   </header>
 
   <section class="hero">

@@ -9,6 +9,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
 import '../../../providers/app_providers.dart';
+import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
@@ -21,193 +22,18 @@ class WalletScreen extends ConsumerStatefulWidget {
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
 
-  Future<void> _handleDirectPurchase(String plan) async {
-    AuthGuard.requireHostAuth(context, ref, () async {
-      setState(() => _isProcessing = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Row(
-            children: [
-              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-              SizedBox(width: 12),
-              Text('Connecting to Stripe Checkout...'),
-            ],
-          ),
-          duration: Duration(seconds: 4),
-        ),
-      );
-
-      try {
-        final success = await ref.read(walletRepositoryProvider).startDirectStripeCheckout(plan: plan);
-        if (!success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Could not open Stripe checkout. Please try again or open ${AppConfig.purchaseBaseUrl}'),
-              backgroundColor: AppTheme.accentWarning,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Checkout Error: $e'), backgroundColor: AppTheme.accentDanger),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isProcessing = false);
-      }
-    });
-  }
-
-  void _showPurchasePacksDialog() {
+  void _openPricingPage() {
     AuthGuard.requireHostAuth(context, ref, () {
-      showModalBottomSheet(
-        context: context,
-        backgroundColor: AppTheme.darkCard,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (ctx) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Select Credit Pack',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70),
-                      onPressed: () => Navigator.of(ctx).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Choose a pack to open secure Stripe Hosted Checkout:',
-                  style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
-                ),
-                const SizedBox(height: 16),
-                _buildPackTile(
-                  title: 'Starter Pack',
-                  credits: '+50 Credits',
-                  price: '\$5',
-                  plan: 'starter',
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _handleDirectPurchase('starter');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildPackTile(
-                  title: 'Family & Party Pack',
-                  credits: '+150 Credits',
-                  price: '\$12',
-                  plan: 'family',
-                  isFeatured: true,
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _handleDirectPurchase('family');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildPackTile(
-                  title: 'Pro Host Pack',
-                  credits: '+300 Credits',
-                  price: '\$20',
-                  plan: 'pro',
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _handleDirectPurchase('pro');
-                  },
-                ),
-                const SizedBox(height: 8),
-                _buildPackTile(
-                  title: 'Mega Gala Pack',
-                  credits: '+750 Credits',
-                  price: '\$45',
-                  plan: 'mega',
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _handleDirectPurchase('mega');
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    ref.read(walletRepositoryProvider).launchWebPurchaseHandoff();
-                  },
-                  child: const Text('View Full Web Store →', style: TextStyle(color: AppTheme.secondaryColor)),
-                ),
-              ],
-            ),
-          );
-        },
+      final user = ref.read(currentUserProvider).value;
+      final wallet = ref.read(walletProvider).value;
+      ref.read(walletRepositoryProvider).launchWebPurchaseHandoff(
+        userId: user?.id,
+        adminEmail: user?.email,
+        displayName: user?.displayName,
+        avatar: user?.avatar,
+        balance: wallet?.availableCredits,
       );
     });
-  }
-
-  Widget _buildPackTile({
-    required String title,
-    required String credits,
-    required String price,
-    required String plan,
-    required VoidCallback onTap,
-    bool isFeatured = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isFeatured ? AppTheme.secondaryColor.withValues(alpha: 0.12) : AppTheme.darkSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isFeatured ? AppTheme.secondaryColor : Colors.white12,
-            width: isFeatured ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
-                      if (isFeatured) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppTheme.secondaryColor,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text('Popular', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(credits, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess)),
-                ],
-              ),
-            ),
-            Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _handleAddMockCredits(int amount) async {
@@ -232,8 +58,88 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
   }
 
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Sign Out?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Are you sure you want to sign out? You will return to a guest session, and will need to sign in again to host games.',
+          style: TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await ref.read(authRepositoryProvider).signOut();
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(walletProvider);
+      ref.invalidate(creditTransactionsProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Signed out successfully. You are now in a guest session.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign out error: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  static String _getAvatarEmoji(String avatarKey) {
+    switch (avatarKey) {
+      case 'avatar_lion':
+        return '🦁';
+      case 'avatar_tiger':
+        return '🐯';
+      case 'avatar_crown':
+        return '👑';
+      case 'avatar_wizard':
+        return '🧙';
+      case 'avatar_rocket':
+        return '🚀';
+      case 'avatar_fox':
+        return '🦊';
+      case 'avatar_panda':
+        return '🐼';
+      case 'avatar_unicorn':
+        return '🦄';
+      case 'avatar_cowboy':
+        return '🤠';
+      case 'avatar_star':
+        return '🌟';
+      case 'avatar_bullseye':
+        return '🎯';
+      case 'avatar_rocker':
+        return '🎸';
+      default:
+        return '🦁';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(currentUserProvider);
+    final user = userState.value;
     final walletState = ref.watch(walletProvider);
     final tiersState = ref.watch(capacityTiersProvider);
 
@@ -287,6 +193,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             onPressed: () {
               ref.invalidate(walletProvider);
               ref.invalidate(creditTransactionsProvider);
+              ref.invalidate(currentUserProvider);
             },
           ),
           TextButton.icon(
@@ -294,7 +201,113 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
             label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
           ),
-          const SizedBox(width: 8),
+          // User / Auth Action Button
+          if (user != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8, left: 4),
+              child: user.isRegistered
+                  ? PopupMenuButton<String>(
+                      tooltip: 'Account Menu',
+                      offset: const Offset(0, 48),
+                      color: AppTheme.darkCard,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: const BorderSide(color: Color(0xFF2E334D)),
+                      ),
+                      icon: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
+                        backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                        child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
+                            ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 16))
+                            : null,
+                      ),
+                      itemBuilder: (ctx) => [
+                        PopupMenuItem(
+                          value: 'profile',
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person, size: 18, color: AppTheme.secondaryColor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    if (user.email != null)
+                                      Text(user.email!, style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                          value: 'home',
+                          child: Row(
+                            children: [
+                              Icon(Icons.dashboard_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Dashboard', style: TextStyle(fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'signout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout, size: 18, color: AppTheme.accentDanger),
+                              SizedBox(width: 8),
+                              Text('Sign Out', style: TextStyle(fontSize: 13, color: AppTheme.accentDanger)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (val) {
+                        if (val == 'profile' || val == 'home') {
+                          context.go('/');
+                        } else if (val == 'signout') {
+                          _handleSignOut();
+                        }
+                      },
+                    )
+                  : TextButton.icon(
+                      onPressed: () => AuthDialog.show(context),
+                      icon: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                        child: const Center(
+                          child: Text(
+                            'G',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'Roboto',
+                              color: Color(0xFF4285F4),
+                            ),
+                          ),
+                        ),
+                      ),
+                      label: const Text(
+                        'Sign In',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: TextButton.styleFrom(
+                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
+                        ),
+                      ),
+                    ),
+            ),
+          const SizedBox(width: 4),
         ],
       ),
       body: walletState.when(
@@ -382,9 +395,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
-          onPressed: _showPurchasePacksDialog,
+          onPressed: _openPricingPage,
           icon: const Icon(Icons.shopping_cart_checkout),
-          label: const Text('Buy Credits (Instant Delivery)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          label: const Text('Buy Credits (Web Store)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
@@ -627,7 +640,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           child: CircularProgressIndicator(),
         ),
       ),
-      error: (_, __) => const SizedBox(),
+      error: (err, stack) => const SizedBox(),
       data: (txs) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -646,7 +659,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: txs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (c, idx) {
                   final tx = txs[idx];
                   final isPositive = tx.amount > 0;

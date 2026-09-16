@@ -1,5 +1,5 @@
 // web/js/checkout.js
-// DabHousie — Client-side Stripe Hosted Checkout Controller
+// DabHousie — Client-side Stripe Hosted Checkout & Topbar Sync Controller
 
 (function () {
   'use strict';
@@ -10,36 +10,116 @@
     BASE_URL: window.location.origin,
   };
 
-  // Extract query parameters from URL
-  function getQueryParams() {
-    const params = new URLSearchParams(window.location.search);
-    const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
-    return {
-      userId: params.get('user_id') || hashParams.get('user_id') || localStorage.getItem('dabhousie_user_id') || '',
-      email: params.get('email') || hashParams.get('email') || localStorage.getItem('dabhousie_user_email') || '',
-      plan: params.get('plan') || hashParams.get('plan') || 'family',
-    };
+  // Avatar emoji dictionary matching Flutter AppTheme & Home screen
+  const AVATAR_EMOJIS = {
+    'avatar_lion': '🦁',
+    'avatar_tiger': '🐯',
+    'avatar_crown': '👑',
+    'avatar_wizard': '🧙',
+    'avatar_rocket': '🚀',
+    'avatar_fox': '🦊',
+    'avatar_panda': '🐼',
+    'avatar_unicorn': '🦄',
+    'avatar_cowboy': '🤠',
+    'avatar_star': '🌟',
+    'avatar_bullseye': '🎯',
+    'avatar_rocker': '🎸',
+  };
+
+  function getAvatarEmoji(avatarKey) {
+    if (!avatarKey) return '🦁';
+    if (AVATAR_EMOJIS[avatarKey]) return AVATAR_EMOJIS[avatarKey];
+    if (avatarKey.startsWith('http://') || avatarKey.startsWith('https://')) return null;
+    return '🦁';
   }
 
-  // Save user context if available
-  const queryParams = getQueryParams();
-  if (queryParams.userId) {
-    localStorage.setItem('dabhousie_user_id', queryParams.userId);
+  // Extract query parameters from URL Search and URL Hash
+  function getQueryParams() {
+    const params = new URLSearchParams(window.location.search);
+    const hashPart = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+    const hashParams = new URLSearchParams(hashPart);
+
+    const userId = params.get('user_id') || hashParams.get('user_id') || localStorage.getItem('dabhousie_user_id') || '';
+    const email = params.get('email') || hashParams.get('email') || localStorage.getItem('dabhousie_user_email') || '';
+    const name = params.get('name') || hashParams.get('name') || localStorage.getItem('dabhousie_user_name') || '';
+    const avatar = params.get('avatar') || hashParams.get('avatar') || localStorage.getItem('dabhousie_user_avatar') || '';
+    const balance = params.get('balance') || hashParams.get('balance') || localStorage.getItem('dabhousie_balance') || '';
+    const plan = params.get('plan') || hashParams.get('plan') || '';
+    const cancelled = params.get('cancelled') === 'true' || hashParams.get('cancelled') === 'true';
+
+    return { userId, email, name, avatar, balance, plan, cancelled };
   }
-  if (queryParams.email) {
-    localStorage.setItem('dabhousie_user_email', queryParams.email);
+
+  const userContext = getQueryParams();
+
+  // Persist user context in localStorage for seamless return from Stripe
+  if (userContext.userId) localStorage.setItem('dabhousie_user_id', userContext.userId);
+  if (userContext.email) localStorage.setItem('dabhousie_user_email', userContext.email);
+  if (userContext.name) localStorage.setItem('dabhousie_user_name', userContext.name);
+  if (userContext.avatar) localStorage.setItem('dabhousie_user_avatar', userContext.avatar);
+  if (userContext.balance) localStorage.setItem('dabhousie_balance', userContext.balance);
+
+  /**
+   * Updates the frozen top header bar with user avatar, name, email, and live balance
+   */
+  function syncTopbarUI() {
+    const ctx = getQueryParams();
+
+    // 1. Balance Pill
+    const balancePill = document.getElementById('topbar-balance');
+    const balanceAmount = document.getElementById('balance-amount');
+    if (balancePill && balanceAmount && ctx.balance) {
+      balanceAmount.textContent = ctx.balance;
+      balancePill.style.display = 'inline-flex';
+    }
+
+    // 2. User Profile vs Guest Sign-In
+    const profileMenu = document.getElementById('user-profile-menu');
+    const guestSignIn = document.getElementById('guest-signin-btn');
+    const userNameEl = document.getElementById('user-display-name');
+    const userEmailEl = document.getElementById('user-display-email');
+    const avatarContainer = document.getElementById('avatar-container');
+
+    if (ctx.email || ctx.userId) {
+      if (profileMenu) profileMenu.style.display = 'inline-flex';
+      if (guestSignIn) guestSignIn.style.display = 'none';
+
+      if (userNameEl) {
+        userNameEl.textContent = ctx.name || ctx.email.split('@')[0] || 'Organizer';
+      }
+      if (userEmailEl) {
+        userEmailEl.textContent = ctx.email || 'Host Account';
+      }
+      if (avatarContainer) {
+        if (ctx.avatar && (ctx.avatar.startsWith('http://') || ctx.avatar.startsWith('https://'))) {
+          avatarContainer.innerHTML = `<img src="${ctx.avatar}" alt="Avatar">`;
+        } else {
+          avatarContainer.textContent = getAvatarEmoji(ctx.avatar);
+        }
+      }
+    } else {
+      if (profileMenu) profileMenu.style.display = 'none';
+      if (guestSignIn) guestSignIn.style.display = 'inline-flex';
+    }
+
+    // 3. Cancelled Notice
+    if (ctx.cancelled) {
+      showInfoNotice('Stripe checkout was cancelled. Your credit balance is unchanged.');
+    }
   }
 
   /**
    * Initiates Stripe Hosted Checkout Session
-   * @param {string} plan - The bundle/plan key ('family', 'starter', 'standard', 'party', 'gala', 'mega')
+   * @param {string} plan - The bundle/plan key ('starter', 'family', 'pro', 'mega')
    * @param {string} [customUserId] - Optional user UUID
    * @param {string} [customEmail] - Optional email
    */
   async function initiateCheckout(plan, customUserId, customEmail) {
-    const userId = customUserId || queryParams.userId || localStorage.getItem('dabhousie_user_id');
-    const email = customEmail || queryParams.email || localStorage.getItem('dabhousie_user_email');
+    const ctx = getQueryParams();
+    const userId = customUserId || ctx.userId || localStorage.getItem('dabhousie_user_id');
+    const email = customEmail || ctx.email || localStorage.getItem('dabhousie_user_email');
 
+    // If no credentials, prompt user for email once
     if (!userId || !email) {
       promptUserCredentials(plan);
       return;
@@ -73,7 +153,7 @@
         throw new Error(data.error || 'Failed to initiate checkout session.');
       }
 
-      // Redirect user to Stripe Hosted Checkout
+      // Seamless redirect to Stripe Hosted Checkout
       window.location.href = data.checkout_url;
 
     } catch (err) {
@@ -87,7 +167,7 @@
   }
 
   /**
-   * Modal dialog if user opens pricing.html directly without URL query parameters
+   * Modal dialog fallback only if unauthenticated direct visitor
    */
   function promptUserCredentials(plan) {
     const modal = document.getElementById('auth-prompt-modal');
@@ -98,24 +178,25 @@
         form.onsubmit = function (e) {
           e.preventDefault();
           const emailInput = document.getElementById('prompt-email');
-          const uidInput = document.getElementById('prompt-uid');
           const email = emailInput ? emailInput.value.trim() : '';
-          const userId = uidInput && uidInput.value.trim() ? uidInput.value.trim() : generateGuestUid();
+          const userId = generateGuestUid();
 
           if (email) {
             localStorage.setItem('dabhousie_user_id', userId);
             localStorage.setItem('dabhousie_user_email', email);
             modal.style.display = 'none';
+            syncTopbarUI();
             initiateCheckout(plan, userId, email);
           }
         };
       }
     } else {
-      const email = prompt('Please enter your email to receive your game credits and receipt:');
+      const email = prompt('Please sign in or enter your organizer email to receive credits:');
       if (email) {
         const userId = generateGuestUid();
         localStorage.setItem('dabhousie_user_id', userId);
         localStorage.setItem('dabhousie_user_email', email);
+        syncTopbarUI();
         initiateCheckout(plan, userId, email);
       }
     }
@@ -129,10 +210,25 @@
     const alertBox = document.getElementById('checkout-alert');
     if (alertBox) {
       alertBox.textContent = message;
+      alertBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      alertBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      alertBox.style.color = '#FCA5A5';
       alertBox.style.display = 'block';
       setTimeout(() => { alertBox.style.display = 'none'; }, 8000);
     } else {
       alert('Checkout Notice: ' + message);
+    }
+  }
+
+  function showInfoNotice(message) {
+    const alertBox = document.getElementById('checkout-alert');
+    if (alertBox) {
+      alertBox.textContent = message;
+      alertBox.style.background = 'rgba(255, 193, 7, 0.12)';
+      alertBox.style.borderColor = 'rgba(255, 193, 7, 0.35)';
+      alertBox.style.color = '#FFC107';
+      alertBox.style.display = 'block';
+      setTimeout(() => { alertBox.style.display = 'none'; }, 6000);
     }
   }
 
@@ -142,8 +238,10 @@
     getQueryParams: getQueryParams,
   };
 
-  // Auto-bind click handlers to buttons with [data-plan] and auto-trigger if plan in query
+  // Bind click handlers & sync topbar on DOM load
   document.addEventListener('DOMContentLoaded', () => {
+    syncTopbarUI();
+
     document.querySelectorAll('[data-plan]').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -152,10 +250,10 @@
       });
     });
 
-    // Auto-initiate if plan and credentials are passed in query params
+    // Auto-initiate if plan and credentials are in URL
     const qp = getQueryParams();
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('plan') && (qp.userId || qp.email)) {
+    if (urlParams.get('plan') && (qp.userId || qp.email) && !qp.cancelled) {
       initiateCheckout(urlParams.get('plan'));
     }
   });
