@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../core/utils/tambola_ticket.dart';
 import '../../../models/mpt_called_number.dart';
@@ -282,8 +283,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
-            tooltip: 'Live Board',
-            onPressed: () => context.push('/live-display/${widget.gameId}'),
+            tooltip: 'Live Board (Open in New Tab / Window)',
+            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.emoji_events_outlined),

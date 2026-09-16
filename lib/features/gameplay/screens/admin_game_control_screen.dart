@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../providers/app_providers.dart';
@@ -186,8 +187,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           ),
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
-            tooltip: 'Live Display',
-            onPressed: () => context.push('/live-display/${widget.gameId}'),
+            tooltip: 'Live Display (Open in New Tab / Window)',
+            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

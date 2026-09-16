@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
@@ -301,8 +302,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
-            tooltip: 'Live Display',
-            onPressed: () => context.push('/live-display/${widget.gameId}'),
+            tooltip: 'Live Display (Open in New Tab / Window)',
+            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

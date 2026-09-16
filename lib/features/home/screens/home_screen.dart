@@ -9,6 +9,7 @@ import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
@@ -1371,9 +1372,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                 ] else ...[
                                   OutlinedButton.icon(
-                                    onPressed: () => context.push('/live-display/${game.id}'),
+                                    onPressed: () => LiveDisplayHelper.openInNewWindow(context, game.id),
                                     icon: const Icon(Icons.tv, size: 14),
-                                    label: const Text('Results'),
+                                    label: const Text('Results ↗'),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),

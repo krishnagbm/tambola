@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
@@ -200,9 +201,9 @@ class RegistrationStatusScreen extends ConsumerWidget {
 
                         // Live Projector/Display Link
                         OutlinedButton.icon(
-                          onPressed: () => context.push('/live-display/$gameId'),
+                          onPressed: () => LiveDisplayHelper.openInNewWindow(context, gameId),
                           icon: const Icon(Icons.tv),
-                          label: Text(game.isCompleted ? 'View Final Board & Winners' : 'Open Live Display / Caller Screen'),
+                          label: Text(game.isCompleted ? 'View Final Board & Winners ↗' : 'Open Live Display / Caller Screen ↗'),
                         ),
                       ],
                     ),
