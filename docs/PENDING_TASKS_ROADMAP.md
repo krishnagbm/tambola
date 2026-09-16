@@ -49,12 +49,13 @@ This document captures the remaining feature backlog, authentication integration
 ## 💳 Phase 2: Monetization & Web Store Checkout
 
 ### 2.1 Credit Pack Purchases & Payment Gateway
-- [ ] **External Web Checkout Handoff**:
-  - Connect Stripe / Razorpay / LemonSqueezy payment checkout flow to the **"Buy Credits"** button on `/wallet`.
+- [x] **External Web Checkout Handoff**:
+  - Connect Stripe Hosted Checkout (`stripe.checkout.Session.create`) flow to the **"Buy Credits"** button on `/wallet` and `/pricing.html`.
   - Pass `user_id`, `email`, and selected credit bundle.
-- [ ] **Server-Side Webhook Fulfillment**:
-  - Deploy a secure Supabase Edge Function (`/functions/v1/stripe-webhook`) to verify payment signatures and credit the user's `MPT_admin_wallets` balance automatically.
-  - Record purchase transactions in `MPT_credit_transactions` ledger.
+- [x] **Server-Side Webhook Fulfillment**:
+  - Deploy secure Stripe Webhook handler (`POST /webhook`) verifying signatures (`stripe.Webhook.construct_event`).
+  - Implement atomic, idempotent fulfillment RPC (`MPT_process_stripe_payment`) to credit `MPT_admin_wallets` balance and record ledger in `MPT_credit_transactions` and `MPT_payments`.
+  - Automated HTML purchase confirmation receipt email via AWS SES.
 
 ---
 
@@ -112,7 +113,7 @@ This document captures the remaining feature backlog, authentication integration
 | **Capacity** | Instant 0ms Group Size Selector (6 Confirmed Tiers) | ✅ Completed & Live |
 | **Brand** | DabHousie Logo, Dark Mode UI & OpenGraph Preview | ✅ Completed & Live |
 | **Domain** | Custom Domain (`dabhousie.com`) Live on Amplify | ✅ Completed & Live |
-| **Payments** | Web Checkout Handoff & Edge Function Webhooks | ⏳ Ready to Plan |
+| **Payments** | Stripe Hosted Checkout & Webhook Fulfillment | ✅ Completed & Ready to Deploy |
 | **Audio** | Sound Effects & Bingo Call Synthesizer | ⏳ Ready to Plan |
 | **Patterns** | Custom Enterprise Winning Patterns | ⏳ Backlog |
 | **Mobile** | Native iOS & Android App Store Packaging | ⏳ Backlog |

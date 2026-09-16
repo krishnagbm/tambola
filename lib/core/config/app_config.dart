@@ -6,6 +6,7 @@ class AppConfig {
   static late final String appBaseUrl;
   static late final String supportEmail;
   static late final String purchaseBaseUrl;
+  static late final String checkoutApiUrl;
   static late final bool purchaseEnabled;
   static late final String environment;
   static late final bool enableMockCredits;
@@ -29,7 +30,11 @@ class AppConfig {
     supportEmail = _value('SUPPORT_EMAIL', 'contact@dabhousie.com');
     purchaseBaseUrl = _value(
       'PURCHASE_BASE_URL',
-      'https://www.dabhousie.com/#/wallet',
+      'https://www.dabhousie.com/pricing.html',
+    );
+    checkoutApiUrl = _value(
+      'CHECKOUT_API_URL',
+      '/checkout',
     );
     purchaseEnabled =
         _value('PURCHASE_ENABLED', 'true').toLowerCase() == 'true';
@@ -45,6 +50,7 @@ class AppConfig {
       'APP_BASE_URL' => const String.fromEnvironment('APP_BASE_URL'),
       'SUPPORT_EMAIL' => const String.fromEnvironment('SUPPORT_EMAIL'),
       'PURCHASE_BASE_URL' => const String.fromEnvironment('PURCHASE_BASE_URL'),
+      'CHECKOUT_API_URL' => const String.fromEnvironment('CHECKOUT_API_URL'),
       'PURCHASE_ENABLED' => const String.fromEnvironment('PURCHASE_ENABLED'),
       'APP_ENVIRONMENT' => const String.fromEnvironment('APP_ENVIRONMENT'),
       'ENABLE_MOCK_CREDITS' => const String.fromEnvironment(

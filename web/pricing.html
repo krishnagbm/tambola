@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DabHousie Web Store — Buy Game Credits</title>
+  <meta name="description" content="Purchase host credits for DabHousie multiplayer Tambola & Housie parties. Instant delivery and server-verified games.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root {
+      --primary: #0B3D91;
+      --primary-light: #1D4ED8;
+      --accent: #FFC107;
+      --accent-hover: #E0A800;
+      --bg-dark: #0A0E17;
+      --card-bg: #121826;
+      --card-border: #1E293B;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --success: #10B981;
+      --danger: #EF4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top center, #111c38 0%, var(--bg-dark) 70%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .back-btn {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      color: var(--text-main);
+      border-color: var(--accent);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 48px 20px 32px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(255, 193, 7, 0.12);
+      border: 1px solid rgba(255, 193, 7, 0.3);
+      color: var(--accent);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto 60px;
+      padding: 0 20px;
+      width: 100%;
+    }
+
+    .alert {
+      display: none;
+      padding: 14px 20px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      border-radius: 10px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .pricing-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 193, 7, 0.5);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .pricing-card.featured {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, rgba(255, 193, 7, 0.05) 0%, var(--card-bg) 100%);
+      box-shadow: 0 8px 24px rgba(255, 193, 7, 0.15);
+    }
+
+    .card-ribbon {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: var(--accent);
+      color: #000000;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .plan-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .plan-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      min-height: 38px;
+    }
+
+    .plan-price {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--text-main);
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .plan-price .currency {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .credits-highlight {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .features-list {
+      list-style: none;
+      margin-bottom: 32px;
+      flex-grow: 1;
+    }
+
+    .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      color: #CBD5E1;
+      margin-bottom: 12px;
+    }
+
+    .features-list li::before {
+      content: '✓';
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .buy-btn {
+      width: 100%;
+      background: var(--primary);
+      color: #ffffff;
+      border: 1px solid var(--primary-light);
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .buy-btn:hover {
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+
+    .buy-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .pricing-card.featured .buy-btn {
+      background: var(--accent);
+      color: #000000;
+      border-color: var(--accent-hover);
+    }
+
+    .pricing-card.featured .buy-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .guarantee-box {
+      margin-top: 48px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .guarantee-icon {
+      font-size: 32px;
+    }
+
+    .guarantee-text h4 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .guarantee-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #ffffff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Modal for direct visitors without query parameters */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(5px);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 440px;
+      width: 100%;
+    }
+
+    .modal-content h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .modal-content p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #0A0E17;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="/#/" class="brand">
+      🎟️ Dab<span>Housie</span>
+    </a>
+    <a href="/#/wallet" class="back-btn">← Back to App Wallet</a>
+  </header>
+
+  <section class="hero">
+    <div class="badge">SECURE HOST CHECKOUT</div>
+    <h1>Refill Your DabHousie Host Credits</h1>
+    <p class="subtitle">
+      Credits are deducted only when games start based on your verified player count. 
+      Unused credits never expire as long as you host a game every 12 months.
+    </p>
+  </section>
+
+  <main class="container">
+    <div id="checkout-alert" class="alert"></div>
+
+    <div class="pricing-grid">
+      
+      <!-- Tier 1: Starter Pack -->
+      <div class="pricing-card">
+        <h3 class="plan-title">Starter Pack</h3>
+        <p class="plan-desc">Perfect for small house parties & family get-togethers.</p>
+        <div class="plan-price">
+          <span class="currency">$</span>5<span style="font-size:14px; color:var(--text-muted); font-weight:normal;">/one-time</span>
+        </div>
+        <div class="credits-highlight">+50 Credits</div>
+        <ul class="features-list">
+          <li>Host up to 3 Small Parties (15p)</li>
+          <li>Or 2 Medium Groups (25p)</li>
+          <li>Auto-number voice caller</li>
+          <li>Server-verified claim checks</li>
+          <li>1 Year Credit Validity</li>
+        </ul>
+        <button class="buy-btn" data-plan="starter">Buy Starter Pack</button>
+      </div>
+
+      <!-- Tier 2: Family Pack (Featured / Popular) -->
+      <div class="pricing-card featured">
+        <div class="card-ribbon">Most Popular</div>
+        <h3 class="plan-title">Family & Party Pack</h3>
+        <p class="plan-desc">Ideal for weekend gatherings, birthday parties & clubs.</p>
+        <div class="plan-price">
+          <span class="currency">$</span>12<span style="font-size:14px; color:var(--text-muted); font-weight:normal;">/one-time</span>
+        </div>
+        <div class="credits-highlight">+150 Credits</div>
+        <ul class="features-list">
+          <li>Host 3 Large Events (50p)</li>
+          <li>Or 10 Small Parties (15p)</li>
+          <li>Realtime leaderboard & claims</li>
+          <li>Instant ticket link generator</li>
+          <li>Priority customer support</li>
+          <li>1 Year Credit Validity</li>
+        </ul>
+        <button class="buy-btn" data-plan="family">Buy Family Pack</button>
+      </div>
+
+      <!-- Tier 3: Pro Community Pack -->
+      <div class="pricing-card">
+        <h3 class="plan-title">Pro Host Pack</h3>
+        <p class="plan-desc">Designed for active communities, clubs, and monthly events.</p>
+        <div class="plan-price">
+          <span class="currency">$</span>20<span style="font-size:14px; color:var(--text-muted); font-weight:normal;">/one-time</span>
+        </div>
+        <div class="credits-highlight">+300 Credits</div>
+        <ul class="features-list">
+          <li>Host 3 Full Club Events (100p)</li>
+          <li>Or 6 Large Groups (50p)</li>
+          <li>Unlimited game replays & history</li>
+          <li>Custom winning pattern support</li>
+          <li>1 Year Credit Validity</li>
+        </ul>
+        <button class="buy-btn" data-plan="pro">Buy Pro Pack</button>
+      </div>
+
+      <!-- Tier 4: Gala & Mega Event Pack -->
+      <div class="pricing-card">
+        <h3 class="plan-title">Mega Gala Pack</h3>
+        <p class="plan-desc">Maximum value bundle for festivals, corporates & huge galas.</p>
+        <div class="plan-price">
+          <span class="currency">$</span>45<span style="font-size:14px; color:var(--text-muted); font-weight:normal;">/one-time</span>
+        </div>
+        <div class="credits-highlight">+750 Credits</div>
+        <ul class="features-list">
+          <li>Host 3 Mega Events (250p)</li>
+          <li>Or 7+ Club Events (100p)</li>
+          <li>Volume discount (40% savings)</li>
+          <li>VIP host concierge support</li>
+          <li>1 Year Credit Validity</li>
+        </ul>
+        <button class="buy-btn" data-plan="gala">Buy Mega Gala Pack</button>
+      </div>
+
+    </div>
+
+    <!-- Security & Guarantee Strip -->
+    <div class="guarantee-box">
+      <div class="guarantee-icon">🔒</div>
+      <div class="guarantee-text">
+        <h4>Safe & Verified Stripe Checkout</h4>
+        <p>Payments are processed over end-to-end 256-bit encrypted Stripe checkout. We never see or store your credit card information. Your credits appear immediately upon payment completion.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Auth Prompt Modal for Direct Visitors -->
+  <div id="auth-prompt-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3>Enter Your Email</h3>
+      <p>Where should we send your receipt and link your game credits?</p>
+      <form id="auth-prompt-form">
+        <div class="form-group">
+          <label for="prompt-email">Email Address</label>
+          <input type="email" id="prompt-email" placeholder="host@example.com" required autofocus>
+        </div>
+        <input type="hidden" id="prompt-uid" value="">
+        <button type="submit" class="buy-btn" style="margin-top:12px;">Continue to Stripe Checkout →</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 DabHousie. All rights reserved. &bull; <a href="/terms-conditions.html">Terms of Service</a> &bull; <a href="/privacy-policy.html">Privacy Policy</a></p>
+  </footer>
+
+  <script src="/js/checkout.js"></script>
+</body>
+</html>

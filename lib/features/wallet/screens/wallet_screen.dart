@@ -20,8 +20,8 @@ class WalletScreen extends ConsumerStatefulWidget {
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
 
-  Future<void> _handleWebPurchase() async {
-    final success = await ref.read(walletRepositoryProvider).launchWebPurchaseHandoff();
+  Future<void> _handleWebPurchase({String? plan}) async {
+    final success = await ref.read(walletRepositoryProvider).launchWebPurchaseHandoff(plan: plan);
     if (!success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -30,6 +30,155 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         ),
       );
     }
+  }
+
+  void _showPurchasePacksDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.darkCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Select Credit Pack',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Choose a bundle to open secure Stripe Hosted Checkout:',
+                style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+              ),
+              const SizedBox(height: 16),
+              _buildPackTile(
+                title: 'Starter Pack',
+                credits: '+50 Credits',
+                price: '\$5',
+                plan: 'starter',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleWebPurchase(plan: 'starter');
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildPackTile(
+                title: 'Family & Party Pack',
+                credits: '+150 Credits',
+                price: '\$12',
+                plan: 'family',
+                isFeatured: true,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleWebPurchase(plan: 'family');
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildPackTile(
+                title: 'Pro Host Pack',
+                credits: '+300 Credits',
+                price: '\$20',
+                plan: 'pro',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleWebPurchase(plan: 'pro');
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildPackTile(
+                title: 'Mega Gala Pack',
+                credits: '+750 Credits',
+                price: '\$45',
+                plan: 'gala',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _handleWebPurchase(plan: 'gala');
+                },
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _handleWebPurchase();
+                },
+                child: const Text('View All Options on Web Store →', style: TextStyle(color: AppTheme.secondaryColor)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPackTile({
+    required String title,
+    required String credits,
+    required String price,
+    required String plan,
+    required VoidCallback onTap,
+    bool isFeatured = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isFeatured ? AppTheme.secondaryColor.withValues(alpha: 0.12) : AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isFeatured ? AppTheme.secondaryColor : Colors.white12,
+            width: isFeatured ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                      if (isFeatured) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text('Popular', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(credits, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess)),
+                ],
+              ),
+            ),
+            Text(price, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.white54),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _handleAddMockCredits(int amount) async {
@@ -165,9 +314,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.5), width: 1.5),
+        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.5),
         gradient: LinearGradient(
-          colors: [AppTheme.secondaryColor.withOpacity(0.12), AppTheme.darkCard],
+          colors: [AppTheme.secondaryColor.withValues(alpha: 0.12), AppTheme.darkCard],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -204,9 +353,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
-          onPressed: _handleWebPurchase,
-          icon: const Icon(Icons.open_in_browser),
-          label: const Text('Buy Credits on Web Store', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+          onPressed: _showPurchasePacksDialog,
+          icon: const Icon(Icons.shopping_cart_checkout),
+          label: const Text('Buy Credits (Instant Delivery)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,

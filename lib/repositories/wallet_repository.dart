@@ -141,15 +141,21 @@ class WalletRepository {
 
 
   /// Launches external web checkout for purchasing credits
-  Future<bool> launchWebPurchaseHandoff({String? adminEmail}) async {
+  Future<bool> launchWebPurchaseHandoff({String? plan, String? adminEmail}) async {
     if (!AppConfig.purchaseEnabled) return false;
 
-    final uid = _supabase.auth.currentUser?.id ?? '';
-    final uri = Uri.parse(AppConfig.purchaseBaseUrl).replace(queryParameters: {
-      'user_id': uid,
-      ...?adminEmail == null ? null : {'email': adminEmail},
+    final user = _supabase.auth.currentUser;
+    final uid = user?.id ?? '';
+    final email = adminEmail ?? user?.email ?? '';
+
+    final queryParams = <String, String>{
+      if (uid.isNotEmpty) 'user_id': uid,
+      if (email.isNotEmpty) 'email': email,
+      if (plan != null && plan.isNotEmpty) 'plan': plan,
       'app_env': AppConfig.environment,
-    });
+    };
+
+    final uri = Uri.parse(AppConfig.purchaseBaseUrl).replace(queryParameters: queryParams);
 
     if (await canLaunchUrl(uri)) {
       return await launchUrl(uri, mode: LaunchMode.externalApplication);

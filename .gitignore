@@ -12,8 +12,15 @@
 .swiftpm/
 migrate_working_dir/
 .env
+.env.*
+.aws-sam/
+samconfig.toml
+__pycache__/
+*.pyc
 /test/screenshots
 docs/generated_200_tickets.json
+docs/generated_250_tickets.json
+docs/sql_generated_250_tickets.json
 
 
 # IntelliJ related

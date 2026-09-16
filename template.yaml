@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: DabHousie — Stripe Payment Processing & Webhook Fulfillment
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: python3.12
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        BASE_URL: 'https://www.dabhousie.com'
+        SUPPORT_EMAIL: 'contact@dabhousie.com'
+        SES_FROM_EMAIL: 'receipts@dabhousie.com'
+        AWS_SES_REGION: 'us-east-1'
+
+        # Supabase Config
+        SUPABASE_URL: 'https://itfcnurjrnyalauwwdkj.supabase.co'
+        SUPABASE_SERVICE_ROLE_KEY: '' # Set via Lambda Console / SSM Parameter Store / samconfig.toml
+        SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI'
+
+        # Stripe Production / Test Keys (Set in AWS Lambda Console / SSM Parameter Store)
+        STRIPE_SECRET_KEY: ''
+        STRIPE_WEBHOOK_SECRET: ''
+
+        # Stripe Price IDs (4 Core Packs)
+        STRIPE_PRICE_STARTER: 'price_1UGPWhHdyxwpJ5bdiNkawpFj'
+        STRIPE_PRICE_FAMILY:  'price_1UGPX9HdyxwpJ5bdPrSHBGNR'
+        STRIPE_PRICE_PRO:     'price_1UGPXQHdyxwpJ5bdx1617z0g'
+        STRIPE_PRICE_MEGA:    'price_1UGPXgHdyxwpJ5bdQoGKNkRg'
+
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,X-Requested-With,stripe-signature,Stripe-Signature'"
+      AllowOrigin: "'*'"
+
+Resources:
+  # ── 1. Create Checkout Session Function ──────────────────────────
+  CreateCheckoutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: functions.create_checkout.handler
+      Description: Generates Stripe Hosted Checkout Session for DabHousie credit packs
+      Events:
+        CheckoutPost:
+          Type: Api
+          Properties:
+            Path: /checkout
+            Method: post
+        CreditsCheckoutPost:
+          Type: Api
+          Properties:
+            Path: /credits/checkout
+            Method: post
+        CheckoutOptions:
+          Type: Api
+          Properties:
+            Path: /checkout
+            Method: options
+        CreditsCheckoutOptions:
+          Type: Api
+          Properties:
+            Path: /credits/checkout
+            Method: options
+
+  # ── 2. Stripe Webhook Fulfillment Function ─────────────────────────
+  StripeWebhookFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: functions.stripe_webhook.handler
+      Description: Webhook receiver for Stripe checkout.session.completed events
+      Policies:
+        - SESCrudPolicy:
+            IdentityName: '*'
+      Events:
+        WebhookPost:
+          Type: Api
+          Properties:
+            Path: /webhook
+            Method: post
+        CreditsWebhookPost:
+          Type: Api
+          Properties:
+            Path: /credits/webhook
+            Method: post
+
+Outputs:
+  CheckoutApiEndpoint:
+    Description: 'API Gateway endpoint URL for Checkout'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/checkout'
+  WebhookApiEndpoint:
+    Description: 'Webhook URL to configure in Stripe Dashboard'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook'
