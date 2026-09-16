@@ -288,6 +288,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               return LayoutBuilder(
                 builder: (ctx, constraints) {
                   final isWide = constraints.maxWidth > 700;
+                  final hasStarted = calledNumbers.isNotEmpty;
 
                   return Padding(
                     padding: const EdgeInsets.all(16),
@@ -304,9 +305,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                 flex: 2,
                                 child: Column(
                                   children: [
-                                    _buildCurrentBallHero(latest, calledNumbers.length),
-                                    const SizedBox(height: 12),
-                                    _buildJoinQrCard(game),
+                                    _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                    if (hasStarted) ...[
+                                      const SizedBox(height: 12),
+                                      _buildJoinQrCard(game),
+                                    ],
                                     const SizedBox(height: 12),
                                     Expanded(child: _buildLiveWinnersPanel(claimsStream)),
                                   ],
@@ -317,9 +320,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                         : SingleChildScrollView(
                             child: Column(
                               children: [
-                                _buildCurrentBallHero(latest, calledNumbers.length),
-                                const SizedBox(height: 12),
-                                _buildJoinQrCard(game),
+                                _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                if (hasStarted) ...[
+                                      const SizedBox(height: 12),
+                                      _buildJoinQrCard(game),
+                                ],
                                 const SizedBox(height: 16),
                                 _buildBoardGrid(calledSet),
                                 const SizedBox(height: 16),
@@ -429,45 +434,141 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildCurrentBallHero(int? latest, int totalCalled) {
+  Widget _buildCurrentBallHero(MptGame game, int? latest, int totalCalled) {
+    final hasStarted = totalCalled > 0 && latest != null;
+    final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       decoration: BoxDecoration(
         color: AppTheme.primaryColor,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: AppTheme.primaryColor.withOpacity(0.5), blurRadius: 16, offset: const Offset(0, 6)),
+          BoxShadow(
+            color: AppTheme.primaryColor.withValues(alpha: 0.5),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-      child: Column(
-        children: [
-          const Text('NOW CALLING', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white70)),
-          const SizedBox(height: 8),
-          Container(
-            width: 120,
-            height: 120,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                latest != null ? '$latest' : 'READY',
-                style: TextStyle(
-                  fontSize: latest != null ? 54 : 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.primaryDark,
+      child: hasStarted
+          ? Column(
+              children: [
+                const Text(
+                  'NOW CALLING',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white70),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$latest',
+                      style: const TextStyle(
+                        fontSize: 54,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primaryDark,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '$totalCalled / 90 Numbers Called',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.qr_code_scanner, size: 14, color: AppTheme.secondaryColor),
+                      SizedBox(width: 6),
+                      Text(
+                        'SCAN TO JOIN & PLAY',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                    ],
+                  ),
+                  child: QrImageView(
+                    data: joinUrl,
+                    version: QrVersions.auto,
+                    size: 130.0,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Scan with Camera or visit dabhousie.com',
+                  style: TextStyle(fontSize: 12, color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Invite Code: ',
+                        style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
+                      ),
+                      SelectableText(
+                        game.inviteCode,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Waiting for host to call first number...',
+                  style: TextStyle(fontSize: 11.5, fontStyle: FontStyle.italic, color: Colors.white60),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '$totalCalled / 90 Numbers Called',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-        ],
-      ),
     );
   }
 
