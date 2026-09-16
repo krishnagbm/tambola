@@ -288,7 +288,6 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               return LayoutBuilder(
                 builder: (ctx, constraints) {
                   final isWide = constraints.maxWidth > 700;
-                  final hasStarted = calledNumbers.isNotEmpty;
 
                   return Padding(
                     padding: const EdgeInsets.all(16),
@@ -306,11 +305,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                 child: Column(
                                   children: [
                                     _buildCurrentBallHero(game, latest, calledNumbers.length),
-                                    if (hasStarted) ...[
-                                      const SizedBox(height: 12),
-                                      _buildJoinQrCard(game),
-                                    ],
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 14),
                                     Expanded(child: _buildLiveWinnersPanel(claimsStream)),
                                   ],
                                 ),
@@ -321,10 +316,6 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                             child: Column(
                               children: [
                                 _buildCurrentBallHero(game, latest, calledNumbers.length),
-                                if (hasStarted) ...[
-                                      const SizedBox(height: 12),
-                                      _buildJoinQrCard(game),
-                                ],
                                 const SizedBox(height: 16),
                                 _buildBoardGrid(calledSet),
                                 const SizedBox(height: 16),
@@ -342,48 +333,105 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildJoinQrCard(MptGame game) {
+  Widget _buildCurrentBallHero(MptGame game, int? latest, int totalCalled) {
     final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF4338CA), // AppTheme.primaryColor
+            Color(0xFF312E81), // AppTheme.primaryDark
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFF4338CA).withValues(alpha: 0.45),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
+        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // White container for high contrast QR Code
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: QrImageView(
-              data: joinUrl,
-              version: QrVersions.auto,
-              size: 78.0,
+          // LEFT SIDE: NOW CALLING & BALL
+          Expanded(
+            flex: 6,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'NOW CALLING',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                    color: Colors.white70,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 10,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      latest != null ? '$latest' : 'READY',
+                      style: TextStyle(
+                        fontSize: latest != null ? 46 : 17,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primaryDark,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  totalCalled > 0 ? '$totalCalled / 90 Called' : 'Waiting for Start',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 14),
+
+          // VERTICAL DIVIDER
+          Container(
+            height: 130,
+            width: 1,
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            color: Colors.white.withValues(alpha: 0.22),
+          ),
+
+          // RIGHT SIDE: JOIN QR CODE & INVITE CODE
           Expanded(
+            flex: 5,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                   decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Row(
@@ -392,183 +440,67 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                       Icon(Icons.qr_code_scanner, size: 12, color: AppTheme.secondaryColor),
                       SizedBox(width: 4),
                       Text(
-                        'SCAN TO JOIN & PLAY',
+                        'SCAN TO PLAY',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 0.6,
-                          color: AppTheme.secondaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Scan with Camera or visit dabhousie.com',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Text(
-                      'Code: ',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0), fontWeight: FontWeight.bold),
-                    ),
-                    SelectableText(
-                      game.inviteCode,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                        color: AppTheme.secondaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCurrentBallHero(MptGame game, int? latest, int totalCalled) {
-    final hasStarted = totalCalled > 0 && latest != null;
-    final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.5),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: hasStarted
-          ? Column(
-              children: [
-                const Text(
-                  'NOW CALLING',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 2, color: Colors.white70),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$latest',
-                      style: const TextStyle(
-                        fontSize: 54,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.primaryDark,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '$totalCalled / 90 Numbers Called',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ],
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.qr_code_scanner, size: 14, color: AppTheme.secondaryColor),
-                      SizedBox(width: 6),
-                      Text(
-                        'SCAN TO JOIN & PLAY',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
+                          letterSpacing: 0.8,
                           color: Colors.white,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 7),
+                // Crisp White QR Card
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(10),
                     boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
                     ],
                   ),
                   child: QrImageView(
                     data: joinUrl,
                     version: QrVersions.auto,
-                    size: 130.0,
+                    size: 82.0,
                   ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Scan with Camera or visit dabhousie.com',
-                  style: TextStyle(fontSize: 12, color: Colors.white),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Invite Code: ',
-                        style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Code: ',
+                      style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.bold),
+                    ),
+                    SelectableText(
+                      game.inviteCode,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: AppTheme.secondaryColor,
                       ),
-                      SelectableText(
-                        game.inviteCode,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                          color: AppTheme.secondaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 2),
                 const Text(
-                  'Waiting for host to call first number...',
-                  style: TextStyle(fontSize: 11.5, fontStyle: FontStyle.italic, color: Colors.white60),
+                  'dabhousie.com',
+                  style: TextStyle(fontSize: 10.5, color: Colors.white60),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 
