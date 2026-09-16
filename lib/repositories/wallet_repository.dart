@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
@@ -139,6 +141,50 @@ class WalletRepository {
     return _cachedTiers;
   }
 
+
+  /// Directly requests a Stripe Hosted Checkout session from the backend API
+  /// and opens the Stripe checkout page directly for logged-in hosts
+  Future<bool> startDirectStripeCheckout({required String plan}) async {
+    final user = _supabase.auth.currentUser;
+    final uid = user?.id;
+    final email = user?.email;
+
+    if (uid == null || email == null || email.isEmpty) {
+      // If user session is unverified or missing email, hand off to web store
+      return await launchWebPurchaseHandoff(plan: plan);
+    }
+
+    try {
+      final apiUrl = Uri.parse(AppConfig.checkoutApiUrl);
+      final response = await http.post(
+        apiUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': uid,
+          'email': email,
+          'plan': plan,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final checkoutUrl = data['checkout_url'] as String?;
+        if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+          final uri = Uri.parse(checkoutUrl);
+          if (await canLaunchUrl(uri)) {
+            return await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        }
+      }
+    } catch (_) {
+      // Fall back to web purchase page if direct API call encounters network error
+    }
+
+    return await launchWebPurchaseHandoff(plan: plan, adminEmail: email);
+  }
 
   /// Launches external web checkout for purchasing credits
   Future<bool> launchWebPurchaseHandoff({String? plan, String? adminEmail}) async {

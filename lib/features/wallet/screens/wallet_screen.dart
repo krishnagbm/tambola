@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
@@ -20,108 +21,136 @@ class WalletScreen extends ConsumerStatefulWidget {
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
 
-  Future<void> _handleWebPurchase({String? plan}) async {
-    final success = await ref.read(walletRepositoryProvider).launchWebPurchaseHandoff(plan: plan);
-    if (!success && mounted) {
+  Future<void> _handleDirectPurchase(String plan) async {
+    AuthGuard.requireHostAuth(context, ref, () async {
+      setState(() => _isProcessing = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open web checkout. URL: ${AppConfig.purchaseBaseUrl}'),
-          backgroundColor: AppTheme.accentWarning,
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+              SizedBox(width: 12),
+              Text('Connecting to Stripe Checkout...'),
+            ],
+          ),
+          duration: Duration(seconds: 4),
         ),
       );
-    }
+
+      try {
+        final success = await ref.read(walletRepositoryProvider).startDirectStripeCheckout(plan: plan);
+        if (!success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Could not open Stripe checkout. Please try again or open ${AppConfig.purchaseBaseUrl}'),
+              backgroundColor: AppTheme.accentWarning,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Checkout Error: $e'), backgroundColor: AppTheme.accentDanger),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isProcessing = false);
+      }
+    });
   }
 
   void _showPurchasePacksDialog() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppTheme.darkCard,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Select Credit Pack',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                    onPressed: () => Navigator.of(ctx).pop(),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Choose a bundle to open secure Stripe Hosted Checkout:',
-                style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
-              ),
-              const SizedBox(height: 16),
-              _buildPackTile(
-                title: 'Starter Pack',
-                credits: '+50 Credits',
-                price: '\$5',
-                plan: 'starter',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _handleWebPurchase(plan: 'starter');
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildPackTile(
-                title: 'Family & Party Pack',
-                credits: '+150 Credits',
-                price: '\$12',
-                plan: 'family',
-                isFeatured: true,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _handleWebPurchase(plan: 'family');
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildPackTile(
-                title: 'Pro Host Pack',
-                credits: '+300 Credits',
-                price: '\$20',
-                plan: 'pro',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _handleWebPurchase(plan: 'pro');
-                },
-              ),
-              const SizedBox(height: 8),
-              _buildPackTile(
-                title: 'Mega Gala Pack',
-                credits: '+750 Credits',
-                price: '\$45',
-                plan: 'gala',
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _handleWebPurchase(plan: 'gala');
-                },
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  _handleWebPurchase();
-                },
-                child: const Text('View All Options on Web Store →', style: TextStyle(color: AppTheme.secondaryColor)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    AuthGuard.requireHostAuth(context, ref, () {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: AppTheme.darkCard,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Select Credit Pack',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Choose a pack to open secure Stripe Hosted Checkout:',
+                  style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+                ),
+                const SizedBox(height: 16),
+                _buildPackTile(
+                  title: 'Starter Pack',
+                  credits: '+50 Credits',
+                  price: '\$5',
+                  plan: 'starter',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _handleDirectPurchase('starter');
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildPackTile(
+                  title: 'Family & Party Pack',
+                  credits: '+150 Credits',
+                  price: '\$12',
+                  plan: 'family',
+                  isFeatured: true,
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _handleDirectPurchase('family');
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildPackTile(
+                  title: 'Pro Host Pack',
+                  credits: '+300 Credits',
+                  price: '\$20',
+                  plan: 'pro',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _handleDirectPurchase('pro');
+                  },
+                ),
+                const SizedBox(height: 8),
+                _buildPackTile(
+                  title: 'Mega Gala Pack',
+                  credits: '+750 Credits',
+                  price: '\$45',
+                  plan: 'mega',
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _handleDirectPurchase('mega');
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    ref.read(walletRepositoryProvider).launchWebPurchaseHandoff();
+                  },
+                  child: const Text('View Full Web Store →', style: TextStyle(color: AppTheme.secondaryColor)),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
   }
 
   Widget _buildPackTile({
