@@ -37,7 +37,7 @@ This document captures the remaining feature backlog, authentication integration
 - [ ] **Host / Create Game Restriction**:
   - Restrict **Hosting** and **Scheduling** games strictly to registered/authenticated users (non-anonymous).
   - When an anonymous user taps **"Host a Game"**, **"Schedule for Later"**, or submits the Create Game form:
-    - Display a polite modal: *"Please sign in with Google, Apple, or Email to host and manage DabHousie games."*
+    - Display a polite modal: *"Please sign in with Google or Apple to host and manage DabHousie games."*
     - Automatically redirect back to the setup flow once authentication succeeds.
 - [ ] **Frictionless Guest Player Entry (Preserve Zero-Friction Play)**:
   - Maintain 100% frictionless joining for guest players (`/#/join/:inviteCode`) — guest players do **NOT** need to create an account to play.

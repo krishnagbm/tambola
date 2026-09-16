@@ -357,7 +357,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                                 Text(
-                                  'Please sign in with Google or Email to create rooms, schedule parties, and manage player seats.',
+                                  'Please sign in with Google or Apple to create rooms, schedule parties, and manage player seats.',
                                   style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
                                 ),
                               ],
