@@ -238,19 +238,45 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         Column(
           children: [
             ...tiers.map((tier) {
+              final isFree = tier.creditsRequired == 0;
               return Card(
                 color: AppTheme.darkSurface,
                 margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  title: Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12)),
-                  trailing: Text(
-                    tier.creditsRequired == 0 ? 'FREE (0 Credits)' : '${tier.creditsRequired} Credits',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
-                    ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                            const SizedBox(height: 2),
+                            Text('${tier.minPlayers}–${tier.maxPlayers} Players', style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: (isFree ? AppTheme.accentSuccess : AppTheme.secondaryColor).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: (isFree ? AppTheme.accentSuccess : AppTheme.secondaryColor).withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Text(
+                          isFree ? 'FREE (0 Credits)' : '${tier.creditsRequired} Credits',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: isFree ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -262,20 +288,86 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 borderRadius: BorderRadius.circular(12),
                 side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
               ),
-              child: ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.corporate_fare_rounded, color: AppTheme.secondaryColor, size: 18),
-                ),
-                title: const Text('Mega-X Corporate (250 to 100K+ Players)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
-                subtitle: const Text('Custom capacity up to 100,000+ players, dedicated server scale & volume pricing', style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1))),
-                trailing: TextButton(
-                  onPressed: () => CorporateInquiryDialog.show(context, initialTopic: 'Mega-X Event (250 to 100,000+ Players)'),
-                  child: const Text('Contact Us →', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 420;
+                    if (isNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.corporate_fare_rounded, color: AppTheme.secondaryColor, size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Mega-X Corporate',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Custom capacity (250 to 100K+ players), dedicated server scale & volume pricing.',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () => CorporateInquiryDialog.show(context, initialTopic: 'Mega-X Event (250 to 100,000+ Players)'),
+                              icon: const Icon(Icons.mail_outline, size: 15, color: AppTheme.secondaryColor),
+                              label: const Text('Contact Us →', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.corporate_fare_rounded, color: AppTheme.secondaryColor, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Mega-X Corporate (250 to 100K+ Players)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                              SizedBox(height: 2),
+                              Text('Custom capacity, dedicated server scale & volume pricing', style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1))),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () => CorporateInquiryDialog.show(context, initialTopic: 'Mega-X Event (250 to 100,000+ Players)'),
+                          child: const Text('Contact Us →', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -287,31 +379,63 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
   Widget _buildPolicyNotice() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppTheme.darkSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2E334D)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.accentInfo.withValues(alpha: 0.25)),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, size: 18, color: AppTheme.accentInfo),
-              SizedBox(width: 8),
-              Text('Credit Policy', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.accentInfo)),
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentInfo.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.info_outline, size: 16, color: AppTheme.accentInfo),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Credit Policy & Rules',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppTheme.accentInfo),
+              ),
             ],
           ),
-          SizedBox(height: 6),
-          Text(
-            '• Credits are charged automatically at game start according to confirmed player count.\n'
-            '• Unused credits remain in your wallet for future events.\n'
-            '• Credits are non-refundable and expire 1 year after your most recent paid game.',
-            style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1), height: 1.4),
-          ),
+          const SizedBox(height: 12),
+          _buildPolicyBullet('Credits are charged automatically at game start according to confirmed player count.'),
+          const SizedBox(height: 8),
+          _buildPolicyBullet('Unused credits remain in your wallet for future events.'),
+          const SizedBox(height: 8),
+          _buildPolicyBullet('Credits are non-refundable and expire 1 year after your most recent paid game.'),
         ],
       ),
+    );
+  }
+
+  Widget _buildPolicyBullet(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 6, right: 10),
+          width: 5,
+          height: 5,
+          decoration: const BoxDecoration(
+            color: AppTheme.accentInfo,
+            shape: BoxShape.circle,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1), height: 1.45),
+          ),
+        ),
+      ],
     );
   }
 
