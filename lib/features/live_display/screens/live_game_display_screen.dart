@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/mpt_claim.dart';
+import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
 
 class LiveGameDisplayScreen extends ConsumerStatefulWidget {
@@ -208,39 +210,75 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
       }
     });
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(AppAssets.horizontalLogo, height: 28, fit: BoxFit.contain),
-            const SizedBox(width: 10),
-            const Text('• Projector View', style: TextStyle(fontSize: 15, color: Color(0xFFA0AEC0))),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.cast, color: AppTheme.secondaryColor),
-            tooltip: 'Stream & Cast to TV / Projector',
-            onPressed: _showCastDialog,
+    return gameStream.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
+      data: (game) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(AppAssets.horizontalLogo, height: 28, fit: BoxFit.contain),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    '• ${game.name}',
+                    style: const TextStyle(fontSize: 15, color: Color(0xFFA0AEC0)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.vpn_key_outlined, size: 14, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      game.inviteCode,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: AppTheme.secondaryColor,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.cast, color: AppTheme.secondaryColor),
+                tooltip: 'Stream & Cast to TV / Projector',
+                onPressed: _showCastDialog,
+              ),
+              IconButton(
+                icon: Icon(
+                  _isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: _isMuted ? Colors.grey : AppTheme.secondaryColor,
+                ),
+                tooltip: _isMuted ? 'Unmute Audio Caller' : 'Mute Audio Caller',
+                onPressed: () {
+                  setState(() {
+                    _isMuted = !_isMuted;
+                    TambolaAudioCaller().isMuted = _isMuted;
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          IconButton(
-            icon: Icon(_isMuted ? Icons.volume_off : Icons.volume_up, color: _isMuted ? Colors.grey : AppTheme.secondaryColor),
-            tooltip: _isMuted ? 'Unmute Audio Caller' : 'Mute Audio Caller',
-            onPressed: () {
-              setState(() {
-                _isMuted = !_isMuted;
-                TambolaAudioCaller().isMuted = _isMuted;
-              });
-            },
-          ),
-        ],
-      ),
-      body: gameStream.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
-        data: (game) {
-          return calledStream.when(
+          body: calledStream.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Error: $e')),
             data: (calledNumbers) {
@@ -267,7 +305,9 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                 child: Column(
                                   children: [
                                     _buildCurrentBallHero(latest, calledNumbers.length),
-                                    const SizedBox(height: 16),
+                                    const SizedBox(height: 12),
+                                    _buildJoinQrCard(game),
+                                    const SizedBox(height: 12),
                                     Expanded(child: _buildLiveWinnersPanel(claimsStream)),
                                   ],
                                 ),
@@ -278,6 +318,8 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                             child: Column(
                               children: [
                                 _buildCurrentBallHero(latest, calledNumbers.length),
+                                const SizedBox(height: 12),
+                                _buildJoinQrCard(game),
                                 const SizedBox(height: 16),
                                 _buildBoardGrid(calledSet),
                                 const SizedBox(height: 16),
@@ -289,8 +331,100 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 },
               );
             },
-          );
-        },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildJoinQrCard(MptGame game) {
+    final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // White container for high contrast QR Code
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: QrImageView(
+              data: joinUrl,
+              version: QrVersions.auto,
+              size: 78.0,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.qr_code_scanner, size: 12, color: AppTheme.secondaryColor),
+                      SizedBox(width: 4),
+                      Text(
+                        'SCAN TO JOIN & PLAY',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.6,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'Scan with Camera or visit dabhousie.com',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Text(
+                      'Code: ',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0), fontWeight: FontWeight.bold),
+                    ),
+                    SelectableText(
+                      game.inviteCode,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.0,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

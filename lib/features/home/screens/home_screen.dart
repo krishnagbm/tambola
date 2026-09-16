@@ -1689,10 +1689,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   ],
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () => context.push('/wallet'),
-                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
-                  child: const Text('Manage', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                  icon: const Icon(Icons.account_balance_wallet_outlined, size: 14, color: AppTheme.secondaryColor),
+                  label: const Text('Manage Wallet →', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
                 ),
               ],
             ),

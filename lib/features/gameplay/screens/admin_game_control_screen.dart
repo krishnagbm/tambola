@@ -210,146 +210,194 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           final isMaxNumbers = calledNumbers.length >= 90;
           final disableCalling = _isCalling || isMaxNumbers || allPrizesWon || isGameCompleted;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Event Name Banner with Edit Button
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkCard,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF2E334D)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.celebration, size: 20, color: AppTheme.secondaryColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          game?.name ?? 'DabHousie Event',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Event Name Banner with Edit Button
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF2E334D)),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 16, color: AppTheme.primaryLight),
-                        tooltip: 'Edit Event Name',
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        constraints: const BoxConstraints(),
-                        onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: isGameCompleted ? const Color(0xFF718096).withOpacity(0.2) : AppTheme.accentSuccess.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: isGameCompleted ? const Color(0xFFA0AEC0) : AppTheme.accentSuccess,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.celebration, size: 20, color: AppTheme.secondaryColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              game?.name ?? 'DabHousie Event',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16, color: AppTheme.primaryLight),
+                            tooltip: 'Edit Event Name',
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            constraints: const BoxConstraints(),
+                            onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isGameCompleted ? const Color(0xFF718096).withValues(alpha: 0.2) : AppTheme.accentSuccess.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isGameCompleted ? const Color(0xFFA0AEC0) : AppTheme.accentSuccess,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // All Prizes Won Alert Banner
+                    if (allPrizesWon && !isGameCompleted) ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'All Prizes Won! 🏆',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
-                  ),
-                ),
-                // All Prizes Won Alert Banner
-                if (allPrizesWon && !isGameCompleted) ...[
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
+
+                    // Responsive 2-Column (Desktop/Tablet) vs Stacked Column (Mobile)
+                    LayoutBuilder(
+                      builder: (ctx, constraints) {
+                        final isWide = constraints.maxWidth >= 820;
+
+                        final leftColumn = Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Caller Header
+                            _buildCallerHeader(latest, calledNumbers.length),
+                            const SizedBox(height: 14),
+
+                            // Call Next Number Button
+                            ElevatedButton.icon(
+                              onPressed: disableCalling ? null : _handleCallNext,
+                              icon: Icon(
+                                allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
+                                size: 28,
+                              ),
+                              label: _isCalling
+                                  ? const Text('Selecting Number...')
+                                  : Text(
+                                      isGameCompleted
+                                          ? 'Game Completed'
+                                          : allPrizesWon
+                                              ? 'All Prizes Won (Conclude Below)'
+                                              : isMaxNumbers
+                                                  ? 'All 90 Numbers Called'
+                                                  : 'CALL NEXT NUMBER',
+                                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                    ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                                foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
+                                disabledBackgroundColor: const Color(0xFF222639),
+                                disabledForegroundColor: const Color(0xFF718096),
+                                padding: const EdgeInsets.symmetric(vertical: 18),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Master 1–90 Board Matrix
+                            _buildMasterBoard(calledSet),
+                          ],
+                        );
+
+                        final rightColumn = Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Live Claims & Winners List
+                            _buildClaimsQueue(claimsStream),
+                            const SizedBox(height: 20),
+
+                            // End Game Button
+                            OutlinedButton.icon(
+                              onPressed: isGameCompleted ? null : _handleEndGame,
+                              icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
+                              label: Text(
+                                isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
+                                style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                            ),
+                          ],
+                        );
+
+                        if (isWide) {
+                          return Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'All Prizes Won! 🏆',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                              Expanded(
+                                flex: 3,
+                                child: leftColumn,
                               ),
-                              SizedBox(height: 2),
-                              Text(
-                                'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
-                                style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                flex: 2,
+                                child: rightColumn,
                               ),
                             ],
-                          ),
-                        ),
-                      ],
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            leftColumn,
+                            const SizedBox(height: 20),
+                            rightColumn,
+                          ],
+                        );
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-
-                // Caller Banner
-                _buildCallerHeader(latest, calledNumbers.length),
-                const SizedBox(height: 16),
-
-                // Call Next Number Button
-                ElevatedButton.icon(
-                  onPressed: disableCalling ? null : _handleCallNext,
-                  icon: Icon(
-                    allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                    size: 28,
-                  ),
-                  label: _isCalling
-                      ? const Text('Selecting Number...')
-                      : Text(
-                          isGameCompleted
-                              ? 'Game Completed'
-                              : allPrizesWon
-                                  ? 'All Prizes Won (Conclude Below)'
-                                  : isMaxNumbers
-                                      ? 'All 90 Numbers Called'
-                                      : 'CALL NEXT NUMBER',
-                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                        ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
-                    foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
-                    disabledBackgroundColor: const Color(0xFF222639),
-                    disabledForegroundColor: const Color(0xFF718096),
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-
-                // Master 1–90 Board Matrix
-                _buildMasterBoard(calledSet),
-                const SizedBox(height: 24),
-
-                // Live Claims & Winners List (Item 13 & 16: filtered approved winners)
-                _buildClaimsQueue(claimsStream),
-                const SizedBox(height: 24),
-
-                // End Game Button (Item 20)
-                OutlinedButton.icon(
-                  onPressed: isGameCompleted ? null : _handleEndGame,
-                  icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
-                  label: Text(
-                    isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
-                    style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },
