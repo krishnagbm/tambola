@@ -1,0 +1,48 @@
+Audit and fix SEO + on-page structure issues on the DabHousie marketing site 
+(dabhousie.com). Scope is HTML/head/content only — no app/game logic changes.
+
+1. DUPLICATE H1: The homepage currently renders the H1 "DabHousie: Multiplayer 
+   Tambola, Housie & 90-Ball Bingo" twice — once near the top logo block, once 
+   in a second "Why DabHousie?" section. Keep exactly ONE <h1> on the page 
+   (the first occurrence). Demote the second to an <h2> and reword it so it 
+   isn't a verbatim duplicate of the H1.
+
+2. DEDUPE CONTENT SECTIONS: The page has two near-duplicate feature blocks 
+   ("Key Platform Features" and "Why DabHousie?") repeating the same claims 
+   (free for 1-5 players, automated win claims, projector mode, unique 
+   tickets) in slightly different wording. Consolidate into ONE clean 
+   features section. Remove the redundant duplicate logo/hero image at the 
+   very bottom of the page unless it's an intentional small footer brand 
+   mark — if kept, strip any duplicate marketing copy wrapped around it.
+
+3. ADD JSON-LD STRUCTURED DATA to <head>:
+   - Organization schema (name: DabHousie, url, logo, sameAs for any social 
+     profiles that exist)
+   - WebSite schema with site name and URL
+   - FAQPage schema wrapping the EXISTING FAQ content ("What is DabHousie?", 
+     "Is DabHousie free?", "How to buy credits for large kitty parties?") — 
+     reuse the exact existing Q&A text verbatim, don't invent new questions.
+
+4. IMAGE ALT TEXT AUDIT: Check every <img> across the homepage AND the 
+   pricing/privacy/terms pages for missing or empty alt attributes. Every 
+   non-decorative image needs a real descriptive alt.
+
+5. VERIFY TECHNICAL SEO FILES: Confirm robots.txt exists at the domain root, 
+   is valid, and correctly references sitemap.xml. Confirm sitemap.xml 
+   exists and includes at minimum: /, /pricing.html, /privacy-policy.html, 
+   /terms-conditions.html. If either file is missing or broken, generate it. 
+   Report back exactly what you found before fixing.
+
+6. RUN A PAGESPEED/LIGHTHOUSE CHECK on the homepage (mobile + desktop) and 
+   report Core Web Vitals scores (LCP, CLS, INP) plus any flagged 
+   render-blocking resources. Don't optimize blindly — report first, then 
+   propose fixes if scores are below "Good" thresholds.
+
+7. HEADING HIERARCHY: After the H1 fix, confirm the page follows a logical 
+   H1 > H2 > H3 order sitewide with no skipped levels or H2s doing an H1's 
+   job.
+
+8. Do NOT change the existing copy's meaning, claims, CTAs, or core value 
+   proposition — only fix structure/duplication/technical SEO. Reply with a 
+   before/after summary of everything changed, plus the raw findings from 
+   steps 5 and 6.

@@ -740,7 +740,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         Text(
                           tier.creditsRequired == 0
-                              ? '${tier.minPlayers}–${tier.maxPlayers} Players • Always Free (0 Credits)'
+                              ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
                               : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
                           style: TextStyle(
                             fontSize: 12,
@@ -773,7 +773,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildStaticCapacityOptions() {
     final options = [
-      {'capacity': 5, 'label': '1–5 Players', 'desc': 'Family Pack • Always Free (0 Credits)'},
+      {'capacity': 5, 'label': '1–5 Players', 'desc': 'Family Pack • Free (0 Credits)*'},
       {'capacity': 15, 'label': '6–15 Players', 'desc': 'Small Party • 15 Credits'},
       {'capacity': 25, 'label': '16–25 Players', 'desc': 'Medium Group • 25 Credits'},
       {'capacity': 50, 'label': '26–50 Players', 'desc': 'Large Group • 50 Credits'},

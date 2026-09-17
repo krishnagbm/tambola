@@ -545,7 +545,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Play Live Tambola & Housie with Friends',
+                  'Play Live Tambola, Housie & 90-Ball Bingo',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -638,7 +638,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           Text(
-                            '100% Free forever for 1–5 players (0 credits)',
+                            'Free for 1–5 players* (0 credits)',
                             style: TextStyle(fontSize: 11.5, color: AppTheme.accentSuccess),
                           ),
                         ],
@@ -749,6 +749,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 16),
           ],
+
+          // Limited Time Disclaimer
+          const Center(
+            child: Text(
+              '* Free tier for 1–5 players is offered for family play for a limited time and subject to terms.',
+              style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 10),
 
           // Footer links
           Center(

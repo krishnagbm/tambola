@@ -44,7 +44,7 @@ class DashboardHeroSection extends ConsumerWidget {
                   border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
                 ),
                 child: const Text(
-                  '🎉 DabHousie — Live Tambola, Housie & 90-Ball Bingo',
+                  '🎉 Live Tambola, Housie & 90-Ball Bingo',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -56,7 +56,7 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Headline
               Text(
-                'DabHousie: Multiplayer Tambola & Housie.\nAlways Free for Families, Built for Kitty Parties & Events.',
+                'Play Tambola, Housie & 90-Ball Bingo.\nConnect. Win.',
                 style: TextStyle(
                   fontSize: isWide ? 24 : 19,
                   fontWeight: FontWeight.w900,
@@ -69,7 +69,7 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Subhead
               Text(
-                'Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests (optional mobile app available for notifications & quick access).',
+                'Live multiplayer for friends, family, parties & events. Free for 1–5 players* — join instantly on web with zero app download (optional mobile app available for notifications & quick access).',
                 style: TextStyle(
                   fontSize: isWide ? 13.5 : 12.5,
                   color: const Color(0xFFCBD5E1),
@@ -85,15 +85,11 @@ class DashboardHeroSection extends ConsumerWidget {
                     Expanded(
                       flex: 4,
                       child: ElevatedButton.icon(
-                        onPressed: () => AuthGuard.requireHostAuth(
-                          context,
-                          ref,
-                          () => context.push('/create-game'),
-                        ),
-                        icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
-                        label: const Text('Free Family Play', overflow: TextOverflow.ellipsis),
+                        onPressed: () => context.push('/join'),
+                        icon: const Text('🔑', style: TextStyle(fontSize: 16)),
+                        label: const Text('Join a Game', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accentSuccess,
+                          backgroundColor: AppTheme.secondaryColor,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
@@ -102,18 +98,18 @@ class DashboardHeroSection extends ConsumerWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      flex: 3,
+                      flex: 4,
                       child: ElevatedButton.icon(
                         onPressed: () => AuthGuard.requireHostAuth(
                           context,
                           ref,
                           () => context.push('/create-game'),
                         ),
-                        icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
-                        label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
+                        icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 15)),
+                        label: const Text('Host Game (Free 1–5*)', overflow: TextOverflow.ellipsis),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryLight,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
                         ),
@@ -123,9 +119,13 @@ class DashboardHeroSection extends ConsumerWidget {
                     Expanded(
                       flex: 3,
                       child: OutlinedButton.icon(
-                        onPressed: () => context.push('/join'),
-                        icon: const Text('🔑', style: TextStyle(fontSize: 15)),
-                        label: const Text('Join Game', overflow: TextOverflow.ellipsis),
+                        onPressed: () => AuthGuard.requireHostAuth(
+                          context,
+                          ref,
+                          () => context.push('/create-game'),
+                        ),
+                        icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
+                        label: const Text('Host Party (6+)', overflow: TextOverflow.ellipsis),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
@@ -140,18 +140,14 @@ class DashboardHeroSection extends ConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () => AuthGuard.requireHostAuth(
-                          context,
-                          ref,
-                          () => context.push('/create-game'),
-                        ),
-                        icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 16)),
-                        label: const Text('Free Family Play'),
+                        onPressed: () => context.push('/join'),
+                        icon: const Text('🔑', style: TextStyle(fontSize: 16)),
+                        label: const Text('Join a Game'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.accentSuccess,
+                          backgroundColor: AppTheme.secondaryColor,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                          textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
+                          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                         ),
                       ),
                     ),
@@ -165,11 +161,11 @@ class DashboardHeroSection extends ConsumerWidget {
                               ref,
                               () => context.push('/create-game'),
                             ),
-                            icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
-                            label: const Text('Host Party / Event', overflow: TextOverflow.ellipsis),
+                            icon: const Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 15)),
+                            label: const Text('Host (Free 1–5*)', overflow: TextOverflow.ellipsis),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryLight,
-                              foregroundColor: Colors.white,
+                              backgroundColor: AppTheme.accentSuccess,
+                              foregroundColor: Colors.black,
                               padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
                               textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
                             ),
@@ -178,9 +174,13 @@ class DashboardHeroSection extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () => context.push('/join'),
-                            icon: const Text('🔑', style: TextStyle(fontSize: 15)),
-                            label: const Text('Join Game', overflow: TextOverflow.ellipsis),
+                            onPressed: () => AuthGuard.requireHostAuth(
+                              context,
+                              ref,
+                              () => context.push('/create-game'),
+                            ),
+                            icon: const Text('🎟️', style: TextStyle(fontSize: 15)),
+                            label: const Text('Host Party (6+)', overflow: TextOverflow.ellipsis),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
                               textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),

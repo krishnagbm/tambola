@@ -1,0 +1,377 @@
+ChatGPT prompt to Gravity Agent: Please update the LIVE DabHousie website homepage at:
+
+https://www.dabhousie.com/
+
+The homepage was recently converted from Flutter Web to static HTML specifically to improve SEO and make the marketing page crawlable.
+
+IMPORTANT:
+
+* Do NOT convert the site back to Flutter.
+* Do NOT modify the actual Flutter multiplayer game/application.
+* Do NOT change the DabHousie brand name, logo, domain, or core visual identity.
+* Do NOT make a completely new design.
+* Preserve the existing good visual elements and improve the homepage structure/content.
+* Before changing anything, inspect the existing HTML/CSS/assets and understand the current implementation.
+
+OBJECTIVES
+
+1. CLEAN UP DUPLICATE CONTENT
+
+The current homepage appears to contain duplicate versions of the DabHousie descriptive content.
+
+Find and remove duplicate/hidden copies of the same marketing text.
+
+There should be ONE canonical visible version of each section.
+
+Do not keep large blocks of duplicated SEO text hidden in the page merely for search engines.
+
+2. CREATE A CLEAR HOMEPAGE HIERARCHY
+
+The first screen should immediately communicate what DabHousie is.
+
+The primary message should be:
+
+"DabHousie — Play Tambola. Connect. Win."
+
+Supporting message:
+
+"Live multiplayer Tambola and Housie for friends, family, parties, community events and celebrations."
+
+The visitor should understand within 5–10 seconds:
+
+* What DabHousie is
+* That it is multiplayer
+* That they can play with friends/family/groups
+* That they can host a game
+
+Do not overload the hero section with paragraphs.
+
+3. KEEP TWO CLEAR USER PATHS
+
+The homepage should make these two actions obvious:
+
+PRIMARY:
+"Play Now"
+
+SECONDARY:
+"Host a Game"
+
+Do not create many competing CTAs.
+
+If the current implementation already has appropriate buttons/links, reuse them rather than creating unnecessary new ones.
+
+4. RECOMMENDED HOMEPAGE STRUCTURE
+
+Use approximately this hierarchy:
+
+SECTION 1 — HERO
+
+DabHousie logo/branding
+
+H1:
+"DabHousie — Play Tambola. Connect. Win."
+
+Short supporting text:
+"Live multiplayer Tambola and Housie for friends, family, parties, community events and celebrations."
+
+Primary CTA:
+"Play Now"
+
+Secondary CTA:
+"Host a Game"
+
+If app download badges already exist, keep them but don't let them overpower the main CTA.
+
+The hero should have enough whitespace and should NOT feel crowded.
+
+SECTION 2 — HOW IT WORKS
+
+Heading:
+"How DabHousie Works"
+
+Use three simple steps:
+
+1. Create
+   "Create your game and choose your group size."
+
+2. Invite
+   "Share the game with your friends, family or group."
+
+3. Play
+   "Play live Tambola together with real-time numbers and digital tickets."
+
+Keep this section visually simple.
+
+SECTION 3 — SHOW THE GAME
+
+Use the existing DabHousie screenshots/assets if available.
+
+Show the actual player/game experience rather than explaining everything with text.
+
+Suggested heading:
+
+"Tambola, Together"
+
+Supporting text:
+"Everyone plays together in real time, whether you're in the same room or joining remotely."
+
+Do NOT invent screenshots or fake functionality.
+
+SECTION 4 — HOST A GAME
+
+Heading:
+"Host Your Own Tambola Game"
+
+Explain briefly that an organizer can create and manage a private game for their group.
+
+Use a small number of bullets/features, for example:
+
+* Create private games
+* Invite your group
+* Live number calling
+* Digital tickets
+* Real-time player updates
+* Prize/winner verification
+
+Only include features that are actually implemented.
+
+SECTION 5 — USE CASES
+
+Heading:
+"Made for Groups"
+
+Use short cards or compact text for:
+
+* Family gatherings
+* Friends & parties
+* Kitty parties
+* Community events
+* Club gatherings
+* Corporate/social events
+
+Do not make this section excessively large.
+
+SECTION 6 — DOWNLOAD / FINAL CTA
+
+Heading:
+"Ready to Play?"
+
+Short supporting text.
+
+Show Google Play and Apple App Store badges if they already exist.
+
+Keep the final CTA simple.
+
+SECTION 7 — SEO / INFORMATIONAL CONTENT
+
+Keep useful crawlable text lower on the page rather than putting all of it above the fold.
+
+Include natural descriptions around:
+
+* multiplayer Tambola
+* online Housie
+* 90-ball bingo
+* Tambola game
+* hosting a Tambola game
+* playing with friends and family
+
+Do NOT keyword-stuff.
+
+The content must read naturally for humans.
+
+5. SEO METADATA
+
+Inspect and optimize:
+
+<title>
+<meta name="description">
+<meta name="robots">
+<link rel="canonical">
+
+Suggested title:
+
+"DabHousie — Multiplayer Tambola, Housie & 90-Ball Bingo"
+
+Suggested meta description:
+
+"Play live multiplayer Tambola and Housie with friends, family and groups. Create a game, invite players and enjoy real-time 90-ball bingo with DabHousie."
+
+Use the canonical URL:
+
+https://www.dabhousie.com/
+
+Do not create conflicting canonical URLs.
+
+6. HEADING STRUCTURE
+
+Ensure there is:
+
+ONE H1 only.
+
+Recommended H1:
+
+"DabHousie — Play Tambola. Connect. Win."
+
+Use H2 for major sections:
+
+* How DabHousie Works
+* Tambola, Together
+* Host Your Own Tambola Game
+* Made for Groups
+* Ready to Play?
+
+Use H3 only where appropriate.
+
+Do not use headings simply for visual styling.
+
+7. STRUCTURED DATA
+
+If appropriate, add valid JSON-LD structured data for the website.
+
+At minimum consider:
+
+Organization/WebSite
+
+Use only factual information that is actually known.
+
+Do not invent ratings, reviews, prices, awards, downloads, or other claims.
+
+Validate the JSON-LD syntax.
+
+8. IMAGE SEO
+
+Inspect all important images.
+
+For meaningful images:
+
+* use descriptive filenames where practical
+* provide useful alt text
+* do not stuff keywords into alt attributes
+
+For example:
+
+alt="DabHousie multiplayer Tambola game"
+
+Do not use descriptive alt text for purely decorative images; use empty alt where appropriate.
+
+9. SOCIAL SHARING
+
+Inspect and implement/fix Open Graph metadata:
+
+og:title
+og:description
+og:image
+og:url
+og:type
+
+Also add appropriate Twitter/X card metadata if useful.
+
+Use the existing DabHousie branding image/assets if available.
+
+10. MOBILE DESIGN
+
+The homepage must work well on:
+
+* desktop
+* tablet
+* mobile
+
+Do not simply shrink the desktop page.
+
+Pay particular attention to:
+
+* hero height
+* button size
+* text wrapping
+* screenshot scaling
+* excessive vertical spacing
+* navigation
+* App Store/Google Play badges
+
+11. PERFORMANCE
+
+Because this is now a static HTML marketing site:
+
+* avoid loading Flutter Web runtime on the homepage
+* remove unnecessary JavaScript
+* lazy-load below-the-fold images where appropriate
+* use appropriate image dimensions
+* avoid unnecessarily large assets
+* keep the first screen fast
+
+Do not remove functionality that is actually required by the marketing page.
+
+12. ACCESSIBILITY
+
+Make sure:
+
+* navigation is keyboard accessible
+* buttons/links have meaningful labels
+* images have appropriate alt attributes
+* sufficient heading hierarchy exists
+* color contrast remains readable
+* interactive elements have usable touch targets
+
+13. IMPORTANT: DO NOT OVERDESIGN
+
+DabHousie is a GAME.
+
+The homepage should feel:
+
+* fun
+* social
+* modern
+* clean
+* easy to understand
+
+It should NOT feel like:
+
+* a corporate SaaS dashboard
+* a technical documentation site
+* an SEO article
+* a crowded app store description
+
+The first screen should have ONE clear message and ONE primary action.
+
+14. BEFORE FINISHING
+
+After implementation:
+
+A. Inspect the generated HTML source and confirm:
+
+* exactly one H1
+* no duplicate marketing paragraphs
+* title exists
+* meta description exists
+* canonical exists
+* robots metadata is appropriate
+* Open Graph metadata exists
+* JSON-LD is valid if added
+
+B. Make sure the page does NOT load Flutter Web unnecessarily.
+
+C. Test desktop and mobile layouts.
+
+D. Check that all links/buttons actually work.
+
+E. Check that existing DabHousie app download links have not been broken.
+
+F. Check that Privacy Policy and Terms links still work.
+
+G. Do not modify the actual multiplayer game application unless absolutely required for a homepage link.
+
+IMPORTANT FINAL REQUIREMENT:
+
+Before declaring the task complete, provide a concise report containing:
+
+1. Files changed
+2. Duplicate content removed
+3. SEO metadata added/changed
+4. Heading structure
+5. Structured data added
+6. Images/alt text changes
+7. Performance changes
+8. Mobile/responsive changes
+9. Any functionality that was intentionally NOT changed
+
+Do not rewrite the entire website unnecessarily. Make the smallest set of well-structured changes needed to achieve the above goals.

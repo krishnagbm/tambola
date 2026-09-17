@@ -1,0 +1,328 @@
+FINAL HOMEPAGE MESSAGING & POSITIONING UPDATE
+
+Please use this as the final messaging direction for the DabHousie static HTML homepage.
+
+Do not redesign the entire site. Do not change the actual game functionality. This task is primarily about improving the homepage's first impression, messaging hierarchy, SEO wording, and CTA clarity.
+
+IMPORTANT PRODUCT POSITIONING
+
+DabHousie is a live multiplayer:
+
+* Tambola
+* Housie
+* 90-Ball Bingo
+
+These terms are important because different audiences know the game by different names.
+
+For U.S. visitors in particular, "90-Ball Bingo" should be clearly visible because "Tambola" and "Housie" may not immediately communicate what the game is.
+
+Do NOT treat 90-Ball Bingo as a different product. The messaging should communicate that DabHousie is the same style of game commonly known as Tambola, Housie, or 90-Ball Bingo.
+
+PRIMARY HOMEPAGE OBJECTIVE
+
+A first-time visitor should understand DabHousie within approximately 3–4 seconds.
+
+They should immediately understand:
+
+1. What is this?
+   → A live multiplayer Tambola / Housie / 90-Ball Bingo game.
+
+2. What can I do?
+   → Join a game or host a game.
+
+3. Can I play immediately?
+   → Yes, players can join through the web without installing an app.
+
+4. Why would I want the mobile app?
+   → For convenient anytime access, scheduled games and push reminders.
+
+The homepage should sell the EXPERIENCE first and explain features second.
+
+---
+
+## SECTION 1 — HERO
+
+Use:
+
+DabHousie
+
+H1:
+
+"Play Tambola. Connect. Win."
+
+Supporting text:
+
+"Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties and events."
+
+PRIMARY CTA:
+
+"Join a Game"
+
+SECONDARY CTA:
+
+"Host a Game"
+
+Under the buttons, use:
+
+"Join instantly on the web — no app required."
+
+IMPORTANT:
+
+"Join a Game" must be the visually dominant CTA.
+
+Do NOT use "Play Now" as the primary CTA.
+
+The reason is that "Join a Game" immediately communicates the multiplayer nature of DabHousie and makes sense to a visitor who has received a game invitation/code.
+
+"Host a Game" provides the natural second path for organizers.
+
+---
+
+## 90-BALL BINGO VISIBILITY
+
+"90-Ball Bingo" should appear naturally in the hero/supporting text and at least once more in the main page content.
+
+Do not keyword-stuff.
+
+Suggested wording:
+
+"DabHousie brings the fun of Tambola, Housie and 90-Ball Bingo to live multiplayer play."
+
+Use natural language rather than repeatedly repeating the same keywords.
+
+The goal is to make the site understandable to both:
+
+* people searching for "Tambola"
+* people searching for "Housie"
+* people searching for "90-Ball Bingo"
+
+---
+
+## SECTION 2 — HOW IT WORKS
+
+Heading:
+
+"How DabHousie Works"
+
+Use three simple steps:
+
+1. Create
+   "Set up your game."
+
+2. Invite
+   "Share the game with your friends, family or group."
+
+3. Play
+   "Play live together with digital tickets and real-time number calling."
+
+Keep the text short.
+
+---
+
+## SECTION 3 — EXPLAIN THE GAME
+
+Heading:
+
+"Tambola, Housie & 90-Ball Bingo — Together"
+
+Suggested copy:
+
+"DabHousie brings the classic 90-ball game online for live multiplayer play. Whether you call it Tambola, Housie or 90-Ball Bingo, everyone can play together in real time."
+
+This section is important for U.S. visitors who may recognize "90-Ball Bingo" more readily than "Tambola."
+
+Use actual DabHousie screenshots/assets here.
+
+Do not use fake screenshots or invent features.
+
+---
+
+## SECTION 4 — MOBILE APP
+
+The mobile app is OPTIONAL.
+
+Do NOT position the app as required to play.
+
+Do NOT make "No app required" the main message.
+
+The purpose of the mobile app is convenience and engagement.
+
+Heading:
+
+"Always Ready to Play"
+
+Suggested copy:
+
+"Keep DabHousie on your phone for quick access to games, scheduled events and reminders."
+
+Then three concise benefits:
+
+"Play Anytime"
+"Open DabHousie whenever your group wants an ad-hoc game."
+
+"Schedule a Game"
+"Organizers can schedule an upcoming game for their group."
+
+"Get Reminders"
+"Players with the app can receive push notifications before a scheduled game starts."
+
+CTA:
+
+"Download the App"
+
+Use the existing Google Play and Apple App Store badges.
+
+Only mention functionality that is actually implemented.
+
+---
+
+## SECTION 5 — HOST A GAME
+
+Heading:
+
+"Host Your Own Game"
+
+Suggested copy:
+
+"Create a private multiplayer game, invite your group and run your Tambola, Housie or 90-Ball Bingo event live."
+
+Then show the relevant organizer/game visuals.
+
+Keep it concise.
+
+---
+
+## SECTION 6 — MADE FOR GROUPS
+
+Heading:
+
+"Made for Groups"
+
+Use concise cards:
+
+Family Gatherings
+Friends & Parties
+Kitty Parties
+Community Events
+Club Gatherings
+Social & Corporate Events
+
+Do not make this section overly wordy.
+
+---
+
+## SECTION 7 — FINAL CTA
+
+Heading:
+
+"Ready to Play?"
+
+Copy:
+
+"Join a game with your group or host your own Tambola, Housie or 90-Ball Bingo game."
+
+Buttons:
+
+"Join a Game"
+
+"Host a Game"
+
+---
+
+## SEO REQUIREMENTS
+
+Make sure the following concepts appear naturally in the page:
+
+* multiplayer Tambola
+* Housie
+* 90-Ball Bingo
+* online Tambola
+* multiplayer Housie
+* 90-ball game
+* Tambola game
+* play with friends and family
+* host a game
+
+Do not keyword-stuff.
+
+The content must read naturally to humans.
+
+SEO text should support the visitor experience rather than dominate it.
+
+---
+
+## META TITLE
+
+Use a concise SEO title that includes the three important game terms.
+
+Recommended:
+
+"DabHousie — Multiplayer Tambola, Housie & 90-Ball Bingo"
+
+---
+
+## META DESCRIPTION
+
+Recommended:
+
+"Play live multiplayer Tambola, Housie & 90-Ball Bingo with friends, family and groups. Join a game instantly or host your own with DabHousie."
+
+Keep within a reasonable search-result length.
+
+---
+
+## CRITICAL FIRST-SCREEN TEST
+
+After implementation, look at the homepage as if you have NEVER heard of DabHousie.
+
+Within 3–4 seconds, the visitor should be able to answer:
+
+WHAT IS IT?
+
+"Tambola / Housie / 90-Ball Bingo."
+
+WHAT IS DIFFERENT?
+
+"Live multiplayer with my group."
+
+WHAT CAN I DO?
+
+"Join a Game or Host a Game."
+
+DO I NEED AN APP?
+
+"No. I can join on the web."
+
+WHY GET THE APP?
+
+"For anytime access, scheduled games and push reminders."
+
+If these answers are not immediately obvious visually, simplify the hero rather than adding more text.
+
+---
+
+## DESIGN PRINCIPLE
+
+Do not turn the homepage into a wall of SEO text.
+
+The hierarchy should be:
+
+1. GAME
+2. SOCIAL EXPERIENCE
+3. JOIN / HOST
+4. HOW IT WORKS
+5. MOBILE APP BENEFITS
+6. FEATURES
+7. SEO / DETAILED INFORMATION
+
+The visitor should feel:
+
+"That's a Tambola/Housie game I can play with my people."
+
+not:
+
+"This is a software platform with many features."
+
+Keep DabHousie fun, social, modern and easy to understand.
+
+Finally, inspect the finished page on both desktop and mobile and verify that "Join a Game" is clearly the primary CTA and that "90-Ball Bingo" is visible without requiring the visitor to scroll far down the page.

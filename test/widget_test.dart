@@ -44,12 +44,12 @@ void main() {
       ),
     );
 
-    expect(find.text('🎉 DabHousie — Live Tambola, Housie & 90-Ball Bingo'), findsOneWidget);
-    expect(find.text('DabHousie: Multiplayer Tambola & Housie.\nAlways Free for Families, Built for Kitty Parties & Events.'), findsOneWidget);
-    expect(find.textContaining('Instant digital tickets, guaranteed-unique cards, and automated server-side win verification'), findsOneWidget);
-    expect(find.textContaining('Free Family Play'), findsOneWidget);
+    expect(find.text('🎉 Live Tambola, Housie & 90-Ball Bingo'), findsOneWidget);
+    expect(find.text('Play Tambola, Housie & 90-Ball Bingo.\nConnect. Win.'), findsOneWidget);
+    expect(find.textContaining('Live multiplayer for friends, family, parties'), findsOneWidget);
+    expect(find.textContaining('Join a Game'), findsOneWidget);
+    expect(find.textContaining('Host Game'), findsOneWidget);
     expect(find.textContaining('Host Party'), findsOneWidget);
-    expect(find.text('Join Game'), findsOneWidget);
     expect(find.text('📺 Live Projector & TV Mode'), findsOneWidget);
     expect(find.text('⚡ Smart Waitlist Auto-Promotion'), findsOneWidget);
     expect(find.text('✅ 100K+ Unique tickets (8.1T space)'), findsOneWidget);
