@@ -64,22 +64,22 @@ def send_purchase_email(
     }}
     .header {{
       background: linear-gradient(135deg, #0B3D91 0%, #1e293b 100%);
-      padding: 32px 24px;
+      padding: 28px 24px;
       text-align: center;
       border-bottom: 2px solid #FFC107;
     }}
-    .header h1 {{
-      margin: 0;
-      color: #ffffff;
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
+    .header img {{
+      max-width: 220px;
+      height: auto;
+      display: block;
+      margin: 0 auto 8px;
     }}
     .header p {{
-      margin: 8px 0 0 0;
+      margin: 4px 0 0 0;
       color: #FFC107;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 600;
+      letter-spacing: 0.5px;
     }}
     .content {{
       padding: 32px 24px;
@@ -154,7 +154,9 @@ def send_purchase_email(
 <body>
   <div class="container">
     <div class="header">
-      <h1>🎟️ DabHousie</h1>
+      <a href="{BASE_URL}" target="_blank" style="text-decoration:none;">
+        <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 8px; border:0;" />
+      </a>
       <p>Multiplayer Tambola, Housie & Bingo</p>
     </div>
     <div class="content">
