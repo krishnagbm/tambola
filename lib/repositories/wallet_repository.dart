@@ -34,33 +34,20 @@ class WalletRepository {
           .maybeSingle();
 
       if (res != null) {
-        final wallet = MptWallet.fromJson(res);
-        if (wallet.availableCredits > 0) return wallet;
+        return MptWallet.fromJson(res);
       }
 
-      // Create new wallet record with 10 free welcome credits if missing or empty
+      // Create new wallet record with 0 initial credits if missing
       final row = await _supabase.from('MPT_admin_wallets').upsert({
         'user_id': uid,
-        'available_credits': 10,
+        'available_credits': 0,
         'credits_expire_at': DateTime.now().add(const Duration(days: 365)).toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       }).select().single();
 
-      // Also record initial welcome transaction in ledger
-      try {
-        await _supabase.from('MPT_credit_transactions').insert({
-          'user_id': uid,
-          'type': 'PURCHASE',
-          'amount': 10,
-          'balance_after': 10,
-          'description': 'Welcome Bonus: 10 Free Credits',
-          'idempotency_key': 'welcome-$uid',
-        });
-      } catch (_) {}
-
       return MptWallet.fromJson(row);
     } catch (_) {
-      return MptWallet(userId: uid, availableCredits: 10, updatedAt: DateTime.now());
+      return MptWallet(userId: uid, availableCredits: 0, updatedAt: DateTime.now());
     }
   }
 
