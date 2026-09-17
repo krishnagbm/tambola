@@ -356,6 +356,40 @@
       font-size: 14px;
       margin-bottom: 18px;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .savings-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+
+    .savings-badge.tier-standard {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #60A5FA;
+    }
+
+    .savings-badge.tier-large {
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid rgba(16, 185, 129, 0.6);
+      color: #34D399;
+    }
+
+    .savings-badge.tier-mega {
+      background: rgba(255, 193, 7, 0.25);
+      border: 1px solid rgba(255, 193, 7, 0.65);
+      color: #FFC107;
     }
 
     .features-list {
@@ -600,7 +634,9 @@
         <div class="plan-price">
           <span class="currency">$</span>2<span style="font-size:13px; color:var(--text-muted); font-weight:normal;">/one-time</span>
         </div>
-        <div class="credits-highlight">+15 Credits</div>
+        <div class="credits-highlight">
+          <span>+15 Credits</span>
+        </div>
         <ul class="features-list">
           <li>Host 1 Small Party (up to 15 Players)</li>
           <li>Auto-number voice caller</li>
@@ -617,7 +653,10 @@
         <div class="plan-price">
           <span class="currency">$</span>5<span style="font-size:13px; color:var(--text-muted); font-weight:normal;">/one-time</span>
         </div>
-        <div class="credits-highlight">+40 Credits</div>
+        <div class="credits-highlight">
+          <span>+40 Credits</span>
+          <span class="savings-badge tier-standard">Save 6%</span>
+        </div>
         <ul class="features-list">
           <li>Host 1 Standard Event (25p) + 1 Small Party (15p)</li>
           <li>Or up to 2 Small Parties (15p)</li>
@@ -635,7 +674,10 @@
         <div class="plan-price">
           <span class="currency">$</span>10<span style="font-size:13px; color:var(--text-muted); font-weight:normal;">/one-time</span>
         </div>
-        <div class="credits-highlight">+100 Credits</div>
+        <div class="credits-highlight">
+          <span>+100 Credits</span>
+          <span class="savings-badge tier-large">Save 25%</span>
+        </div>
         <ul class="features-list">
           <li>Host 1 Full Large Gala (100 Players)</li>
           <li>Or 4 Standard Events (25p)</li>
@@ -648,13 +690,16 @@
 
       <!-- Tier 4: Mega Event Pack (Featured / Best Value) -->
       <div class="pricing-card featured">
-        <div class="card-ribbon">Best Value</div>
+        <div class="card-ribbon">⭐ Best Value • Save 50%</div>
         <h3 class="plan-title">Mega Event Pack</h3>
         <p class="plan-desc">Maximum value bundle for festivals, corporates & huge galas.</p>
         <div class="plan-price">
           <span class="currency">$</span>20<span style="font-size:13px; color:var(--text-muted); font-weight:normal;">/one-time</span>
         </div>
-        <div class="credits-highlight">+300 Credits</div>
+        <div class="credits-highlight" style="background: rgba(255, 193, 7, 0.15); border-color: rgba(255, 193, 7, 0.45); color: #FFC107;">
+          <span>+300 Credits</span>
+          <span class="savings-badge tier-mega">Half Price!</span>
+        </div>
         <ul class="features-list">
           <li>Host 1 Mega Event (250p) + 50 leftover credits</li>
           <li>Or 3 Large Galas (100p)</li>
