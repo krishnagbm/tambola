@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -394,16 +395,39 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ElevatedButton.icon(
-          onPressed: _openPricingPage,
-          icon: const Icon(Icons.shopping_cart_checkout),
-          label: const Text('Buy Credits (Web Store)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        if (kIsWeb) ...[
+          ElevatedButton.icon(
+            onPressed: _openPricingPage,
+            icon: const Icon(Icons.shopping_cart_checkout),
+            label: const Text('Add Credits on Web (dabhousie.com)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
-        ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryLight.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: AppTheme.secondaryColor, size: 22),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Credits can be added on our website at dabhousie.com to host larger games.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFFE2E8F0), height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         if (AppConfig.enableMockCredits) ...[
           const SizedBox(height: 10),
           OutlinedButton.icon(

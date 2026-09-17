@@ -46,7 +46,7 @@ void main() {
 
     expect(find.text('🎉 DabHousie — Live Tambola, Housie & 90-Ball Bingo'), findsOneWidget);
     expect(find.text('DabHousie: Multiplayer Tambola & Housie.\nAlways Free for Families, Built for Kitty Parties & Events.'), findsOneWidget);
-    expect(find.text('Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests.'), findsOneWidget);
+    expect(find.textContaining('Instant digital tickets, guaranteed-unique cards, and automated server-side win verification'), findsOneWidget);
     expect(find.textContaining('Free Family Play'), findsOneWidget);
     expect(find.textContaining('Host Party'), findsOneWidget);
     expect(find.text('Join Game'), findsOneWidget);
@@ -153,7 +153,7 @@ void main() {
     await AppConfig.initialize();
     expect(AppConfig.appBaseUrl, equals('https://www.dabhousie.com'));
     expect(AppConfig.supportEmail, equals('contact@dabhousie.com'));
-    expect(AppConfig.purchaseBaseUrl, equals('https://www.dabhousie.com/#/wallet'));
+    expect(AppConfig.purchaseBaseUrl, equals('https://www.dabhousie.com/pricing.html'));
 
     const testCode = 'DAB888';
     final inviteLink = '${AppConfig.appBaseUrl}/#/join/$testCode';

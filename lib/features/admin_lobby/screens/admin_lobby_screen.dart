@@ -212,7 +212,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Add mock credits (for testing) or buy credits on the web to start the game.',
+              'Credits can be added on the dabhousie.com website to host larger games.',
               style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
             ),
           ],

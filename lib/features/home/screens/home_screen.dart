@@ -19,7 +19,6 @@ import '../widgets/dashboard_footer.dart';
 import '../widgets/dashboard_hero_section.dart';
 import '../widgets/how_it_works_section.dart';
 import '../widgets/opening_screen.dart';
-import '../widgets/organizer_player_split.dart';
 import '../widgets/perfect_for_chips_section.dart';
 import '../widgets/usp_grid_section.dart';
 
@@ -182,10 +181,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             tooltip: 'My Rewards',
             onPressed: () => context.push('/rewards'),
           ),
-          IconButton(
-            icon: const Icon(Icons.account_balance_wallet_outlined),
-            tooltip: 'Organizer Wallet',
-            onPressed: () => context.push('/wallet'),
+          // Organizer Credits Pill in Top Menu Bar
+          walletState.when(
+            data: (w) {
+              final credits = w.availableCredits;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+                child: InkWell(
+                  onTap: () => context.push('/wallet'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🪙', style: TextStyle(fontSize: 13)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$credits C',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+            loading: () => IconButton(
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              tooltip: 'Organizer Wallet',
+              onPressed: () => context.push('/wallet'),
+            ),
+            error: (_, __) => IconButton(
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              tooltip: 'Organizer Wallet',
+              onPressed: () => context.push('/wallet'),
+            ),
           ),
           // User / Auth Action Button
           if (user != null)
@@ -385,6 +428,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }).firstOrNull;
 
     final liveHosted = hostedState.value?.where((g) => g.isInProgress).firstOrNull;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (isMobile) {
+      return _buildMobileDashboard(
+        context,
+        user,
+        walletState,
+        liveJoined,
+        liveHosted,
+      );
+    }
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -413,39 +467,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 12),
             ],
 
-            // 1. Dashboard Hero Section
+            // 1. Dashboard Hero Section (Free for 1-5, Optional App, 3 CTAs)
             const DashboardHeroSection(),
-            const SizedBox(height: 12),
-
-            // Player Identity Bar
-            _buildUserProfileStrip(context, user, walletState),
             const SizedBox(height: 14),
 
-            // 2. Organizer vs. Player Split
-            const OrganizerPlayerSplit(),
-            const SizedBox(height: 14),
-
-            // 3. USP Grid ("Why DabHousie?")
+            // 2. USP Grid ("Why DabHousie?")
             const UspGridSection(),
             const SizedBox(height: 14),
 
-            // 4. How It Works (3-step flow)
+            // 3. How It Works (3-step flow)
             const HowItWorksSection(),
             const SizedBox(height: 14),
 
-            // 5. Perfect For (Chip row)
+            // 4. Perfect For (Chip row)
             const PerfectForChipsSection(),
             const SizedBox(height: 14),
 
-            // 6. Mobile Apps Download Badges Section
+            // 5. Mobile Apps Download Badges Section
             _buildAppDownloadSection(context),
             const SizedBox(height: 12),
 
-            // 7. Quick Rules & How to Win Helper
+            // 6. Quick Rules & How to Win Helper
             _buildHowToPlayCard(context),
             const SizedBox(height: 8),
 
-            // 8. Dashboard Footer Tagline
+            // 7. Dashboard Footer Tagline
             const DashboardFooter(),
           ],
         ),
@@ -453,93 +499,284 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildUserProfileStrip(BuildContext context, MptUser user, AsyncValue walletState) {
-    final isRegistered = user.isRegistered;
-    final hasAvatarUrl = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2E334D)),
-      ),
-      child: Row(
+  // ==========================================
+  // DEDICATED INTUITIVE MOBILE DASHBOARD
+  // ==========================================
+  Widget _buildMobileDashboard(
+    BuildContext context,
+    MptUser user,
+    AsyncValue walletState,
+    dynamic liveJoined,
+    MptGame? liveHosted,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
-            backgroundImage: hasAvatarUrl ? NetworkImage(user.avatarUrl!) : null,
-            child: !hasAvatarUrl
-                ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 18))
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
+          // Live Game in Progress Alert Banner (if any)
+          if (liveJoined != null) ...[
+            _buildLiveGameBanner(
+              context,
+              title: (liveJoined['game']?['name'] ?? 'Live Game').toString(),
+              subtitle: 'You are registered in this live session! Tap to play.',
+              onTap: () => context.push('/play/${liveJoined['game_id']}'),
+            ),
+            const SizedBox(height: 14),
+          ] else if (liveHosted != null) ...[
+            _buildLiveGameBanner(
+              context,
+              title: liveHosted.name,
+              subtitle: 'You are hosting this live session. Tap to resume controls.',
+              onTap: () => context.push('/admin-control/${liveHosted.id}'),
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          // Minimalist Header
+          Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  user.displayName,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
+                Image.asset(
+                  AppAssets.horizontalLogo,
+                  height: 46,
+                  fit: BoxFit.contain,
                 ),
-                Text(
-                  isRegistered
-                      ? (user.email != null ? '✓ ${user.email}' : '✓ Registered Account')
-                      : 'Guest Player • Sign in to save games',
+                const SizedBox(height: 4),
+                const Text(
+                  'Play Live Tambola & Housie with Friends',
                   style: TextStyle(
-                    fontSize: 10.5,
-                    color: isRegistered ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFCBD5E1),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Primary Action 1: Join Game
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  AppTheme.darkCard,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.5),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Text('🔑', style: TextStyle(fontSize: 22)),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Got an Invite Code?',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            'Join instantly as guest — zero sign-up required',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/join'),
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: const Text('Enter Code to Join', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ],
             ),
           ),
-          if (!isRegistered) ...[
-            OutlinedButton.icon(
-              onPressed: () => AuthDialog.show(context),
-              icon: const Icon(Icons.login, size: 14, color: AppTheme.secondaryColor),
-              label: const Text('Sign In', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+          const SizedBox(height: 14),
+
+          // Primary Action 2: Free Family Game (1–5 Players)
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.5), width: 1.5),
             ),
-            const SizedBox(width: 6),
-          ],
-          InkWell(
-            onTap: () => context.push('/wallet'),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 22)),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Free Family Play',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            '100% Free forever for 1–5 players (0 credits)',
+                            style: TextStyle(fontSize: 11.5, color: AppTheme.accentSuccess),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () => AuthGuard.requireHostAuth(
+                    context,
+                    ref,
+                    () => context.push('/create-game'),
+                  ),
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
+                  label: const Text('Start Free Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentSuccess,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Primary Action 3: Host Party / Event
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5), width: 1.5),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Text('🎟️', style: TextStyle(fontSize: 22)),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Host Party / Event',
+                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            'Kitty parties, society clubs & corporate galas',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () => AuthGuard.requireHostAuth(
+                    context,
+                    ref,
+                    () => context.push('/create-game'),
+                  ),
+                  icon: const Icon(Icons.celebration_rounded, size: 18),
+                  label: const Text('Host Party (6+ Players)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryLight,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Quick Sign-In for Guests (if not registered)
+          if (!user.isRegistered) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
+                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF334155)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.stars, size: 15, color: AppTheme.secondaryColor),
-                  const SizedBox(width: 4),
-                  walletState.when(
-                    loading: () => const Text('...', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
-                    error: (_, __) => const Text('10 C', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
-                    data: (w) => Text(
-                      '${w.availableCredits} C',
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                  const Icon(Icons.info_outline, size: 18, color: Color(0xFF94A3B8)),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Sign in to save hosted games & access wallet history',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: () => AuthDialog.show(context),
+                    child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+          ],
+
+          // Footer links
+          Center(
+            child: Wrap(
+              spacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/privacy-policy.html')),
+                  child: const Text('Privacy Policy', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                ),
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/terms-conditions.html')),
+                  child: const Text('Terms', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                ),
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/pricing.html')),
+                  child: const Text('Pricing', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
+
 
   Widget _buildLiveGameBanner(BuildContext context, {required String title, required String subtitle, required VoidCallback onTap}) {
     return InkWell(

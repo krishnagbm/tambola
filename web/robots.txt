@@ -1,6 +1,7 @@
 # Robots.txt for DabHousie (https://www.dabhousie.com)
 User-agent: *
 Allow: /
+Allow: /pricing.html
 Allow: /privacy-policy.html
 Allow: /terms-conditions.html
 Allow: /sitemap.xml

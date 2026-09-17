@@ -1,17 +1,6 @@
-<!DOCTYPE html><html><head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
@@ -19,8 +8,8 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="description" content="DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo. Always 100% free for family games (1-5 players), perfect for weekly kitty parties, society clubs, and corporate events with automated server ticket verification.">
-  <meta name="keywords" content="DabHousie, Tambola online, Housie game, 90-ball bingo, online bingo with friends, free family tambola, kitty party games, multiplayer housie, virtual bingo night, corporate tambola, British bingo generator, Indian bingo app">
+  <meta name="description" content="DabHousie is the ultimate multiplayer Tambola, Housie &amp; 90-Ball Bingo platform. Always 100% free for family games (1-5 players). Instant digital tickets, auto number calling &amp; automated win verification. Zero app download needed for guests.">
+  <meta name="keywords" content="DabHousie, Dab Housie, Dabhousie Tambola, Tambola online, Housie game online, 90-ball bingo, free family tambola, kitty party games, multiplayer housie, virtual bingo caller, corporate tambola, Indian bingo app, tambola ticket generator">
   <meta name="google-site-verification" content="ErXgjuRNgPZ-4PiKf6kpNepe5rcwuccKmqH5ig3RigM">
   <link rel="canonical" href="https://www.dabhousie.com/">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
@@ -54,43 +43,38 @@
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.dabhousie.com/">
-  <meta property="og:title" content="DabHousie: Live Tambola, Housie &amp; 90-Ball Bingo">
-  <meta property="og:description" content="Multiplayer Tambola, Housie &amp; 90-Ball Bingo. Always free for family games (1-5 players), perfect for weekly kitty parties, society clubs, and corporate events with automated ticket verification.">
+  <meta property="og:title" content="DabHousie: Live Multiplayer Tambola, Housie &amp; 90-Ball Bingo">
+  <meta property="og:description" content="Multiplayer Tambola &amp; Housie. Always 100% Free for family games (1-5 players). Instant digital tickets, auto number calling &amp; automated win claims — zero guest download needed.">
   <meta property="og:image" content="https://www.dabhousie.com/og-banner.png">
   <meta property="og:image:secure_url" content="https://www.dabhousie.com/og-banner.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="DabHousie - Live Tambola &amp; Housie">
+  <meta property="og:image:alt" content="DabHousie - Live Multiplayer Tambola and Housie">
   <meta property="og:site_name" content="DabHousie">
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://www.dabhousie.com/">
-  <meta name="twitter:title" content="DabHousie: Live Tambola, Housie &amp; 90-Ball Bingo">
-  <meta name="twitter:description" content="Multiplayer Tambola, Housie &amp; 90-Ball Bingo. Always free for family games (1-5 players), perfect for weekly kitty parties, society clubs, and corporate events with automated ticket verification.">
+  <meta name="twitter:title" content="DabHousie: Live Multiplayer Tambola, Housie &amp; 90-Ball Bingo">
+  <meta name="twitter:description" content="Multiplayer Tambola &amp; Housie. Always 100% Free for family games (1-5 players). Instant digital tickets, auto number calling &amp; automated win claims.">
   <meta name="twitter:image" content="https://www.dabhousie.com/og-banner.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png">
 
-  <title>DabHousie: Live Tambola, Housie &amp; 90-Ball Bingo | Free Family Play &amp; Kitty Parties</title>
+  <title>DabHousie: Live Tambola, Housie &amp; 90-Ball Bingo | Free Family Play &amp; Party Events</title>
   <link rel="manifest" href="manifest.json">
-  
-  
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-  
-  
-  <style id="splash-screen-style">
-    html {
-      height: 100%
-    }
 
-    body {
+  <style id="splash-screen-style">
+    html, body {
       margin: 0;
+      padding: 0;
       min-height: 100%;
-      background-color: #0B3D91;
-          background-size: 100% 100%;
+      background-color: #0B1026;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #F8FAFC;
     }
 
     .center {
@@ -102,133 +86,216 @@
       transform: translate(-50%, -50%);
     }
 
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
-
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
-
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
-
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
-
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
-
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-    }
-  </style>
-  <!-- JSON-LD Structured Data for Google OAuth Verification & Search Crawlers -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "DabHousie",
-    "alternateName": "DabHousie: Live Tambola, Housie & 90-Ball Bingo",
-    "url": "https://www.dabhousie.com",
-    "applicationCategory": "GameApplication",
-    "operatingSystem": "All",
-    "description": "DabHousie is a modern social multiplayer entertainment platform created by Digital App Studio. Designed for family game nights, kitty parties, club gatherings, and corporate events, DabHousie makes it easy to host and play live 90-ball Tambola (also known as Housie or Indian Bingo) with digital cards, automated number calling, and server-side prize claim verification.",
-    "publisher": {
-      "@type": "Organization",
-      "name": "Digital App Studio",
-      "url": "https://www.dabhousie.com"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD",
-      "description": "Free for family games up to 5 players"
-    }
-  }
-  </script>
-
-  <style id="seo-landing-style">
-    /* Hidden behind Flutter Canvas so it never blocks the interactive Flutter App */
-    .seo-crawler-content {
+    /* Semantic SEO Content Layer (Behind Flutter Canvas) */
+    .seo-content-layer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
-      z-index: -1;
-      opacity: 0.001;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      z-index: 0;
+      opacity: 0.01;
       pointer-events: none;
     }
   </style>
 
+  <!-- JSON-LD Structured Data Graph for Google & AI Search Bots -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.dabhousie.com/#organization",
+        "name": "Digital App Studio",
+        "url": "https://www.dabhousie.com",
+        "logo": "https://www.dabhousie.com/dabhousie_horizontal_logo.png",
+        "sameAs": [
+          "https://www.dabhousie.com"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.dabhousie.com/#website",
+        "url": "https://www.dabhousie.com",
+        "name": "DabHousie",
+        "alternateName": ["DabHousie", "Dab Housie", "Dabhousie Tambola", "Dabhousie App", "Dabhousie Game"],
+        "description": "Multiplayer live Tambola, Housie, and 90-ball bingo game for family game nights, kitty parties, and corporate events.",
+        "publisher": {
+          "@id": "https://www.dabhousie.com/#organization"
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.dabhousie.com/#/join/{search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://www.dabhousie.com/#webapp",
+        "name": "DabHousie: Live Tambola & Housie",
+        "url": "https://www.dabhousie.com",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "description": "DabHousie is a modern social multiplayer entertainment platform by Digital App Studio for hosting and playing live 90-ball Tambola (also known as Housie or Indian Bingo) with digital cards, automated number calling, and server-side prize claim verification. Free for 1-5 players.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Free Family Play for 1 to 5 players with full feature access."
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.dabhousie.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is DabHousie?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "DabHousie is a real-time multiplayer Tambola (also known as Housie or 90-ball Bingo) platform where organizers can host games for family gatherings, kitty parties, social clubs, and corporate galas with automated ticket calling and instant server-verified prize claims."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is DabHousie free to play?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! DabHousie is 100% free for all family games up to 5 players (0 credits required). For larger kitty parties and corporate events (6 to 250+ players), hosts can purchase affordable credit packs on dabhousie.com/pricing.html."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do players or guests need to download an app to play DabHousie?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No app download is required for guests. Players can join instantly on any mobile or desktop web browser by entering the 6-digit game code or clicking an invite link. An optional mobile app is also available on iOS and Android for push notifications and quick access."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does automated prize claim verification work in DabHousie?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When a player claims a winning pattern (such as Early Five, Top Line, Middle Line, Bottom Line, Four Corners, or Full House), DabHousie's server automatically validates the ticket numbers against the drawn numbers in real time, preventing false claims and disputes."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script id="splash-screen-script">
     function removeSplashFromWeb() {
       document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.getElementById("app-landing-info")?.remove();
       document.body.style.background = "transparent";
     }
 
-    // Automatically remove any splash overlays when Flutter renders its first frame
+    // Automatically remove splash when Flutter paints first frame
     window.addEventListener('flutter-first-frame', function() {
       removeSplashFromWeb();
     });
   </script>
 </head>
 <body>
-  <!-- Fallback for Web Crawlers & Bots (without JavaScript) -->
+  <!-- Fallback for Web Crawlers, AI Search Agents & Non-JS Clients -->
   <noscript>
-    <div style="background:#0B1026; color:#F8FAFC; padding:40px 20px; font-family:sans-serif; max-width:800px; margin:0 auto;">
-      <h1 style="color:#FFD700; font-size:28px;">🎉 DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
-      <p style="font-size:16px; line-height:1.6; color:#CBD5E1;">
-        <strong>DabHousie</strong> is a modern social multiplayer entertainment platform created by <strong>Digital App Studio</strong>. Designed for family game nights, kitty parties, club gatherings, and corporate events, DabHousie makes it easy to host and play live 90-ball Tambola (also known as Housie or Indian Bingo) with digital cards, automated number calling, and server-side prize claim verification.
-      </p>
-      <h2 style="color:#FFD700; font-size:20px; margin-top:20px;">Platform Features</h2>
-      <ul style="color:#CBD5E1; line-height:1.8;">
-        <li><strong>Zero-Friction Play:</strong> Guests and players join games instantly via invite links with no sign-up required.</li>
-        <li><strong>Host &amp; Schedule Parties:</strong> Organizers sign in with Google to schedule game nights, host private rooms, and manage ticket capacities.</li>
-        <li><strong>Automated Server Verification:</strong> Instant rule validation for Early Five, Lines, Four Corners, and Full House.</li>
-        <li><strong>Free Family Games:</strong> Permanently free for 1–5 players with full feature access.</li>
-      </ul>
-      <p style="margin-top:24px;">
-        <a href="https://www.dabhousie.com/privacy-policy.html" style="color:#4895EF;">Privacy Policy</a> • 
-        <a href="https://www.dabhousie.com/terms-conditions.html" style="color:#4895EF;">Terms &amp; Conditions</a>
-      </p>
-      <p style="font-size:12px; color:#64748B;">&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
+    <div style="background:#0B1026; color:#F8FAFC; padding:40px 20px; font-family:sans-serif; max-width:860px; margin:0 auto;">
+      <header>
+        <img src="dabhousie_horizontal_logo.png" alt="DabHousie Logo" style="max-height:50px; margin-bottom:16px;">
+        <h1 style="color:#FFD700; font-size:28px; margin-top:0;">DabHousie: Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
+      </header>
+      <main>
+        <p style="font-size:16px; line-height:1.6; color:#CBD5E1;">
+          <strong>DabHousie</strong> is the premier multiplayer social entertainment platform created by <strong>Digital App Studio</strong>. Host and play live 90-ball Tambola (also known as Housie or Indian Bingo) with instant digital tickets, automated number calling, and server-side prize verification.
+        </p>
+        <h2 style="color:#4895EF; font-size:20px; margin-top:24px;">Key Platform Features</h2>
+        <ul style="color:#CBD5E1; line-height:1.8;">
+          <li><strong>100% Free Family Games:</strong> Always free for 1–5 players with unlimited games and full access.</li>
+          <li><strong>Zero App Download for Guests:</strong> Friends and family can join games instantly via web link or 6-digit code. Optional mobile app available for quick access and notifications.</li>
+          <li><strong>Automated Prize Claim Verification:</strong> Instant server validation for Early Five, Lines, Four Corners, and Full House with zero disputes.</li>
+          <li><strong>Host Controls &amp; Projector Mode:</strong> Control caller speed, repeat numbers, auto-promote waitlists, and project game boards on large screens.</li>
+        </ul>
+        <h2 style="color:#4895EF; font-size:20px; margin-top:24px;">Start Playing Now</h2>
+        <p>
+          <a href="https://www.dabhousie.com/#/join" style="color:#FFD700; font-weight:bold; font-size:16px;">🔑 Join Game with Code</a> | 
+          <a href="https://www.dabhousie.com/#/create-game" style="color:#FFD700; font-weight:bold; font-size:16px;">👨‍👩‍👧‍👦 Start Free Family Game</a> | 
+          <a href="https://www.dabhousie.com/pricing.html" style="color:#FFD700; font-weight:bold; font-size:16px;">🪙 Pricing &amp; Credit Packs</a>
+        </p>
+      </main>
+      <footer style="margin-top:40px; border-top:1px solid #1E293B; padding-top:20px;">
+        <p>
+          <a href="https://www.dabhousie.com/privacy-policy.html" style="color:#94A3B8;">Privacy Policy</a> • 
+          <a href="https://www.dabhousie.com/terms-conditions.html" style="color:#94A3B8;">Terms &amp; Conditions</a> • 
+          <a href="https://www.dabhousie.com/pricing.html" style="color:#94A3B8;">Pricing</a>
+        </p>
+        <p style="font-size:12px; color:#64748B;">&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
+      </footer>
     </div>
   </noscript>
 
-  <!-- Crawler & Bot readable DOM container (positioned behind canvas so it never obstructs Flutter) -->
-  <div id="app-landing-info" class="seo-crawler-content" aria-hidden="true">
-    <h1>DabHousie - Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
-    <p>DabHousie is a modern social multiplayer entertainment platform created by Digital App Studio for hosting and playing live 90-ball Tambola with digital tickets, automated calling, and server prize verification.</p>
-    <p>Application Name: DabHousie</p>
-    <p>Developer: Digital App Studio</p>
-    <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a>
-    <a href="https://www.dabhousie.com/terms-conditions.html">Terms and Conditions</a>
+  <!-- Semantic SEO and Crawler Accessible Structure (Always present for bots and screen readers) -->
+  <div id="seo-crawler-container" class="seo-content-layer" aria-hidden="true">
+    <header>
+      <img src="dabhousie_horizontal_logo.png" alt="DabHousie - Play. Connect. Win." style="max-height:48px;">
+      <h1>DabHousie: Multiplayer Tambola, Housie &amp; 90-Ball Bingo</h1>
+      <p>Always 100% free for family games (1–5 players). Built for kitty parties, social clubs, and corporate events.</p>
+    </header>
+
+    <section>
+      <h2>Zero Friction Play</h2>
+      <p>No app download needed for guests — join instantly from any browser on phone, tablet, or desktop with a 6-digit room code. Optional mobile app available for notifications and quick access.</p>
+      <nav>
+        <a href="https://www.dabhousie.com/#/join">Join a Game</a>
+        <a href="https://www.dabhousie.com/#/create-game">Host a Free Family Game (1–5 Players)</a>
+        <a href="https://www.dabhousie.com/pricing.html">Host Party / Event (Pricing &amp; Credit Packs)</a>
+        <a href="https://www.dabhousie.com/#/wallet">Organizer Wallet</a>
+      </nav>
+    </section>
+
+    <section>
+      <h2>Why DabHousie?</h2>
+      <ul>
+        <li><strong>Free Family Play:</strong> Casual games with 1 to 5 players are permanently 100% free with 0 credits deducted.</li>
+        <li><strong>Automated Win Claims:</strong> Instant server validation for Early Five, Top Line, Middle Line, Bottom Line, Four Corners, and Full House.</li>
+        <li><strong>Live Projector &amp; TV Mode:</strong> Display high-definition drawn boards for physical hall and party events.</li>
+        <li><strong>Guaranteed Unique Tickets:</strong> Cryptographically generated unique 3x9 Tambola tickets.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Frequently Asked Questions</h2>
+      <article>
+        <h3>What is DabHousie?</h3>
+        <p>DabHousie is a multiplayer live Tambola / Housie game platform created by Digital App Studio.</p>
+      </article>
+      <article>
+        <h3>Is DabHousie free?</h3>
+        <p>Yes, all games with 1 to 5 players are completely free forever.</p>
+      </article>
+      <article>
+        <h3>How to buy credits for large kitty parties?</h3>
+        <p>Hosts can add credit packs anytime on <a href="https://www.dabhousie.com/pricing.html">dabhousie.com/pricing.html</a>.</p>
+      </article>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 Digital App Studio. All rights reserved. <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a> | <a href="https://www.dabhousie.com/terms-conditions.html">Terms &amp; Conditions</a> | <a href="https://www.dabhousie.com/pricing.html">Pricing</a></p>
+    </footer>
   </div>
 
   <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo">
+    <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
+    <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
+    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo">
   </picture>
   
   <script src="flutter_bootstrap.js" async=""></script>
-</body></html>
+</body>
+</html>

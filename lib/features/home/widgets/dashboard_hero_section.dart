@@ -69,7 +69,7 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Subhead
               Text(
-                'Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests.',
+                'Instant digital tickets, guaranteed-unique cards, and automated server-side win verification — no app download needed for guests (optional mobile app available for notifications & quick access).',
                 style: TextStyle(
                   fontSize: isWide ? 13.5 : 12.5,
                   color: const Color(0xFFCBD5E1),
