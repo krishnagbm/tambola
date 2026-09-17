@@ -14,7 +14,7 @@ Globals:
         BASE_URL: 'https://www.dabhousie.com'
         SUPPORT_EMAIL: 'contact@dabhousie.com'
         SES_FROM_EMAIL: 'receipts@dabhousie.com'
-        AWS_SES_REGION: 'us-east-1'
+        AWS_SES_REGION: 'us-east-2'
 
         # Supabase Config
         SUPABASE_URL: 'https://itfcnurjrnyalauwwdkj.supabase.co'
