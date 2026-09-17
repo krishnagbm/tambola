@@ -14,38 +14,53 @@ import stripe
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 BASE_URL = os.getenv("BASE_URL", "https://www.dabhousie.com")
 
-# Price mapping for the 4 core DabHousie packs
+# Price mapping for the 4 core DabHousie packs ($2/15c, $5/40c, $10/100c, $20/300c)
 def get_price_map():
     return {
+        "small": {
+            "price_id": os.getenv("STRIPE_PRICE_SMALL") or os.getenv("STRIPE_PRICE_STARTER"),
+            "credits": int(os.getenv("STRIPE_CREDITS_SMALL", "15")),
+            "label": "Small Pack (15 Credits)",
+        },
         "starter": {
-            "price_id": os.getenv("STRIPE_PRICE_STARTER"),
-            "credits": int(os.getenv("STRIPE_CREDITS_STARTER", "50")),
-            "label": "Starter Pack (50 Credits)",
+            "price_id": os.getenv("STRIPE_PRICE_SMALL") or os.getenv("STRIPE_PRICE_STARTER"),
+            "credits": int(os.getenv("STRIPE_CREDITS_STARTER", "15")),
+            "label": "Small Pack (15 Credits)",
+        },
+        "standard": {
+            "price_id": os.getenv("STRIPE_PRICE_STANDARD") or os.getenv("STRIPE_PRICE_FAMILY"),
+            "credits": int(os.getenv("STRIPE_CREDITS_STANDARD", "40")),
+            "label": "Standard Pack (40 Credits)",
         },
         "family": {
-            "price_id": os.getenv("STRIPE_PRICE_FAMILY"),
-            "credits": int(os.getenv("STRIPE_CREDITS_FAMILY", "150")),
-            "label": "Family & Party Pack (150 Credits)",
+            "price_id": os.getenv("STRIPE_PRICE_STANDARD") or os.getenv("STRIPE_PRICE_FAMILY"),
+            "credits": int(os.getenv("STRIPE_CREDITS_FAMILY", "40")),
+            "label": "Standard Pack (40 Credits)",
         },
         "family_plan": {
-            "price_id": os.getenv("STRIPE_PRICE_FAMILY"),
-            "credits": int(os.getenv("STRIPE_CREDITS_FAMILY", "150")),
-            "label": "Family & Party Pack (150 Credits)",
+            "price_id": os.getenv("STRIPE_PRICE_STANDARD") or os.getenv("STRIPE_PRICE_FAMILY"),
+            "credits": int(os.getenv("STRIPE_CREDITS_FAMILY", "40")),
+            "label": "Standard Pack (40 Credits)",
+        },
+        "large": {
+            "price_id": os.getenv("STRIPE_PRICE_LARGE") or os.getenv("STRIPE_PRICE_PRO"),
+            "credits": int(os.getenv("STRIPE_CREDITS_LARGE", "100")),
+            "label": "Large Gala Pack (100 Credits)",
         },
         "pro": {
-            "price_id": os.getenv("STRIPE_PRICE_PRO"),
-            "credits": int(os.getenv("STRIPE_CREDITS_PRO", "300")),
-            "label": "Pro Host Pack (300 Credits)",
+            "price_id": os.getenv("STRIPE_PRICE_LARGE") or os.getenv("STRIPE_PRICE_PRO"),
+            "credits": int(os.getenv("STRIPE_CREDITS_PRO", "100")),
+            "label": "Large Gala Pack (100 Credits)",
         },
         "mega": {
             "price_id": os.getenv("STRIPE_PRICE_MEGA"),
-            "credits": int(os.getenv("STRIPE_CREDITS_MEGA", "750")),
-            "label": "Mega Gala Pack (750 Credits)",
+            "credits": int(os.getenv("STRIPE_CREDITS_MEGA", "300")),
+            "label": "Mega Event Pack (300 Credits)",
         },
         "gala": {
             "price_id": os.getenv("STRIPE_PRICE_MEGA"),
-            "credits": int(os.getenv("STRIPE_CREDITS_MEGA", "750")),
-            "label": "Mega Gala Pack (750 Credits)",
+            "credits": int(os.getenv("STRIPE_CREDITS_MEGA", "300")),
+            "label": "Mega Event Pack (300 Credits)",
         },
     }
 

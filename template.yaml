@@ -42,11 +42,14 @@ Globals:
         STRIPE_SECRET_KEY: !Ref StripeSecretKey
         STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
 
-        # Stripe Price IDs (4 Core Packs)
-        STRIPE_PRICE_STARTER: 'price_1UGVEyHN5g5gsWE0PFX6NsCs'
-        STRIPE_PRICE_FAMILY:  'price_1UGVFVHN5g5gsWE0WiGBChwz'
-        STRIPE_PRICE_PRO:     'price_1UGVFvHN5g5gsWE0wo8VaXPc'
-        STRIPE_PRICE_MEGA:    'price_1UGVGRHN5g5gsWE0zUQidJpA'
+        # Stripe Price IDs (4 Core Packs: Small $2/15c, Standard $5/40c, Large $10/100c, Mega $20/300c)
+        STRIPE_PRICE_SMALL:    'price_1UGi2yHN5g5gsWE0ZB2aEvIo'
+        STRIPE_PRICE_STARTER:  'price_1UGi2yHN5g5gsWE0ZB2aEvIo'
+        STRIPE_PRICE_STANDARD: 'price_1UGi3fHN5g5gsWE0qCLg1aUd'
+        STRIPE_PRICE_FAMILY:   'price_1UGi3fHN5g5gsWE0qCLg1aUd'
+        STRIPE_PRICE_LARGE:    'price_1UGi42HN5g5gsWE0a4kaJcCg'
+        STRIPE_PRICE_PRO:      'price_1UGi42HN5g5gsWE0a4kaJcCg'
+        STRIPE_PRICE_MEGA:     'price_1UGi4PHN5g5gsWE05k0sHIjW'
 
   Api:
     Cors:

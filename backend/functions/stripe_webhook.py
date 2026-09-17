@@ -123,16 +123,18 @@ def _handle_checkout_session_completed(session: Any):
         # Fallback credit parsing if metadata was omitted
         if not credits_str or not str(credits_str).isdigit():
             credits_fallback_map = {
-                "family": 50,
-                "family_plan": 50,
-                "starter": 50,
-                "standard": 150,
-                "party": 300,
-                "pro": 300,
-                "gala": 750,
-                "mega": 1500,
+                "small": 15,
+                "starter": 15,
+                "standard": 40,
+                "family": 40,
+                "family_plan": 40,
+                "party": 40,
+                "large": 100,
+                "pro": 100,
+                "gala": 300,
+                "mega": 300,
             }
-            credits = credits_fallback_map.get(plan, 50)
+            credits = credits_fallback_map.get(plan, 15)
         else:
             credits = int(credits_str)
 

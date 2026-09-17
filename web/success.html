@@ -184,14 +184,16 @@
       const sessionId = params.get('session_id') || 'Completed';
 
       const planMap = {
-        'starter': 'Starter Pack (50 Credits)',
-        'family': 'Family & Party Pack (150 Credits)',
-        'family_plan': 'Family & Party Pack (150 Credits)',
-        'standard': 'Standard Event Pack (150 Credits)',
-        'party': 'Party Pack (300 Credits)',
-        'pro': 'Pro Host Pack (300 Credits)',
-        'gala': 'Mega Gala Pack (750 Credits)',
-        'mega': 'Mega Community Pack (1500 Credits)',
+        'small': 'Small Pack (15 Credits)',
+        'starter': 'Small Pack (15 Credits)',
+        'standard': 'Standard Pack (40 Credits)',
+        'family': 'Standard Pack (40 Credits)',
+        'family_plan': 'Standard Pack (40 Credits)',
+        'large': 'Large Gala Pack (100 Credits)',
+        'pro': 'Large Gala Pack (100 Credits)',
+        'party': 'Large Gala Pack (100 Credits)',
+        'mega': 'Mega Event Pack (300 Credits)',
+        'gala': 'Mega Event Pack (300 Credits)',
       };
 
       document.getElementById('plan-display').textContent = planMap[plan.toLowerCase()] || plan;
