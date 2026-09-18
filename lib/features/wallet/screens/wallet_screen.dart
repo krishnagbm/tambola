@@ -223,13 +223,15 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             '${Formatters.formatCredits(wallet.availableCredits)} Credits',
             style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor),
           ),
-          const SizedBox(height: 8),
-          Text(
-            wallet.creditsExpireAt != null
-                ? 'Valid until: ${Formatters.formatDate(wallet.creditsExpireAt!)}'
-                : 'Credits valid for 1 year from your most recent paid game.',
-            style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
-          ),
+          if (wallet.availableCredits > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              wallet.creditsExpireAt != null
+                  ? 'Valid until: ${Formatters.formatDate(wallet.creditsExpireAt!)}'
+                  : 'Credits valid for 1 year from your most recent paid game.',
+              style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+            ),
+          ],
         ],
       ),
     );

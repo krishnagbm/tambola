@@ -446,7 +446,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Join a game with an invite code without signing in.',
+                                'Join a game with an invite code\nwithout signing in.',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Color(0xFFA0AEC0),
