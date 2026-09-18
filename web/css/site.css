@@ -36,22 +36,26 @@ a {
 }
 
 /* ========================================================
-   TOP NAVIGATION BAR
+   TOP NAVIGATION BAR (Pixel-Matched to Canvas DabHousieAppBar)
    ======================================================== */
 header.site-header {
   position: sticky;
   top: 0;
   z-index: 1000;
+  height: 64px;
   background: rgba(10, 14, 23, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px 24px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .nav-container {
-  max-width: 1180px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -62,25 +66,39 @@ header.site-header {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .nav-logo {
   height: 42px;
   display: block;
+  object-fit: contain;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 6px;
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-links a {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  transition: color 0.2s ease;
+  color: #CBD5E1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .nav-links a:hover,
@@ -91,7 +109,8 @@ header.site-header {
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Nav Buttons */
@@ -99,13 +118,14 @@ header.site-header {
   background: var(--accent);
   color: #000;
   font-weight: 800;
-  font-size: 13.5px;
-  padding: 8px 16px;
+  font-size: 13px;
+  padding: 7px 14px;
   border-radius: 8px;
   transition: transform 0.15s ease, background 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
 .btn-nav-join:hover {
@@ -119,9 +139,10 @@ header.site-header {
   color: #fff;
   font-weight: 700;
   font-size: 13px;
-  padding: 7px 14px;
+  padding: 6px 12px;
   border-radius: 8px;
   transition: background 0.2s ease;
+  white-space: nowrap;
 }
 
 .btn-nav-host:hover {
@@ -139,6 +160,7 @@ header.site-header {
   padding: 6px 12px;
   border-radius: 8px;
   transition: background 0.2s ease;
+  white-space: nowrap;
 }
 
 .nav-signin-btn:hover {
@@ -188,10 +210,12 @@ header.site-header {
 /* Mobile Hamburger Toggle */
 .mobile-nav-toggle {
   display: none;
-  background: none;
-  border: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
-  font-size: 24px;
+  font-size: 20px;
+  padding: 5px 9px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -223,8 +247,13 @@ header.site-header {
   .nav-links {
     display: none;
   }
+  .btn-nav-host {
+    display: none;
+  }
   .mobile-nav-toggle {
-    display: block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
