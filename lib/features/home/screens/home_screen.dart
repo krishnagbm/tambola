@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
@@ -130,7 +129,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final walletState = ref.watch(walletProvider);
     final hostedGamesState = ref.watch(myHostedGamesProvider);
     final joinedGamesState = ref.watch(myJoinedGamesProvider);
-    final user = userState.value;
 
     return Scaffold(
       appBar: DabHousieAppBar(
@@ -337,7 +335,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 14),
           ],
 
-          // Hero Message (Logo is in AppBar)
+          // Hero Message (No duplicate logo; AppBar contains the main logo)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
@@ -347,9 +345,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     colors: [Color(0xFFFFD700), Color(0xFFFF9E00), Color(0xFF4895EF)],
                   ).createShader(bounds),
                   child: const Text(
-                    'Play Live Tambola, Housie, 90-Ball Bingo',
+                    'Play Live Tambola, Housie & 90-Ball Bingo',
                     style: TextStyle(
-                      fontSize: 19,
+                      fontSize: 20,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.2,
                       color: Colors.white,
@@ -357,9 +355,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 6),
                 const Text(
-                  'Connect with friends & family • Instant web play',
+                  'Live multiplayer for friends, family, parties & events • Instant web play',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -370,7 +368,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // Primary Action 1: Join Game
           Container(
@@ -399,11 +397,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Got an Invite Code?',
+                            'Join a Game',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           Text(
-                            'Join instantly as guest — zero sign-up required',
+                            'Enter 6-digit room code — instant web play, zero download',
                             style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
                           ),
                         ],
@@ -415,7 +413,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ElevatedButton.icon(
                   onPressed: () => context.push('/join'),
                   icon: const Icon(Icons.login_rounded, size: 18),
-                  label: const Text('Enter Code to Join', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                  label: const Text('Join a Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: Colors.black,
@@ -428,12 +426,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Primary Action 2: Family & Small Group Game (1–5 Players)
+          // Primary Action 2: Host a Game
           Container(
             decoration: BoxDecoration(
               color: AppTheme.darkCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.5), width: 1.5),
+              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5), width: 1.5),
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -448,64 +446,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Family Game Night',
+                            'Host a Game',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           Text(
-                            '1–5 players included* (0 credits needed)',
-                            style: TextStyle(fontSize: 11.5, color: AppTheme.accentSuccess),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton.icon(
-                  onPressed: () => AuthGuard.requireHostAuth(
-                    context,
-                    ref,
-                    () => context.push('/create-game'),
-                  ),
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Start Family Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.accentSuccess,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Primary Action 3: Host Party / Event
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.darkCard,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5), width: 1.5),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Row(
-                  children: [
-                    Text('🎟️', style: TextStyle(fontSize: 22)),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Host Party / Event',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                          Text(
-                            'Kitty parties, society clubs & corporate galas',
+                            'Free for 1–5 players • Paid hosting for larger groups',
                             style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
                           ),
                         ],
@@ -520,8 +465,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ref,
                     () => context.push('/create-game'),
                   ),
-                  icon: const Icon(Icons.celebration_rounded, size: 18),
-                  label: const Text('Host Party (6+ Players)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
+                  label: const Text('Host a Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryLight,
                     foregroundColor: Colors.white,
@@ -532,7 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
 
           // Quick Sign-In for Guests (if not registered)
           if (!user.isRegistered) ...[
@@ -686,14 +631,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Icon(Icons.phone_android_rounded, color: AppTheme.secondaryColor, size: 20),
               SizedBox(width: 8),
               Text(
-                'Play Anywhere on Any Device',
+                'Keep DabHousie Ready',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),
           const SizedBox(height: 4),
           const Text(
-            'Enjoy DabHousie seamlessly in your web browser or download the native mobile apps.',
+            'Use the mobile app for scheduled games, push reminders and quick access to ad-hoc games. Guests can join directly on web with zero app download.',
             style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
           ),
           const SizedBox(height: 12),
