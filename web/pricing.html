@@ -28,12 +28,137 @@
       text-align: center;
     }
 
+    /* Free Tier Hero Banner Card */
+    .free-tier-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(18, 24, 38, 0.95) 100%);
+      border: 1.5px solid rgba(16, 185, 129, 0.45);
+      border-radius: 18px;
+      padding: 28px 32px;
+      margin-bottom: 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    @media (max-width: 860px) {
+      .free-tier-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 20px;
+      }
+      .free-badge-row {
+        justify-content: center;
+      }
+      .free-tier-actions {
+        width: 100%;
+      }
+      .free-tier-actions .btn-free-host {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .free-tier-content {
+      flex: 1;
+    }
+
+    .free-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .free-pill {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34D399;
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .promo-offer-tag {
+      color: #94A3B8;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .free-tier-card h2 {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+
+    .free-tier-highlight {
+      font-size: 16px;
+      font-weight: 800;
+      color: #34D399;
+      margin-bottom: 8px;
+    }
+
+    .free-tier-card p {
+      font-size: 14px;
+      color: #CBD5E1;
+      line-height: 1.55;
+      max-width: 720px;
+      margin: 0;
+    }
+
+    .btn-free-host {
+      background: #10B981;
+      color: #000000;
+      font-size: 14.5px;
+      font-weight: 800;
+      padding: 13px 26px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-free-host:hover {
+      background: #059669;
+      transform: translateY(-2px);
+    }
+
+    /* Section divider for Paid Packs */
+    .paid-section-header {
+      margin-bottom: 16px;
+    }
+
+    .paid-section-header h2 {
+      font-size: 22px;
+      font-weight: 900;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .paid-section-header p {
+      font-size: 14px;
+      color: #94A3B8;
+    }
+
     /* 4-column side-by-side grid */
     .pricing-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
-      margin-top: 16px;
+      margin-top: 14px;
       align-items: stretch;
     }
 
@@ -366,16 +491,37 @@
   </div>
 
   <section class="page-hero">
-    <span class="eyebrow">SECURE HOST CHECKOUT</span>
-    <h1>Refill Your DabHousie Host Credits</h1>
+    <span class="eyebrow">TRANSPARENT HOST PRICING</span>
+    <h1>DabHousie Pricing &amp; Host Credits</h1>
     <p class="subtitle">
-      Credits are deducted only when games start based on your verified player count. 
-      Unused credits remain in your wallet and are valid for 1 year from your most recent paid game.
+      Free for family &amp; friends games (1–5 players*). For larger parties and group events (6+ players), choose an affordable credit pack.
     </p>
   </section>
 
   <main class="container">
     <div id="checkout-alert" class="alert"></div>
+
+    <!-- Free Tier Promotional Section -->
+    <div class="free-tier-card">
+      <div class="free-tier-content">
+        <div class="free-badge-row">
+          <span class="free-pill">🎁 100% Free Family Play</span>
+          <span class="promo-offer-tag">Limited-time promotional offer*</span>
+        </div>
+        <h2>Host Your First Small Game Free</h2>
+        <div class="free-tier-highlight">1–5 Players — 0 Credits Required</div>
+        <p>Host a family or friends game for up to 5 players at no cost. No credits are deducted for games with 1–5 players.</p>
+      </div>
+      <div class="free-tier-actions">
+        <a href="/#/create-game" class="btn-free-host">👨‍👩‍👧‍👦 Host a Free Game</a>
+      </div>
+    </div>
+
+    <!-- Section Divider for Paid Packs -->
+    <div class="paid-section-header">
+      <h2>🎟️ For Larger Groups</h2>
+      <p>Games with 6+ players use DabHousie Host Credits.</p>
+    </div>
 
     <div class="pricing-grid">
       
