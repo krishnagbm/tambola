@@ -478,24 +478,32 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
                     // ========================================================
                     // 1. WIDE SCREEN: 3-COLUMN LAYOUT
-                    // Left: Info, Waiting, Claims & End Game | Middle: Caller & Master Board | Right: Players List
+                    // Left: Pre-Game Banner, Header, Waiting, Claims, End Game | Middle: Caller & Master Board (Full Visibility) | Right: Players List
                     // ========================================================
                     if (is3Column) {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left Column (Cards, Prize Claims & Winners, End Game)
+                          // Left Column (Pre-Game Banner, Cards, Prize Claims & Winners, End Game)
                           Expanded(
                             flex: 3,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                                  _buildPreGameBanner(game, confirmedPlayers.length),
+                                  const SizedBox(height: 10),
+                                ],
+                                if (allPrizesWon && !isGameCompleted) ...[
+                                  _buildAllPrizesWonBanner(),
+                                  const SizedBox(height: 10),
+                                ],
                                 _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 _buildWaitingRoomCard(game, registrations),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 12),
                                 _buildClaimsQueue(claimsStream),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 14),
                                 OutlinedButton.icon(
                                   onPressed: isGameCompleted ? null : _handleEndGame,
                                   icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
@@ -505,35 +513,27 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 14),
 
-                          // Middle Column (Max Width: Latest Number, Call Button, Master Board)
+                          // Middle Column (Max Width: Latest Number, Call Button, Compact Master Board)
                           Expanded(
                             flex: 5,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                if (allPrizesWon && !isGameCompleted) ...[
-                                  _buildAllPrizesWonBanner(),
-                                  const SizedBox(height: 14),
-                                ],
-                                if (calledNumbers.isEmpty && !isGameCompleted) ...[
-                                  _buildPreGameBanner(game, confirmedPlayers.length),
-                                  const SizedBox(height: 14),
-                                ],
                                 _buildCallerHeader(latest, calledNumbers.length),
-                                const SizedBox(height: 14),
+                                const SizedBox(height: 8),
                                 ElevatedButton.icon(
                                   onPressed: disableCalling ? null : _handleCallNext,
                                   icon: Icon(
                                     allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                                    size: 28,
+                                    size: 24,
                                   ),
                                   label: _isCalling
                                       ? const Text('Selecting Number...')
@@ -547,27 +547,27 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                                       : calledNumbers.isEmpty
                                                           ? 'CALL FIRST NUMBER'
                                                           : 'CALL NEXT NUMBER',
-                                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                         ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
                                     foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
                                     disabledBackgroundColor: const Color(0xFF222639),
                                     disabledForegroundColor: const Color(0xFF718096),
-                                    padding: const EdgeInsets.symmetric(vertical: 18),
+                                    padding: const EdgeInsets.symmetric(vertical: 13),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 8),
                                 _buildMasterBoard(calledSet),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 14),
 
                           // Right Column (Compact Dedicated Players List with independent vertical scrollbar)
                           Expanded(
                             flex: 2,
-                            child: _buildPlayersSidebar(game, registrations, height: 740),
+                            child: _buildPlayersSidebar(game, registrations, height: 680),
                           ),
                         ],
                       );
@@ -1294,10 +1294,11 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
   Widget _buildCallerHeader(int? latest, int totalCalled) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: AppTheme.primaryDark,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF2E334D)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1305,19 +1306,18 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('LATEST NUMBER', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)),
-              const SizedBox(height: 4),
+              const Text('LATEST NUMBER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70)),
               Text(
                 latest != null ? '$latest' : '---',
-                style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor),
+                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor, height: 1.1),
               ),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('$totalCalled / 90', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-              const Text('Total Called', style: TextStyle(fontSize: 12, color: Colors.white70)),
+              Text('$totalCalled / 90', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              const Text('Total Called', style: TextStyle(fontSize: 11, color: Colors.white70)),
             ],
           ),
         ],
@@ -1328,21 +1328,30 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
   Widget _buildMasterBoard(Set<int> calledSet) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Master Board (1–90)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Master Board (1–90)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(
+                  '${calledSet.length} Called',
+                  style: const TextStyle(fontSize: 11, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 90,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 10,
-                childAspectRatio: 1,
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 4,
+                childAspectRatio: 1.18,
+                crossAxisSpacing: 3,
+                mainAxisSpacing: 3,
               ),
               itemBuilder: (ctx, idx) {
                 final num = idx + 1;
@@ -1350,14 +1359,14 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                 return Container(
                   decoration: BoxDecoration(
                     color: isCalled ? AppTheme.accentSuccess : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: isCalled ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: isCalled ? AppTheme.accentSuccess : const Color(0xFF2E334D), width: 0.8),
                   ),
                   child: Center(
                     child: Text(
                       '$num',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: isCalled ? Colors.white : const Color(0xFFA0AEC0),
                       ),
