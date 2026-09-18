@@ -12,6 +12,22 @@
     <priority>1.0</priority>
   </url>
 
+  <!-- How It Works Step-by-Step Guide -->
+  <url>
+    <loc>https://www.dabhousie.com/how-it-works.html</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- 90-Ball Bingo, Tambola & Housie Rules Guide -->
+  <url>
+    <loc>https://www.dabhousie.com/90-ball-bingo.html</loc>
+    <lastmod>2026-09-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Pricing & Storefront -->
   <url>
     <loc>https://www.dabhousie.com/pricing.html</loc>
@@ -42,14 +58,6 @@
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-  </url>
-
-  <!-- Rewards & Vouchers -->
-  <url>
-    <loc>https://www.dabhousie.com/#/rewards</loc>
-    <lastmod>2026-09-17</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
   </url>
 
   <!-- Official Privacy Policy -->

@@ -1,6 +1,8 @@
 # Robots.txt for DabHousie (https://www.dabhousie.com)
 User-agent: *
 Allow: /
+Allow: /how-it-works.html
+Allow: /90-ball-bingo.html
 Allow: /pricing.html
 Allow: /privacy-policy.html
 Allow: /terms-conditions.html
