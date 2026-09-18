@@ -625,7 +625,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Primary Action 2: Free Family Game (1–5 Players)
+          // Primary Action 2: Family & Small Group Game (1–5 Players)
           Container(
             decoration: BoxDecoration(
               color: AppTheme.darkCard,
@@ -645,11 +645,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Free Family Play',
+                            'Family Game Night',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           Text(
-                            'Free for 1–5 players* (0 credits)',
+                            '1–5 players included* (0 credits needed)',
                             style: TextStyle(fontSize: 11.5, color: AppTheme.accentSuccess),
                           ),
                         ],
@@ -665,7 +665,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     () => context.push('/create-game'),
                   ),
                   icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Start Free Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  label: const Text('Start Family Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.accentSuccess,
                     foregroundColor: Colors.black,
