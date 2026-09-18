@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
-import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
@@ -11,7 +9,6 @@ import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
 import '../../../providers/app_providers.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
-import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
@@ -60,88 +57,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
   }
 
-  Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.darkCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Sign Out?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text(
-          'Are you sure you want to sign out? You will return to a guest session, and will need to sign in again to host games.',
-          style: TextStyle(fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentDanger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await ref.read(authRepositoryProvider).signOut();
-      ref.invalidate(currentUserProvider);
-      ref.invalidate(walletProvider);
-      ref.invalidate(creditTransactionsProvider);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Signed out successfully. You are now in a guest session.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sign out error: $e'), backgroundColor: AppTheme.accentDanger),
-      );
-    }
-  }
-
-  static String _getAvatarEmoji(String avatarKey) {
-    switch (avatarKey) {
-      case 'avatar_lion':
-        return '🦁';
-      case 'avatar_tiger':
-        return '🐯';
-      case 'avatar_crown':
-        return '👑';
-      case 'avatar_wizard':
-        return '🧙';
-      case 'avatar_rocket':
-        return '🚀';
-      case 'avatar_fox':
-        return '🦊';
-      case 'avatar_panda':
-        return '🐼';
-      case 'avatar_unicorn':
-        return '🦄';
-      case 'avatar_cowboy':
-        return '🤠';
-      case 'avatar_star':
-        return '🌟';
-      case 'avatar_bullseye':
-        return '🎯';
-      case 'avatar_rocker':
-        return '🎸';
-      default:
-        return '🦁';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(currentUserProvider);
-    final user = userState.value;
     final walletState = ref.watch(walletProvider);
     final tiersState = ref.watch(capacityTiersProvider);
 

@@ -240,6 +240,60 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  Future<void> _handleLeaveGame() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 28),
+            SizedBox(width: 8),
+            Text('Leave Game?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to leave this game room?\n\nYour ticket and registration will be released, freeing up your seat in the room.',
+          style: TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay in Game'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Leave Game'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).leaveGame(widget.gameId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You have left the game room.'),
+          backgroundColor: AppTheme.accentSuccess,
+        ),
+      );
+      context.go('/');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error leaving game: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(currentUserProvider, (prev, next) {
@@ -290,6 +344,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             icon: const Icon(Icons.emoji_events_outlined),
             tooltip: 'My Rewards',
             onPressed: () => context.push('/rewards'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger),
+            tooltip: 'Quit / Leave Game Room',
+            onPressed: _handleLeaveGame,
           ),
         ],
       ),

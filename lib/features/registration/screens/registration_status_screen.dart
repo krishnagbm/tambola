@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
@@ -130,9 +129,9 @@ class RegistrationStatusScreen extends ConsumerWidget {
                         ] else if (game.isCompleted || game.status == 'COMPLETED') ...[
                           _buildConcludedCard(context, myReg, game),
                         ] else if (myReg.isConfirmed) ...[
-                          _buildConfirmedCard(context, myReg, game),
+                          _buildConfirmedCard(context, ref, myReg, game),
                         ] else ...[
-                          _buildWaitingCard(context, myReg, game),
+                          _buildWaitingCard(context, ref, myReg, game),
                         ],
 
                         const SizedBox(height: 20),
@@ -340,7 +339,59 @@ class RegistrationStatusScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildConfirmedCard(BuildContext context, MptRegistration reg, MptGame game) {
+  Future<void> _handleLeaveGame(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger),
+            SizedBox(width: 8),
+            Text('Leave Game Room?'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to leave this game room?\n\nYour seat reservation will be released and you will be removed from the organizer\'s player roster.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Stay in Room'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Leave Game'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).leaveGame(gameId);
+      ref.invalidate(registrationsStreamProvider(gameId));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You have left the game room.')),
+      );
+      context.go('/');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error leaving game: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  Widget _buildConfirmedCard(BuildContext context, WidgetRef ref, MptRegistration reg, MptGame game) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -393,12 +444,18 @@ class RegistrationStatusScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: () => _handleLeaveGame(context, ref),
+            icon: const Icon(Icons.exit_to_app_rounded, size: 16, color: Color(0xFFEF4444)),
+            label: const Text('Leave / Quit Game Room', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildWaitingCard(BuildContext context, MptRegistration reg, MptGame game) {
+  Widget _buildWaitingCard(BuildContext context, WidgetRef ref, MptRegistration reg, MptGame game) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -446,6 +503,12 @@ class RegistrationStatusScreen extends ConsumerWidget {
             'You will be notified automatically if the Organizer adds capacity before the game starts.',
             style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: () => _handleLeaveGame(context, ref),
+            icon: const Icon(Icons.exit_to_app_rounded, size: 16, color: Color(0xFFEF4444)),
+            label: const Text('Leave / Cancel Waiting Position', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
           ),
         ],
       ),

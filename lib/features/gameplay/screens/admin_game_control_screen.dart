@@ -181,6 +181,122 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
+  Future<void> _handleExpandCapacity(int extraCapacity) async {
+    try {
+      await ref.read(gameRepositoryProvider).increaseCapacity(
+            gameId: widget.gameId,
+            additionalCapacity: extraCapacity,
+          );
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      ref.invalidate(registrationsStreamProvider(widget.gameId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Room capacity expanded by +$extraCapacity seats! Waiting players promoted automatically. 🚀'),
+          backgroundColor: AppTheme.accentSuccess,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error expanding capacity: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  void _showCapacityUpgradeDialog(BuildContext context, MptGame? game, int waitingCount) {
+    final currentCap = game?.fundedCapacity ?? 5;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.upgrade_rounded, color: AppTheme.secondaryColor, size: 28),
+            SizedBox(width: 8),
+            Text('Switch Plan / Add Seats', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Current Room Capacity: $currentCap Seats',
+              style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1), fontWeight: FontWeight.bold),
+            ),
+            if (waitingCount > 0) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentWarning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentWarning),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 18, color: AppTheme.accentWarning),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$waitingCount player${waitingCount > 1 ? "s are" : " is"} waiting in the overflow queue and will be promoted immediately upon adding seats.',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFFDE68A)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            const Text(
+              'Select seats boost to add to this room:',
+              style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _buildCapacityOptionButton(ctx, '+5 Seats', 5, isRecommended: waitingCount > 0 && waitingCount <= 5),
+                _buildCapacityOptionButton(ctx, '+10 Seats', 10, isRecommended: waitingCount > 5 && waitingCount <= 10),
+                _buildCapacityOptionButton(ctx, '+25 Seats', 25, isRecommended: waitingCount > 10 && waitingCount <= 25),
+                _buildCapacityOptionButton(ctx, '+50 Seats', 50, isRecommended: waitingCount > 25),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCapacityOptionButton(BuildContext ctx, String label, int seats, {bool isRecommended = false}) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.pop(ctx);
+        _handleExpandCapacity(seats);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isRecommended ? AppTheme.secondaryColor : AppTheme.darkSurface,
+        foregroundColor: isRecommended ? AppTheme.primaryDark : Colors.white,
+        side: BorderSide(color: isRecommended ? AppTheme.secondaryColor : const Color(0xFF3B4163)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isRecommended ? AppTheme.primaryDark : Colors.white),
+      ),
+    );
+  }
+
   void _showPlayersModal(BuildContext context, List<MptRegistration> registrations, MptGame? game) {
     final confirmed = registrations.where((r) => r.isConfirmed).toList();
     final waiting = registrations.where((r) => r.isWaiting).toList();
@@ -222,6 +338,44 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                     ],
                   ),
                   const SizedBox(height: 12),
+                  if (waiting.isNotEmpty) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.accentWarning.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.accentWarning),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: AppTheme.accentWarning, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${waiting.length} player(s) in lobby over $capacity limit.',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFFDE68A)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _showCapacityUpgradeDialog(context, game, waiting.length);
+                            },
+                            icon: const Icon(Icons.upgrade_rounded, size: 14),
+                            label: const Text('Upgrade Plan'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accentWarning,
+                              foregroundColor: AppTheme.primaryDark,
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (game != null) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -398,6 +552,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     final game = gameStream.value;
     final registrations = regStream.value ?? [];
     final confirmedPlayers = registrations.where((r) => r.isConfirmed).toList();
+    final waitingPlayers = registrations.where((r) => r.isWaiting).toList();
+    final capacity = game?.fundedCapacity ?? 5;
     final isGameCompleted = game?.status == 'COMPLETED';
     final activePrizes = game?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
     final claims = claimsStream.value ?? [];
@@ -478,13 +634,13 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
                     // ========================================================
                     // 1. WIDE SCREEN: 3-COLUMN LAYOUT
-                    // Left: Pre-Game Banner, Header, Waiting, Claims, End Game | Middle: Caller & Master Board (Full Visibility) | Right: Players List
+                    // Left: Pre-Game Banner, Header, Claims, End Game | Middle: Caller & Master Board (Full Visibility) | Right: Two Dedicated Cards (Confirmed & Waiting with own scrollbars)
                     // ========================================================
                     if (is3Column) {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left Column (Pre-Game Banner, Cards, Prize Claims & Winners, End Game)
+                          // Left Column (Pre-Game Banner, Header, Prize Claims & Winners, End Game)
                           Expanded(
                             flex: 3,
                             child: Column(
@@ -499,8 +655,6 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                   const SizedBox(height: 10),
                                 ],
                                 _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
-                                const SizedBox(height: 10),
-                                _buildWaitingRoomCard(game, registrations),
                                 const SizedBox(height: 12),
                                 _buildClaimsQueue(claimsStream),
                                 const SizedBox(height: 14),
@@ -564,10 +718,26 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                           ),
                           const SizedBox(width: 14),
 
-                          // Right Column (Compact Dedicated Players List with independent vertical scrollbar)
+                          // Right Column: Two distinct sidebar cards, each with its own vertical scrollbar
                           Expanded(
-                            flex: 2,
-                            child: _buildPlayersSidebar(game, registrations, height: 680),
+                            flex: 3,
+                            child: SizedBox(
+                              height: 680,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: _buildConfirmedPlayersSidebarCard(game, confirmedPlayers, capacity),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Expanded(
+                                    flex: 2,
+                                    child: _buildWaitingPlayersSidebarCard(game, waitingPlayers, capacity),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ],
                       );
@@ -582,8 +752,6 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                         children: [
                           _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
                           const SizedBox(height: 12),
-                          _buildWaitingRoomCard(game, registrations),
-                          const SizedBox(height: 14),
                           if (allPrizesWon && !isGameCompleted) ...[
                             _buildAllPrizesWonBanner(),
                             const SizedBox(height: 14),
@@ -656,7 +824,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                   children: [
                                     _buildClaimsQueue(claimsStream),
                                     const SizedBox(height: 16),
-                                    _buildPlayersSidebar(game, registrations, height: 480),
+                                    _buildConfirmedPlayersSidebarCard(game, confirmedPlayers, capacity, height: 280),
+                                    const SizedBox(height: 12),
+                                    _buildWaitingPlayersSidebarCard(game, waitingPlayers, capacity, height: 200),
                                   ],
                                 ),
                               ),
@@ -674,8 +844,6 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                       children: [
                         _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
                         const SizedBox(height: 12),
-                        _buildWaitingRoomCard(game, registrations),
-                        const SizedBox(height: 14),
                         if (allPrizesWon && !isGameCompleted) ...[
                           _buildAllPrizesWonBanner(),
                           const SizedBox(height: 14),
@@ -718,6 +886,10 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                         _buildMasterBoard(calledSet),
                         const SizedBox(height: 16),
                         _buildClaimsQueue(claimsStream),
+                        const SizedBox(height: 16),
+                        _buildConfirmedPlayersSidebarCard(game, confirmedPlayers, capacity, height: 280),
+                        const SizedBox(height: 12),
+                        _buildWaitingPlayersSidebarCard(game, waitingPlayers, capacity, height: 200),
                         const SizedBox(height: 16),
                         OutlinedButton.icon(
                           onPressed: isGameCompleted ? null : _handleEndGame,
@@ -776,11 +948,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
-  Widget _buildPlayersSidebar(MptGame? game, List<MptRegistration> registrations, {double? height}) {
-    final confirmed = registrations.where((r) => r.isConfirmed).toList();
-    final waiting = registrations.where((r) => r.isWaiting).toList();
-    final capacity = game?.fundedCapacity ?? 5;
-
+  Widget _buildConfirmedPlayersSidebarCard(MptGame? game, List<MptRegistration> confirmed, int capacity, {double? height}) {
     return Container(
       height: height,
       padding: const EdgeInsets.all(14),
@@ -798,8 +966,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Players List (${confirmed.length}/$capacity)',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                  'Confirmed Players (${confirmed.length}/$capacity)',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
               if (game != null)
@@ -815,37 +983,38 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           ),
           const SizedBox(height: 8),
           const Divider(color: Color(0xFF2E334D), height: 1),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Expanded(
-            child: registrations.isEmpty
+            child: confirmed.isEmpty
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.person_add_alt_1_rounded, size: 36, color: Color(0xFF64748B)),
-                          const SizedBox(height: 10),
+                          const Icon(Icons.person_add_alt_1_rounded, size: 32, color: Color(0xFF64748B)),
+                          const SizedBox(height: 8),
                           const Text(
                             'No players joined yet',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           const SizedBox(height: 4),
                           const Text(
-                            'Share your invite code or link with players to get tickets.',
+                            'Share your invite code or link with players.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           if (game != null)
                             ElevatedButton.icon(
                               onPressed: () => _handleShareInvite(game),
-                              icon: const Icon(Icons.share_rounded, size: 14),
+                              icon: const Icon(Icons.share_rounded, size: 13),
                               label: const Text('Share Invite'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.secondaryColor,
                                 foregroundColor: AppTheme.primaryDark,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                visualDensity: VisualDensity.compact,
                               ),
                             ),
                         ],
@@ -855,26 +1024,116 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                 : Scrollbar(
                     thumbVisibility: true,
                     child: ListView(
-                      padding: const EdgeInsets.only(right: 8),
-                      children: [
-                        if (confirmed.isNotEmpty) ...[
-                          Text(
-                            'CONFIRMED PLAYERS (${confirmed.length})',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.accentSuccess, letterSpacing: 0.8),
-                          ),
+                      padding: const EdgeInsets.only(right: 6),
+                      children: confirmed.map((r) => _buildPlayerTile(r, isConfirmed: true)).toList(),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingPlayersSidebarCard(MptGame? game, List<MptRegistration> waiting, int capacity, {double? height}) {
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: waiting.isNotEmpty ? AppTheme.accentWarning.withValues(alpha: 0.6) : const Color(0xFF2E334D),
+          width: waiting.isNotEmpty ? 1.2 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.hourglass_top_rounded, color: AppTheme.accentWarning, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Waiting Room (${waiting.length})',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.upgrade_rounded, size: 18, color: AppTheme.secondaryColor),
+                tooltip: 'Switch Plan / Add Seats',
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                constraints: const BoxConstraints(),
+                onPressed: () => _showCapacityUpgradeDialog(context, game, waiting.length),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFF2E334D), height: 1),
+          const SizedBox(height: 8),
+          if (waiting.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.accentWarning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.accentWarning.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 16, color: AppTheme.accentWarning),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${waiting.length} player(s) waiting over $capacity limit.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFFDE68A), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => _showCapacityUpgradeDialog(context, game, waiting.length),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.accentWarning,
+                      foregroundColor: AppTheme.primaryDark,
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    ),
+                    child: const Text('Add Seats', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Expanded(
+            child: waiting.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline_rounded, size: 28, color: AppTheme.accentSuccess.withValues(alpha: 0.7)),
                           const SizedBox(height: 6),
-                          ...confirmed.map((r) => _buildPlayerTile(r, isConfirmed: true)),
-                          const SizedBox(height: 12),
-                        ],
-                        if (waiting.isNotEmpty) ...[
-                          Text(
-                            'WAITING ROOM (${waiting.length})',
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.accentWarning, letterSpacing: 0.8),
+                          const Text(
+                            'Lobby queue is clear',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white70),
                           ),
-                          const SizedBox(height: 6),
-                          ...waiting.map((r) => _buildPlayerTile(r, isConfirmed: false)),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'All joined players currently have confirmed tickets.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                          ),
                         ],
-                      ],
+                      ),
+                    ),
+                  )
+                : Scrollbar(
+                    thumbVisibility: true,
+                    child: ListView(
+                      padding: const EdgeInsets.only(right: 6),
+                      children: waiting.map((r) => _buildPlayerTile(r, isConfirmed: false)).toList(),
                     ),
                   ),
           ),
@@ -888,6 +1147,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     final isFreeTier = capacity <= 5;
     final inviteCode = game?.inviteCode ?? '---';
     final confirmedCount = registrations.where((r) => r.isConfirmed).length;
+    final waitingCount = registrations.where((r) => r.isWaiting).length;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -979,9 +1239,63 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                   ),
                 ),
               ),
+              const SizedBox(width: 6),
+              // Switch Plan / Add Seats Chip
+              InkWell(
+                onTap: () => _showCapacityUpgradeDialog(context, game, waitingCount),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.secondaryColor, width: 0.8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.upgrade_rounded, size: 13, color: AppTheme.secondaryColor),
+                      SizedBox(width: 2),
+                      Text(
+                        '+ Seats',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
+
+          // Message when no players have joined yet
+          if (registrations.isEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Color(0xFF60A5FA), size: 18),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'No players have joined yet. Share your 6-digit room code or join link with your players so they can enter and receive tickets before you call numbers.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           // Bottom Bar: Invite Code Box + Action Buttons
           Container(
@@ -1043,6 +1357,17 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                   runSpacing: 8,
                   children: [
                     ElevatedButton.icon(
+                      onPressed: () => _showCapacityUpgradeDialog(context, game, waitingCount),
+                      icon: const Icon(Icons.upgrade_rounded, size: 16),
+                      label: const Text('Switch Plan / Add Seats'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    ElevatedButton.icon(
                       onPressed: game != null ? () => _handleShareInvite(game) : null,
                       icon: const Icon(Icons.share_rounded, size: 16),
                       label: const Text('Share Invite'),
@@ -1078,178 +1403,6 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                   ],
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWaitingRoomCard(MptGame? game, List<MptRegistration> registrations) {
-    final confirmed = registrations.where((r) => r.isConfirmed).toList();
-    final waiting = registrations.where((r) => r.isWaiting).toList();
-    final capacity = game?.fundedCapacity ?? 5;
-
-    if (registrations.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4), width: 1.2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF60A5FA), size: 20),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Waiting for Players to Join (0 Joined)',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      Text(
-                        'No family members or players have joined the game yet.',
-                        style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Send a fresh invite link or share the 6-digit room code with your players so they can enter and receive their tickets before you call numbers.',
-              style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (game != null) ...[
-                  ElevatedButton.icon(
-                    onPressed: () => _handleShareInvite(game),
-                    icon: const Icon(Icons.share_rounded, size: 16),
-                    label: const Text('Send Invite Now'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                OutlinedButton.icon(
-                  onPressed: () => _handleCopyLink(game?.inviteCode ?? ''),
-                  icon: const Icon(Icons.copy_rounded, size: 14),
-                  label: const Text('Copy Join Link'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF93C5FD),
-                    side: const BorderSide(color: Color(0xFF3B82F6)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2E334D)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.groups_rounded, color: AppTheme.secondaryColor, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Players in Game (${confirmed.length} / $capacity Joined)',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
-              if (waiting.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentWarning.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    '${waiting.length} Waiting',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentWarning),
-                  ),
-                ),
-              TextButton(
-                onPressed: () => _showPlayersModal(context, registrations, game),
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-                child: const Text('View All', style: TextStyle(fontSize: 12, color: AppTheme.secondaryColor)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: registrations.take(8).map((r) {
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: r.isConfirmed ? const Color(0xFF334155) : AppTheme.accentWarning.withValues(alpha: 0.5)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(Formatters.getAvatarEmoji(r.avatar), style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                      Text(
-                        r.displayName,
-                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList()
-                ..addAll(registrations.length > 8
-                    ? [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.darkSurface,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '+${registrations.length - 8} more',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                          ),
-                        )
-                      ]
-                    : []),
             ),
           ),
         ],

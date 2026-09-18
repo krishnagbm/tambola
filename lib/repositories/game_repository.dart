@@ -160,6 +160,23 @@ class GameRepository {
     }
   }
 
+  /// Allows a player to leave / cancel their game registration
+  Future<void> leaveGame(String gameId) async {
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) return;
+    try {
+      await _supabase.rpc('MPT_leave_game', params: {
+        'p_game_id': gameId,
+      });
+    } catch (_) {
+      await _supabase
+          .from('MPT_game_registrations')
+          .delete()
+          .eq('game_id', gameId)
+          .eq('user_id', uid);
+    }
+  }
+
   /// Admin increases funded capacity and triggers automatic waiting player promotion
   Future<void> increaseCapacity({
     required String gameId,
