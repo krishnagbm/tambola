@@ -9,7 +9,7 @@ class DashboardFooter extends StatelessWidget {
   Future<void> _launchURL(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      await launchUrl(uri, webOnlyWindowName: '_self');
     }
   }
 
@@ -29,27 +29,17 @@ class DashboardFooter extends StatelessWidget {
                 color: AppTheme.secondaryColor,
               ),
             ),
-            const SizedBox(height: 6),
-            InkWell(
-              onTap: () => _launchURL(AppConfig.appBaseUrl),
-              child: const Text(
-                'DabHousie by Digital App Studio',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFA0AEC0),
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Wrap(
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
               children: [
                 InkWell(
-                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/how-it-works.html'),
                   child: const Text(
-                    'Privacy Policy',
+                    'How It Works',
                     style: TextStyle(
                       fontSize: 12,
                       color: Color(0xFFCBD5E1),
@@ -58,10 +48,33 @@ class DashboardFooter extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/90-ball-bingo.html'),
+                  child: const Text(
+                    '90-Ball Bingo Guide',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
+                    ),
+                  ),
                 ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/pricing.html'),
+                  child: const Text(
+                    'Pricing',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                 InkWell(
                   onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html'),
                   child: const Text(
@@ -74,7 +87,31 @@ class DashboardFooter extends StatelessWidget {
                     ),
                   ),
                 ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                  child: const Text(
+                    'Privacy Policy',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ),
               ],
+            ),
+            const SizedBox(height: 10),
+            InkWell(
+              onTap: () => _launchURL(AppConfig.appBaseUrl),
+              child: const Text(
+                '© 2026 DabHousie by Digital App Studio. All rights reserved.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFFA0AEC0),
+                ),
+              ),
             ),
           ],
         ),

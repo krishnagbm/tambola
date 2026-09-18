@@ -171,6 +171,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          if (MediaQuery.of(context).size.width > 768) ...[
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/how-it-works.html'), webOnlyWindowName: '_self'),
+              child: const Text('How It Works', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/90-ball-bingo.html'), webOnlyWindowName: '_self'),
+              child: const Text('90-Ball Bingo Guide', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/pricing.html'), webOnlyWindowName: '_self'),
+              child: const Text('Pricing', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 8),
+          ],
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
