@@ -63,20 +63,39 @@
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
 
   <title>DabHousie — Multiplayer Tambola, Housie &amp; 90-Ball Bingo</title>
-  <link rel="stylesheet" href="/css/site.css">
 
   <style id="splash-screen-style">
-    .flutter-splash-container {
-      position: fixed;
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: #0B1026;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #F8FAFC;
+    }
+
+    .center {
+      margin: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      -ms-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+    }
+
+    /* Semantic SEO Content Layer (Accessible to search engine crawlers and screen readers) */
+    .seo-content-layer {
+      position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #0B1026;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 99999;
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      z-index: 0;
+      opacity: 0.01;
+      pointer-events: none;
     }
   </style>
 
@@ -168,191 +187,124 @@
     ]
   }
   </script>
+
+  <script id="splash-screen-script">
+    function removeSplashFromWeb() {
+      document.getElementById("splash")?.remove();
+      document.body.style.background = "transparent";
+    }
+
+    // Automatically remove splash when Flutter paints first frame
+    window.addEventListener('flutter-first-frame', function() {
+      removeSplashFromWeb();
+    });
+  </script>
 </head>
 <body>
-
-  <!-- Non-JS Fallback -->
+  <!-- Fallback for Non-JS Clients -->
   <noscript>
     <div style="background:#0B1026; color:#F8FAFC; padding:24px; text-align:center; font-family:sans-serif;">
       <p style="font-size:16px;">JavaScript is required to run the interactive DabHousie live game. Please enable JavaScript in your browser settings to join or host games.</p>
     </div>
   </noscript>
 
-  <!-- Visible HTML Landing Page Layer -->
-  <div id="html-landing-view">
-    <!-- Top Navigation Header -->
-    <header class="site-header">
-      <div class="nav-container">
-        <div class="nav-left">
-          <a href="/" class="brand">
-            <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
-          </a>
-        </div>
-
-        <ul class="nav-links">
-          <li><a href="/how-it-works.html">How It Works</a></li>
-          <li><a href="/90-ball-bingo.html">90-Ball Bingo Guide</a></li>
-          <li><a href="/pricing.html">Pricing</a></li>
-        </ul>
-
-        <div class="nav-actions">
-          <div id="nav-auth-container">
-            <a href="javascript:void(0)" onclick="launchFlutterApp('/profile')" class="nav-signin-btn">Sign In</a>
-          </div>
-          <a href="javascript:void(0)" onclick="launchFlutterApp('/create-game')" class="btn-nav-host">Host a Game</a>
-          <a href="javascript:void(0)" onclick="launchFlutterApp('/join')" class="btn-nav-join">🔑 Join a Game</a>
-          <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
-        </div>
-      </div>
+  <!-- Semantic SEO and Crawler Accessible Structure (Always present for bots and screen readers) -->
+  <div id="seo-crawler-container" class="seo-content-layer" aria-hidden="true">
+    <header>
+      <img src="dabhousie_horizontal_logo.png" alt="DabHousie - Multiplayer Tambola, Housie and 90-Ball Bingo" style="max-height:48px;">
+      <h1>Play Tambola, Housie &amp; 90-Ball Bingo. Connect. Win.</h1>
+      <p>Live multiplayer Tambola, Housie &amp; 90-Ball Bingo for friends, family, parties, and events.</p>
+      <nav>
+        <a href="https://www.dabhousie.com/#/join">Join a Game</a>
+        <a href="https://www.dabhousie.com/#/create-game">Host a Game (Free for 1–5 Players*)</a>
+        <a href="https://www.dabhousie.com/how-it-works.html">How It Works</a>
+        <a href="https://www.dabhousie.com/90-ball-bingo.html">90-Ball Bingo Guide</a>
+        <a href="https://www.dabhousie.com/pricing.html">Pricing &amp; Credit Packs</a>
+        <a href="https://www.dabhousie.com/#/wallet">Organizer Wallet</a>
+      </nav>
+      <p>Join instantly on the web — no app download required. (Optional mobile app available for notifications &amp; quick access).</p>
     </header>
 
-    <!-- Mobile Navigation Drawer -->
-    <div id="mobile-nav-drawer" class="mobile-nav-drawer">
-      <a href="/">Home</a>
-      <a href="/how-it-works.html">How It Works</a>
-      <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a>
-      <a href="/pricing.html">Pricing &amp; Credit Packs</a>
-      <a href="javascript:void(0)" onclick="launchFlutterApp('/join')" style="color:var(--accent);">🔑 Join a Game</a>
-      <a href="javascript:void(0)" onclick="launchFlutterApp('/create-game')">👨‍👩‍👧‍👦 Host a Game</a>
-    </div>
-
-    <!-- Hero Section -->
-    <section class="page-hero">
-      <span class="eyebrow">🎉 LIVE MULTIPLAYER TAMBOLA, HOUSIE &amp; 90-BALL BINGO</span>
-      <h1>Play Tambola, Housie &amp; 90-Ball Bingo. Connect. Win.</h1>
-      <p class="subtitle">
-        Live multiplayer for friends, family, parties &amp; events. Free for 1–5 players* — join instantly on web with zero app download (optional mobile app available for notifications &amp; quick access).
-      </p>
-      <div class="btn-group">
-        <button onclick="launchFlutterApp('/join')" class="btn-nav-join" style="font-size:16px; padding:14px 32px; border:none; cursor:pointer;">🔑 Join a Game</button>
-        <button onclick="launchFlutterApp('/create-game')" class="btn-nav-host" style="font-size:15px; padding:14px 28px; cursor:pointer;">👨‍👩‍👧‍👦 Host a Game (Free for 1–5 Players*)</button>
-      </div>
+    <section>
+      <h2>How DabHousie Works</h2>
+      <ol>
+        <li><strong>Create:</strong> Set up your game and choose your group size.</li>
+        <li><strong>Invite:</strong> Share the 6-digit room code with your friends, family, or group.</li>
+        <li><strong>Play:</strong> Play live together with digital tickets and real-time automated number calling.</li>
+      </ol>
     </section>
 
-    <!-- Main Content -->
-    <main class="main-content">
+    <section>
+      <h2>Tambola, Housie &amp; 90-Ball Bingo — Together</h2>
+      <p>DabHousie brings the classic 90-ball game online for live multiplayer play. Whether your group calls it Tambola, Housie, or 90-Ball Bingo, everyone plays together in real time on any phone, tablet, or laptop.</p>
+    </section>
 
-      <!-- 3-Column Highlights Grid -->
-      <div class="grid-3">
-        <div class="feature-box" style="cursor:pointer;" onclick="location.href='/how-it-works.html'">
-          <h4>⚡ How DabHousie Works</h4>
-          <p>Create a game in 30 seconds, share a 6-digit room code, and let players join instantly on any phone, tablet, or PC with zero app download.</p>
-          <p style="margin-top:10px; color:var(--accent); font-weight:700; font-size:13px;">Learn more →</p>
-        </div>
+    <section>
+      <h2>Host Your Own Game</h2>
+      <p>Create a private multiplayer game, invite your group, and run your Tambola, Housie or 90-Ball Bingo event live with digital cards, automated number calling, and server-side prize verification.</p>
+      <ul>
+        <li><strong>Family Game Night:</strong> 1–5 players included* (0 credits needed).</li>
+        <li><strong>Automated Win Claims:</strong> Instant server validation for Early Five, Top Line, Middle Line, Bottom Line, Four Corners, and Full House.</li>
+        <li><strong>Live Projector &amp; TV Mode:</strong> Display high-definition drawn boards for physical hall and party events.</li>
+        <li><strong>Guaranteed Unique Tickets:</strong> Cryptographically generated unique 3x9 Tambola tickets.</li>
+      </ul>
+    </section>
 
-        <div class="feature-box" style="cursor:pointer;" onclick="location.href='/90-ball-bingo.html'">
-          <h4>🎯 90-Ball Bingo &amp; Tambola Guide</h4>
-          <p>Complete guide to 3×9 tickets, column rules (1–90), and winning combinations (Early 5, Rows, Corners, Full House).</p>
-          <p style="margin-top:10px; color:var(--accent); font-weight:700; font-size:13px;">View game rules →</p>
-        </div>
+    <section>
+      <h2>Made for Groups</h2>
+      <ul>
+        <li>Family Game Nights</li>
+        <li>Friends &amp; Birthday Celebrations</li>
+        <li>Kitty Parties &amp; Society Socials</li>
+        <li>Community &amp; Club Gatherings</li>
+        <li>Corporate &amp; Virtual Galas</li>
+      </ul>
+    </section>
 
-        <div class="feature-box" style="cursor:pointer;" onclick="location.href='/pricing.html'">
-          <h4>🪙 Transparent Pricing</h4>
-          <p>Casual games for 1–5 players are free (0 credits required)*. Large gala &amp; event credit packs starting at just $2.</p>
-          <p style="margin-top:10px; color:var(--accent); font-weight:700; font-size:13px;">View credit packs →</p>
-        </div>
-      </div>
+    <section>
+      <h2>Always Ready to Play — Optional Mobile App</h2>
+      <p>Keep DabHousie on your phone for quick anytime access to games, scheduled party events, and instant start reminders. All guests can join directly on the web with zero app download required.</p>
+    </section>
 
-      <!-- Feature Card: Host Your Own Game -->
-      <div class="content-card" style="margin-top:28px;">
-        <h2>👑 Host Your Own Game</h2>
-        <p>Run your Tambola, Housie, or 90-Ball Bingo event live with digital cards, automated number calling, and server-side prize verification.</p>
-        <div class="grid-2">
-          <div>
-            <ul style="margin-bottom:0;">
-              <li><strong>Family Game Night:</strong> 1–5 players included* (0 credits needed).</li>
-              <li><strong>Automated Win Claims:</strong> Instant server validation for Early Five, Lines, Corners, and Full House.</li>
-            </ul>
-          </div>
-          <div>
-            <ul style="margin-bottom:0;">
-              <li><strong>Live TV &amp; Projector Mode:</strong> Display high-definition drawn boards for physical hall events.</li>
-              <li><strong>Guaranteed Unique Tickets:</strong> Cryptographically unique 3×9 tickets generated per session.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+    <section>
+      <h2>Frequently Asked Questions</h2>
+      <article>
+        <h3>What is DabHousie?</h3>
+        <p>DabHousie is a live multiplayer platform for the classic 90-ball game known globally as Tambola, Housie, or 90-Ball Bingo.</p>
+      </article>
+      <article>
+        <h3>Is DabHousie free to play?</h3>
+        <p>Yes, DabHousie offers a free tier for family games up to 5 players (0 credits required)*. For larger groups (6 to 250+ players), organizers can purchase credit packs on <a href="https://www.dabhousie.com/pricing.html">dabhousie.com/pricing.html</a>.</p>
+      </article>
+      <article>
+        <h3>Do players need to download an app to join?</h3>
+        <p>No app download is required for guests. Players can join instantly on any web browser.</p>
+      </article>
+      <article>
+        <h3>How does automated prize claim verification work?</h3>
+        <p>When a player claims a winning pattern, DabHousie's server automatically validates the ticket numbers against the drawn numbers in real time, preventing false claims.</p>
+      </article>
+    </section>
 
-      <!-- Use Cases -->
-      <div class="content-card">
-        <h2>🎉 Made for Every Group</h2>
-        <div class="grid-3">
-          <div class="feature-box"><h4>👨‍👩‍👧‍👦 Family Game Nights</h4><p>Connect living rooms across cities for holiday and weekend fun.</p></div>
-          <div class="feature-box"><h4>🥳 Birthday &amp; Kitty Parties</h4><p>Fast-paced social rounds with custom winning prizes.</p></div>
-          <div class="feature-box"><h4>🏢 Corporate &amp; Club Galas</h4><p>Host large-scale community events for up to 250+ guests.</p></div>
-        </div>
-      </div>
+    <section>
+      <h2>Ready to Play?</h2>
+      <p>Join a game with your group or host your own Tambola, Housie or 90-Ball Bingo game.</p>
+      <a href="https://www.dabhousie.com/#/join">Join a Game</a>
+      <a href="https://www.dabhousie.com/#/create-game">Host a Game</a>
+    </section>
 
-      <!-- Bottom CTA Banner -->
-      <div class="cta-banner">
-        <h2>Ready to Play?</h2>
-        <p>Join a game with your group or host your own Tambola, Housie or 90-Ball Bingo game.</p>
-        <div class="btn-group">
-          <button onclick="launchFlutterApp('/join')" class="btn-nav-join" style="font-size:15px; padding:12px 28px; border:none; cursor:pointer;">🔑 Join a Game</button>
-          <button onclick="launchFlutterApp('/create-game')" class="btn-nav-host" style="font-size:15px; padding:12px 24px; cursor:pointer;">👨‍👩‍👧‍👦 Host a Game</button>
-        </div>
-      </div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="site-footer">
-      <div class="footer-links">
-        <a href="/">Home</a> <span>•</span>
-        <a href="/how-it-works.html">How It Works</a> <span>•</span>
-        <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> <span>•</span>
-        <a href="/pricing.html">Pricing</a> <span>•</span>
-        <a href="/terms-conditions.html">Terms &amp; Conditions</a> <span>•</span>
-        <a href="/privacy-policy.html">Privacy Policy</a>
-      </div>
-      <p>&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
-      <p class="disclaimer-text">
-        * Free hosting for 1–5 players is offered for a limited promotional period and is subject to terms of service and fair usage policies.
-      </p>
+    <footer>
+      <p>* Free tier for 1–5 players is offered for family play for a limited time and subject to terms of service and fair usage policy.</p>
+      <p>&copy; 2026 Digital App Studio. All rights reserved. <a href="https://www.dabhousie.com/how-it-works.html">How It Works</a> | <a href="https://www.dabhousie.com/90-ball-bingo.html">90-Ball Bingo Guide</a> | <a href="https://www.dabhousie.com/pricing.html">Pricing</a> | <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a> | <a href="https://www.dabhousie.com/terms-conditions.html">Terms &amp; Conditions</a></p>
     </footer>
   </div>
 
-  <!-- Interactive Flutter App View Container (Hidden initially on root landing, launched on action or deep link) -->
-  <div id="flutter-app-wrapper" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999; background:#0B1026;">
-    <picture id="splash" class="flutter-splash-container">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo" style="max-height:64px;">
-    </picture>
-  </div>
-
-  <script src="/js/nav.js"></script>
-
-  <script>
-    let flutterLoaded = false;
-
-    function launchFlutterApp(route) {
-      if (route) {
-        window.location.hash = '#' + route;
-      }
-      document.getElementById('html-landing-view').style.display = 'none';
-      document.getElementById('flutter-app-wrapper').style.display = 'block';
-
-      if (!flutterLoaded) {
-        flutterLoaded = true;
-        const script = document.createElement('script');
-        script.src = 'flutter_bootstrap.js';
-        document.body.appendChild(script);
-      }
-    }
-
-    // Auto-launch Flutter if visitor arrives directly on an app hash route (e.g., /#/join, /#/play, /#/wallet)
-    (function () {
-      const hash = window.location.hash;
-      if (hash && hash.length > 2 && (hash.startsWith('#/') || hash.startsWith('#!'))) {
-        launchFlutterApp();
-      }
-    })();
-
-    // Remove splash screen when Flutter renders first frame
-    window.addEventListener('flutter-first-frame', function() {
-      document.getElementById('splash')?.remove();
-    });
-  </script>
+  <picture id="splash">
+    <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
+    <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
+    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo">
+  </picture>
+  
+  <script src="flutter_bootstrap.js" async=""></script>
 </body>
 </html>
