@@ -329,8 +329,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
   Widget _buildPlayerTile(MptRegistration r, {required bool isConfirmed}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
         color: AppTheme.darkSurface,
         borderRadius: BorderRadius.circular(10),
@@ -339,8 +339,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: isConfirmed ? AppTheme.primaryColor.withValues(alpha: 0.3) : AppTheme.accentWarning.withValues(alpha: 0.2),
               shape: BoxShape.circle,
@@ -348,36 +348,36 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
             alignment: Alignment.center,
             child: Text(
               Formatters.getAvatarEmoji(r.avatar),
-              style: const TextStyle(fontSize: 18),
+              style: const TextStyle(fontSize: 16),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   r.displayName,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Ticket #${r.registrationSeq} • ${Formatters.formatShortDate(r.joinedAt)}',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  'Ticket #${r.registrationSeq}',
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
               color: isConfirmed ? AppTheme.accentSuccess.withValues(alpha: 0.2) : AppTheme.accentWarning.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(5),
             ),
             child: Text(
               isConfirmed ? 'CONFIRMED' : 'WAITING',
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: FontWeight.bold,
                 color: isConfirmed ? AppTheme.accentSuccess : AppTheme.accentWarning,
               ),
@@ -478,13 +478,13 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
                     // ========================================================
                     // 1. WIDE SCREEN: 3-COLUMN LAYOUT
-                    // Left: Info & Master Board | Middle: Caller & Claims | Right: Players List
+                    // Left: Info, Waiting, Claims & End Game | Middle: Caller & Master Board | Right: Players List
                     // ========================================================
                     if (is3Column) {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Left Column (Cards & Master Board & End Game)
+                          // Left Column (Cards, Prize Claims & Winners, End Game)
                           Expanded(
                             flex: 3,
                             child: Column(
@@ -494,8 +494,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                 const SizedBox(height: 12),
                                 _buildWaitingRoomCard(game, registrations),
                                 const SizedBox(height: 14),
-                                _buildMasterBoard(calledSet),
-                                const SizedBox(height: 14),
+                                _buildClaimsQueue(claimsStream),
+                                const SizedBox(height: 16),
                                 OutlinedButton.icon(
                                   onPressed: isGameCompleted ? null : _handleEndGame,
                                   icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
@@ -513,9 +513,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                           ),
                           const SizedBox(width: 16),
 
-                          // Middle Column (Caller Header, Call Button, Claims)
+                          // Middle Column (Max Width: Latest Number, Call Button, Master Board)
                           Expanded(
-                            flex: 4,
+                            flex: 5,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -558,15 +558,15 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildClaimsQueue(claimsStream),
+                                _buildMasterBoard(calledSet),
                               ],
                             ),
                           ),
                           const SizedBox(width: 16),
 
-                          // Right Column (Dedicated Players List with independent vertical scrollbar)
+                          // Right Column (Compact Dedicated Players List with independent vertical scrollbar)
                           Expanded(
-                            flex: 3,
+                            flex: 2,
                             child: _buildPlayersSidebar(game, registrations, height: 740),
                           ),
                         ],
