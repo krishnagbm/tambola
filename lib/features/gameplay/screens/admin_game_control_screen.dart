@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/mpt_claim.dart';
+import '../../../models/mpt_game.dart';
+import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
 
 class AdminGameControlScreen extends ConsumerStatefulWidget {
@@ -25,6 +30,29 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
   void initState() {
     super.initState();
     _isMuted = TambolaAudioCaller().isMuted;
+  }
+
+  void _handleCopyCode(String inviteCode) {
+    Clipboard.setData(ClipboardData(text: inviteCode));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invite Code copied to clipboard!')),
+    );
+  }
+
+  void _handleCopyLink(String inviteCode) {
+    final link = '${AppConfig.appBaseUrl}/#/join/$inviteCode';
+    Clipboard.setData(ClipboardData(text: link));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Direct join link copied to clipboard!')),
+    );
+  }
+
+  Future<void> _handleShareInvite(MptGame game) async {
+    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
+        '🔑 Invite Code: ${game.inviteCode}\n\n'
+        '👉 Tap the link below to join directly on web or in app:\n$link';
+    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
   Future<void> _handleCallNext() async {
@@ -153,13 +181,223 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
+  void _showPlayersModal(BuildContext context, List<MptRegistration> registrations, MptGame? game) {
+    final confirmed = registrations.where((r) => r.isConfirmed).toList();
+    final waiting = registrations.where((r) => r.isWaiting).toList();
+    final capacity = game?.fundedCapacity ?? 5;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.darkCard,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.65,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          expand: false,
+          builder: (_, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.groups_rounded, color: AppTheme.secondaryColor, size: 24),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Joined Players (${confirmed.length} / $capacity)',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white70),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (game != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF2E334D)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('INVITE CODE', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w700)),
+                                Text(
+                                  game.inviteCode,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: AppTheme.secondaryColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _handleShareInvite(game),
+                            icon: const Icon(Icons.share_rounded, size: 16),
+                            label: const Text('Share Invite'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              foregroundColor: AppTheme.primaryDark,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  Expanded(
+                    child: registrations.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.person_outline, size: 48, color: Color(0xFF64748B)),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'No players have joined yet',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Share the invite code or direct link with your players so they can get their tickets.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                                ),
+                                const SizedBox(height: 16),
+                                if (game != null)
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      _handleShareInvite(game);
+                                    },
+                                    icon: const Icon(Icons.share_rounded, size: 18),
+                                    label: const Text('Share Invite Link'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.secondaryColor,
+                                      foregroundColor: AppTheme.primaryDark,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          )
+                        : ListView(
+                            controller: scrollController,
+                            children: [
+                              if (confirmed.isNotEmpty) ...[
+                                Text(
+                                  'CONFIRMED PLAYERS (${confirmed.length})',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess, letterSpacing: 0.8),
+                                ),
+                                const SizedBox(height: 8),
+                                ...confirmed.map((r) => _buildPlayerTile(r, isConfirmed: true)),
+                                const SizedBox(height: 16),
+                              ],
+                              if (waiting.isNotEmpty) ...[
+                                Text(
+                                  'WAITING ROOM PLAYERS (${waiting.length})',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentWarning, letterSpacing: 0.8),
+                                ),
+                                const SizedBox(height: 8),
+                                ...waiting.map((r) => _buildPlayerTile(r, isConfirmed: false)),
+                              ],
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPlayerTile(MptRegistration r, {required bool isConfirmed}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: isConfirmed ? const Color(0xFF2E334D) : AppTheme.accentWarning.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isConfirmed ? AppTheme.primaryColor.withValues(alpha: 0.3) : AppTheme.accentWarning.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              Formatters.getAvatarEmoji(r.avatar),
+              style: const TextStyle(fontSize: 18),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  r.displayName,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Ticket #${r.registrationSeq} • ${Formatters.formatShortDate(r.joinedAt)}',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: isConfirmed ? AppTheme.accentSuccess.withValues(alpha: 0.2) : AppTheme.accentWarning.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              isConfirmed ? 'CONFIRMED' : 'WAITING',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: isConfirmed ? AppTheme.accentSuccess : AppTheme.accentWarning,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
+    final regStream = ref.watch(registrationsStreamProvider(widget.gameId));
 
     final game = gameStream.value;
+    final registrations = regStream.value ?? [];
+    final confirmedPlayers = registrations.where((r) => r.isConfirmed).toList();
     final isGameCompleted = game?.status == 'COMPLETED';
     final activePrizes = game?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
     final claims = claimsStream.value ?? [];
@@ -185,6 +423,23 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
               });
             },
           ),
+          if (game != null)
+            IconButton(
+              icon: const Icon(Icons.share_rounded, color: AppTheme.secondaryColor),
+              tooltip: 'Share Invite Code & Link',
+              onPressed: () => _handleShareInvite(game),
+            ),
+          IconButton(
+            icon: Badge(
+              isLabelVisible: registrations.isNotEmpty,
+              label: Text('${registrations.length}'),
+              backgroundColor: AppTheme.secondaryColor,
+              textColor: AppTheme.primaryDark,
+              child: const Icon(Icons.groups_rounded, color: Colors.white),
+            ),
+            tooltip: 'View Players (${registrations.length})',
+            onPressed: () => _showPlayersModal(context, registrations, game),
+          ),
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
             tooltip: 'Live Display (Open in New Tab / Window)',
@@ -197,6 +452,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
               ref.invalidate(calledNumbersStreamProvider(widget.gameId));
               ref.invalidate(claimsStreamProvider(widget.gameId));
               ref.invalidate(gameStreamProvider(widget.gameId));
+              ref.invalidate(registrationsStreamProvider(widget.gameId));
             },
           ),
         ],
@@ -218,53 +474,21 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Event Name Banner with Edit Button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkCard,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF2E334D)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.celebration, size: 20, color: AppTheme.secondaryColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              game?.name ?? 'DabHousie Event',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, size: 16, color: AppTheme.primaryLight),
-                            tooltip: 'Edit Event Name',
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            constraints: const BoxConstraints(),
-                            onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: isGameCompleted ? const Color(0xFF718096).withValues(alpha: 0.2) : AppTheme.accentSuccess.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isGameCompleted ? const Color(0xFFA0AEC0) : AppTheme.accentSuccess,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    // 1. Comprehensive Game Header & Invite Banner
+                    _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
+                    const SizedBox(height: 12),
 
-                    // All Prizes Won Alert Banner
+                    // 2. Live Waiting Room & Joined Players Summary Card
+                    _buildWaitingRoomCard(game, registrations),
+                    const SizedBox(height: 14),
+
+                    // 3. Pre-Game Guidance Banner (When 0 numbers called)
+                    if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                      _buildPreGameBanner(game, confirmedPlayers.length),
+                      const SizedBox(height: 14),
+                    ],
+
+                    // 4. All Prizes Won Alert Banner
                     if (allPrizesWon && !isGameCompleted) ...[
                       Container(
                         padding: const EdgeInsets.all(14),
@@ -299,7 +523,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                       ),
                     ],
 
-                    // Responsive 2-Column (Desktop/Tablet) vs Stacked Column (Mobile)
+                    // 5. Responsive 2-Column (Desktop/Tablet) vs Stacked Column (Mobile)
                     LayoutBuilder(
                       builder: (ctx, constraints) {
                         final isWide = constraints.maxWidth >= 820;
@@ -327,7 +551,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                               ? 'All Prizes Won (Conclude Below)'
                                               : isMaxNumbers
                                                   ? 'All 90 Numbers Called'
-                                                  : 'CALL NEXT NUMBER',
+                                                  : calledNumbers.isEmpty
+                                                      ? 'CALL FIRST NUMBER'
+                                                      : 'CALL NEXT NUMBER',
                                       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                     ),
                               style: ElevatedButton.styleFrom(
@@ -401,6 +627,396 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildGameHeaderAndInviteCard(MptGame? game, List<MptRegistration> registrations, bool isGameCompleted) {
+    final capacity = game?.fundedCapacity ?? 5;
+    final isFreeTier = capacity <= 5;
+    final inviteCode = game?.inviteCode ?? '---';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2E334D)),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primaryColor.withValues(alpha: 0.15),
+            AppTheme.darkCard,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Top Row: Title, Edit, Status & Tier badges
+          Row(
+            children: [
+              const Icon(Icons.celebration, size: 22, color: AppTheme.secondaryColor),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  game?.name ?? 'DabHousie Event',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit, size: 18, color: AppTheme.primaryLight),
+                tooltip: 'Edit Event Name',
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                constraints: const BoxConstraints(),
+                onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
+              ),
+              const SizedBox(width: 6),
+              // Status Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isGameCompleted ? const Color(0xFF718096).withValues(alpha: 0.2) : AppTheme.accentSuccess.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isGameCompleted ? const Color(0xFFA0AEC0) : AppTheme.accentSuccess,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Capacity Tier Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 0.8),
+                ),
+                child: Text(
+                  isFreeTier ? '5-Player (Free)' : '$capacity-Member Game',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Bottom Bar: Invite Code Box + Action Buttons
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                // Invite Code Box with Copy
+                InkWell(
+                  onTap: () => _handleCopyCode(inviteCode),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'ROOM INVITE CODE',
+                              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFF94A3B8), letterSpacing: 0.5),
+                            ),
+                            Text(
+                              inviteCode,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.secondaryColor,
+                                letterSpacing: 1.5,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.copy_rounded, size: 16, color: AppTheme.secondaryColor),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Action Buttons
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: game != null ? () => _handleShareInvite(game) : null,
+                      icon: const Icon(Icons.share_rounded, size: 16),
+                      label: const Text('Share Invite'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: AppTheme.primaryDark,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _handleCopyLink(inviteCode),
+                      icon: const Icon(Icons.link_rounded, size: 16),
+                      label: const Text('Copy Link'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Color(0xFF475569)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/admin-lobby/${widget.gameId}'),
+                      icon: const Icon(Icons.meeting_room_outlined, size: 16),
+                      label: const Text('Lobby View'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF94A3B8),
+                        side: const BorderSide(color: Color(0xFF334155)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingRoomCard(MptGame? game, List<MptRegistration> registrations) {
+    final confirmed = registrations.where((r) => r.isConfirmed).toList();
+    final waiting = registrations.where((r) => r.isWaiting).toList();
+    final capacity = game?.fundedCapacity ?? 5;
+
+    if (registrations.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF3B82F6).withValues(alpha: 0.4), width: 1.2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_add_alt_1_rounded, color: Color(0xFF60A5FA), size: 20),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Waiting for Players to Join (0 Joined)',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      Text(
+                        'No family members or players have joined the game yet.',
+                        style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Send a fresh invite link or share the 6-digit room code with your players so they can enter and receive their tickets before you call numbers.',
+              style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (game != null) ...[
+                  ElevatedButton.icon(
+                    onPressed: () => _handleShareInvite(game),
+                    icon: const Icon(Icons.share_rounded, size: 16),
+                    label: const Text('Send Invite Now'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                OutlinedButton.icon(
+                  onPressed: () => _handleCopyLink(game?.inviteCode ?? ''),
+                  icon: const Icon(Icons.copy_rounded, size: 14),
+                  label: const Text('Copy Join Link'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF93C5FD),
+                    side: const BorderSide(color: Color(0xFF3B82F6)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF2E334D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.groups_rounded, color: AppTheme.secondaryColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Players in Game (${confirmed.length} / $capacity Joined)',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              if (waiting.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentWarning.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    '${waiting.length} Waiting',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentWarning),
+                  ),
+                ),
+              TextButton(
+                onPressed: () => _showPlayersModal(context, registrations, game),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
+                child: const Text('View All', style: TextStyle(fontSize: 12, color: AppTheme.secondaryColor)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: registrations.take(8).map((r) {
+                return Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: r.isConfirmed ? const Color(0xFF334155) : AppTheme.accentWarning.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(Formatters.getAvatarEmoji(r.avatar), style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Text(
+                        r.displayName,
+                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList()
+                ..addAll(registrations.length > 8
+                    ? [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkSurface,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '+${registrations.length - 8} more',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          ),
+                        )
+                      ]
+                    : []),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreGameBanner(MptGame? game, int confirmedCount) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.accentSuccess.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.campaign_outlined, color: AppTheme.accentSuccess, size: 26),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Game is Ready to Start! 🎲',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  confirmedCount > 0
+                      ? '$confirmedCount players are in the game. When everyone is ready with their tickets, tap "CALL FIRST NUMBER" below to begin!'
+                      : 'Invite your players first. When they have joined, tap "CALL FIRST NUMBER" below to begin drawing balls.',
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

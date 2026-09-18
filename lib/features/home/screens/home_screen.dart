@@ -222,7 +222,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return (g['status'] ?? '') == 'IN_PROGRESS';
     }).firstOrNull;
 
-    final liveHosted = hostedState.value?.where((g) => g.isInProgress).firstOrNull;
+    final liveHosted = hostedState.value?.where((g) => g.isInProgress || g.isOpen).firstOrNull;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     if (isMobile) {
@@ -256,8 +256,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               _buildLiveGameBanner(
                 context,
                 title: liveHosted.name,
-                subtitle: 'You are hosting this live session. Tap to resume caller controls.',
-                onTap: () => context.push('/admin-control/${liveHosted.id}'),
+                subtitle: liveHosted.isOpen
+                    ? 'Lobby Open • Waiting for players. Tap to manage lobby & invite.'
+                    : 'You are hosting this live session. Tap to resume caller controls.',
+                onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
               ),
               const SizedBox(height: 12),
             ],
@@ -323,8 +325,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildLiveGameBanner(
               context,
               title: liveHosted.name,
-              subtitle: 'You are hosting this live session. Tap to resume controls.',
-              onTap: () => context.push('/admin-control/${liveHosted.id}'),
+              subtitle: liveHosted.isOpen
+                  ? 'Lobby Open • Waiting for players. Tap to manage lobby & invite.'
+                  : 'You are hosting this live session. Tap to resume controls.',
+              onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
             ),
             const SizedBox(height: 14),
           ],
