@@ -33,14 +33,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentTabIndex = 0;
   String _playerFilter = 'ALL';
   String _organizerFilter = 'ALL';
-  final _emailController = TextEditingController();
   bool _isSigningIn = false;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
+  String? _loadingProvider;
 
   void _refreshAll() {
     ref.invalidate(currentUserProvider);
@@ -1506,89 +1500,123 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             // Social Sign-In / Account Protection Section (Show when not registered)
             if (!isRegistered) ...[
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppTheme.darkCard,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: const Color(0xFF2E334D)),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Row(
                       children: [
                         Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 22),
                         SizedBox(width: 8),
                         Text(
-                          'Account Backup & Google Sign-In',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                          'Sign In to DabHousie',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Link your account with Google or Email to save your organizer credits, tickets, and game history across devices.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                      'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
+                      style: TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1), height: 1.4),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Google Sign In
+                    _buildOAuthButton(
+                      icon: const CustomPaint(
+                        size: Size(22, 22),
+                        painter: GoogleLogoPainter(),
+                      ),
+                      title: 'Google',
+                      subtitle: 'Continue with your Google Account',
+                      isLoading: _isSigningIn && _loadingProvider == 'Google',
+                      onTap: _isSigningIn ? null : _handleGoogleSignIn,
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Apple Sign In
+                    _buildOAuthButton(
+                      icon: const CustomPaint(
+                        size: Size(22, 22),
+                        painter: AppleLogoPainter(),
+                      ),
+                      title: 'Apple',
+                      subtitle: 'Continue with your Apple ID',
+                      isLoading: _isSigningIn && _loadingProvider == 'Apple',
+                      onTap: _isSigningIn ? null : _handleAppleSignIn,
                     ),
                     const SizedBox(height: 16),
 
-                    // Google Sign In Button
-                    ElevatedButton(
-                      onPressed: _isSigningIn ? null : _handleGoogleSignIn,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF1F2937),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: _isSigningIn
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 22,
-                                  height: 22,
-                                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                  child: const Center(
-                                    child: Text(
-                                      'G',
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF4285F4)),
-                                    ),
-                                  ),
+                    // Legal Note
+                    Center(
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          const Text(
+                            'By signing in, you agree to our ',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFFCBD5E1),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html'),
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                              child: Text(
+                                'Terms',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF60A5FA),
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Color(0xFF60A5FA),
                                 ),
-                                const SizedBox(width: 10),
-                                const Text('Continue with Google', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              ],
-                            ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Email Sign In Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              hintText: 'Enter email address',
-                              prefixIcon: Icon(Icons.email_outlined),
-                              isDense: true,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: _isSigningIn ? null : _handleEmailSignIn,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          const Text(
+                            ' and ',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFFCBD5E1),
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
-                          child: const Text('Send Link'),
-                        ),
-                      ],
+                          InkWell(
+                            onTap: () => _launchURL('${AppConfig.appBaseUrl}/privacy-policy.html'),
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+                              child: Text(
+                                'Privacy Policy',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFF60A5FA),
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Color(0xFF60A5FA),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Text(
+                            '.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFFCBD5E1),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1812,49 +1840,117 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _handleGoogleSignIn() async {
-    setState(() => _isSigningIn = true);
+  Widget _buildOAuthButton({
+    required Widget icon,
+    required String title,
+    required String subtitle,
+    required bool isLoading,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: const Color(0xFF0F172A),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: const Color(0xFF1E293B),
+        splashColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF2E334D), width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : icon,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w400,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: Color(0xFF64748B),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleOAuthSignIn(String provider, Future<void> Function() signInAction) async {
+    setState(() {
+      _isSigningIn = true;
+      _loadingProvider = provider;
+    });
     try {
-      await ref.read(authRepositoryProvider).signInWithGoogle();
+      await signInAction();
+      _refreshAll();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Redirecting to Google Sign-In...')),
+        SnackBar(content: Text('Redirecting to $provider Sign-In...')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Google Sign-In error: $e'), backgroundColor: AppTheme.accentDanger),
+        SnackBar(content: Text('$provider sign-in failed: $e'), backgroundColor: AppTheme.accentDanger),
       );
     } finally {
-      if (mounted) setState(() => _isSigningIn = false);
+      if (mounted) {
+        setState(() {
+          _isSigningIn = false;
+          _loadingProvider = null;
+        });
+      }
     }
   }
 
-  Future<void> _handleEmailSignIn() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email address'), backgroundColor: AppTheme.accentWarning),
-      );
-      return;
-    }
+  Future<void> _handleGoogleSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Google', () => authRepo.signInWithGoogle());
+  }
 
-    setState(() => _isSigningIn = true);
-    try {
-      await ref.read(authRepositoryProvider).signInWithEmail(email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Magic sign-in link sent to $email! Please check your inbox.'), backgroundColor: AppTheme.accentSuccess),
-      );
-      _emailController.clear();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Email sign-in error: $e'), backgroundColor: AppTheme.accentDanger),
-      );
-    } finally {
-      if (mounted) setState(() => _isSigningIn = false);
-    }
+  Future<void> _handleAppleSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Apple', () => authRepo.signInWithApple());
   }
 
   Future<void> _handleSignOut() async {
