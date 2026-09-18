@@ -171,6 +171,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
         actions: [
+          if (MediaQuery.of(context).size.width > 768) ...[
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/how-it-works.html')),
+              child: const Text('How It Works', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/90-ball-bingo.html')),
+              child: const Text('90-Ball Bingo Guide', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/pricing.html')),
+              child: const Text('Pricing', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+            const SizedBox(width: 8),
+          ],
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh',
@@ -471,12 +486,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const DashboardHeroSection(),
             const SizedBox(height: 14),
 
-            // 2. USP Grid ("Why DabHousie?")
-            const UspGridSection(),
+            // 2. 3-Card Highlights Grid (Linking to Dedicated Subpages)
+            _buildDesktopHighlightsGrid(context),
             const SizedBox(height: 14),
 
-            // 3. How It Works (3-step flow)
-            const HowItWorksSection(),
+            // 3. Organizer Feature Card ("Host Your Own Game")
+            _buildOrganizerFeaturesCard(context),
             const SizedBox(height: 14),
 
             // 4. Perfect For (Chip row)
@@ -487,11 +502,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildAppDownloadSection(context),
             const SizedBox(height: 12),
 
-            // 6. Quick Rules & How to Win Helper
-            _buildHowToPlayCard(context),
-            const SizedBox(height: 8),
-
-            // 7. Dashboard Footer Tagline
+            // 6. Dashboard Footer Tagline
             const DashboardFooter(),
           ],
         ),
@@ -795,6 +806,211 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 8),
         ],
       ),
+    );
+  }
+
+  // ==========================================
+  // DESKTOP HIGHLIGHTS & SUBPAGE LINK CARDS
+  // ==========================================
+  Widget _buildDesktopHighlightsGrid(BuildContext context) {
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        final isWide = constraints.maxWidth > 700;
+        final items = [
+          _HighlightItem(
+            emoji: '⚡',
+            title: 'How DabHousie Works',
+            description: 'Create a game in 30 seconds, share a 6-digit room code, and let players join instantly on any phone or browser.',
+            linkUrl: '${AppConfig.appBaseUrl}/how-it-works.html',
+            actionText: 'Learn more →',
+          ),
+          _HighlightItem(
+            emoji: '🎯',
+            title: '90-Ball Bingo Guide',
+            description: 'Complete guide to 3×9 tickets, columns (1–90), and winning patterns (Early 5, Lines, Corners, Full House).',
+            linkUrl: '${AppConfig.appBaseUrl}/90-ball-bingo.html',
+            actionText: 'View game rules →',
+          ),
+          _HighlightItem(
+            emoji: '🪙',
+            title: 'Transparent Pricing',
+            description: 'Casual games for 1–5 players are free (0 credits)*. Large event packs starting from just \$2.',
+            linkUrl: '${AppConfig.appBaseUrl}/pricing.html',
+            actionText: 'View credit packs →',
+          ),
+        ];
+
+        if (isWide) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: items.map((item) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: _buildHighlightCard(item),
+                ),
+              );
+            }).toList(),
+          );
+        }
+
+        return Column(
+          children: items.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildHighlightCard(item),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildHighlightCard(_HighlightItem item) {
+    return InkWell(
+      onTap: () => launchUrl(Uri.parse(item.linkUrl)),
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppTheme.darkCard,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(item.emoji, style: const TextStyle(fontSize: 20)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    item.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.description,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFF94A3B8),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              item.actionText,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // DESKTOP ORGANIZER FEATURE CARD
+  // ==========================================
+  Widget _buildOrganizerFeaturesCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Text('👑', style: TextStyle(fontSize: 22)),
+              SizedBox(width: 10),
+              Text(
+                'Host Your Own Game',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Run your Tambola, Housie, or 90-Ball Bingo event live with digital cards, automated speech calling, and server-side prize verification.',
+            style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (ctx, constraints) {
+              final isWide = constraints.maxWidth > 600;
+              final col1 = [
+                '👨‍👩‍👧‍👦 Family Game Night: 1–5 players included* (0 credits needed)',
+                '⚡ Automated Win Claims: Instant server validation for Early 5, Rows & Full House',
+              ];
+              final col2 = [
+                '📺 Live TV & Projector Mode: Cast HD drawn boards for physical hall events',
+                '🎫 Unique Tickets: Guaranteed mathematically unique 3×9 tickets',
+              ];
+
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildBulletColumn(col1)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildBulletColumn(col2)),
+                  ],
+                );
+              }
+
+              return Column(
+                children: [
+                  _buildBulletColumn(col1),
+                  const SizedBox(height: 8),
+                  _buildBulletColumn(col2),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBulletColumn(List<String> bullets) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: bullets.map((b) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('• ', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(
+                  b,
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -2190,4 +2406,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 }
+
+class _HighlightItem {
+  final String emoji;
+  final String title;
+  final String description;
+  final String linkUrl;
+  final String actionText;
+
+  _HighlightItem({
+    required this.emoji,
+    required this.title,
+    required this.description,
+    required this.linkUrl,
+    required this.actionText,
+  });
+}
+
 
