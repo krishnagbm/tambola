@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
 import '../../../providers/app_providers.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
@@ -145,171 +146,14 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final tiersState = ref.watch(capacityTiersProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
-        titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              AppAssets.horizontalLogo,
-              height: 38,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
-              ),
-              child: const Text(
-                'Wallet',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.secondaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Balance',
-            onPressed: () {
-              ref.invalidate(walletProvider);
-              ref.invalidate(creditTransactionsProvider);
-              ref.invalidate(currentUserProvider);
-            },
-          ),
-          TextButton.icon(
-            onPressed: () => context.go('/'),
-            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
-            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
-          ),
-          // User / Auth Action Button
-          if (user != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8, left: 4),
-              child: user.isRegistered
-                  ? PopupMenuButton<String>(
-                      tooltip: 'Account Menu',
-                      offset: const Offset(0, 48),
-                      color: AppTheme.darkCard,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: const BorderSide(color: Color(0xFF2E334D)),
-                      ),
-                      icon: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
-                        backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-                            ? NetworkImage(user.avatarUrl!)
-                            : null,
-                        child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
-                            ? Text(_getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 16))
-                            : null,
-                      ),
-                      itemBuilder: (ctx) => [
-                        PopupMenuItem(
-                          value: 'profile',
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person, size: 18, color: AppTheme.secondaryColor),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(user.displayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                    if (user.email != null)
-                                      Text(user.email!, style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
-                          value: 'home',
-                          child: Row(
-                            children: [
-                              Icon(Icons.dashboard_outlined, size: 18),
-                              SizedBox(width: 8),
-                              Text('Dashboard', style: TextStyle(fontSize: 13)),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'signout',
-                          child: Row(
-                            children: [
-                              Icon(Icons.logout, size: 18, color: AppTheme.accentDanger),
-                              SizedBox(width: 8),
-                              Text('Sign Out', style: TextStyle(fontSize: 13, color: AppTheme.accentDanger)),
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (val) {
-                        if (val == 'profile' || val == 'home') {
-                          context.go('/');
-                        } else if (val == 'signout') {
-                          _handleSignOut();
-                        }
-                      },
-                    )
-                  : TextButton.icon(
-                      onPressed: () => AuthDialog.show(context),
-                      icon: Container(
-                        width: 18,
-                        height: 18,
-                        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                        child: const Center(
-                          child: Text(
-                            'G',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'Roboto',
-                              color: Color(0xFF4285F4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      label: const Text(
-                        'Sign In',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.25),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
-                        ),
-                      ),
-                    ),
-            ),
-          const SizedBox(width: 4),
-        ],
+      appBar: DabHousieAppBar(
+        badgeText: 'Wallet',
+        showBackButton: true,
+        onRefresh: () {
+          ref.invalidate(walletProvider);
+          ref.invalidate(creditTransactionsProvider);
+          ref.invalidate(currentUserProvider);
+        },
       ),
       body: walletState.when(
         loading: () => const Center(child: CircularProgressIndicator()),

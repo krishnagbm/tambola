@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../models/mpt_reward.dart';
 import '../../../providers/app_providers.dart';
 
@@ -15,14 +16,11 @@ class RewardsScreen extends ConsumerWidget {
     final rewardsState = ref.watch(myRewardsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Rewards & Prizes'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref.invalidate(myRewardsProvider),
-          ),
-        ],
+      appBar: DabHousieAppBar(
+        badgeText: 'Rewards',
+        showBackButton: true,
+        showRewards: false,
+        onRefresh: () => ref.invalidate(myRewardsProvider),
       ),
       body: rewardsState.when(
         loading: () => const Center(child: CircularProgressIndicator()),

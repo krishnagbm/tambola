@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 
 class JoinGameScreen extends ConsumerStatefulWidget {
@@ -111,57 +112,10 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   Widget build(BuildContext context) {
     final userState = ref.watch(currentUserProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
-        titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              AppAssets.horizontalLogo,
-              height: 38,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
-              ),
-              child: const Text(
-                'Join',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.secondaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => context.go('/'),
-            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
-            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 8),
-        ],
+    return const Scaffold(
+      appBar: DabHousieAppBar(
+        badgeText: 'Join',
+        showBackButton: true,
       ),
       body: Center(
         child: ConstrainedBox(

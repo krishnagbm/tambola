@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../providers/app_providers.dart';
 
 class VerifyRewardScreen extends ConsumerStatefulWidget {
@@ -45,9 +46,10 @@ class _VerifyRewardScreenState extends ConsumerState<VerifyRewardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify Prize Reward'),
+    return const Scaffold(
+      appBar: DabHousieAppBar(
+        badgeText: 'Verify Prize',
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

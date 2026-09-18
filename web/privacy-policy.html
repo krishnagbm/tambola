@@ -15,66 +15,37 @@
     gtag('js', new Date());
     gtag('config', 'G-E46BLPH29F');
   </script>
+  <link rel="stylesheet" href="/css/site.css">
   <style>
-    :root {
-      --bg-dark: #0B1026;
-      --card-bg: #151B38;
-      --primary: #4361EE;
-      --primary-light: #4895EF;
-      --secondary: #FFD700;
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --border: #2E334D;
-      --accent-success: #2ECC71;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      line-height: 1.7;
-      padding: 32px 16px 80px;
-    }
-    .container {
-      max-width: 880px;
-      margin: 0 auto;
+    .legal-container {
+      max-width: 920px;
+      margin: 0 auto 60px;
       background: var(--card-bg);
-      border: 1px solid var(--border);
+      border: 1px solid var(--card-border);
       border-radius: 20px;
       padding: 40px 32px;
       box-shadow: 0 12px 36px rgba(0,0,0,0.4);
     }
-    .header {
-      border-bottom: 1px solid var(--border);
+    .legal-header {
+      border-bottom: 1px solid var(--card-border);
       padding-bottom: 24px;
       margin-bottom: 32px;
     }
-    .logo {
-      font-size: 26px;
-      font-weight: 900;
-      color: var(--secondary);
-      text-decoration: none;
-      display: inline-block;
-      margin-bottom: 8px;
-    }
-    h1 {
+    .legal-header h1 {
       font-size: 30px;
       color: #FFFFFF;
       margin-bottom: 8px;
       letter-spacing: -0.3px;
     }
-    .meta-info {
+    .legal-meta-info {
       font-size: 13.5px;
       color: var(--text-muted);
       margin-top: 4px;
+      line-height: 1.6;
     }
     .highlight-box {
-      background: rgba(67, 97, 238, 0.12);
-      border: 1px solid rgba(67, 97, 238, 0.4);
+      background: rgba(29, 78, 216, 0.15);
+      border: 1px solid rgba(29, 78, 216, 0.4);
       border-radius: 12px;
       padding: 16px 20px;
       margin: 24px 0;
@@ -89,40 +60,41 @@
       font-size: 13.5px;
       color: #CBD5E1;
     }
-    h2 {
+    .legal-container h2 {
       font-size: 20px;
-      color: var(--secondary);
+      color: var(--accent);
       margin-top: 36px;
       margin-bottom: 14px;
       border-bottom: 1px solid rgba(46, 51, 77, 0.6);
       padding-bottom: 6px;
     }
-    h3 {
+    .legal-container h3 {
       font-size: 16px;
       color: #FFFFFF;
       margin-top: 20px;
       margin-bottom: 8px;
     }
-    p, ul, ol {
+    .legal-container p, .legal-container ul, .legal-container ol {
       font-size: 14.5px;
       color: #CBD5E1;
       margin-bottom: 14px;
+      line-height: 1.65;
     }
-    ul, ol {
+    .legal-container ul, .legal-container ol {
       padding-left: 24px;
     }
-    li {
+    .legal-container li {
       margin-bottom: 6px;
     }
-    strong {
+    .legal-container strong {
       color: #FFFFFF;
     }
-    a {
-      color: var(--primary-light);
+    .legal-container a {
+      color: var(--accent);
       text-decoration: underline;
     }
-    a:hover {
-      color: var(--secondary);
+    .legal-container a:hover {
+      color: var(--accent-hover);
     }
     .table-wrapper {
       overflow-x: auto;
@@ -135,7 +107,7 @@
       color: #CBD5E1;
     }
     th, td {
-      border: 1px solid var(--border);
+      border: 1px solid var(--card-border);
       padding: 10px 14px;
       text-align: left;
     }
@@ -144,25 +116,55 @@
       color: #FFFFFF;
       font-weight: 700;
     }
-    .footer {
-      margin-top: 48px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border);
-      text-align: center;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    .footer a {
-      margin: 0 10px;
-    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <a href="https://www.dabhousie.com" class="logo">🎉 DabHousie</a>
-      <h1>Privacy Policy</h1>
-      <div class="meta-info">
+
+  <!-- Top Navigation Header -->
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="brand">
+          <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
+        </a>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="/how-it-works.html">How It Works</a></li>
+        <li><a href="/90-ball-bingo.html">90-Ball Bingo Guide</a></li>
+        <li><a href="/pricing.html">Pricing</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <div id="nav-auth-container">
+          <a href="/#/" class="nav-signin-btn">Sign In</a>
+        </div>
+        <a href="/#/create-game" class="btn-nav-host">Host a Game</a>
+        <a href="/#/join" class="btn-nav-join">🔑 Join a Game</a>
+        <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a>
+    <a href="/pricing.html">Pricing &amp; Credit Packs</a>
+    <a href="/#/join" style="color:var(--accent);">🔑 Join a Game</a>
+    <a href="/#/create-game">👨‍👩‍👧‍👦 Host a Game</a>
+  </div>
+
+  <section class="page-hero">
+    <span class="eyebrow">DATA &amp; PRIVACY</span>
+    <h1>Privacy Policy</h1>
+    <p class="subtitle">Our commitment to transparency, data protection, and user rights.</p>
+  </section>
+
+  <main class="legal-container">
+    <div class="legal-header">
+      <div class="legal-meta-info">
         <strong>Application Name:</strong> DabHousie (Multiplayer Tambola, Housie &amp; 90-Ball Bingo)<br>
         <strong>Developer Entity:</strong> Digital App Studio<br>
         <strong>Domain:</strong> https://www.dabhousie.com<br>
@@ -296,16 +298,24 @@
       <li><strong>Company / Publisher:</strong> Digital App Studio</li>
       <li><strong>Web Platform:</strong> <a href="https://www.dabhousie.com">https://www.dabhousie.com</a></li>
     </ul>
+  </main>
 
-    <div class="footer">
-      <a href="https://www.dabhousie.com">Home</a> •
-      <a href="https://www.dabhousie.com/how-it-works.html">How It Works</a> •
-      <a href="https://www.dabhousie.com/90-ball-bingo.html">90-Ball Bingo Guide</a> •
-      <a href="https://www.dabhousie.com/pricing.html">Pricing</a> •
-      <a href="https://www.dabhousie.com/privacy-policy.html">Privacy Policy</a> •
-      <a href="https://www.dabhousie.com/terms-conditions.html">Terms &amp; Conditions</a>
-      <p style="margin-top: 10px;">&copy; 2026 Digital App Studio. All rights reserved.</p>
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="/">Home</a> <span>•</span>
+      <a href="/how-it-works.html">How It Works</a> <span>•</span>
+      <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> <span>•</span>
+      <a href="/pricing.html">Pricing</a> <span>•</span>
+      <a href="/terms-conditions.html">Terms &amp; Conditions</a> <span>•</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
     </div>
-  </div>
+    <p>&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
+    <p class="disclaimer-text">
+      * Free hosting for 1–5 players is offered for a limited promotional period and is subject to terms of service and fair usage policies.
+    </p>
+  </footer>
+
+  <script src="/js/nav.js"></script>
 </body>
 </html>

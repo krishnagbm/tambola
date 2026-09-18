@@ -8,6 +8,7 @@ import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 
 class RegistrationStatusScreen extends ConsumerWidget {
   final String gameId;
@@ -21,64 +22,13 @@ class RegistrationStatusScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider).value;
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
-        titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              AppAssets.horizontalLogo,
-              height: 38,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
-              ),
-              child: const Text(
-                'Status',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.secondaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Status',
-            onPressed: () {
-              ref.invalidate(gameStreamProvider(gameId));
-              ref.invalidate(registrationsStreamProvider(gameId));
-            },
-          ),
-          TextButton.icon(
-            onPressed: () => context.go('/'),
-            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
-            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 8),
-        ],
+      appBar: DabHousieAppBar(
+        badgeText: 'Status',
+        showBackButton: true,
+        onRefresh: () {
+          ref.invalidate(gameStreamProvider(gameId));
+          ref.invalidate(registrationsStreamProvider(gameId));
+        },
       ),
       body: gameStream.when(
         loading: () => const Center(child: CircularProgressIndicator()),

@@ -10,6 +10,7 @@ import '../../../core/utils/auth_guard.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
@@ -234,94 +235,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 64,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/');
-            }
-          },
-        ),
-        titleSpacing: 0,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset(
-              AppAssets.horizontalLogo,
-              height: 38,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
-              ),
-              child: const Text(
-                'Host',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.secondaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Live Credit Balance chip
-          Consumer(
-            builder: (context, ref, _) {
-              final walletAsync = ref.watch(walletProvider);
-              final credits = walletAsync.value?.availableCredits ?? 0;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-                child: InkWell(
-                  onTap: () => context.push('/wallet'),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.darkSurface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 16),
-                        const SizedBox(width: 5),
-                        Text(
-                          '$credits C',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.secondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 4),
-          TextButton.icon(
-            onPressed: () => context.go('/'),
-            icon: const Icon(Icons.home_outlined, size: 18, color: AppTheme.secondaryColor),
-            label: const Text('Home', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
-          ),
-          const SizedBox(width: 8),
-        ],
+      appBar: const DabHousieAppBar(
+        badgeText: 'Host',
+        showBackButton: true,
       ),
       body: Center(
         child: ConstrainedBox(

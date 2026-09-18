@@ -6,239 +6,9 @@
   <title>DabHousie Web Store — Buy Game Credits</title>
   <meta name="description" content="Purchase host credits for DabHousie multiplayer Tambola & Housie parties. Instant delivery and server-verified games.">
   <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="/css/site.css">
   <style>
-    :root {
-      --primary: #0B3D91;
-      --primary-light: #1D4ED8;
-      --accent: #FFC107;
-      --accent-hover: #E0A800;
-      --bg-dark: #0A0E17;
-      --card-bg: #121826;
-      --card-border: #1E293B;
-      --text-main: #F8FAFC;
-      --text-muted: #94A3B8;
-      --success: #10B981;
-      --danger: #EF4444;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(circle at top center, #111c38 0%, var(--bg-dark) 70%);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Sticky Frozen App Top Header */
-    header.app-topbar {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: rgba(10, 14, 23, 0.92);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 12px 28px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .topbar-badge {
-      padding: 3px 8px;
-      background: rgba(29, 78, 216, 0.3);
-      border: 1px solid rgba(29, 78, 216, 0.6);
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent);
-      letter-spacing: 0.5px;
-    }
-
-    .topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .balance-pill {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 193, 7, 0.12);
-      border: 1px solid rgba(255, 193, 7, 0.35);
-      border-radius: 20px;
-      padding: 6px 14px;
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--accent);
-    }
-
-    .user-profile {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #121826;
-      border: 1px solid #1E293B;
-      padding: 5px 12px 5px 6px;
-      border-radius: 24px;
-    }
-
-    .user-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: rgba(29, 78, 216, 0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      overflow: hidden;
-    }
-
-    .user-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .user-info {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.2;
-    }
-
-    .user-name {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #FFFFFF;
-      max-width: 140px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .user-email {
-      font-size: 10.5px;
-      color: #94A3B8;
-      max-width: 150px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .signin-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(29, 78, 216, 0.25);
-      border: 1px solid rgba(29, 78, 216, 0.5);
-      color: #FFFFFF;
-      text-decoration: none;
-      font-size: 12.5px;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 8px;
-      transition: all 0.2s;
-    }
-
-    .signin-pill:hover {
-      background: rgba(29, 78, 216, 0.45);
-    }
-
-    .signin-pill .g-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      background: #FFFFFF;
-      color: #4285F4;
-      border-radius: 50%;
-      font-weight: 900;
-      font-size: 10px;
-      font-family: Roboto, sans-serif;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-    }
-
-    .brand img {
-      height: 44px;
-      max-width: 220px;
-      object-fit: contain;
-    }
-
-    .back-btn {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 600;
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--card-border);
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .back-btn:hover {
-      color: var(--text-main);
-      border-color: var(--accent);
-    }
-
-    .hero {
-      text-align: center;
-      padding: 32px 20px 20px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 5px 14px;
-      background: rgba(255, 193, 7, 0.12);
-      border: 1px solid rgba(255, 193, 7, 0.3);
-      color: var(--accent);
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 12px;
-      letter-spacing: 0.5px;
-    }
-
-    h1 {
-      font-size: 32px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      line-height: 1.2;
-    }
-
-    .subtitle {
-      font-size: 15px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
+    /* Specific styles for pricing cards & modal */
     .container {
       max-width: 1420px;
       margin: 0 auto 40px;
@@ -476,20 +246,6 @@
       color: var(--text-muted);
     }
 
-    footer {
-      margin-top: auto;
-      padding: 20px;
-      text-align: center;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 12.5px;
-      color: var(--text-muted);
-    }
-
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
-
     /* Spinner */
     .spinner {
       display: inline-block;
@@ -548,9 +304,9 @@
     .form-group label {
       display: block;
       font-size: 12px;
-      font-weight: 700;
       color: var(--text-muted);
       margin-bottom: 6px;
+      font-weight: 600;
     }
 
     .form-group input {
@@ -571,60 +327,44 @@
 </head>
 <body>
 
-  <header class="app-topbar">
-    <div class="topbar-left">
-      <a href="/#/" class="brand">
-        <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" onerror="this.onerror=null; this.src='assets/branding/dabhousie_horizontal_logo.png';">
-      </a>
-      <span class="topbar-badge">Store</span>
-    </div>
-
-    <div class="topbar-right">
-      <!-- Live Wallet Balance Pill -->
-      <div id="topbar-balance" class="balance-pill" style="display: none;">
-        <span>🪙</span>
-        <span id="balance-amount">0</span>
-        <span style="font-size: 11px; opacity: 0.9;">Credits</span>
+  <!-- Top Navigation Header -->
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="brand">
+          <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
+        </a>
       </div>
 
-      <!-- Logged-in User Profile Header Card -->
-      <div id="user-profile-menu" class="user-profile" style="display: none;">
-        <div class="user-avatar" id="avatar-container">🦁</div>
-        <div class="user-info">
-          <div class="user-name" id="user-display-name">Host</div>
-          <div class="user-email" id="user-display-email">user@example.com</div>
+      <ul class="nav-links">
+        <li><a href="/how-it-works.html">How It Works</a></li>
+        <li><a href="/90-ball-bingo.html">90-Ball Bingo Guide</a></li>
+        <li><a href="/pricing.html" class="active">Pricing</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <div id="nav-auth-container">
+          <a href="/#/" class="nav-signin-btn">Sign In</a>
         </div>
+        <a href="/#/create-game" class="btn-nav-host">Host a Game</a>
+        <a href="/#/join" class="btn-nav-join">🔑 Join a Game</a>
+        <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
       </div>
-
-      <!-- Guest Sign In Button -->
-      <a href="/#/" id="guest-signin-btn" class="signin-pill" style="display: none;">
-        <span class="g-icon">G</span> Sign In
-      </a>
-
-      <!-- How It Works Link -->
-      <a href="/how-it-works.html" class="back-btn">
-        <span>📖</span> How It Works
-      </a>
-
-      <!-- 90-Ball Bingo Guide Link -->
-      <a href="/90-ball-bingo.html" class="back-btn">
-        <span>🎯</span> 90-Ball Bingo Guide
-      </a>
-
-      <!-- Home Button -->
-      <a href="/#/" class="back-btn">
-        <span>🏠</span> Home
-      </a>
-
-      <!-- Back to App Button -->
-      <a href="/#/wallet" class="back-btn">
-        <span>🪙</span> App Wallet
-      </a>
     </div>
   </header>
 
-  <section class="hero">
-    <div class="badge">SECURE HOST CHECKOUT</div>
+  <!-- Mobile Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a>
+    <a href="/pricing.html" class="active">Pricing &amp; Credit Packs</a>
+    <a href="/#/join" style="color:var(--accent);">🔑 Join a Game</a>
+    <a href="/#/create-game">👨‍👩‍👧‍👦 Host a Game</a>
+  </div>
+
+  <section class="page-hero">
+    <span class="eyebrow">SECURE HOST CHECKOUT</span>
     <h1>Refill Your DabHousie Host Credits</h1>
     <p class="subtitle">
       Credits are deducted only when games start based on your verified player count. 
@@ -749,10 +489,23 @@
     </div>
   </div>
 
-  <footer>
-    <p>&copy; 2026 DabHousie. All rights reserved. &bull; <a href="/#/">Home</a> &bull; <a href="/how-it-works.html">How It Works</a> &bull; <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> &bull; <a href="/#/wallet">Wallet</a> &bull; <a href="/terms-conditions.html">Terms of Service</a> &bull; <a href="/privacy-policy.html">Privacy Policy</a></p>
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="/">Home</a> <span>•</span>
+      <a href="/how-it-works.html">How It Works</a> <span>•</span>
+      <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> <span>•</span>
+      <a href="/pricing.html">Pricing</a> <span>•</span>
+      <a href="/terms-conditions.html">Terms &amp; Conditions</a> <span>•</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
+    <p class="disclaimer-text">
+      * Free hosting for 1–5 players is offered for a limited promotional period and is subject to terms of service and fair usage policies.
+    </p>
   </footer>
 
+  <script src="/js/nav.js"></script>
   <script src="/js/checkout.js"></script>
 </body>
 </html>
