@@ -46,8 +46,8 @@ class _VerifyRewardScreenState extends ConsumerState<VerifyRewardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: DabHousieAppBar(
+    return Scaffold(
+      appBar: const DabHousieAppBar(
         badgeText: 'Verify Prize',
         showBackButton: true,
       ),

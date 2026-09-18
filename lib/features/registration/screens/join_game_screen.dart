@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
@@ -112,8 +111,8 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   Widget build(BuildContext context) {
     final userState = ref.watch(currentUserProvider);
 
-    return const Scaffold(
-      appBar: DabHousieAppBar(
+    return Scaffold(
+      appBar: const DabHousieAppBar(
         badgeText: 'Join',
         showBackButton: true,
       ),
