@@ -468,160 +468,272 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
 
           return Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
+              constraints: const BoxConstraints(maxWidth: 1800),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 1. Comprehensive Game Header & Invite Banner
-                    _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
-                    const SizedBox(height: 12),
+                child: LayoutBuilder(
+                  builder: (ctx, constraints) {
+                    final is3Column = constraints.maxWidth >= 1080;
+                    final is2Column = constraints.maxWidth >= 750 && constraints.maxWidth < 1080;
 
-                    // 2. Live Waiting Room & Joined Players Summary Card
-                    _buildWaitingRoomCard(game, registrations),
-                    const SizedBox(height: 14),
-
-                    // 3. Pre-Game Guidance Banner (When 0 numbers called)
-                    if (calledNumbers.isEmpty && !isGameCompleted) ...[
-                      _buildPreGameBanner(game, confirmedPlayers.length),
-                      const SizedBox(height: 14),
-                    ],
-
-                    // 4. All Prizes Won Alert Banner
-                    if (allPrizesWon && !isGameCompleted) ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        margin: const EdgeInsets.only(bottom: 14),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'All Prizes Won! 🏆',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                    // ========================================================
+                    // 1. WIDE SCREEN: 3-COLUMN LAYOUT
+                    // Left: Info & Master Board | Middle: Caller & Claims | Right: Players List
+                    // ========================================================
+                    if (is3Column) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left Column (Cards & Master Board & End Game)
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
+                                const SizedBox(height: 12),
+                                _buildWaitingRoomCard(game, registrations),
+                                const SizedBox(height: 14),
+                                _buildMasterBoard(calledSet),
+                                const SizedBox(height: 14),
+                                OutlinedButton.icon(
+                                  onPressed: isGameCompleted ? null : _handleEndGame,
+                                  icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
+                                  label: Text(
+                                    isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
+                                    style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
                                   ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
-                                    style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
                                   ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+
+                          // Middle Column (Caller Header, Call Button, Claims)
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                if (allPrizesWon && !isGameCompleted) ...[
+                                  _buildAllPrizesWonBanner(),
+                                  const SizedBox(height: 14),
                                 ],
-                              ),
+                                if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                                  _buildPreGameBanner(game, confirmedPlayers.length),
+                                  const SizedBox(height: 14),
+                                ],
+                                _buildCallerHeader(latest, calledNumbers.length),
+                                const SizedBox(height: 14),
+                                ElevatedButton.icon(
+                                  onPressed: disableCalling ? null : _handleCallNext,
+                                  icon: Icon(
+                                    allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
+                                    size: 28,
+                                  ),
+                                  label: _isCalling
+                                      ? const Text('Selecting Number...')
+                                      : Text(
+                                          isGameCompleted
+                                              ? 'Game Completed'
+                                              : allPrizesWon
+                                                  ? 'All Prizes Won (Conclude Below)'
+                                                  : isMaxNumbers
+                                                      ? 'All 90 Numbers Called'
+                                                      : calledNumbers.isEmpty
+                                                          ? 'CALL FIRST NUMBER'
+                                                          : 'CALL NEXT NUMBER',
+                                          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                        ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                                    foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
+                                    disabledBackgroundColor: const Color(0xFF222639),
+                                    disabledForegroundColor: const Color(0xFF718096),
+                                    padding: const EdgeInsets.symmetric(vertical: 18),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                _buildClaimsQueue(claimsStream),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                          const SizedBox(width: 16),
 
-                    // 5. Responsive 2-Column (Desktop/Tablet) vs Stacked Column (Mobile)
-                    LayoutBuilder(
-                      builder: (ctx, constraints) {
-                        final isWide = constraints.maxWidth >= 820;
+                          // Right Column (Dedicated Players List with independent vertical scrollbar)
+                          Expanded(
+                            flex: 3,
+                            child: _buildPlayersSidebar(game, registrations, height: 740),
+                          ),
+                        ],
+                      );
+                    }
 
-                        final leftColumn = Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Caller Header
-                            _buildCallerHeader(latest, calledNumbers.length),
+                    // ========================================================
+                    // 2. MEDIUM SCREEN (e.g. 800px monitor / Tablet): 2 COLUMNS
+                    // ========================================================
+                    if (is2Column) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
+                          const SizedBox(height: 12),
+                          _buildWaitingRoomCard(game, registrations),
+                          const SizedBox(height: 14),
+                          if (allPrizesWon && !isGameCompleted) ...[
+                            _buildAllPrizesWonBanner(),
                             const SizedBox(height: 14),
-
-                            // Call Next Number Button
-                            ElevatedButton.icon(
-                              onPressed: disableCalling ? null : _handleCallNext,
-                              icon: Icon(
-                                allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                                size: 28,
-                              ),
-                              label: _isCalling
-                                  ? const Text('Selecting Number...')
-                                  : Text(
-                                      isGameCompleted
-                                          ? 'Game Completed'
-                                          : allPrizesWon
-                                              ? 'All Prizes Won (Conclude Below)'
-                                              : isMaxNumbers
-                                                  ? 'All 90 Numbers Called'
-                                                  : calledNumbers.isEmpty
-                                                      ? 'CALL FIRST NUMBER'
-                                                      : 'CALL NEXT NUMBER',
-                                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                                    ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
-                                foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
-                                disabledBackgroundColor: const Color(0xFF222639),
-                                disabledForegroundColor: const Color(0xFF718096),
-                                padding: const EdgeInsets.symmetric(vertical: 18),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Master 1–90 Board Matrix
-                            _buildMasterBoard(calledSet),
                           ],
-                        );
-
-                        final rightColumn = Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Live Claims & Winners List
-                            _buildClaimsQueue(claimsStream),
-                            const SizedBox(height: 20),
-
-                            // End Game Button
-                            OutlinedButton.icon(
-                              onPressed: isGameCompleted ? null : _handleEndGame,
-                              icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
-                              label: Text(
-                                isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
-                                style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                            ),
+                          if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                            _buildPreGameBanner(game, confirmedPlayers.length),
+                            const SizedBox(height: 14),
                           ],
-                        );
-
-                        if (isWide) {
-                          return Row(
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: leftColumn,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildCallerHeader(latest, calledNumbers.length),
+                                    const SizedBox(height: 14),
+                                    ElevatedButton.icon(
+                                      onPressed: disableCalling ? null : _handleCallNext,
+                                      icon: Icon(
+                                        allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
+                                        size: 28,
+                                      ),
+                                      label: _isCalling
+                                          ? const Text('Selecting Number...')
+                                          : Text(
+                                              isGameCompleted
+                                                  ? 'Game Completed'
+                                                  : allPrizesWon
+                                                      ? 'All Prizes Won (Conclude Below)'
+                                                      : isMaxNumbers
+                                                          ? 'All 90 Numbers Called'
+                                                          : calledNumbers.isEmpty
+                                                              ? 'CALL FIRST NUMBER'
+                                                              : 'CALL NEXT NUMBER',
+                                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                            ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                                        foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
+                                        disabledBackgroundColor: const Color(0xFF222639),
+                                        disabledForegroundColor: const Color(0xFF718096),
+                                        padding: const EdgeInsets.symmetric(vertical: 18),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildMasterBoard(calledSet),
+                                    const SizedBox(height: 16),
+                                    OutlinedButton.icon(
+                                      onPressed: isGameCompleted ? null : _handleEndGame,
+                                      icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
+                                      label: Text(
+                                        isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
+                                        style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                                      ),
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(width: 20),
+                              const SizedBox(width: 16),
                               Expanded(
-                                flex: 2,
-                                child: rightColumn,
+                                flex: 3,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildClaimsQueue(claimsStream),
+                                    const SizedBox(height: 16),
+                                    _buildPlayersSidebar(game, registrations, height: 480),
+                                  ],
+                                ),
                               ),
                             ],
-                          );
-                        }
+                          ),
+                        ],
+                      );
+                    }
 
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            leftColumn,
-                            const SizedBox(height: 20),
-                            rightColumn,
-                          ],
-                        );
-                      },
-                    ),
-                  ],
+                    // ========================================================
+                    // 3. MOBILE SCREEN (< 750px): STACKED 1 COLUMN
+                    // ========================================================
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildGameHeaderAndInviteCard(game, registrations, isGameCompleted),
+                        const SizedBox(height: 12),
+                        _buildWaitingRoomCard(game, registrations),
+                        const SizedBox(height: 14),
+                        if (allPrizesWon && !isGameCompleted) ...[
+                          _buildAllPrizesWonBanner(),
+                          const SizedBox(height: 14),
+                        ],
+                        if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                          _buildPreGameBanner(game, confirmedPlayers.length),
+                          const SizedBox(height: 14),
+                        ],
+                        _buildCallerHeader(latest, calledNumbers.length),
+                        const SizedBox(height: 14),
+                        ElevatedButton.icon(
+                          onPressed: disableCalling ? null : _handleCallNext,
+                          icon: Icon(
+                            allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
+                            size: 28,
+                          ),
+                          label: _isCalling
+                              ? const Text('Selecting Number...')
+                              : Text(
+                                  isGameCompleted
+                                      ? 'Game Completed'
+                                      : allPrizesWon
+                                          ? 'All Prizes Won (Conclude Below)'
+                                          : isMaxNumbers
+                                              ? 'All 90 Numbers Called'
+                                              : calledNumbers.isEmpty
+                                                  ? 'CALL FIRST NUMBER'
+                                                  : 'CALL NEXT NUMBER',
+                                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
+                            foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
+                            disabledBackgroundColor: const Color(0xFF222639),
+                            disabledForegroundColor: const Color(0xFF718096),
+                            padding: const EdgeInsets.symmetric(vertical: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildMasterBoard(calledSet),
+                        const SizedBox(height: 16),
+                        _buildClaimsQueue(claimsStream),
+                        const SizedBox(height: 16),
+                        OutlinedButton.icon(
+                          onPressed: isGameCompleted ? null : _handleEndGame,
+                          icon: const Icon(Icons.flag_outlined, color: AppTheme.accentDanger),
+                          label: Text(
+                            isGameCompleted ? 'Game Concluded' : 'End Game & Conclude Event',
+                            style: TextStyle(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: isGameCompleted ? Colors.grey : AppTheme.accentDanger),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -631,10 +743,151 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
+  Widget _buildAllPrizesWonBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+          SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'All Prizes Won! 🏆',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayersSidebar(MptGame? game, List<MptRegistration> registrations, {double? height}) {
+    final confirmed = registrations.where((r) => r.isConfirmed).toList();
+    final waiting = registrations.where((r) => r.isWaiting).toList();
+    final capacity = game?.fundedCapacity ?? 5;
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2E334D)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.groups_rounded, color: AppTheme.secondaryColor, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Players List (${confirmed.length}/$capacity)',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              if (game != null)
+                IconButton(
+                  icon: const Icon(Icons.share_rounded, size: 16, color: AppTheme.secondaryColor),
+                  tooltip: 'Share Invite',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () => _handleShareInvite(game),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(color: Color(0xFF2E334D), height: 1),
+          const SizedBox(height: 10),
+          Expanded(
+            child: registrations.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.person_add_alt_1_rounded, size: 36, color: Color(0xFF64748B)),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'No players joined yet',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Share your invite code or link with players to get tickets.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                          ),
+                          const SizedBox(height: 12),
+                          if (game != null)
+                            ElevatedButton.icon(
+                              onPressed: () => _handleShareInvite(game),
+                              icon: const Icon(Icons.share_rounded, size: 14),
+                              label: const Text('Share Invite'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: AppTheme.primaryDark,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Scrollbar(
+                    thumbVisibility: true,
+                    child: ListView(
+                      padding: const EdgeInsets.only(right: 8),
+                      children: [
+                        if (confirmed.isNotEmpty) ...[
+                          Text(
+                            'CONFIRMED PLAYERS (${confirmed.length})',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.accentSuccess, letterSpacing: 0.8),
+                          ),
+                          const SizedBox(height: 6),
+                          ...confirmed.map((r) => _buildPlayerTile(r, isConfirmed: true)),
+                          const SizedBox(height: 12),
+                        ],
+                        if (waiting.isNotEmpty) ...[
+                          Text(
+                            'WAITING ROOM (${waiting.length})',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.accentWarning, letterSpacing: 0.8),
+                          ),
+                          const SizedBox(height: 6),
+                          ...waiting.map((r) => _buildPlayerTile(r, isConfirmed: false)),
+                        ],
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGameHeaderAndInviteCard(MptGame? game, List<MptRegistration> registrations, bool isGameCompleted) {
     final capacity = game?.fundedCapacity ?? 5;
     final isFreeTier = capacity <= 5;
     final inviteCode = game?.inviteCode ?? '---';
+    final confirmedCount = registrations.where((r) => r.isConfirmed).length;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -654,7 +907,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top Row: Title, Edit, Status & Tier badges
+          // Top Row: Title, Edit, Status & Tier badges + Players joined (x/y)
           Row(
             children: [
               const Icon(Icons.celebration, size: 22, color: AppTheme.secondaryColor),
@@ -705,6 +958,24 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Number of Players Joined Badge (x/y)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5), width: 0.8),
+                ),
+                child: Text(
+                  '👥 $confirmedCount/$capacity Joined',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),
