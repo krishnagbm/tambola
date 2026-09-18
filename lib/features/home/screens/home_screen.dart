@@ -534,29 +534,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 14),
           ],
 
-          // Minimalist Header
-          Center(
+          // Hero Message (Logo is in AppBar)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               children: [
-                Image.asset(
-                  AppAssets.horizontalLogo,
-                  height: 46,
-                  fit: BoxFit.contain,
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFF9E00), Color(0xFF4895EF)],
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Play Live Tambola, Housie, 90-Ball Bingo',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 const Text(
-                  'Play Live Tambola, Housie & 90-Ball Bingo',
+                  'Connect with friends & family • Instant web play',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFCBD5E1),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF94A3B8),
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
           // Primary Action 1: Join Game
           Container(
