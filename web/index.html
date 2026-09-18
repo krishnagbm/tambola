@@ -86,15 +86,15 @@
     /* Semantic SEO Content Layer (Accessible to search engine crawlers and screen readers) */
     .seo-content-layer {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 24px 16px;
-      box-sizing: border-box;
-      z-index: 0;
-      opacity: 0.01;
+      left: -9999px;
+      top: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      opacity: 0;
       pointer-events: none;
     }
   </style>
