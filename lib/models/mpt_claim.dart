@@ -32,8 +32,8 @@ class MptClaim {
       prizeType: json['prize_type'] as String,
       status: json['status'] as String? ?? 'SUBMITTED',
       rejectionReason: json['rejection_reason'] as String?,
-      userName: userData?['display_name'] as String?,
-      userAvatar: userData?['avatar'] as String?,
+      userName: json['user_name'] as String? ?? userData?['display_name'] as String?,
+      userAvatar: json['user_avatar'] as String? ?? userData?['avatar'] as String?,
       submittedAt: json['submitted_at'] != null ? DateTime.parse(json['submitted_at']) : DateTime.now(),
       processedAt: json['processed_at'] != null ? DateTime.parse(json['processed_at']) : null,
     );

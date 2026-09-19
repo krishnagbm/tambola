@@ -218,13 +218,27 @@ class GameplayRepository {
   Stream<List<MptClaim>> watchClaims(String gameId) async* {
     while (true) {
       try {
-        final res = await _supabase
-            .from('MPT_claims')
-            .select('*, user:MPT_users(display_name, avatar)')
-            .eq('game_id', gameId)
-            .order('submitted_at', ascending: false);
-        yield (res as List).map((e) => MptClaim.fromJson(e)).toList();
-      } catch (_) {}
+        final rpcRes = await _supabase.rpc('MPT_get_game_claims', params: {'p_game_id': gameId});
+        if (rpcRes is List) {
+          yield (rpcRes).map((e) => MptClaim.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+        } else {
+          final res = await _supabase
+              .from('MPT_claims')
+              .select('*, user:MPT_users(display_name, avatar)')
+              .eq('game_id', gameId)
+              .order('submitted_at', ascending: false);
+          yield (res as List).map((e) => MptClaim.fromJson(e)).toList();
+        }
+      } catch (_) {
+        try {
+          final res = await _supabase
+              .from('MPT_claims')
+              .select('*')
+              .eq('game_id', gameId)
+              .order('submitted_at', ascending: false);
+          yield (res as List).map((e) => MptClaim.fromJson(e)).toList();
+        } catch (_) {}
+      }
       await Future.delayed(const Duration(seconds: 2));
     }
   }

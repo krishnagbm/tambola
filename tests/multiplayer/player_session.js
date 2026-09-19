@@ -813,16 +813,31 @@ export class PlayerSession {
           await this.page.keyboard.press('Escape').catch(() => {});
           await this.page.waitForTimeout(400);
           await this.clickFlutterButton('Continue Playing', false);
-          await this.page.waitForTimeout(800);
+          await this.page.waitForTimeout(1000);
           await this.ensureInGameScreen();
         } else if (claimResult.status === 'BOGEY') {
           this.log(`⚠️ Claim for "${prize.name}" rejected by validation.`);
-          await this.clickFlutterButton('OK', true);
-          await this.page.waitForTimeout(400);
+          await this.page.keyboard.press('Escape').catch(() => {});
+          await this.page.waitForTimeout(300);
+          const dismissed = await this.clickFlutterButton('Understood', false);
+          if (!dismissed) {
+            await this.clickFlutterButton('OK, Got It', false);
+          }
+          await this.page.waitForTimeout(800);
           await this.ensureInGameScreen();
         } else {
           this.log(`Claim button tapped for "${prize.name}". Submitted to server.`);
+          // If any warning dialog is open, auto-dismiss
+          await this.page.waitForTimeout(500);
+          const warningDismissed = await this.clickFlutterButton('Understood', false);
+          if (!warningDismissed) {
+            await this.clickFlutterButton('OK, Got It', false);
+          }
+          await this.page.waitForTimeout(600);
+          await this.ensureInGameScreen();
         }
+        // Small pause between multiple prize claims
+        await this.page.waitForTimeout(600);
       }
     }
   }

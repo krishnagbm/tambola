@@ -93,10 +93,20 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     required Set<int> calledSet,
   }) async {
     // 1. Strict validation: check for uncalled marked numbers (Bogey)
-    final uncalled = _markedNumbers.where((n) => !calledSet.contains(n)).toList();
+    var effectiveCalledSet = Set<int>.from(calledSet);
+    var uncalled = _markedNumbers.where((n) => !effectiveCalledSet.contains(n)).toList();
     if (uncalled.isNotEmpty) {
-      _showBogeyDialog('Invalid Claim: You have marked numbers that have not been called yet: ${uncalled.join(', ')}');
-      return;
+      // Re-fetch latest called numbers from server to avoid false Bogey on stream latency
+      try {
+        final latestCalls = await ref.read(gameplayRepositoryProvider).getCalledNumbers(widget.gameId);
+        effectiveCalledSet = latestCalls.map((e) => e.number).toSet();
+        uncalled = _markedNumbers.where((n) => !effectiveCalledSet.contains(n)).toList();
+      } catch (_) {}
+
+      if (uncalled.isNotEmpty) {
+        _showBogeyDialog('Invalid Claim: You have marked numbers that have not been called yet: ${uncalled.join(', ')}');
+        return;
+      }
     }
 
     // 2. Strict validation: check pattern is complete (Item 15)

@@ -722,7 +722,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           final latest = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
           final calledSet = calledNumbers.map((e) => e.number).toSet();
           final isMaxNumbers = calledNumbers.length >= 90;
-          final disableCalling = _isCalling || isMaxNumbers || allPrizesWon || isGameCompleted;
+          final disableCalling = _isCalling || isMaxNumbers || allPrizesWon || isGameCompleted || (_celebrationSecondsLeft > 0);
 
           return Center(
             child: ConstrainedBox(
@@ -1009,6 +1009,23 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           padding: EdgeInsets.symmetric(vertical: verticalPadding),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 4,
+        ),
+      );
+    }
+
+    if (_celebrationSecondsLeft > 0) {
+      return ElevatedButton.icon(
+        onPressed: null,
+        icon: Icon(Icons.celebration_rounded, size: iconSize, color: AppTheme.secondaryColor),
+        label: Text(
+          '🎉 Celebrating Winner... (${_celebrationSecondsLeft}s)',
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+        ),
+        style: ElevatedButton.styleFrom(
+          disabledBackgroundColor: const Color(0xFF222639),
+          disabledForegroundColor: AppTheme.secondaryColor,
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
         ),
       );
     }
