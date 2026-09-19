@@ -328,9 +328,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const PerfectForChipsSection(),
             const SizedBox(height: 14),
 
-            // 5. Mobile Apps Download Badges Section
-            _buildAppDownloadSection(context),
-            const SizedBox(height: 12),
+            // 5. Mobile Apps Download Badges Section (Temporarily hidden until native mobile apps are released & approved by app stores)
+            // _buildAppDownloadSection(context),
+            // const SizedBox(height: 12),
 
             // 6. Quick Rules & How to Win Helper
             _buildHowToPlayCard(context),
