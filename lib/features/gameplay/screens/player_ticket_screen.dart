@@ -744,26 +744,36 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Color bgColor = isMarked ? AppTheme.accentSuccess : AppTheme.darkSurface;
     Color textColor = Colors.white;
 
-    return GestureDetector(
-      onTap: isGameEnded ? null : () => _toggleMark(numVal),
-      child: Container(
-        height: 48,
-        margin: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: bgColor,
+    return Semantics(
+      label: 'Ticket number $numVal',
+      value: isMarked ? 'marked' : 'unmarked',
+      button: true,
+      enabled: !isGameEnded,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isMarked ? AppTheme.accentSuccess : const Color(0xFF3B4163),
-            width: isMarked ? 1.5 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            '$numVal',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: textColor,
+          onTap: isGameEnded ? null : () => _toggleMark(numVal),
+          child: Container(
+            height: 48,
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: isMarked ? AppTheme.accentSuccess : const Color(0xFF3B4163),
+                width: isMarked ? 1.5 : 1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                '$numVal',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
             ),
           ),
         ),
