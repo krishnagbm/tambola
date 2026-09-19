@@ -639,6 +639,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildAppDownloadSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(14),
