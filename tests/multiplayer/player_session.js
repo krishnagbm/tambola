@@ -106,17 +106,20 @@ export class PlayerSession {
   }
 
   /**
-   * Recovers player screen if session accidentally wanders off to /wallet, /rewards, or /
+   * Recovers player screen if session accidentally wanders off to /wallet or /rewards
    */
   async ensureInGameScreen() {
     try {
       if (!this.page || this.page.isClosed()) return;
+      const isUuid = this.gameId && this.gameId.length > 20 && this.gameId.includes('-');
+      if (!isUuid) return;
+
       const url = await this.page.evaluate(() => window.location.href).catch(() => '');
-      if (url.includes('/wallet') || url.includes('/rewards') || url.endsWith('#/')) {
+      if (url.includes('/wallet') || url.includes('/rewards')) {
         this.log(`Detected unwanted screen navigation (${url}). Redirecting back to game...`);
-        if (this.status === 'PLAYING' && this.gameId) {
+        if (this.status === 'PLAYING') {
           await this.page.goto(`https://www.dabhousie.com/#/play/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
-        } else if (this.gameId) {
+        } else {
           await this.page.goto(`https://www.dabhousie.com/#/game-status/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
         }
         await this.page.waitForTimeout(1500);
@@ -312,48 +315,64 @@ export class PlayerSession {
 
     // 3. Register into the game
     let isRegistered = false;
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      const currentUrl = await this.page.evaluate(() => window.location.href);
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      let currentUrl = await this.page.evaluate(() => window.location.href);
       if (currentUrl.includes('/game-status/') || currentUrl.includes('/play/')) {
         isRegistered = true;
+        this.finalUrl = currentUrl;
         break;
       }
 
       this.registrationAttempts = attempt;
       this.log(`Registering into game (attempt ${attempt})...`);
       await this.clickFlutterButton('Register & Get Ticket');
-      await this.page.waitForTimeout(800);
+      await this.page.waitForTimeout(1000);
 
       // Handle mandatory name modal if prompted
       await this.handleMandatoryNameDialog();
 
-      isRegistered = await this.page.evaluate(() => {
-        const url = window.location.href;
-        const text = document.body.innerText || document.body.textContent || '';
-        const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
-        const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
-        const has = (t) => text.includes(t) || labels.some(l => l.includes(t));
+      // Wait up to 12 seconds for registration to complete and route to transition
+      for (let waitStep = 0; waitStep < 24; waitStep++) {
+        const state = await this.page.evaluate(() => {
+          const url = window.location.href;
+          const text = document.body.innerText || document.body.textContent || '';
+          const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
+          const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
+          const has = (t) => text.includes(t) || labels.some(l => l.includes(t));
 
-        return (
-          url.includes('/game-status/') ||
-          url.includes('/play/') ||
-          has('SEAT CONFIRMED') ||
-          has('Waiting for Organizer')
-        );
-      });
+          return {
+            url,
+            isConfirmed: (
+              url.includes('/game-status/') ||
+              url.includes('/play/') ||
+              has('SEAT CONFIRMED') ||
+              has('Waiting for Organizer') ||
+              has('DABHOUSIE TICKET')
+            ),
+          };
+        });
+
+        if (state.isConfirmed) {
+          isRegistered = true;
+          this.finalUrl = state.url;
+          break;
+        }
+        await this.page.waitForTimeout(500);
+      }
 
       if (isRegistered) break;
-      await this.page.waitForTimeout(1500);
     }
 
-    try {
-      this.finalUrl = await this.page.evaluate(() => window.location.href);
-    } catch (_) {
-      this.finalUrl = this.page.url();
+    if (!this.finalUrl) {
+      try {
+        this.finalUrl = await this.page.evaluate(() => window.location.href);
+      } catch (_) {
+        this.finalUrl = this.page.url();
+      }
     }
 
-    const gameIdMatch = this.finalUrl.match(/(?:game-status|play)\/([a-f0-9\-]+)/i);
-    if (gameIdMatch) {
+    const gameIdMatch = (this.finalUrl || '').match(/(?:game-status|play)\/([a-f0-9\-]+)/i);
+    if (gameIdMatch && gameIdMatch[1].length > 20) {
       this.gameId = gameIdMatch[1];
     } else {
       this.gameId = this.inviteCode;
