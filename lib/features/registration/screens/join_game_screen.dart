@@ -8,6 +8,8 @@ import '../../../providers/app_providers.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 
+import '../../../core/widgets/ad_banner_slot.dart';
+
 class JoinGameScreen extends ConsumerStatefulWidget {
   final String? initialCode;
 
@@ -19,6 +21,7 @@ class JoinGameScreen extends ConsumerStatefulWidget {
 
 class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   late TextEditingController _codeController;
+  final TextEditingController _nameInputController = TextEditingController();
   MptGame? _previewGame;
   bool _isSearching = false;
   bool _isRegistering = false;
@@ -36,6 +39,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   @override
   void dispose() {
     _codeController.dispose();
+    _nameInputController.dispose();
     super.dispose();
   }
 
@@ -87,12 +91,80 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
     final user = ref.read(currentUserProvider).value;
     if (user == null) return;
 
+    // Check mandatory name before registering if still default 'My Name'
+    final trimmedName = user.displayName.trim();
+    final lowerName = trimmedName.toLowerCase();
+    if (trimmedName.isEmpty || lowerName == 'my name' || lowerName == 'player' || lowerName == 'guest') {
+      _nameInputController.text = '';
+      final updated = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.badge_outlined, color: AppTheme.secondaryColor, size: 24),
+              SizedBox(width: 8),
+              Text('Enter Your Name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please set your name or nickname before joining so the organizer and players can recognize you in the game room.',
+                style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                autofocus: true,
+                controller: _nameInputController,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Your Name / Nickname',
+                  hintText: 'e.g. Bala Goparaju',
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = _nameInputController.text.trim();
+                if (newName.isNotEmpty && newName.toLowerCase() != 'my name') {
+                  await ref.read(authRepositoryProvider).updateProfile(
+                        displayName: newName,
+                        avatar: user.avatar,
+                      );
+                  ref.invalidate(currentUserProvider);
+                  if (ctx.mounted) Navigator.pop(ctx, true);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.black),
+              child: const Text('Save & Join', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+
+      if (updated != true) return;
+    }
+
+    final updatedUser = ref.read(currentUserProvider).value ?? user;
+
     setState(() => _isRegistering = true);
     try {
       await ref.read(gameRepositoryProvider).registerPlayer(
             gameId: _previewGame!.id,
-            displayName: user.displayName,
-            avatar: user.avatar,
+            displayName: updatedUser.displayName,
+            avatar: updatedUser.avatar,
           );
 
       if (!mounted) return;
@@ -181,7 +253,13 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                     error: (e, _) => Text('Error: $e'),
                     data: (user) => _buildPlayerProfileBar(user),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
+                  const AdBannerSlot(
+                    slotType: AdSlotType.banner,
+                    title: 'DabHousie Live Tambola',
+                    subtitle: 'Play live with family & friends • Instant web verification',
+                  ),
+                  const SizedBox(height: 16),
 
                   ElevatedButton(
                     onPressed: _isRegistering ? null : _handleRegister,

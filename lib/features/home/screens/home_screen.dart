@@ -343,7 +343,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     colors: [Color(0xFFFFD700), Color(0xFFFF9E00), Color(0xFF4895EF)],
                   ).createShader(bounds),
                   child: const Text(
-                    'Play Live Tambola, Housie & 90-Ball Bingo',
+                    'Play Live Tambola, Housie, 90-Ball Bingo',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -355,7 +355,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Live multiplayer for friends, family, parties & events • Instant web play',
+                  'Connect with friends & family • Instant web play',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -368,19 +368,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Primary Action 1: Join Game
+          // Card 1: Got an Invite Code?
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.secondaryColor.withValues(alpha: 0.15),
-                  AppTheme.darkCard,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppTheme.darkCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.5),
+              border: Border.all(color: const Color(0xFFEAB308), width: 1.5),
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -388,32 +381,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const Row(
                   children: [
-                    Text('🔑', style: TextStyle(fontSize: 22)),
-                    SizedBox(width: 10),
+                    Text('🔑', style: TextStyle(fontSize: 24)),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Join a Game',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                            'Got an Invite Code?',
+                            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
+                          SizedBox(height: 2),
                           Text(
-                            'Enter 6-digit room code — instant web play, zero download',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+                            'Join instantly as guest — zero sign-up required',
+                            style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 ElevatedButton.icon(
                   onPressed: () => context.push('/join'),
-                  icon: const Icon(Icons.login_rounded, size: 18),
-                  label: const Text('Join a Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                  label: const Text('Enter Code to Join', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
+                    backgroundColor: const Color(0xFFEAB308),
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -424,12 +418,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Primary Action 2: Host a Game
+          // Card 2: Free Family Play
           Container(
             decoration: BoxDecoration(
               color: AppTheme.darkCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5), width: 1.5),
+              border: Border.all(color: const Color(0xFF10B981), width: 1.5),
             ),
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -437,26 +431,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const Row(
                   children: [
-                    Text('👨‍👩‍👧‍👦', style: TextStyle(fontSize: 22)),
-                    SizedBox(width: 10),
+                    Text('🎲', style: TextStyle(fontSize: 24)),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Host a Game',
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                            'Free Family Play',
+                            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
+                          SizedBox(height: 2),
                           Text(
-                            'Free for 1–5 players • Paid hosting for larger groups',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+                            'Free for 1–5 players* (0 credits)',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF10B981)),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
                 ElevatedButton.icon(
                   onPressed: () => AuthGuard.requireHostAuth(
                     context,
@@ -464,9 +459,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     () => context.push('/create-game'),
                   ),
                   icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Host a Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                  label: const Text('Start Free Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryLight,
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Card 3: Host Party / Event
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF3B82F6), width: 1.5),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Row(
+                  children: [
+                    Text('🎟️', style: TextStyle(fontSize: 24)),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Host Party / Event',
+                            style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Kitty parties, society clubs & corporate galas',
+                            style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
+                  onPressed: () => AuthGuard.requireHostAuth(
+                    context,
+                    ref,
+                    () => context.push('/create-game'),
+                  ),
+                  icon: const Icon(Icons.celebration_rounded, size: 18),
+                  label: const Text('Host Party (6+ Players)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -476,69 +525,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Quick Sign-In for Guests (if not registered)
-          if (!user.isRegistered) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF334155)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, size: 18, color: Color(0xFF94A3B8)),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Sign in to save hosted games & access wallet history',
-                      style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton(
-                    onPressed: () => AuthDialog.show(context),
-                    child: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Limited Time Disclaimer
-          const Center(
-            child: Text(
-              '* Free tier for 1–5 players is offered for family play for a limited time and subject to terms.',
-              style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Footer links
-          Center(
-            child: Wrap(
-              spacing: 12,
-              alignment: WrapAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/privacy-policy.html')),
-                  child: const Text('Privacy Policy', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                ),
-                TextButton(
-                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/terms-conditions.html')),
-                  child: const Text('Terms', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                ),
-                TextButton(
-                  onPressed: () => launchUrl(Uri.parse('${AppConfig.appBaseUrl}/pricing.html')),
-                  child: const Text('Pricing', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
         ],
       ),
     );

@@ -41,11 +41,40 @@ class RewardsScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: rewards.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (ctx, idx) => _buildRewardCard(context, rewards[idx]),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline, color: AppTheme.secondaryColor, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Rewards Claim Notice: Prizes must be claimed directly from your game organizer by presenting your voucher reference or QR code. DabHousie is a gameplay platform and is not responsible for physical or monetary prize distributions.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber.shade200,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ...rewards.map((reward) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildRewardCard(context, reward),
+                  )),
+            ],
           );
         },
       ),

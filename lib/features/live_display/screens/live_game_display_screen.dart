@@ -304,7 +304,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                 flex: 2,
                                 child: Column(
                                   children: [
-                                    _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                    _buildCurrentBallHero(game, latest, calledNumbers.length, calledNumbers),
                                     const SizedBox(height: 14),
                                     Expanded(child: _buildLiveWinnersPanel(claimsStream)),
                                   ],
@@ -315,7 +315,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                         : SingleChildScrollView(
                             child: Column(
                               children: [
-                                _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                _buildCurrentBallHero(game, latest, calledNumbers.length, calledNumbers),
                                 const SizedBox(height: 16),
                                 _buildBoardGrid(calledSet),
                                 const SizedBox(height: 16),
@@ -333,11 +333,12 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildCurrentBallHero(MptGame game, int? latest, int totalCalled) {
+  Widget _buildCurrentBallHero(MptGame game, int? latest, int totalCalled, List<dynamic> calledList) {
     final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    final recentCalls = calledList.reversed.skip(1).take(5).toList();
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
@@ -357,148 +358,241 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
         ],
         border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // LEFT SIDE: NOW CALLING & BALL
-          Expanded(
-            flex: 6,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'NOW CALLING',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2.0,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      latest != null ? '$latest' : 'READY',
-                      style: TextStyle(
-                        fontSize: latest != null ? 46 : 17,
-                        fontWeight: FontWeight.w900,
-                        color: AppTheme.primaryDark,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  totalCalled > 0 ? '$totalCalled / 90 Called' : 'Waiting for Start',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // VERTICAL DIVIDER
-          Container(
-            height: 130,
-            width: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            color: Colors.white.withValues(alpha: 0.22),
-          ),
-
-          // RIGHT SIDE: JOIN QR CODE & INVITE CODE
-          Expanded(
-            flex: 5,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.qr_code_scanner, size: 12, color: AppTheme.secondaryColor),
-                      SizedBox(width: 4),
-                      Text(
-                        'SCAN TO PLAY',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.8,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 7),
-                // Crisp White QR Card
-                Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 6,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: QrImageView(
-                    data: joinUrl,
-                    version: QrVersions.auto,
-                    size: 82.0,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // 1. LEFT SIDE: NOW CALLING & BALL
+              Expanded(
+                flex: 4,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Code: ',
-                      style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.bold),
+                      'NOW CALLING',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.8,
+                        color: Colors.white70,
+                      ),
                     ),
-                    SelectableText(
-                      game.inviteCode,
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 86,
+                      height: 86,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          latest != null ? '$latest' : 'READY',
+                          style: TextStyle(
+                            fontSize: latest != null ? 42 : 16,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.primaryDark,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      totalCalled > 0 ? '$totalCalled / 90 Called' : 'Waiting for Start',
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
-                        color: AppTheme.secondaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'dabhousie.com',
-                  style: TextStyle(fontSize: 10.5, color: Colors.white60),
+              ),
+
+              // VERTICAL DIVIDER 1
+              Container(
+                height: 120,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                color: Colors.white.withValues(alpha: 0.22),
+              ),
+
+              // 2. MIDDLE SIDE: JOIN QR CODE & INVITE CODE
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.qr_code_scanner, size: 11, color: AppTheme.secondaryColor),
+                          SizedBox(width: 4),
+                          Text(
+                            'SCAN TO PLAY',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.6,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Crisp White QR Card
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: QrImageView(
+                        data: joinUrl,
+                        version: QrVersions.auto,
+                        size: 72.0,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Code: ',
+                          style: TextStyle(fontSize: 10.5, color: Colors.white70, fontWeight: FontWeight.bold),
+                        ),
+                        SelectableText(
+                          game.inviteCode,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              // VERTICAL DIVIDER 2
+              Container(
+                height: 120,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                color: Colors.white.withValues(alpha: 0.22),
+              ),
+
+              // 3. RIGHT SIDE: DABHOUSIE BRANDING LOGO (3rd Column)
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.asset(
+                        AppAssets.dabhousieLogo600x400,
+                        height: 70,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => Image.asset(
+                          AppAssets.horizontalLogo,
+                          height: 50,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Live Tambola & Housie',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                        letterSpacing: 0.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      'dabhousie.com',
+                      style: TextStyle(fontSize: 9.5, color: Colors.white60),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
+
+          // Horizontal Recent Calls Strip beneath
+          if (recentCalls.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'RECENT: ',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.secondaryColor,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  ...recentCalls.map((item) {
+                    final n = item.number;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$n',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

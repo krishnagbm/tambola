@@ -10,6 +10,7 @@ class AppAssets {
   static const String favicon192 = 'assets/branding/dabhousie_favicon_192.png';
   static const String brandIdentitySheet = 'assets/branding/dabhousie_brand_identity_sheet.png';
   static const String marketingBanner = 'assets/branding/dabhousie_marketing_banner.png';
+  static const String dabhousieLogo600x400 = 'assets/branding/DabHousie_600x400.png';
 
   // Game Balls
   static const String ballGreen = 'assets/branding/game_balls/ball_green_256x256.png';

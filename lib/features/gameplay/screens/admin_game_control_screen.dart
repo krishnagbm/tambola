@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
+import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
@@ -25,11 +27,44 @@ class AdminGameControlScreen extends ConsumerStatefulWidget {
 class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen> {
   bool _isCalling = false;
   bool _isMuted = false;
+  Timer? _celebrationTimer;
+  int _celebrationSecondsLeft = 0;
+  int _knownApprovedCount = -1;
+  String? _celebrationMessage;
 
   @override
   void initState() {
     super.initState();
     _isMuted = TambolaAudioCaller().isMuted;
+  }
+
+  @override
+  void dispose() {
+    _celebrationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _triggerCelebrationPause(String message) {
+    _celebrationTimer?.cancel();
+    setState(() {
+      _celebrationSecondsLeft = 10;
+      _celebrationMessage = message;
+    });
+
+    _celebrationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_celebrationSecondsLeft > 1) {
+          _celebrationSecondsLeft--;
+        } else {
+          _celebrationSecondsLeft = 0;
+          timer.cancel();
+        }
+      });
+    });
   }
 
   void _handleCopyCode(String inviteCode) {
@@ -609,8 +644,21 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     final isGameCompleted = game?.status == 'COMPLETED';
     final activePrizes = game?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
     final claims = claimsStream.value ?? [];
-    final approvedClaimPrizes = claims.where((c) => c.status == 'APPROVED').map((c) => c.prizeType).toSet();
+    final approvedClaimsList = claims.where((c) => c.status == 'APPROVED').toList();
+    final approvedClaimPrizes = approvedClaimsList.map((c) => c.prizeType).toSet();
     final allPrizesWon = activePrizes.isNotEmpty && activePrizes.every((p) => approvedClaimPrizes.contains(p));
+
+    if (_knownApprovedCount == -1) {
+      _knownApprovedCount = approvedClaimsList.length;
+    } else if (approvedClaimsList.length > _knownApprovedCount) {
+      final latestClaim = approvedClaimsList.first;
+      _knownApprovedCount = approvedClaimsList.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _triggerCelebrationPause('Player "${latestClaim.userName ?? 'Player'}" won ${Formatters.formatPrizeName(latestClaim.prizeType)}!');
+        }
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -733,7 +781,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _buildCallerHeader(latest, calledNumbers.length),
+                                if (_celebrationSecondsLeft > 0)
+                                  _buildCelebrationPauseBanner(),
+                                _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                                 const SizedBox(height: 8),
                                 ElevatedButton.icon(
                                   onPressed: disableCalling ? null : _handleCallNext,
@@ -782,7 +832,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                     flex: 3,
                                     child: _buildConfirmedPlayersSidebarCard(game, confirmedPlayers, capacity),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 10),
                                   Expanded(
                                     flex: 2,
                                     child: _buildWaitingPlayersSidebarCard(game, waitingPlayers, capacity),
@@ -820,7 +870,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildCallerHeader(latest, calledNumbers.length),
+                                    if (_celebrationSecondsLeft > 0)
+                                      _buildCelebrationPauseBanner(),
+                                    _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                                     const SizedBox(height: 14),
                                     ElevatedButton.icon(
                                       onPressed: disableCalling ? null : _handleCallNext,
@@ -904,7 +956,9 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                           _buildPreGameBanner(game, confirmedPlayers.length),
                           const SizedBox(height: 14),
                         ],
-                        _buildCallerHeader(latest, calledNumbers.length),
+                        if (_celebrationSecondsLeft > 0)
+                          _buildCelebrationPauseBanner(),
+                        _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                         const SizedBox(height: 14),
                         ElevatedButton.icon(
                           onPressed: disableCalling ? null : _handleCallNext,
@@ -1497,34 +1551,160 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
-  Widget _buildCallerHeader(int? latest, int totalCalled) {
+  Widget _buildCelebrationPauseBanner() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.celebration_rounded, color: AppTheme.secondaryColor, size: 24),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Celebration Pause (${_celebrationSecondsLeft}s)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${_celebrationSecondsLeft}s',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_celebrationMessage != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _celebrationMessage!,
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              _celebrationTimer?.cancel();
+              setState(() => _celebrationSecondsLeft = 0);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: const Text('Skip Pause', style: TextStyle(fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCallerHeader(int? latest, int totalCalled, [List<MptCalledNumber>? calledNumbers]) {
+    final recent = (calledNumbers != null && calledNumbers.isNotEmpty)
+        ? calledNumbers.reversed.skip(1).take(6).toList()
+        : <MptCalledNumber>[];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppTheme.primaryDark,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFF2E334D)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('LATEST NUMBER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70)),
-              Text(
-                latest != null ? '$latest' : '---',
-                style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor, height: 1.1),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('LATEST NUMBER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white70)),
+                  Text(
+                    latest != null ? '$latest' : '---',
+                    style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor, height: 1.1),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('$totalCalled / 90', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text('Total Called', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                ],
               ),
             ],
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('$totalCalled / 90', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-              const Text('Total Called', style: TextStyle(fontSize: 11, color: Colors.white70)),
-            ],
-          ),
+          if (recent.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text(
+                  'LAST 6: ',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.secondaryColor,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: recent.map((item) {
+                        return Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkSurface,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFF3B4163)),
+                          ),
+                          child: Text(
+                            '${item.number}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

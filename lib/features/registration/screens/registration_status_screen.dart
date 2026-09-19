@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
+import '../../../core/widgets/ad_banner_slot.dart';
+import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
-import '../../../core/widgets/dabhousie_app_bar.dart';
 
 class RegistrationStatusScreen extends ConsumerWidget {
   final String gameId;
@@ -167,51 +168,13 @@ class RegistrationStatusScreen extends ConsumerWidget {
   }
 
   Widget _buildAdBannerSlot({bool isCompleted = false, bool isCancelled = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2E334D)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryColor.withOpacity(0.1),
-            AppTheme.darkCard,
-          ],
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.campaign_outlined, color: AppTheme.secondaryColor, size: 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isCancelled
-                      ? 'Game Event Cancelled'
-                      : isCompleted
-                          ? 'Game Session Ended'
-                          : 'Event Sponsor / Game Tip',
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isCancelled
-                      ? 'This game is no longer active. You can browse and join other upcoming events from the Home screen.'
-                      : isCompleted
-                          ? 'Thank you for playing! Any claimed prizes and vouchers are available in My Rewards.'
-                          : 'Stay on this screen! Your game ticket will automatically appear the moment the Organizer starts.',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    if (isCancelled || isCompleted) {
+      return const SizedBox.shrink();
+    }
+    return const AdBannerSlot(
+      slotType: AdSlotType.videoReward,
+      title: 'Sponsored Event Promo',
+      subtitle: 'Host your next family reunion or kitty party on DabHousie!',
     );
   }
 
