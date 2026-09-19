@@ -31,8 +31,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentTabIndex = 0;
-  String _playerFilter = 'ALL';
-  String _organizerFilter = 'ALL';
+  String _playerFilter = 'ACTIVE';
+  String _organizerFilter = 'ACTIVE';
   bool _isSigningIn = false;
   String? _loadingProvider;
 
@@ -206,6 +206,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  bool _isLiveOrPendingGame(dynamic g) {
+    if (g == null) return false;
+    String status = '';
+    DateTime? createdAt;
+    DateTime? startedAt;
+
+    if (g is MptGame) {
+      if (g.isCompleted || g.isCancelled) return false;
+      status = g.status;
+      createdAt = g.createdAt;
+      startedAt = g.startedAt;
+    } else if (g is Map) {
+      status = (g['status'] ?? '').toString();
+      if (status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED') return false;
+      if (g['created_at'] != null) createdAt = DateTime.tryParse(g['created_at'].toString());
+      if (g['started_at'] != null) startedAt = DateTime.tryParse(g['started_at'].toString());
+    }
+
+    if (status != 'IN_PROGRESS' && status != 'OPEN' && status != 'READY_TO_START') {
+      return false;
+    }
+
+    // Stale games started > 12h ago or created > 24h ago are considered past history
+    final now = DateTime.now();
+    if (startedAt != null && now.difference(startedAt).inHours >= 12) return false;
+    if (createdAt != null && now.difference(createdAt).inHours >= 24) return false;
+
+    return true;
+  }
+
   // ==========================================
   // TAB 0: DASHBOARD / WEB LANDING HOME
   // ==========================================
@@ -216,13 +246,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AsyncValue<List<MptGame>> hostedState,
     AsyncValue<List<Map<String, dynamic>>> joinedState,
   ) {
-    // Check if there is any active live game
+    // Only live or pending items appear; completed games move to history
     final liveJoined = joinedState.value?.where((reg) {
       final g = reg['game'] as Map<String, dynamic>? ?? {};
-      return (g['status'] ?? '') == 'IN_PROGRESS';
+      return _isLiveOrPendingGame(g);
     }).firstOrNull;
 
-    final liveHosted = hostedState.value?.where((g) => g.isInProgress || g.isOpen).firstOrNull;
+    final liveHosted = hostedState.value?.where((g) => _isLiveOrPendingGame(g)).firstOrNull;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     if (isMobile) {
@@ -814,19 +844,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['ALL', 'LIVE', 'WAITING', 'COMPLETED'].map((filter) {
+              children: ['ACTIVE', 'LIVE', 'WAITING', 'COMPLETED', 'ALL'].map((filter) {
                 final isSelected = _playerFilter == filter;
                 return FilterChip(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   label: Text(
-                    filter == 'ALL'
-                        ? 'All Games'
+                    filter == 'ACTIVE'
+                        ? 'Active / Upcoming'
                         : filter == 'LIVE'
                             ? '🟢 Live'
                             : filter == 'WAITING'
-                                ? '⏳ Upcoming'
-                                : '🏁 Completed',
+                                ? '⏳ Waiting Room'
+                                : filter == 'COMPLETED'
+                                    ? '🏁 History'
+                                    : 'All Games',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -850,9 +882,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final filtered = joined.where((reg) {
                   final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                   final status = (gameData['status'] ?? 'OPEN').toString();
+                  final isCompleted = status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED';
+
+                  if (_playerFilter == 'ACTIVE') {
+                    return !isCompleted && (status == 'IN_PROGRESS' || status == 'OPEN' || status == 'READY_TO_START');
+                  }
                   if (_playerFilter == 'LIVE') return status == 'IN_PROGRESS';
-                  if (_playerFilter == 'WAITING') return status == 'OPEN';
-                  if (_playerFilter == 'COMPLETED') return status == 'COMPLETED';
+                  if (_playerFilter == 'WAITING') return status == 'OPEN' || status == 'READY_TO_START';
+                  if (_playerFilter == 'COMPLETED') return isCompleted;
                   return true;
                 }).toList();
 
@@ -865,8 +902,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(Icons.confirmation_number_outlined, size: 36, color: Color(0xFF4A5568)),
                         const SizedBox(height: 8),
                         Text(
-                          _playerFilter == 'ALL'
-                              ? 'No joined games found.\nEnter an invite code to join a game!'
+                          _playerFilter == 'ACTIVE' || _playerFilter == 'ALL'
+                              ? 'No active joined games.\nEnter an invite code to join a game!'
                               : 'No $_playerFilter games found.',
                           style: const TextStyle(color: Color(0xFFA0AEC0), fontSize: 12),
                           textAlign: TextAlign.center,
@@ -1123,19 +1160,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['ALL', 'LIVE', 'LOBBY', 'COMPLETED'].map((filter) {
+              children: ['ACTIVE', 'LIVE', 'LOBBY', 'COMPLETED', 'ALL'].map((filter) {
                 final isSelected = _organizerFilter == filter;
                 return FilterChip(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   label: Text(
-                    filter == 'ALL'
-                        ? 'All Events'
+                    filter == 'ACTIVE'
+                        ? 'Active & Open'
                         : filter == 'LIVE'
                             ? '🟢 Live Controls'
                             : filter == 'LOBBY'
                                 ? '🚪 Lobby Open'
-                                : '🏁 Concluded',
+                                : filter == 'COMPLETED'
+                                    ? '🏁 Past History'
+                                    : 'All Events',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1158,6 +1197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (games) {
                 final filtered = games.where((g) {
+                  if (_organizerFilter == 'ACTIVE') return !g.isCompleted && !g.isCancelled && (g.isInProgress || g.isLobbyOpen);
                   if (_organizerFilter == 'LIVE') return g.isInProgress;
                   if (_organizerFilter == 'LOBBY') return g.isLobbyOpen;
                   if (_organizerFilter == 'COMPLETED') return g.isCompleted || g.isCancelled;
@@ -1173,8 +1213,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const Icon(Icons.event_note, size: 36, color: Color(0xFF4A5568)),
                         const SizedBox(height: 8),
                         Text(
-                          _organizerFilter == 'ALL'
-                              ? 'No hosted games yet.\nTap "Create New Game Event" to start!'
+                          _organizerFilter == 'ACTIVE' || _organizerFilter == 'ALL'
+                              ? 'No active hosted games.\nTap "Create New Game Event" to start!'
                               : 'No $_organizerFilter events found.',
                           style: const TextStyle(color: Color(0xFFA0AEC0), fontSize: 12),
                           textAlign: TextAlign.center,

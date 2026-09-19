@@ -100,6 +100,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
         TambolaAudioCaller().announceNumber(num);
       } else {
         if (!mounted) return;
+        await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
+        ref.invalidate(gameStreamProvider(widget.gameId));
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('All 90 numbers have been called! Game completed.')),
         );

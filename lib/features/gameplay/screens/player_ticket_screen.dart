@@ -364,7 +364,27 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           tooltip: 'Back to Home',
           onPressed: () => context.go('/'),
         ),
-        title: const Text('DabHousie Ticket'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              gameStream.value?.name ?? 'DabHousie Ticket',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (gameStream.value != null)
+              Text(
+                'Code: ${gameStream.value!.inviteCode}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppTheme.secondaryColor,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.8,
+                ),
+              ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: Icon(_voiceEnabled ? Icons.volume_up : Icons.volume_off, color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey),
@@ -432,8 +452,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             data: (calledNumbers) {
               final latestCalled = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
               final calledSet = calledNumbers.map((e) => e.number).toSet();
-              final isGameEnded = gameStream.value?.status == 'COMPLETED' || calledNumbers.length >= 90;
-              final activePrizes = gameStream.value?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
+              final currentGame = gameStream.value;
+              final isGameEnded = currentGame?.status == 'COMPLETED' || calledNumbers.length >= 90;
+              final activePrizes = currentGame?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
               final currentUser = ref.watch(currentUserProvider).value;
 
               return CelebrationOverlay(
@@ -461,7 +482,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildPlayerIdentityBanner(currentUser, ticket, isCompact: true),
+                                    _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isCompact: true),
                                     const SizedBox(height: 8),
                                     _buildLatestNumberBanner(latestCalled, calledNumbers.length, isGameEnded: isGameEnded, context: context, isCompact: true),
                                     const SizedBox(height: 8),
@@ -551,7 +572,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Player Identity & Ticket Number Card
-                          _buildPlayerIdentityBanner(currentUser, ticket),
+                          _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame),
                           const SizedBox(height: 10),
 
                           // Latest Called Ball / Game Concluded Banner
@@ -633,7 +654,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket, {bool isCompact = false}) {
+  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket, {MptGame? game, bool isCompact = false}) {
     final emoji = Formatters.getAvatarEmoji(user?.avatar);
     final name = (user?.displayName != null && user!.displayName.trim().isNotEmpty)
         ? user.displayName
@@ -675,11 +696,13 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'Playing Live Game',
+                  game != null ? '${game.name} • Code: ${game.inviteCode}' : 'Playing Live Game',
                   style: TextStyle(
                     fontSize: isCompact ? 9.5 : 11,
-                    color: const Color(0xFFA0AEC0),
+                    color: AppTheme.secondaryColor,
+                    fontWeight: FontWeight.w600,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
