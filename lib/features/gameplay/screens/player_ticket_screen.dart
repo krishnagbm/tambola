@@ -838,10 +838,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               return ElevatedButton(
                 onPressed: null, // Disabled
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isWonByMe ? AppTheme.secondaryColor.withOpacity(0.2) : Colors.black26,
-                  disabledBackgroundColor: isWonByMe ? AppTheme.secondaryColor.withOpacity(0.25) : const Color(0xFF222639),
-                  disabledForegroundColor: isWonByMe ? AppTheme.secondaryColor : const Color(0xFF718096),
-                  side: BorderSide(color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFF2E334D)),
+                  backgroundColor: isWonByMe ? AppTheme.accentSuccess.withOpacity(0.2) : Colors.black26,
+                  disabledBackgroundColor: isWonByMe ? AppTheme.accentSuccess.withOpacity(0.25) : const Color(0xFF222639),
+                  disabledForegroundColor: isWonByMe ? AppTheme.accentSuccess : const Color(0xFF718096),
+                  side: BorderSide(color: isWonByMe ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                 ),
                 child: Column(
@@ -854,7 +854,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     ),
                     Text(
                       isWonByMe ? '🏆 Won by You!' : '✓ Won by ${approvedClaim.userName ?? "Player"}',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.secondaryColor : const Color(0xFFA0AEC0)),
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.accentSuccess : const Color(0xFFA0AEC0)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

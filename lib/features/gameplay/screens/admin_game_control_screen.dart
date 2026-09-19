@@ -1646,7 +1646,7 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                         const SizedBox(height: 2),
                         Text(
                           'Won by: ${claim.userName ?? "Player"}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.secondaryColor),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.accentSuccess),
                         ),
                         Text(
                           'Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
