@@ -20,10 +20,26 @@
     <priority>0.9</priority>
   </url>
 
+  <!-- Tambola Rules & Jaldi 5 Guide -->
+  <url>
+    <loc>https://www.dabhousie.com/how-to-play-tambola.html</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Housie Party Rules & Calling Guide -->
+  <url>
+    <loc>https://www.dabhousie.com/how-to-play-housie.html</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- 90-Ball Bingo, Tambola & Housie Rules Guide -->
   <url>
     <loc>https://www.dabhousie.com/90-ball-bingo.html</loc>
-    <lastmod>2026-09-17</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>

@@ -48,6 +48,31 @@ class DashboardFooter extends StatelessWidget {
                     ),
                   ),
                 ),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/how-to-play-tambola.html'),
+                  child: const Text(
+                    'Tambola Guide',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/how-to-play-housie.html'),
+                  child: const Text(
+                    'Housie Guide',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFCBD5E1),
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFCBD5E1),
+                    ),
+                  ),
+                ),
                 const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                 InkWell(
                   onTap: () => _launchURL('${AppConfig.appBaseUrl}/90-ball-bingo.html'),
