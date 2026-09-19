@@ -211,7 +211,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+                Navigator.of(ctx, rootNavigator: true).pop();
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentSuccess,
               foregroundColor: Colors.white,
@@ -220,7 +224,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+                Navigator.of(ctx, rootNavigator: true).pop();
+              }
               context.push('/rewards');
             },
             child: const Text('View in Rewards'),
@@ -249,7 +255,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+                Navigator.of(ctx, rootNavigator: true).pop();
+              }
+            },
             child: const Text('OK, Got It'),
           ),
         ],
@@ -276,7 +286,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+                Navigator.of(ctx, rootNavigator: true).pop();
+              }
+            },
             child: const Text('Understood'),
           ),
         ],

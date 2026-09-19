@@ -104,7 +104,7 @@ export class PlayerSession {
   }
 
   /**
-   * Recovers player screen if session accidentally wanders off to /wallet or /rewards
+   * Recovers player screen if session accidentally wanders off to /wallet, /rewards, or becomes blank
    */
   async ensureInGameScreen() {
     try {
@@ -112,15 +112,22 @@ export class PlayerSession {
       const isUuid = this.gameId && this.gameId.length > 20 && this.gameId.includes('-');
       if (!isUuid) return;
 
-      const url = await this.page.evaluate(() => window.location.href).catch(() => '');
-      if (url.includes('/wallet') || url.includes('/rewards')) {
-        this.log(`Detected unwanted screen navigation (${url}). Redirecting back to game...`);
+      const isCorruptedOrNavigated = await this.page.evaluate(() => {
+        const url = window.location.href;
+        if (url.includes('/wallet') || url.includes('/rewards')) return true;
+        const text = document.body.innerText || document.body.textContent || '';
+        const hasContent = text.includes('DABHOUSIE') || text.includes('CURRENT CALL') || text.includes('SEAT CONFIRMED') || text.includes('WAITING') || text.includes('WINNER') || text.includes('Claim');
+        return !hasContent && (!text || text.trim().length === 0);
+      }).catch(() => false);
+
+      if (isCorruptedOrNavigated) {
+        this.log(`Detected blank canvas or unwanted navigation. Restoring gameplay screen...`);
         if (this.status === 'PLAYING') {
           await this.page.goto(`https://www.dabhousie.com/#/play/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
         } else {
           await this.page.goto(`https://www.dabhousie.com/#/game-status/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
         }
-        await this.page.waitForTimeout(1500);
+        await this.page.waitForTimeout(2000);
         await this.enableFlutterSemantics();
       }
     } catch (_) {}
@@ -803,11 +810,16 @@ export class PlayerSession {
         if (claimResult.status === 'APPROVED') {
           this.log(`🎉 [CLAIM APPROVED] Player ${this.id} (${this.name}) won "${prize.name}"! Organizer received approval.`);
           await this.captureScreenshot(`won_${prize.id.toLowerCase()}`);
+          await this.page.keyboard.press('Escape').catch(() => {});
+          await this.page.waitForTimeout(400);
           await this.clickFlutterButton('Continue Playing', false);
-          await this.page.waitForTimeout(500);
+          await this.page.waitForTimeout(800);
+          await this.ensureInGameScreen();
         } else if (claimResult.status === 'BOGEY') {
           this.log(`⚠️ Claim for "${prize.name}" rejected by validation.`);
           await this.clickFlutterButton('OK', true);
+          await this.page.waitForTimeout(400);
+          await this.ensureInGameScreen();
         } else {
           this.log(`Claim button tapped for "${prize.name}". Submitted to server.`);
         }
