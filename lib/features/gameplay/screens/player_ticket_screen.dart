@@ -11,6 +11,7 @@ import '../../../core/utils/wake_lock_helper.dart';
 import '../../../core/widgets/celebration_overlay.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
+import '../../../models/mpt_game.dart';
 import '../../../models/mpt_ticket.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
