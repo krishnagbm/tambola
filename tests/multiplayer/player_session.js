@@ -86,7 +86,7 @@ export class PlayerSession {
   }
 
   /**
-   * Enables Flutter Web Semantics / Accessibility tree
+   * Enables Flutter Web Semantics / Accessibility tree safely
    */
   async enableFlutterSemantics() {
     try {
@@ -94,16 +94,34 @@ export class PlayerSession {
         const placeholder = document.querySelector('flt-semantics-placeholder');
         if (placeholder) {
           placeholder.click();
-          placeholder.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          placeholder.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         }
       });
       const placeholderLoc = this.page.locator('flt-semantics-placeholder');
       if (await placeholderLoc.count() > 0) {
         await placeholderLoc.first().click({ force: true }).catch(() => {});
       }
-      await this.page.keyboard.press('Tab').catch(() => {});
-      await this.page.keyboard.press('Enter').catch(() => {});
-      await this.page.waitForTimeout(400);
+      await this.page.waitForTimeout(300);
+    } catch (_) {}
+  }
+
+  /**
+   * Recovers player screen if session accidentally wanders off to /wallet, /rewards, or /
+   */
+  async ensureInGameScreen() {
+    try {
+      if (!this.page || this.page.isClosed()) return;
+      const url = await this.page.evaluate(() => window.location.href).catch(() => '');
+      if (url.includes('/wallet') || url.includes('/rewards') || url.endsWith('#/')) {
+        this.log(`Detected unwanted screen navigation (${url}). Redirecting back to game...`);
+        if (this.status === 'PLAYING' && this.gameId) {
+          await this.page.goto(`https://www.dabhousie.com/#/play/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        } else if (this.gameId) {
+          await this.page.goto(`https://www.dabhousie.com/#/game-status/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        }
+        await this.page.waitForTimeout(1500);
+        await this.enableFlutterSemantics();
+      }
     } catch (_) {}
   }
 
@@ -412,6 +430,8 @@ export class PlayerSession {
     while (Date.now() - startTime < maxWaitMs) {
       if (this.page.isClosed()) return;
 
+      await this.ensureInGameScreen();
+
       const hasStarted = await this.page.evaluate(() => {
         const url = window.location.href;
         const text = document.body.innerText || document.body.textContent || '';
@@ -425,7 +445,7 @@ export class PlayerSession {
       if (hasStarted) {
         this.status = 'PLAYING';
         this.log('Game has started! In gameplay screen.');
-        await this.page.waitForTimeout(2000);
+        await this.page.waitForTimeout(1500);
         await this.enableFlutterSemantics();
         await this.captureScreenshot('game_started');
         return;
@@ -443,10 +463,13 @@ export class PlayerSession {
   async inspectAndExtractTicketNumbers() {
     this.log('Extracting ticket matrix numbers...');
     
+    await this.ensureInGameScreen();
     await this.enableFlutterSemantics();
-    await this.page.waitForTimeout(1000);
+    await this.page.waitForTimeout(800);
 
-    for (let attempt = 1; attempt <= 5; attempt++) {
+    for (let attempt = 1; attempt <= 6; attempt++) {
+      await this.ensureInGameScreen();
+
       const result = await this.page.evaluate(() => {
         const found = [];
         const seen = new Set();
@@ -465,7 +488,7 @@ export class PlayerSession {
           }
         }
 
-        // 2. Fallback: Search text nodes
+        // 2. Fallback: Search in full body text or HTML for "Ticket number X"
         if (found.length < 15) {
           const fullHtml = document.body.innerHTML || '';
           const regexAll = /Ticket\s+number\s+(\d{1,2})\b/gi;
@@ -479,27 +502,46 @@ export class PlayerSession {
           }
         }
 
+        // 3. Fallback: Check numeric elements inside the ticket container
+        if (found.length < 15) {
+          for (const el of allElements) {
+            const label = (el.getAttribute('aria-label') || el.innerText || '').trim();
+            if (/^\d{1,2}$/.test(label)) {
+              const val = parseInt(label, 10);
+              if (val >= 1 && val <= 90 && !seen.has(val)) {
+                if (!label.includes('Called') && !seen.has(val)) {
+                  seen.add(val);
+                  found.push(val);
+                }
+              }
+            }
+          }
+        }
+
         return found;
       });
 
-      if (result.length >= 15 || attempt === 5) {
-        this.ticketNumbers = [...result].sort((a, b) => a - b);
-        
-        // Extract 3x9 rows (5 numbers per row in DOM layout order)
-        const rows = [[], [], []];
-        for (let i = 0; i < Math.min(result.length, 15); i++) {
-          rows[Math.floor(i / 5)].push(result[i]);
-        }
-        this.ticketMatrix = rows;
+      if (result.length >= 15 || attempt === 6) {
+        if (result.length > 0) {
+          this.ticketNumbers = [...result].sort((a, b) => a - b);
+          
+          // Extract 3x9 rows (5 numbers per row in DOM layout order)
+          const rows = [[], [], []];
+          for (let i = 0; i < Math.min(result.length, 15); i++) {
+            rows[Math.floor(i / 5)].push(result[i]);
+          }
+          this.ticketMatrix = rows;
 
-        this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
-        return this.ticketNumbers;
+          this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
+          return this.ticketNumbers;
+        }
       }
 
       await this.enableFlutterSemantics();
       await this.page.waitForTimeout(1000);
     }
 
+    this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
     return this.ticketNumbers;
   }
 
@@ -508,6 +550,7 @@ export class PlayerSession {
    */
   async getCurrentCalledNumber() {
     try {
+      await this.ensureInGameScreen();
       const callData = await this.page.evaluate(() => {
         const text = document.body.innerText || document.body.textContent || '';
         if (text.includes('GAME CONCLUDED') || text.includes('GAME COMPLETED') || text.includes('Game Concluded')) {
