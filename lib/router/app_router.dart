@@ -16,7 +16,11 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const HomeScreen(initialTabIndex: 0),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const HomeScreen(initialTabIndex: 3),
     ),
     GoRoute(
       path: '/create-game',

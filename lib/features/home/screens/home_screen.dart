@@ -23,18 +23,36 @@ import '../widgets/usp_grid_section.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final int initialTabIndex;
+
+  const HomeScreen({super.key, this.initialTabIndex = 0});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _currentTabIndex = 0;
+  late int _currentTabIndex;
   String _playerFilter = 'ACTIVE';
   String _organizerFilter = 'ACTIVE';
   bool _isSigningIn = false;
   String? _loadingProvider;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTabIndex = widget.initialTabIndex;
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTabIndex != widget.initialTabIndex) {
+      setState(() {
+        _currentTabIndex = widget.initialTabIndex;
+      });
+    }
+  }
 
   void _refreshAll() {
     ref.invalidate(currentUserProvider);

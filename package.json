@@ -1,0 +1,8 @@
+{
+  "name": "tambola-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:multiplayer": "node tests/multiplayer/runner.js"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "dabhousie-multiplayer-test-harness",
+  "version": "1.0.0",
+  "description": "Local automated multiplayer testing tool for DabHousie",
+  "main": "runner.js",
+  "type": "module",
+  "scripts": {
+    "test:multiplayer": "node runner.js"
+  },
+  "keywords": ["playwright", "testing", "tambola", "multiplayer"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}
