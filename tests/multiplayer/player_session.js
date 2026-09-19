@@ -748,6 +748,17 @@ export class PlayerSession {
         isEligible: () => this.dabbedNumbers.size >= 5,
       },
       {
+        id: 'FOUR_CORNERS',
+        name: 'Four Corners',
+        isEligible: () =>
+          row0.length === 5 &&
+          row2.length === 5 &&
+          this.dabbedNumbers.has(row0[0]) &&
+          this.dabbedNumbers.has(row0[4]) &&
+          this.dabbedNumbers.has(row2[0]) &&
+          this.dabbedNumbers.has(row2[4]),
+      },
+      {
         id: 'TOP_LINE',
         name: 'Top Line',
         isEligible: () => row0.length === 5 && row0.every(n => this.dabbedNumbers.has(n)),
@@ -761,17 +772,6 @@ export class PlayerSession {
         id: 'BOTTOM_LINE',
         name: 'Bottom Line',
         isEligible: () => row2.length === 5 && row2.every(n => this.dabbedNumbers.has(n)),
-      },
-      {
-        id: 'FOUR_CORNERS',
-        name: 'Four Corners',
-        isEligible: () =>
-          row0.length === 5 &&
-          row2.length === 5 &&
-          this.dabbedNumbers.has(row0[0]) &&
-          this.dabbedNumbers.has(row0[4]) &&
-          this.dabbedNumbers.has(row2[0]) &&
-          this.dabbedNumbers.has(row2[4]),
       },
       {
         id: 'FULL_HOUSE',
