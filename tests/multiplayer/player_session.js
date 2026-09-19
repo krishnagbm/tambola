@@ -233,89 +233,64 @@ export class PlayerSession {
   async joinGame(joinUrl) {
     this.log(`Navigating to ${joinUrl}...`);
     const codeMatch = joinUrl.match(/join\/([A-Za-z0-9]+)/);
-    this.inviteCode = codeMatch ? codeMatch[1] : 'UNKNOWN';
+    this.inviteCode = codeMatch ? codeMatch[1].toUpperCase() : 'UNKNOWN';
 
     await this.page.goto(joinUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await this.page.waitForTimeout(2500);
-
-    // Ensure localStorage is set if already on the origin
-    await this.page.evaluate((playerName) => {
-      try {
-        localStorage.setItem('flutter.mpt_player_name', playerName);
-        localStorage.setItem('flutter.mpt_player_avatar', 'avatar_lion');
-      } catch (_) {}
-    }, this.name);
-
+    await this.page.waitForTimeout(3000);
     await this.enableFlutterSemantics();
 
     this.userUuid = await this.getAnonymousUserUuid();
     this.log(`Session Auth UUID: ${this.userUuid}`);
 
-    this.log('Waiting for Register button or Lobby status...');
-    for (let i = 0; i < 20; i++) {
-      const currentUrl = this.page.url();
-      if (currentUrl.includes('/game-status/') || currentUrl.includes('/play/')) {
-        this.log(`Already in game status/play screen: ${currentUrl}`);
-        break;
+    // 1. If landed on Home screen, navigate into Join screen
+    for (let step = 0; step < 5; step++) {
+      const currentUrl = await this.page.evaluate(() => window.location.href);
+      const isJoinScreen = currentUrl.includes('/join');
+      if (isJoinScreen) break;
+
+      this.log('Landed on Home screen. Clicking "Enter Code to Join"...');
+      const clickedJoin = await this.clickFlutterButton('Enter Code to Join');
+      if (!clickedJoin) {
+        await this.clickFlutterButton('Join Game');
       }
+      await this.page.waitForTimeout(2000);
+    }
 
-      const foundState = await this.page.evaluate(() => {
-        const full = document.body.innerText || document.body.textContent || '';
-        const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label], *'));
+    // 2. Ensure invite code is entered and looked up
+    this.log(`Looking up game code ${this.inviteCode}...`);
+    for (let lookupAttempt = 0; lookupAttempt < 5; lookupAttempt++) {
+      const hasRegisterBtn = await this.page.evaluate(() => {
+        const text = document.body.innerText || document.body.textContent || '';
+        const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
         const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
-        const has = (t) => full.includes(t) || labels.some(l => l.includes(t));
-
-        if (has('Register & Get Ticket')) return 'READY_TO_REGISTER';
-        if (has('SEAT CONFIRMED') || has('Waiting for Organizer')) return 'IN_LOBBY';
-        if (has('CURRENT CALL') || has('DABHOUSIE TICKET')) return 'IN_PLAY';
-        return null;
+        return text.includes('Register & Get Ticket') || labels.some(l => l.includes('Register & Get Ticket'));
       });
 
-      if (foundState === 'READY_TO_REGISTER' || foundState === 'IN_LOBBY' || foundState === 'IN_PLAY') {
-        this.log(`Found state: ${foundState}`);
+      if (hasRegisterBtn) {
+        this.log('Game preview found! "Register & Get Ticket" button is ready.');
         break;
       }
 
-      if (i === 4 && currentUrl.includes('/join')) {
-        try {
-          const input = this.page.locator('input').first();
-          if (await input.isVisible({ timeout: 2000 })) {
-            await input.fill(this.inviteCode);
-          }
-        } catch (_) {}
-        await this.clickFlutterButton('Find', true);
-      }
-      await this.page.waitForTimeout(1000);
-    }
-
-    // Attempt profile name change if on join screen
-    if (this.page.url().includes('/join')) {
+      // Enter code into input
       try {
-        this.log(`Setting player display name to "${this.name}"...`);
-        const clickedChange = await this.clickFlutterButton('Change', true);
-        if (clickedChange) {
-          await this.page.waitForTimeout(600);
-          const nameInput = this.page.locator('input').last();
-          if (await nameInput.isVisible({ timeout: 2500 }).catch(() => false)) {
-            await nameInput.fill('');
-            await nameInput.fill(this.name);
-            await this.page.waitForTimeout(200);
-            await this.clickFlutterButton('Save Profile', true);
-            await this.page.waitForTimeout(800);
-          } else {
-            await this.page.keyboard.press('Control+A').catch(() => {});
-            await this.page.keyboard.type(this.name).catch(() => {});
-            await this.clickFlutterButton('Save Profile', true);
-            await this.page.waitForTimeout(800);
-          }
+        const inputs = this.page.locator('input');
+        const count = await inputs.count();
+        if (count > 0) {
+          const firstInput = inputs.first();
+          await firstInput.click().catch(() => {});
+          await firstInput.fill(this.inviteCode).catch(() => {});
         }
       } catch (_) {}
+
+      await this.clickFlutterButton('Find', true);
+      await this.page.waitForTimeout(2000);
     }
 
+    // 3. Register into the game
     let isRegistered = false;
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      const cur = this.page.url();
-      if (cur.includes('/game-status/') || cur.includes('/play/')) {
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const currentUrl = await this.page.evaluate(() => window.location.href);
+      if (currentUrl.includes('/game-status/') || currentUrl.includes('/play/')) {
         isRegistered = true;
         break;
       }
@@ -323,12 +298,12 @@ export class PlayerSession {
       this.registrationAttempts = attempt;
       this.log(`Registering into game (attempt ${attempt})...`);
       await this.clickFlutterButton('Register & Get Ticket');
-      await this.page.waitForTimeout(600);
+      await this.page.waitForTimeout(800);
 
       // Handle mandatory name modal if prompted
       await this.handleMandatoryNameDialog();
 
-      isRegistered = await this.page.waitForFunction(() => {
+      isRegistered = await this.page.evaluate(() => {
         const url = window.location.href;
         const text = document.body.innerText || document.body.textContent || '';
         const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
@@ -341,10 +316,10 @@ export class PlayerSession {
           has('SEAT CONFIRMED') ||
           has('Waiting for Organizer')
         );
-      }, { timeout: 6000 }).then(() => true).catch(() => false);
+      });
 
       if (isRegistered) break;
-      await this.page.waitForTimeout(1000);
+      await this.page.waitForTimeout(1500);
     }
 
     try {
@@ -356,23 +331,31 @@ export class PlayerSession {
     const gameIdMatch = this.finalUrl.match(/(?:game-status|play)\/([a-f0-9\-]+)/i);
     if (gameIdMatch) {
       this.gameId = gameIdMatch[1];
-    } else if (!this.gameId) {
+    } else {
       this.gameId = this.inviteCode;
     }
 
-    this.seatStatus = 'CONFIRMED';
-    this.successfulRegistrations = 1;
-    this.status = 'CONNECTED / REGISTERED';
-    this.registrationResult = {
-      success: true,
-      seatStatus: this.seatStatus,
-      ticketSeq: this.registrationSeq || 'N/A',
-      gameId: this.gameId,
-    };
+    if (isRegistered) {
+      this.seatStatus = 'CONFIRMED';
+      this.successfulRegistrations = 1;
+      this.status = 'CONNECTED / REGISTERED';
+      this.registrationResult = {
+        success: true,
+        seatStatus: this.seatStatus,
+        ticketSeq: this.registrationSeq || 'N/A',
+        gameId: this.gameId,
+      };
 
-    await this.captureScreenshot('registered');
-    this.log(`Successfully registered! [Seat: ${this.seatStatus}, UUID: ${this.userUuid}]`);
-    return true;
+      await this.captureScreenshot('registered');
+      this.log(`Successfully registered! [Seat: ${this.seatStatus}, UUID: ${this.userUuid}]`);
+      return true;
+    } else {
+      this.seatStatus = 'FAILED';
+      this.successfulRegistrations = 0;
+      this.status = 'REGISTRATION FAILED';
+      this.log('Could not complete registration. Check if game is open and accepting players.');
+      return false;
+    }
   }
 
   /**
@@ -417,22 +400,35 @@ export class PlayerSession {
    */
   async waitForGameStart() {
     this.log('Waiting for Organizer to start game...');
-    
-    await this.page.waitForFunction(() => {
-      const url = window.location.href;
-      const text = document.body.innerText || document.body.textContent || '';
-      return (
-        url.includes('/play/') ||
-        text.includes('CURRENT CALL') ||
-        text.includes('DABHOUSIE TICKET')
-      );
-    }, { timeout: 600000 }); // Wait up to 10 minutes for host to start
+    const maxWaitMs = 600000; // 10 minutes
+    const startTime = Date.now();
 
-    this.status = 'PLAYING';
-    this.log('Game has started! In gameplay screen.');
-    await this.page.waitForTimeout(2000); // allow ticket to render
-    await this.enableFlutterSemantics();
-    await this.captureScreenshot('game_started');
+    while (Date.now() - startTime < maxWaitMs) {
+      if (this.page.isClosed()) return;
+
+      const hasStarted = await this.page.evaluate(() => {
+        const url = window.location.href;
+        const text = document.body.innerText || document.body.textContent || '';
+        return (
+          url.includes('/play/') ||
+          text.includes('CURRENT CALL') ||
+          text.includes('DABHOUSIE TICKET')
+        );
+      }).catch(() => false);
+
+      if (hasStarted) {
+        this.status = 'PLAYING';
+        this.log('Game has started! In gameplay screen.');
+        await this.page.waitForTimeout(2000);
+        await this.enableFlutterSemantics();
+        await this.captureScreenshot('game_started');
+        return;
+      }
+
+      await this.page.waitForTimeout(2000);
+    }
+
+    this.log('Timed out waiting for game start after 10 minutes.');
   }
 
   /**
