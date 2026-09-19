@@ -2,6 +2,8 @@ import path from 'path';
 import fs from 'fs';
 
 const SCREENSHOTS_DIR = path.resolve('tests/multiplayer/screenshots');
+const SUPABASE_URL = 'https://itfcnurjrnyalauwwdkj.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI';
 
 export class PlayerSession {
   /**
@@ -553,80 +555,114 @@ export class PlayerSession {
   }
 
   /**
-   * Observe current called number from the player's screen
+   * Fetches all announced called numbers directly from the Supabase backend
+   */
+  async fetchCalledNumbersList() {
+    try {
+      let resolvedGameId = this.gameId;
+      if (!resolvedGameId || !resolvedGameId.includes('-')) {
+        // Look up game UUID by invite code
+        if (this.inviteCode) {
+          const gameRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?invite_code=eq.${this.inviteCode}&select=id,status&limit=1`, {
+            headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+          });
+          const gameData = await gameRes.json();
+          if (Array.isArray(gameData) && gameData.length > 0) {
+            resolvedGameId = gameData[0].id;
+            this.gameId = resolvedGameId;
+            if (gameData[0].status === 'COMPLETED') {
+              return { numbers: [], isCompleted: true };
+            }
+          }
+        }
+      }
+
+      if (!resolvedGameId) {
+        return { numbers: [], isCompleted: false };
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/MPT_called_numbers?game_id=eq.${resolvedGameId}&order=call_seq.asc`, {
+        headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        return { numbers: data, isCompleted: false };
+      }
+      return { numbers: [], isCompleted: false };
+    } catch (_) {
+      return { numbers: [], isCompleted: false };
+    }
+  }
+
+  /**
+   * Observe current called number from the player's screen and backend
    */
   async getCurrentCalledNumber() {
     try {
       await this.ensureInGameScreen();
-      const callData = await this.page.evaluate(() => {
+
+      // 1. Check DOM semantics and text from page
+      const domCallData = await this.page.evaluate(() => {
         const text = document.body.innerText || document.body.textContent || '';
         if (text.includes('GAME CONCLUDED') || text.includes('GAME COMPLETED') || text.includes('Game Concluded')) {
           return { number: null, isCompleted: true };
         }
 
-        // 1. Primary: Check semantics label CURRENT_CALLED_NUMBER_X
         const allSemantics = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
+        let foundNum = null;
+
+        // Check semantics label CURRENT_CALLED_NUMBER_X
         for (const el of allSemantics) {
           const aria = (el.getAttribute('aria-label') || '').trim();
-          if (aria.includes('CURRENT_CALLED_NUMBER_READY')) {
-            return { number: null, isCompleted: false };
-          }
           const match = aria.match(/CURRENT_CALLED_NUMBER_(\d{1,2})\b/i);
           if (match) {
             const val = parseInt(match[1], 10);
             if (val >= 1 && val <= 90) {
-              return { number: val, isCompleted: false };
+              foundNum = val;
+              break;
             }
           }
         }
 
-        // 2. Resilient text parsing: Inspect line with 'CURRENT CALL' and its immediate successor
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        const idx = lines.findIndex(l => l.toUpperCase().includes('CURRENT CALL'));
-        if (idx !== -1) {
-          // Check inline match (e.g. "CURRENT CALL: 45" or "CURRENT CALL 45")
-          const inlineMatch = lines[idx].match(/CURRENT\s+CALL\s*[:\-]?\s*(\d{1,2})\b/i);
-          if (inlineMatch) {
-            const val = parseInt(inlineMatch[1], 10);
-            if (val >= 1 && val <= 90) return { number: val, isCompleted: false };
-          }
-
-          // Check line directly after CURRENT CALL
-          if (idx + 1 < lines.length) {
-            const nextLine = lines[idx + 1].trim();
-            if (nextLine.toUpperCase() === 'READY') {
-              return { number: null, isCompleted: false };
+        // Resilient text parsing: Inspect line with 'CURRENT CALL' and its immediate successor
+        if (!foundNum) {
+          const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+          const idx = lines.findIndex(l => l.toUpperCase().includes('CURRENT CALL'));
+          if (idx !== -1) {
+            const inlineMatch = lines[idx].match(/CURRENT\s+CALL\s*[:\-]?\s*(\d{1,2})\b/i);
+            if (inlineMatch) {
+              const val = parseInt(inlineMatch[1], 10);
+              if (val >= 1 && val <= 90) foundNum = val;
             }
-            if (/^\d{1,2}$/.test(nextLine)) {
-              const val = parseInt(nextLine, 10);
-              if (val >= 1 && val <= 90) {
-                return { number: val, isCompleted: false };
+
+            if (!foundNum && idx + 1 < lines.length) {
+              const nextLine = lines[idx + 1].trim();
+              if (/^\d{1,2}$/.test(nextLine)) {
+                const val = parseInt(nextLine, 10);
+                if (val >= 1 && val <= 90) foundNum = val;
               }
             }
           }
         }
 
-        // 3. Fallback: Check semantics elements around CURRENT CALL
-        for (let i = 0; i < allSemantics.length; i++) {
-          const t = (allSemantics[i].getAttribute('aria-label') || allSemantics[i].innerText || '').trim();
-          if (t.toUpperCase().includes('CURRENT CALL')) {
-            if (i + 1 < allSemantics.length) {
-              const nextText = (allSemantics[i + 1].getAttribute('aria-label') || allSemantics[i + 1].innerText || '').trim();
-              if (nextText.toUpperCase() === 'READY') return { number: null, isCompleted: false };
-              if (/^\d{1,2}$/.test(nextText)) {
-                const val = parseInt(nextText, 10);
-                if (val >= 1 && val <= 90) return { number: val, isCompleted: false };
-              }
-            }
-          }
-        }
+        return { number: foundNum, isCompleted: false };
+      }).catch(() => ({ number: null, isCompleted: false }));
 
-        return { number: null, isCompleted: false };
-      });
+      // 2. Also fetch real-time backend ground truth
+      const backendData = await this.fetchCalledNumbersList();
+      const allCalls = backendData.numbers || [];
+      const latestBackendCall = allCalls.length > 0 ? allCalls[allCalls.length - 1].number : null;
 
-      return callData;
+      const activeNumber = latestBackendCall || domCallData.number;
+      const isCompleted = domCallData.isCompleted || backendData.isCompleted || (allCalls.length >= 90);
+
+      return {
+        number: activeNumber,
+        allCalls,
+        isCompleted
+      };
     } catch (_) {
-      return { number: null, isCompleted: false };
+      return { number: null, allCalls: [], isCompleted: false };
     }
   }
 

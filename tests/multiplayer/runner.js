@@ -194,12 +194,13 @@ Game status: IN_PROGRESS
 
     // 6. Realtime Game Loop: Observe called numbers and auto-dab
     console.log('--- OBSERVING CALLED NUMBERS ---');
-    let callSequence = 0;
+    const processedCallSeqs = new Set();
+    const processedNumbers = new Set();
     let isGameCompleted = false;
-    let roomLastCalledNumber = null;
 
     while (!isGameCompleted && !isShuttingDown) {
-      let activeCall = null;
+      let activeCallsList = [];
+      let singleActiveNum = null;
 
       for (const p of successfulJoins) {
         const status = await p.getCurrentCalledNumber();
@@ -207,24 +208,38 @@ Game status: IN_PROGRESS
           isGameCompleted = true;
           break;
         }
-        if (status.number && status.number !== roomLastCalledNumber) {
-          activeCall = status.number;
-          break;
+        if (status.allCalls && status.allCalls.length > 0) {
+          activeCallsList = status.allCalls;
+        }
+        if (status.number) {
+          singleActiveNum = status.number;
         }
       }
 
-      if (activeCall) {
-        callSequence++;
-        roomLastCalledNumber = activeCall;
-        console.log(`\n>>> [CALL #${callSequence}] NUMBER ANNOUNCED: ${activeCall} <<<`);
-        
-        // Process this called number for all players
+      if (activeCallsList.length > 0) {
+        for (const call of activeCallsList) {
+          const seq = call.call_seq || (processedCallSeqs.size + 1);
+          const num = call.number;
+          if (!processedCallSeqs.has(seq)) {
+            processedCallSeqs.add(seq);
+            processedNumbers.add(num);
+            console.log(`\n>>> [CALL #${seq}] NUMBER ANNOUNCED: ${num} <<<`);
+            for (const p of successfulJoins) {
+              await p.processCalledNumber(num, seq);
+            }
+          }
+        }
+      } else if (singleActiveNum && !processedNumbers.has(singleActiveNum)) {
+        const seq = processedCallSeqs.size + 1;
+        processedCallSeqs.add(seq);
+        processedNumbers.add(singleActiveNum);
+        console.log(`\n>>> [CALL #${seq}] NUMBER ANNOUNCED: ${singleActiveNum} <<<`);
         for (const p of successfulJoins) {
-          await p.processCalledNumber(activeCall, callSequence);
+          await p.processCalledNumber(singleActiveNum, seq);
         }
       }
 
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     if (isGameCompleted) {
