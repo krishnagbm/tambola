@@ -17,7 +17,9 @@ export class PlayerSession {
     this.browser = null;
     this.page = null;
     this.ticketNumbers = [];
+    this.ticketMatrix = [[], [], []];
     this.dabbedNumbers = new Set();
+    this.claimedPrizes = new Set();
     this.lastCalledNumber = null;
     this.status = 'INITIALIZING';
     this.gameId = null;
@@ -95,8 +97,12 @@ export class PlayerSession {
           placeholder.dispatchEvent(new MouseEvent('click', { bubbles: true }));
         }
       });
-      await this.page.keyboard.press('Tab');
-      await this.page.keyboard.press('Enter');
+      const placeholderLoc = this.page.locator('flt-semantics-placeholder');
+      if (await placeholderLoc.count() > 0) {
+        await placeholderLoc.first().click({ force: true }).catch(() => {});
+      }
+      await this.page.keyboard.press('Tab').catch(() => {});
+      await this.page.keyboard.press('Enter').catch(() => {});
       await this.page.waitForTimeout(400);
     } catch (_) {}
   }
@@ -432,7 +438,7 @@ export class PlayerSession {
   }
 
   /**
-   * Scrapes and caches the 15 numbers from the player's ticket
+   * Scrapes and caches the 15 numbers from the player's ticket and matrix rows
    */
   async inspectAndExtractTicketNumbers() {
     this.log('Extracting ticket matrix numbers...');
@@ -441,44 +447,56 @@ export class PlayerSession {
     await this.page.waitForTimeout(1000);
 
     for (let attempt = 1; attempt <= 5; attempt++) {
-      const numbers = await this.page.evaluate(() => {
-        const found = new Set();
+      const result = await this.page.evaluate(() => {
+        const found = [];
+        const seen = new Set();
         const allElements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div, button'));
         
-        // 1. Primary: Check for Flutter Semantics label "Ticket number X"
+        // 1. Primary: Check for Flutter Semantics label "Ticket number X" in DOM order
         for (const el of allElements) {
           const aria = (el.getAttribute('aria-label') || '').trim();
           const match = aria.match(/Ticket\s+number\s+(\d{1,2})\b/i);
           if (match) {
             const val = parseInt(match[1], 10);
-            if (val >= 1 && val <= 90) {
-              found.add(val);
+            if (val >= 1 && val <= 90 && !seen.has(val)) {
+              seen.add(val);
+              found.push(val);
             }
           }
         }
 
-        // 2. Fallback: Search all text nodes if semantics tree had fewer numbers
-        if (found.size < 15) {
+        // 2. Fallback: Search text nodes
+        if (found.length < 15) {
           const fullHtml = document.body.innerHTML || '';
           const regexAll = /Ticket\s+number\s+(\d{1,2})\b/gi;
           let m;
           while ((m = regexAll.exec(fullHtml)) !== null) {
             const val = parseInt(m[1], 10);
-            if (val >= 1 && val <= 90) {
-              found.add(val);
+            if (val >= 1 && val <= 90 && !seen.has(val)) {
+              seen.add(val);
+              found.push(val);
             }
           }
         }
 
-        return Array.from(found).sort((a, b) => a - b);
+        return found;
       });
 
-      if (numbers.length >= 15 || attempt === 5) {
-        this.ticketNumbers = numbers;
+      if (result.length >= 15 || attempt === 5) {
+        this.ticketNumbers = [...result].sort((a, b) => a - b);
+        
+        // Extract 3x9 rows (5 numbers per row in DOM layout order)
+        const rows = [[], [], []];
+        for (let i = 0; i < Math.min(result.length, 15); i++) {
+          rows[Math.floor(i / 5)].push(result[i]);
+        }
+        this.ticketMatrix = rows;
+
         this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
         return this.ticketNumbers;
       }
 
+      await this.enableFlutterSemantics();
       await this.page.waitForTimeout(1000);
     }
 
@@ -584,10 +602,108 @@ export class PlayerSession {
     console.log(`  Action: ${hasNumber ? (isAlreadyDabbed ? 'Already Dabbed' : `Dab ${calledNum}`) : 'None'}`);
 
     if (hasNumber && !isAlreadyDabbed) {
-      await this.dabNumber(calledNum);
-      this.dabbedNumbers.add(calledNum);
+      const success = await this.dabNumber(calledNum);
+      if (success) {
+        this.dabbedNumbers.add(calledNum);
+      }
       if (callSequence <= 5) {
         await this.captureScreenshot(`call_${callSequence}_dabbed_${calledNum}`);
+      }
+    }
+
+    // Automatically check and claim any winning prize patterns!
+    await this.checkAndClaimPrizes();
+  }
+
+  /**
+   * Evaluates all prize patterns and automatically submits claims for eligible prizes
+   */
+  async checkAndClaimPrizes() {
+    if (this.ticketNumbers.length < 15 || this.dabbedNumbers.size < 4) {
+      return;
+    }
+
+    const row0 = this.ticketMatrix[0] || [];
+    const row1 = this.ticketMatrix[1] || [];
+    const row2 = this.ticketMatrix[2] || [];
+
+    const prizeRules = [
+      {
+        id: 'EARLY_FIVE',
+        name: 'Early 5 (Jaldi 5)',
+        isEligible: () => this.dabbedNumbers.size >= 5,
+      },
+      {
+        id: 'TOP_LINE',
+        name: 'Top Line',
+        isEligible: () => row0.length === 5 && row0.every(n => this.dabbedNumbers.has(n)),
+      },
+      {
+        id: 'MIDDLE_LINE',
+        name: 'Middle Line',
+        isEligible: () => row1.length === 5 && row1.every(n => this.dabbedNumbers.has(n)),
+      },
+      {
+        id: 'BOTTOM_LINE',
+        name: 'Bottom Line',
+        isEligible: () => row2.length === 5 && row2.every(n => this.dabbedNumbers.has(n)),
+      },
+      {
+        id: 'FOUR_CORNERS',
+        name: 'Four Corners',
+        isEligible: () =>
+          row0.length === 5 &&
+          row2.length === 5 &&
+          this.dabbedNumbers.has(row0[0]) &&
+          this.dabbedNumbers.has(row0[4]) &&
+          this.dabbedNumbers.has(row2[0]) &&
+          this.dabbedNumbers.has(row2[4]),
+      },
+      {
+        id: 'FULL_HOUSE',
+        name: 'Full House',
+        isEligible: () => this.ticketNumbers.length === 15 && this.ticketNumbers.every(n => this.dabbedNumbers.has(n)),
+      },
+    ];
+
+    for (const prize of prizeRules) {
+      if (this.claimedPrizes.has(prize.id)) continue;
+
+      if (prize.isEligible()) {
+        this.log(`🏆 [PRIZE READY] Winning pattern completed for "${prize.name}"! Submitting claim...`);
+        this.claimedPrizes.add(prize.id);
+
+        // Click prize claim button on UI
+        const clicked = await this.clickFlutterButton(prize.name, false);
+        if (!clicked) {
+          await this.clickFlutterButton(prize.id, false);
+        }
+
+        await this.page.waitForTimeout(1000);
+
+        // Check if winner modal or result dialog is visible
+        const claimResult = await this.page.evaluate(() => {
+          const text = document.body.innerText || document.body.textContent || '';
+          if (text.includes('WINNER!') || text.includes('Congratulations!') || text.includes('APPROVED')) {
+            return { status: 'APPROVED' };
+          }
+          if (text.includes('Bogey') || text.includes('Invalid Claim') || text.includes('Incomplete')) {
+            return { status: 'BOGEY' };
+          }
+          return { status: 'UNKNOWN' };
+        });
+
+        if (claimResult.status === 'APPROVED') {
+          this.log(`🎉 [CLAIM APPROVED] Player ${this.id} (${this.name}) won "${prize.name}"! Organizer received approval.`);
+          await this.captureScreenshot(`won_${prize.id.toLowerCase()}`);
+          await this.clickFlutterButton('Continue Playing', false);
+          await this.page.waitForTimeout(500);
+        } else if (claimResult.status === 'BOGEY') {
+          this.log(`⚠️ Claim for "${prize.name}" rejected by validation.`);
+          await this.clickFlutterButton('OK', true);
+        } else {
+          this.log(`Claim button tapped for "${prize.name}". Submitted to server.`);
+        }
       }
     }
   }
@@ -599,41 +715,138 @@ export class PlayerSession {
   async dabNumber(numberToDab) {
     try {
       this.log(`Dabbing number ${numberToDab} on ticket matrix...`);
-      
-      const clicked = await this.page.evaluate((targetNum) => {
+
+      // Helper to check if the target number is marked (ignoring 'unmarked')
+      const checkMarkedState = async () => {
+        return await this.page.evaluate((targetNum) => {
+          const regex = new RegExp(`Ticket\\s+number\\s+${targetNum}\\b`, 'i');
+          const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
+          for (const el of elements) {
+            const aria = (el.getAttribute('aria-label') || '').trim();
+            const val = (el.getAttribute('aria-valuetext') || el.getAttribute('value') || '').trim();
+            if (regex.test(aria)) {
+              const hasUnmarked = aria.toLowerCase().includes('unmarked') || val.toLowerCase().includes('unmarked');
+              const hasMarked = aria.toLowerCase().includes('marked') || val.toLowerCase().includes('marked');
+              if (hasMarked && !hasUnmarked) {
+                return true;
+              }
+            }
+          }
+          return false;
+        }, numberToDab);
+      };
+
+      // 1. If already marked, skip
+      if (await checkMarkedState()) {
+        this.log(`Number ${numberToDab} is already marked.`);
+        return true;
+      }
+
+      // 2. Step 1: Use Playwright Locator on Flutter Semantics
+      const locators = [
+        this.page.locator(`flt-semantics[aria-label*="Ticket number ${numberToDab}"]`),
+        this.page.locator(`[aria-label*="Ticket number ${numberToDab}"]`),
+      ];
+
+      for (const loc of locators) {
+        const count = await loc.count();
+        if (count > 0) {
+          for (let i = 0; i < count; i++) {
+            const el = loc.nth(i);
+            const box = await el.boundingBox().catch(() => null);
+            if (box && box.width > 5 && box.height > 5) {
+              const cx = box.x + box.width / 2;
+              const cy = box.y + box.height / 2;
+              await this.page.mouse.click(cx, cy);
+              await el.click({ force: true }).catch(() => {});
+              break;
+            }
+          }
+        }
+      }
+
+      // 3. Step 2: DOM Event dispatch fallback
+      await this.page.evaluate((targetNum) => {
         const targetRegex = new RegExp(`Ticket\\s+number\\s+${targetNum}\\b`, 'i');
         const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], button, div, span'));
-        
-        // Find exact semantic ticket cell
         const matching = elements.filter(el => {
           const aria = (el.getAttribute('aria-label') || '').trim();
           return targetRegex.test(aria);
         });
 
-        if (matching.length > 0) {
-          const exact = matching[0];
-          exact.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-          exact.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-          exact.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          if (typeof exact.click === 'function') exact.click();
-
-          const r = exact.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) {
-            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-          }
-          return { clicked: true };
+        for (const el of matching) {
+          el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+          el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+          el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          if (typeof el.click === 'function') el.click();
         }
-        return null;
       }, numberToDab);
 
-      if (clicked && clicked.x && clicked.y) {
-        await this.page.mouse.click(clicked.x, clicked.y);
+      await this.page.waitForTimeout(250);
+
+      // Verify if marked
+      let isMarked = await checkMarkedState();
+
+      // 4. Step 3: Geometric Grid Click Fallback if still not marked
+      if (!isMarked) {
+        this.log(`Accessibility click did not mark ${numberToDab}, calculating geometric coordinates...`);
+        
+        // Find row & col of numberToDab
+        let targetRow = -1;
+        for (let r = 0; r < 3; r++) {
+          if (this.ticketMatrix[r] && this.ticketMatrix[r].includes(numberToDab)) {
+            targetRow = r;
+            break;
+          }
+        }
+        const targetCol = numberToDab === 90 ? 8 : Math.min(8, Math.floor(numberToDab / 10));
+
+        const cardBounds = await this.page.evaluate(() => {
+          const all = Array.from(document.querySelectorAll('*'));
+          for (const el of all) {
+            const text = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim();
+            if (text.includes('DABHOUSIE TICKET') || (text.includes('TICKET') && text.includes('Marked'))) {
+              const r = el.getBoundingClientRect();
+              if (r.width > 200 && r.height > 80) {
+                return { left: r.left, top: r.top, width: r.width, height: r.height };
+              }
+            }
+          }
+          return null;
+        });
+
+        const gridLeft = cardBounds ? cardBounds.left + 10 : 26;
+        const gridWidth = cardBounds ? cardBounds.width - 20 : (this.bounds.width - 52);
+        const colWidth = gridWidth / 9;
+        const cellX = gridLeft + (targetCol + 0.5) * colWidth;
+
+        const gridTop = cardBounds ? (cardBounds.top + 42) : 260;
+        const gridHeight = cardBounds ? (cardBounds.height - 52) : 150;
+        const rowHeight = gridHeight / 3;
+
+        const rowsToTry = targetRow >= 0 ? [targetRow] : [0, 1, 2];
+        for (const r of rowsToTry) {
+          const cellY = gridTop + (r + 0.5) * rowHeight;
+          await this.page.mouse.click(cellX, cellY);
+          await this.page.waitForTimeout(150);
+          if (await checkMarkedState()) {
+            isMarked = true;
+            break;
+          }
+        }
       }
 
-      await this.page.waitForTimeout(300);
-      this.log(`Dabbed ${numberToDab} successfully.`);
+      await this.page.waitForTimeout(200);
+      isMarked = await checkMarkedState();
+      if (isMarked) {
+        this.log(`Dabbed ${numberToDab} successfully (Marked verified on ticket).`);
+      } else {
+        this.log(`Dab action dispatched for ${numberToDab}.`);
+      }
+      return true;
     } catch (err) {
       this.error(`Failed to dab number ${numberToDab}: ${err.message}`);
+      return false;
     }
   }
 

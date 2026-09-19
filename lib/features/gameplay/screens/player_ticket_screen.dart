@@ -966,6 +966,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       value: isMarked ? 'marked' : 'unmarked',
       button: true,
       enabled: !isGameEnded,
+      onTap: isGameEnded ? null : () => _toggleMark(numVal),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
