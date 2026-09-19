@@ -721,7 +721,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingPlayers.length),
+                  onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingCount),
                   icon: const Icon(Icons.group_add, size: 18),
                   label: const Text('+ Add Seats (+5, +10, +15, +25)'),
                 ),
@@ -738,7 +738,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           )
         else
           OutlinedButton.icon(
-            onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingPlayers.length),
+            onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingCount),
             icon: const Icon(Icons.group_add, size: 18),
             label: const Text('+ Add Seats (+5, +10, +15, +25)'),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
