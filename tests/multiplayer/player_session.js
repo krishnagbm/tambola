@@ -440,47 +440,48 @@ export class PlayerSession {
     await this.enableFlutterSemantics();
     await this.page.waitForTimeout(1000);
 
-    const numbers = await this.page.evaluate(() => {
-      // 1. Check all elements in DOM
-      const found = new Set();
-      const allElements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div'));
-      
-      for (const el of allElements) {
-        const t = (el.getAttribute('aria-label') || el.innerText || el.textContent || '').trim();
-        if (/^\d{1,2}$/.test(t)) {
-          const val = parseInt(t, 10);
-          if (val >= 1 && val <= 90) {
-            found.add(val);
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      const numbers = await this.page.evaluate(() => {
+        const found = new Set();
+        const allElements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div, button'));
+        
+        // 1. Primary: Check for Flutter Semantics label "Ticket number X"
+        for (const el of allElements) {
+          const aria = (el.getAttribute('aria-label') || '').trim();
+          const match = aria.match(/Ticket\s+number\s+(\d{1,2})\b/i);
+          if (match) {
+            const val = parseInt(match[1], 10);
+            if (val >= 1 && val <= 90) {
+              found.add(val);
+            }
           }
         }
-      }
 
-      // 2. Also parse plain text lines
-      const fullText = document.body.innerText || document.body.textContent || '';
-      const lines = fullText.split('\n').map(l => l.trim()).filter(Boolean);
-      const ticketIdx = lines.findIndex(l => l.includes('DABHOUSIE TICKET') || l.includes('Marked'));
-      const claimIdx = lines.findIndex(l => l.includes('Claim Winning Prize') || l.includes('Early Five'));
-
-      let searchLines = lines;
-      if (ticketIdx !== -1 && claimIdx !== -1 && claimIdx > ticketIdx) {
-        searchLines = lines.slice(ticketIdx, claimIdx);
-      }
-
-      for (const line of searchLines) {
-        const parts = line.split(/\s+/);
-        for (const p of parts) {
-          const num = parseInt(p, 10);
-          if (!isNaN(num) && num >= 1 && num <= 90 && String(num) === p) {
-            found.add(num);
+        // 2. Fallback: Search all text nodes if semantics tree had fewer numbers
+        if (found.size < 15) {
+          const fullHtml = document.body.innerHTML || '';
+          const regexAll = /Ticket\s+number\s+(\d{1,2})\b/gi;
+          let m;
+          while ((m = regexAll.exec(fullHtml)) !== null) {
+            const val = parseInt(m[1], 10);
+            if (val >= 1 && val <= 90) {
+              found.add(val);
+            }
           }
         }
+
+        return Array.from(found).sort((a, b) => a - b);
+      });
+
+      if (numbers.length >= 15 || attempt === 5) {
+        this.ticketNumbers = numbers;
+        this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
+        return this.ticketNumbers;
       }
 
-      return Array.from(found).sort((a, b) => a - b);
-    });
+      await this.page.waitForTimeout(1000);
+    }
 
-    this.ticketNumbers = numbers;
-    this.log(`Ticket verified with ${this.ticketNumbers.length} numbers: [${this.ticketNumbers.join(', ')}]`);
     return this.ticketNumbers;
   }
 
@@ -491,34 +492,46 @@ export class PlayerSession {
     try {
       const callData = await this.page.evaluate(() => {
         const text = document.body.innerText || document.body.textContent || '';
-        if (text.includes('GAME COMPLETED') || text.includes('Game Concluded')) {
+        if (text.includes('GAME CONCLUDED') || text.includes('GAME COMPLETED') || text.includes('Game Concluded')) {
           return { number: null, isCompleted: true };
         }
 
-        const allSemantics = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div'));
-        for (let i = 0; i < allSemantics.length; i++) {
-          const t = (allSemantics[i].getAttribute('aria-label') || allSemantics[i].innerText || '').trim();
-          if (t === 'CURRENT CALL' && allSemantics[i + 1]) {
-            const nextText = (allSemantics[i + 1].getAttribute('aria-label') || allSemantics[i + 1].innerText || '').trim();
-            const val = parseInt(nextText, 10);
-            if (!isNaN(val) && val >= 1 && val <= 90) {
-              return { number: val, isCompleted: false };
+        // 1. Look for exact "CURRENT CALL" followed by integer (skip "2 / 90" or "Called")
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const idx = lines.findIndex(l => l.toUpperCase() === 'CURRENT CALL' || l.includes('CURRENT CALL'));
+        if (idx !== -1) {
+          for (let i = idx + 1; i < Math.min(lines.length, idx + 6); i++) {
+            const l = lines[i];
+            if (l.includes('/') || l.includes('Called') || l.includes('DABHOUSIE') || l.includes('TICKET')) {
+              continue;
+            }
+            if (/^\d{1,2}$/.test(l)) {
+              const val = parseInt(l, 10);
+              if (val >= 1 && val <= 90) {
+                return { number: val, isCompleted: false };
+              }
             }
           }
         }
 
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        const idx = lines.findIndex(l => l.includes('CURRENT CALL'));
-        if (idx !== -1 && lines[idx + 1]) {
-          const valStr = lines[idx + 1];
-          if (valStr === 'READY') {
-            return { number: null, isCompleted: false };
-          }
-          const val = parseInt(valStr, 10);
-          if (!isNaN(val) && val >= 1 && val <= 90) {
-            return { number: val, isCompleted: false };
+        // 2. Fallback to semantics query
+        const allSemantics = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div'));
+        for (let i = 0; i < allSemantics.length; i++) {
+          const t = (allSemantics[i].getAttribute('aria-label') || allSemantics[i].innerText || '').trim();
+          if (t.toUpperCase() === 'CURRENT CALL') {
+            for (let j = i + 1; j < Math.min(allSemantics.length, i + 6); j++) {
+              const nextText = (allSemantics[j].getAttribute('aria-label') || allSemantics[j].innerText || '').trim();
+              if (nextText.includes('/') || nextText.includes('Called')) continue;
+              if (/^\d{1,2}$/.test(nextText)) {
+                const val = parseInt(nextText, 10);
+                if (val >= 1 && val <= 90) {
+                  return { number: val, isCompleted: false };
+                }
+              }
+            }
           }
         }
+
         return { number: null, isCompleted: false };
       });
 
@@ -539,10 +552,32 @@ export class PlayerSession {
     }
 
     this.lastCalledNumber = calledNum;
-    const hasNumber = this.ticketNumbers.includes(calledNum);
+
+    // If initial ticket extraction was incomplete (<15 numbers), re-extract
+    if (this.ticketNumbers.length < 15) {
+      await this.inspectAndExtractTicketNumbers();
+    }
+
+    let hasNumber = this.ticketNumbers.includes(calledNum);
+
+    // Dynamic fail-safe check: check if ticket cell for this number exists on DOM
+    if (!hasNumber) {
+      const cellExists = await this.page.evaluate((num) => {
+        const regex = new RegExp(`Ticket\\s+number\\s+${num}\\b`, 'i');
+        const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
+        return elements.some(el => regex.test(el.getAttribute('aria-label') || ''));
+      }, calledNum);
+
+      if (cellExists) {
+        this.ticketNumbers.push(calledNum);
+        this.ticketNumbers.sort((a, b) => a - b);
+        hasNumber = true;
+      }
+    }
+
     const isAlreadyDabbed = this.dabbedNumbers.has(calledNum);
 
-    console.log(`Player ${this.id}:`);
+    console.log(`Player ${this.id} (${this.name}):`);
     console.log(`  Ticket: [${this.ticketNumbers.join(', ')}]`);
     console.log(`  Called: ${calledNum}`);
     console.log(`  Ticket contains ${calledNum}: ${hasNumber ? 'YES' : 'NO'}`);
@@ -565,49 +600,34 @@ export class PlayerSession {
     try {
       this.log(`Dabbing number ${numberToDab} on ticket matrix...`);
       
-      const dabbed = await this.page.evaluate((targetNum) => {
-        const text = String(targetNum);
-        const ariaTarget = `Ticket number ${text}`;
+      const clicked = await this.page.evaluate((targetNum) => {
+        const targetRegex = new RegExp(`Ticket\\s+number\\s+${targetNum}\\b`, 'i');
+        const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], button, div, span'));
         
-        const allDivs = Array.from(document.querySelectorAll('flt-semantics, [aria-label], button, span, p, div, *'));
-        const ticketHeader = allDivs.find(el => (el.innerText || el.textContent || '').includes('DABHOUSIE TICKET'));
-        const claimHeader = allDivs.find(el => (el.innerText || el.textContent || '').includes('Claim Winning Prize'));
-
-        const ticketY = ticketHeader ? ticketHeader.getBoundingClientRect().top : 0;
-        const claimY = claimHeader ? claimHeader.getBoundingClientRect().top : window.innerHeight;
-
-        const candidates = allDivs.filter(el => {
-          const directText = (el.innerText || el.textContent || '').trim();
+        // Find exact semantic ticket cell
+        const matching = elements.filter(el => {
           const aria = (el.getAttribute('aria-label') || '').trim();
-          const matches = directText === text || aria === ariaTarget || aria === text || aria.startsWith(ariaTarget);
-          if (!matches) return false;
-          const rect = el.getBoundingClientRect();
-          return rect.top >= (ticketY - 10) && rect.bottom <= (claimY + 10) && rect.width > 10 && rect.height > 10;
+          return targetRegex.test(aria);
         });
 
-        if (candidates.length > 0) {
-          // Sort by smallest area (most specific inner element)
-          candidates.sort((a, b) => {
-            const rA = a.getBoundingClientRect();
-            const rB = b.getBoundingClientRect();
-            return (rA.width * rA.height) - (rB.width * rB.height);
-          });
-          const target = candidates[0];
-          target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-          target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-          target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          if (typeof target.click === 'function') target.click();
-          return true;
-        }
+        if (matching.length > 0) {
+          const exact = matching[0];
+          exact.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+          exact.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+          exact.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          if (typeof exact.click === 'function') exact.click();
 
-        return false;
+          const r = exact.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) {
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          }
+          return { clicked: true };
+        }
+        return null;
       }, numberToDab);
 
-      if (!dabbed) {
-        await this.clickFlutterButton(`Ticket number ${numberToDab}`, false);
-      }
-      if (!dabbed) {
-        await this.clickFlutterButton(String(numberToDab), true);
+      if (clicked && clicked.x && clicked.y) {
+        await this.page.mouse.click(clicked.x, clicked.y);
       }
 
       await this.page.waitForTimeout(300);
