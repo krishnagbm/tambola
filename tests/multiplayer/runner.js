@@ -24,8 +24,10 @@ function parseArgs() {
       options.joinUrl = args[++i].trim();
     } else if (arg.startsWith('--players=')) {
       options.playersCount = parseInt(arg.split('=')[1].trim(), 10) || 3;
-    } else if (arg === '--headless') {
+    } else if (arg === '--headless' || arg === '--hide' || arg === '--headless=true') {
       options.headless = true;
+    } else if (arg === '--show' || arg === '--headed' || arg === '--headless=false') {
+      options.headless = false;
     } else if (arg.startsWith('--base-url=')) {
       options.baseUrl = arg.split('=')[1].trim();
     }
@@ -60,7 +62,8 @@ Options:
   --game=<CODE>      6-character DabHousie invite code
   --url=<URL>        Full join URL
   --players=<N>      Number of automated players (default: 3)
-  --headless         Run in headless mode (default: false / headed)
+  --show / --headed  Run with visible browser windows (default)
+  --hide / --headless Run in background without windows
 ===================================================================
 `);
     process.exit(1);
