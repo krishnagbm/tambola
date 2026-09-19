@@ -787,33 +787,15 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                   _buildCelebrationPauseBanner(),
                                 _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                                 const SizedBox(height: 8),
-                                ElevatedButton.icon(
-                                  onPressed: disableCalling ? null : _handleCallNext,
-                                  icon: Icon(
-                                    allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                                    size: 24,
-                                  ),
-                                  label: _isCalling
-                                      ? const Text('Selecting Number...')
-                                      : Text(
-                                          isGameCompleted
-                                              ? 'Game Completed'
-                                              : allPrizesWon
-                                                  ? 'All Prizes Won (Conclude Below)'
-                                                  : isMaxNumbers
-                                                      ? 'All 90 Numbers Called'
-                                                      : calledNumbers.isEmpty
-                                                          ? 'CALL FIRST NUMBER'
-                                                          : 'CALL NEXT NUMBER',
-                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                                        ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
-                                    foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
-                                    disabledBackgroundColor: const Color(0xFF222639),
-                                    disabledForegroundColor: const Color(0xFF718096),
-                                    padding: const EdgeInsets.symmetric(vertical: 13),
-                                  ),
+                                _buildMainActionButton(
+                                  isGameCompleted: isGameCompleted,
+                                  allPrizesWon: allPrizesWon,
+                                  isMaxNumbers: isMaxNumbers,
+                                  calledCount: calledNumbers.length,
+                                  disableCalling: disableCalling,
+                                  verticalPadding: 13,
+                                  fontSize: 15,
+                                  iconSize: 24,
                                 ),
                                 const SizedBox(height: 8),
                                 _buildMasterBoard(calledSet),
@@ -876,33 +858,15 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                                       _buildCelebrationPauseBanner(),
                                     _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                                     const SizedBox(height: 14),
-                                    ElevatedButton.icon(
-                                      onPressed: disableCalling ? null : _handleCallNext,
-                                      icon: Icon(
-                                        allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                                        size: 28,
-                                      ),
-                                      label: _isCalling
-                                          ? const Text('Selecting Number...')
-                                          : Text(
-                                              isGameCompleted
-                                                  ? 'Game Completed'
-                                                  : allPrizesWon
-                                                      ? 'All Prizes Won (Conclude Below)'
-                                                      : isMaxNumbers
-                                                          ? 'All 90 Numbers Called'
-                                                          : calledNumbers.isEmpty
-                                                              ? 'CALL FIRST NUMBER'
-                                                              : 'CALL NEXT NUMBER',
-                                              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                                            ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
-                                        foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
-                                        disabledBackgroundColor: const Color(0xFF222639),
-                                        disabledForegroundColor: const Color(0xFF718096),
-                                        padding: const EdgeInsets.symmetric(vertical: 18),
-                                      ),
+                                    _buildMainActionButton(
+                                      isGameCompleted: isGameCompleted,
+                                      allPrizesWon: allPrizesWon,
+                                      isMaxNumbers: isMaxNumbers,
+                                      calledCount: calledNumbers.length,
+                                      disableCalling: disableCalling,
+                                      verticalPadding: 18,
+                                      fontSize: 17,
+                                      iconSize: 28,
                                     ),
                                     const SizedBox(height: 16),
                                     _buildMasterBoard(calledSet),
@@ -962,33 +926,15 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
                           _buildCelebrationPauseBanner(),
                         _buildCallerHeader(latest, calledNumbers.length, calledNumbers),
                         const SizedBox(height: 14),
-                        ElevatedButton.icon(
-                          onPressed: disableCalling ? null : _handleCallNext,
-                          icon: Icon(
-                            allPrizesWon ? Icons.emoji_events : Icons.campaign_rounded,
-                            size: 28,
-                          ),
-                          label: _isCalling
-                              ? const Text('Selecting Number...')
-                              : Text(
-                                  isGameCompleted
-                                      ? 'Game Completed'
-                                      : allPrizesWon
-                                          ? 'All Prizes Won (Conclude Below)'
-                                          : isMaxNumbers
-                                              ? 'All 90 Numbers Called'
-                                              : calledNumbers.isEmpty
-                                                  ? 'CALL FIRST NUMBER'
-                                                  : 'CALL NEXT NUMBER',
-                                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-                                ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: allPrizesWon ? AppTheme.secondaryColor : AppTheme.accentSuccess,
-                            foregroundColor: allPrizesWon ? AppTheme.primaryDark : Colors.white,
-                            disabledBackgroundColor: const Color(0xFF222639),
-                            disabledForegroundColor: const Color(0xFF718096),
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                          ),
+                        _buildMainActionButton(
+                          isGameCompleted: isGameCompleted,
+                          allPrizesWon: allPrizesWon,
+                          isMaxNumbers: isMaxNumbers,
+                          calledCount: calledNumbers.length,
+                          disableCalling: disableCalling,
+                          verticalPadding: 18,
+                          fontSize: 17,
+                          iconSize: 28,
                         ),
                         const SizedBox(height: 16),
                         _buildMasterBoard(calledSet),
@@ -1023,6 +969,70 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     );
   }
 
+  Widget _buildMainActionButton({
+    required bool isGameCompleted,
+    required bool allPrizesWon,
+    required bool isMaxNumbers,
+    required int calledCount,
+    required bool disableCalling,
+    double verticalPadding = 14,
+    double fontSize = 16,
+    double iconSize = 24,
+  }) {
+    if (isGameCompleted) {
+      return ElevatedButton.icon(
+        onPressed: null,
+        icon: Icon(Icons.flag_rounded, size: iconSize),
+        label: Text('🏁 Game Concluded', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          disabledBackgroundColor: const Color(0xFF222639),
+          disabledForegroundColor: const Color(0xFF718096),
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+
+    if (allPrizesWon || isMaxNumbers) {
+      return ElevatedButton.icon(
+        onPressed: _handleEndGame,
+        icon: Icon(Icons.flag_rounded, size: iconSize, color: Colors.white),
+        label: Text(
+          allPrizesWon
+              ? '🏆 All Prizes Won — End & Conclude Event'
+              : '🏁 All 90 Numbers Called — End & Conclude Event',
+          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.3),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.accentDanger,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 4,
+        ),
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed: disableCalling ? null : _handleCallNext,
+      icon: Icon(Icons.campaign_rounded, size: iconSize),
+      label: _isCalling
+          ? const Text('Selecting Number...')
+          : Text(
+              calledCount == 0 ? 'CALL FIRST NUMBER' : 'CALL NEXT NUMBER',
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+            ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppTheme.accentSuccess,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: const Color(0xFF222639),
+        disabledForegroundColor: const Color(0xFF718096),
+        padding: EdgeInsets.symmetric(vertical: verticalPadding),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
   Widget _buildAllPrizesWonBanner() {
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1031,24 +1041,41 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
       ),
-      child: const Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
-          SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'All Prizes Won! 🏆',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+          const Row(
+            children: [
+              Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+              SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'All Prizes Won! 🏆',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.secondaryColor),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'All configured prizes have approved winners. Number calling is concluded. Tap below to finalize and publish results.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    ),
+                  ],
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'All configured prizes have approved winners. Number calling is paused. Conclude the game to finalize results.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-                ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            onPressed: _handleEndGame,
+            icon: const Icon(Icons.flag_rounded, size: 18),
+            label: const Text('End Game & Conclude Event', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           ),
         ],
