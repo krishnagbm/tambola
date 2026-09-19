@@ -741,22 +741,12 @@ export class PlayerSession {
     const row1 = this.ticketMatrix[1] || [];
     const row2 = this.ticketMatrix[2] || [];
 
-    const prizeRules = [
+    // 1. Intermediate prizes: Early 5, Any Lines, Four Corners (can be claimed in whatever dynamic order they complete)
+    const intermediateRules = [
       {
         id: 'EARLY_FIVE',
         name: 'Early 5 (Jaldi 5)',
         isEligible: () => this.dabbedNumbers.size >= 5,
-      },
-      {
-        id: 'FOUR_CORNERS',
-        name: 'Four Corners',
-        isEligible: () =>
-          row0.length === 5 &&
-          row2.length === 5 &&
-          this.dabbedNumbers.has(row0[0]) &&
-          this.dabbedNumbers.has(row0[4]) &&
-          this.dabbedNumbers.has(row2[0]) &&
-          this.dabbedNumbers.has(row2[4]),
       },
       {
         id: 'TOP_LINE',
@@ -774,11 +764,26 @@ export class PlayerSession {
         isEligible: () => row2.length === 5 && row2.every(n => this.dabbedNumbers.has(n)),
       },
       {
-        id: 'FULL_HOUSE',
-        name: 'Full House',
-        isEligible: () => this.ticketNumbers.length === 15 && this.ticketNumbers.every(n => this.dabbedNumbers.has(n)),
+        id: 'FOUR_CORNERS',
+        name: 'Four Corners',
+        isEligible: () =>
+          row0.length === 5 &&
+          row2.length === 5 &&
+          this.dabbedNumbers.has(row0[0]) &&
+          this.dabbedNumbers.has(row0[4]) &&
+          this.dabbedNumbers.has(row2[0]) &&
+          this.dabbedNumbers.has(row2[4]),
       },
     ];
+
+    // 2. Full House grand finale: strictly claimed only after all intermediate prizes are settled
+    const fullHouseRule = {
+      id: 'FULL_HOUSE',
+      name: 'Full House',
+      isEligible: () => this.ticketNumbers.length === 15 && this.ticketNumbers.every(n => this.dabbedNumbers.has(n)),
+    };
+
+    const prizeRules = [...intermediateRules, fullHouseRule];
 
     for (const prize of prizeRules) {
       if (this.claimedPrizes.has(prize.id)) continue;
