@@ -172,6 +172,14 @@ export class PlayerSession {
       userAgent: `DabHousie-TestPlayer-${this.id}`,
     });
 
+    // Pre-seed local storage so Flutter's SharedPreferences immediately starts with this real player name
+    await this.context.addInitScript((playerName) => {
+      try {
+        localStorage.setItem('flutter.mpt_player_name', playerName);
+        localStorage.setItem('flutter.mpt_player_avatar', 'avatar_lion');
+      } catch (_) {}
+    }, this.name);
+
     this.page = await this.context.newPage();
 
     this.page.on('pageerror', (err) => {
@@ -228,7 +236,16 @@ export class PlayerSession {
     this.inviteCode = codeMatch ? codeMatch[1] : 'UNKNOWN';
 
     await this.page.goto(joinUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await this.page.waitForTimeout(3000);
+    await this.page.waitForTimeout(2500);
+
+    // Ensure localStorage is set if already on the origin
+    await this.page.evaluate((playerName) => {
+      try {
+        localStorage.setItem('flutter.mpt_player_name', playerName);
+        localStorage.setItem('flutter.mpt_player_avatar', 'avatar_lion');
+      } catch (_) {}
+    }, this.name);
+
     await this.enableFlutterSemantics();
 
     this.userUuid = await this.getAnonymousUserUuid();
