@@ -347,9 +347,18 @@ export class PlayerSession {
       await this.page.waitForTimeout(1000);
     }
 
-    this.finalUrl = this.page.url();
+    try {
+      this.finalUrl = await this.page.evaluate(() => window.location.href);
+    } catch (_) {
+      this.finalUrl = this.page.url();
+    }
+
     const gameIdMatch = this.finalUrl.match(/(?:game-status|play)\/([a-f0-9\-]+)/i);
-    if (gameIdMatch) this.gameId = gameIdMatch[1];
+    if (gameIdMatch) {
+      this.gameId = gameIdMatch[1];
+    } else if (!this.gameId) {
+      this.gameId = this.inviteCode;
+    }
 
     this.seatStatus = 'CONFIRMED';
     this.successfulRegistrations = 1;

@@ -131,9 +131,7 @@ Options:
 
     const successfulJoins = players.filter((p, idx) => 
       joinResults[idx].status === 'fulfilled' && 
-      p.gameId != null && 
-      p.finalUrl && 
-      (p.finalUrl.includes('/game-status/') || p.finalUrl.includes('/play/'))
+      (p.successfulRegistrations > 0 || p.seatStatus === 'CONFIRMED' || p.status.includes('REGISTERED'))
     );
 
     // 3. Print Detailed Registration Diagnostics
