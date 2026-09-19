@@ -324,6 +324,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ),
       );
       context.go('/');
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error leaving game: $e'), backgroundColor: AppTheme.accentDanger),
@@ -436,7 +437,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final currentUser = ref.watch(currentUserProvider).value;
 
               return CelebrationOverlay(
-                showCelebration: _showCelebration,
+                isCelebrating: _showCelebration,
                 child: LayoutBuilder(
                   builder: (ctx, constraints) {
                     final orientation = MediaQuery.of(ctx).orientation;

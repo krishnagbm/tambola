@@ -21,6 +21,7 @@ __pycache__/
 docs/generated_200_tickets.json
 docs/generated_250_tickets.json
 docs/sql_generated_250_tickets.json
+docs/AmplifyLogs
 
 
 # IntelliJ related
