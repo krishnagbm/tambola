@@ -91,12 +91,15 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
     final user = ref.read(currentUserProvider).value;
     if (user == null) return;
 
+    String effectiveDisplayName = user.displayName;
+    String effectiveAvatar = user.avatar;
+
     // Check mandatory name before registering if still default 'My Name'
     final trimmedName = user.displayName.trim();
     final lowerName = trimmedName.toLowerCase();
     if (trimmedName.isEmpty || lowerName == 'my name' || lowerName == 'player' || lowerName == 'guest') {
       _nameInputController.text = '';
-      final updated = await showDialog<bool>(
+      final updatedName = await showDialog<String>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
@@ -132,19 +135,18 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
+              onPressed: () => Navigator.pop(ctx, null),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () async {
                 final newName = _nameInputController.text.trim();
                 if (newName.isNotEmpty && newName.toLowerCase() != 'my name') {
-                  await ref.read(authRepositoryProvider).updateProfile(
+                  await ref.read(currentUserProvider.notifier).updateProfile(
                         displayName: newName,
                         avatar: user.avatar,
                       );
-                  ref.invalidate(currentUserProvider);
-                  if (ctx.mounted) Navigator.pop(ctx, true);
+                  if (ctx.mounted) Navigator.pop(ctx, newName);
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.black),
@@ -154,17 +156,16 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
         ),
       );
 
-      if (updated != true) return;
+      if (updatedName == null || updatedName.trim().isEmpty) return;
+      effectiveDisplayName = updatedName.trim();
     }
-
-    final updatedUser = ref.read(currentUserProvider).value ?? user;
 
     setState(() => _isRegistering = true);
     try {
       await ref.read(gameRepositoryProvider).registerPlayer(
             gameId: _previewGame!.id,
-            displayName: updatedUser.displayName,
-            avatar: updatedUser.avatar,
+            displayName: effectiveDisplayName,
+            avatar: effectiveAvatar,
           );
 
       if (!mounted) return;
