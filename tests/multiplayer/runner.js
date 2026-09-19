@@ -189,6 +189,7 @@ Game status: IN_PROGRESS
     console.log('--- OBSERVING CALLED NUMBERS ---');
     let callSequence = 0;
     let isGameCompleted = false;
+    let roomLastCalledNumber = null;
 
     while (!isGameCompleted && !isShuttingDown) {
       let activeCall = null;
@@ -199,7 +200,7 @@ Game status: IN_PROGRESS
           isGameCompleted = true;
           break;
         }
-        if (status.number && status.number !== p.lastCalledNumber) {
+        if (status.number && status.number !== roomLastCalledNumber) {
           activeCall = status.number;
           break;
         }
@@ -207,6 +208,7 @@ Game status: IN_PROGRESS
 
       if (activeCall) {
         callSequence++;
+        roomLastCalledNumber = activeCall;
         console.log(`\n>>> [CALL #${callSequence}] NUMBER ANNOUNCED: ${activeCall} <<<`);
         
         // Process this called number for all players

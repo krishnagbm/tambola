@@ -514,38 +514,34 @@ export class PlayerSession {
           return { number: null, isCompleted: true };
         }
 
-        // 1. Look for exact "CURRENT CALL" followed by integer (skip "2 / 90" or "Called")
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        const idx = lines.findIndex(l => l.toUpperCase() === 'CURRENT CALL' || l.includes('CURRENT CALL'));
-        if (idx !== -1) {
-          for (let i = idx + 1; i < Math.min(lines.length, idx + 6); i++) {
-            const l = lines[i];
-            if (l.includes('/') || l.includes('Called') || l.includes('DABHOUSIE') || l.includes('TICKET')) {
-              continue;
-            }
-            if (/^\d{1,2}$/.test(l)) {
-              const val = parseInt(l, 10);
-              if (val >= 1 && val <= 90) {
-                return { number: val, isCompleted: false };
-              }
+        // 1. Primary: Check semantics label CURRENT_CALLED_NUMBER_X
+        const allSemantics = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
+        for (const el of allSemantics) {
+          const aria = (el.getAttribute('aria-label') || '').trim();
+          if (aria.includes('CURRENT_CALLED_NUMBER_READY')) {
+            return { number: null, isCompleted: false };
+          }
+          const match = aria.match(/CURRENT_CALLED_NUMBER_(\d{1,2})\b/i);
+          if (match) {
+            const val = parseInt(match[1], 10);
+            if (val >= 1 && val <= 90) {
+              return { number: val, isCompleted: false };
             }
           }
         }
 
-        // 2. Fallback to semantics query
-        const allSemantics = Array.from(document.querySelectorAll('flt-semantics, [aria-label], span, p, div'));
-        for (let i = 0; i < allSemantics.length; i++) {
-          const t = (allSemantics[i].getAttribute('aria-label') || allSemantics[i].innerText || '').trim();
-          if (t.toUpperCase() === 'CURRENT CALL') {
-            for (let j = i + 1; j < Math.min(allSemantics.length, i + 6); j++) {
-              const nextText = (allSemantics[j].getAttribute('aria-label') || allSemantics[j].innerText || '').trim();
-              if (nextText.includes('/') || nextText.includes('Called')) continue;
-              if (/^\d{1,2}$/.test(nextText)) {
-                const val = parseInt(nextText, 10);
-                if (val >= 1 && val <= 90) {
-                  return { number: val, isCompleted: false };
-                }
-              }
+        // 2. Strict text parsing: ONLY inspect line immediately after 'CURRENT CALL'
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        const idx = lines.findIndex(l => l.toUpperCase() === 'CURRENT CALL');
+        if (idx !== -1 && idx + 1 < lines.length) {
+          const nextLine = lines[idx + 1].trim();
+          if (nextLine.toUpperCase() === 'READY') {
+            return { number: null, isCompleted: false };
+          }
+          if (/^\d{1,2}$/.test(nextLine)) {
+            const val = parseInt(nextLine, 10);
+            if (val >= 1 && val <= 90) {
+              return { number: val, isCompleted: false };
             }
           }
         }
@@ -801,34 +797,20 @@ export class PlayerSession {
         }
         const targetCol = numberToDab === 90 ? 8 : Math.min(8, Math.floor(numberToDab / 10));
 
-        const cardBounds = await this.page.evaluate(() => {
-          const all = Array.from(document.querySelectorAll('*'));
-          for (const el of all) {
-            const text = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim();
-            if (text.includes('DABHOUSIE TICKET') || (text.includes('TICKET') && text.includes('Marked'))) {
-              const r = el.getBoundingClientRect();
-              if (r.width > 200 && r.height > 80) {
-                return { left: r.left, top: r.top, width: r.width, height: r.height };
-              }
-            }
-          }
-          return null;
-        });
-
-        const gridLeft = cardBounds ? cardBounds.left + 10 : 26;
-        const gridWidth = cardBounds ? cardBounds.width - 20 : (this.bounds.width - 52);
+        const viewportSize = this.page.viewportSize() || { width: 430, height: 700 };
+        const gridLeft = 26;
+        const gridWidth = viewportSize.width - 52;
         const colWidth = gridWidth / 9;
         const cellX = gridLeft + (targetCol + 0.5) * colWidth;
 
-        const gridTop = cardBounds ? (cardBounds.top + 42) : 260;
-        const gridHeight = cardBounds ? (cardBounds.height - 52) : 150;
-        const rowHeight = gridHeight / 3;
-
+        // Calibrated row Y centers on mobile viewport
+        const rowYCenters = [366, 423, 480];
         const rowsToTry = targetRow >= 0 ? [targetRow] : [0, 1, 2];
+
         for (const r of rowsToTry) {
-          const cellY = gridTop + (r + 0.5) * rowHeight;
+          const cellY = rowYCenters[r];
           await this.page.mouse.click(cellX, cellY);
-          await this.page.waitForTimeout(150);
+          await this.page.waitForTimeout(200);
           if (await checkMarkedState()) {
             isMarked = true;
             break;

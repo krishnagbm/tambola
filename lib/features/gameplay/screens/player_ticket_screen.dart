@@ -853,9 +853,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             children: [
               const Text('CURRENT CALL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.white70)),
               const SizedBox(height: 2),
-              Text(
-                latestNumber != null ? '$latestNumber' : 'READY',
-                style: TextStyle(fontSize: isCompact ? 32 : 42, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+              Semantics(
+                label: latestNumber != null ? 'CURRENT_CALLED_NUMBER_$latestNumber' : 'CURRENT_CALLED_NUMBER_READY',
+                child: Text(
+                  latestNumber != null ? '$latestNumber' : 'READY',
+                  style: TextStyle(fontSize: isCompact ? 32 : 42, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+                ),
               ),
             ],
           ),
