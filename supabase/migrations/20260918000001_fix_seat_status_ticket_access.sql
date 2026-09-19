@@ -1,10 +1,10 @@
 -- =====================================================================
 -- Migration: 20260918000001_fix_seat_status_ticket_access.sql
 -- Description: 
---   1. Ensures MPT_generate_ticket_matrix() strictly adheres to standard
---      3x9 Tambola rules (exactly 5 numbers in Row 1, 5 in Row 2, 5 in Row 3).
---   2. Allows players with seat_status IN ('ELIGIBLE', 'CONFIRMED')
---      to fetch/create unique player tickets and submit prize claims.
+--   1. Strictly guarantees 3x9 Tambola ticket matrix layout (5, 5, 5 numbers per row).
+--   2. Enables ticket generation and claim access for CONFIRMED and ELIGIBLE seats.
+--   3. Adds MPT_leave_game RPC and DELETE/UPDATE RLS policies to cleanly remove
+--      players who quit, promoting waiting players and updating organizer screen in real-time.
 -- =====================================================================
 
 -- 1. Strictly Validated 3x9 Tambola Ticket Matrix Generator (5, 5, 5 per row)
@@ -432,3 +432,71 @@ BEGIN
     END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. Player Leave / Quit Game RPC
+CREATE OR REPLACE FUNCTION public."MPT_leave_game"(
+    p_game_id UUID
+)
+RETURNS JSONB AS $$
+DECLARE
+    v_uid UUID := auth.uid();
+    v_reg RECORD;
+    v_next_waiting RECORD;
+BEGIN
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'AUTH_REQUIRED: User must be authenticated';
+    END IF;
+
+    -- Fetch user registration
+    SELECT * INTO v_reg
+    FROM public."MPT_game_registrations"
+    WHERE game_id = p_game_id AND user_id = v_uid;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', true, 'message', 'Not registered');
+    END IF;
+
+    -- Delete registration record
+    DELETE FROM public."MPT_game_registrations"
+    WHERE game_id = p_game_id AND user_id = v_uid;
+
+    -- Delete player ticket
+    DELETE FROM public."MPT_player_tickets"
+    WHERE game_id = p_game_id AND user_id = v_uid;
+
+    -- If this was a CONFIRMED seat, promote the first waiting player if one exists
+    IF v_reg.seat_status IN ('CONFIRMED', 'ELIGIBLE') THEN
+        SELECT * INTO v_next_waiting
+        FROM public."MPT_game_registrations"
+        WHERE game_id = p_game_id AND seat_status = 'WAITING'
+        ORDER BY registration_seq ASC
+        LIMIT 1;
+
+        IF FOUND THEN
+            UPDATE public."MPT_game_registrations"
+            SET seat_status = 'CONFIRMED', updated_at = NOW()
+            WHERE id = v_next_waiting.id;
+        END IF;
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'game_id', p_game_id,
+        'user_id', v_uid,
+        'released_seat', v_reg.registration_seq
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. Add DELETE & UPDATE RLS Policies for MPT_game_registrations
+DROP POLICY IF EXISTS "MPT_game_reg_delete_self" ON public."MPT_game_registrations";
+CREATE POLICY "MPT_game_reg_delete_self"
+ON public."MPT_game_registrations"
+FOR DELETE
+USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "MPT_game_reg_update_self" ON public."MPT_game_registrations";
+CREATE POLICY "MPT_game_reg_update_self"
+ON public."MPT_game_registrations"
+FOR UPDATE
+USING (auth.uid() = user_id);

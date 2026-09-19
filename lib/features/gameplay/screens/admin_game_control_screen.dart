@@ -492,32 +492,84 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
       ),
       child: Row(
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isConfirmed ? AppTheme.primaryColor.withValues(alpha: 0.3) : AppTheme.accentWarning.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              Formatters.getAvatarEmoji(r.avatar),
-              style: const TextStyle(fontSize: 16),
-            ),
+          Stack(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: isConfirmed ? AppTheme.primaryColor.withValues(alpha: 0.3) : AppTheme.accentWarning.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  Formatters.getAvatarEmoji(r.avatar),
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: isConfirmed ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppTheme.darkSurface, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isConfirmed ? const Color(0xFF10B981) : const Color(0xFFF59E0B)).withValues(alpha: 0.6),
+                        blurRadius: 3,
+                        spreadRadius: 0.5,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  r.displayName,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        r.displayName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: isConfirmed ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  'Ticket #${r.registrationSeq}',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                Row(
+                  children: [
+                    Text(
+                      'Ticket #${r.registrationSeq}',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '• ${isConfirmed ? "Live" : "Waiting"}',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: isConfirmed ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
