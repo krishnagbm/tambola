@@ -844,7 +844,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['ACTIVE', 'LIVE', 'WAITING', 'COMPLETED', 'ALL'].map((filter) {
+              children: ['ACTIVE', 'LIVE', 'WAITING', 'COMPLETED', 'CANCELLED', 'ALL'].map((filter) {
                 final isSelected = _playerFilter == filter;
                 return FilterChip(
                   visualDensity: VisualDensity.compact,
@@ -855,10 +855,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         : filter == 'LIVE'
                             ? '🟢 Live'
                             : filter == 'WAITING'
-                                ? '⏳ Waiting Room'
+                                ? '⏳ Upcoming Lobby'
                                 : filter == 'COMPLETED'
-                                    ? '🏁 History'
-                                    : 'All Games',
+                                    ? '🏁 Completed'
+                                    : filter == 'CANCELLED'
+                                        ? '🚫 Cancelled'
+                                        : 'All Games',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -883,14 +885,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                   final status = (gameData['status'] ?? 'OPEN').toString();
                   final isLiveOrPending = _isLiveOrPendingGame(gameData);
-                  final isCompleted = status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED' || !isLiveOrPending;
+                  final isCancelled = status == 'CANCELLED';
+                  final isCompleted = status == 'COMPLETED' || status == 'CLOSED' || (!isLiveOrPending && !isCancelled);
 
                   if (_playerFilter == 'ACTIVE') {
-                    return isLiveOrPending;
+                    return isLiveOrPending && !isCancelled;
                   }
                   if (_playerFilter == 'LIVE') return status == 'IN_PROGRESS' && isLiveOrPending;
-                  if (_playerFilter == 'WAITING') return (status == 'OPEN' || status == 'READY_TO_START') && isLiveOrPending;
-                  if (_playerFilter == 'COMPLETED') return isCompleted;
+                  if (_playerFilter == 'WAITING') return (status == 'OPEN' || status == 'READY_TO_START') && isLiveOrPending && !isCancelled;
+                  if (_playerFilter == 'COMPLETED') return isCompleted && !isCancelled;
+                  if (_playerFilter == 'CANCELLED') return isCancelled;
                   return true;
                 }).toList();
 
@@ -1012,8 +1016,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                   : isCompleted
                                                       ? '🏁 COMPLETED'
                                                       : isConfirmed
-                                                          ? 'CONFIRMED'
-                                                          : 'WAITING',
+                                                          ? '⏳ LOBBY OPEN'
+                                                          : '⏳ WAITING',
                                           style: TextStyle(
                                             fontSize: 9.5,
                                             fontWeight: FontWeight.bold,
@@ -1062,7 +1066,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ? 'Cancelled'
                                         : isCompleted
                                             ? 'View Results'
-                                            : 'View Status',
+                                            : 'Enter Lobby',
                               ),
                             ),
                           ],
@@ -1187,7 +1191,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: ['ACTIVE', 'LIVE', 'LOBBY', 'COMPLETED', 'ALL'].map((filter) {
+              children: ['ACTIVE', 'LIVE', 'LOBBY', 'COMPLETED', 'CANCELLED', 'ALL'].map((filter) {
                 final isSelected = _organizerFilter == filter;
                 return FilterChip(
                   visualDensity: VisualDensity.compact,
@@ -1200,8 +1204,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             : filter == 'LOBBY'
                                 ? '🚪 Lobby Open'
                                 : filter == 'COMPLETED'
-                                    ? '🏁 Past History'
-                                    : 'All Events',
+                                    ? '🏁 Completed'
+                                    : filter == 'CANCELLED'
+                                        ? '🚫 Cancelled'
+                                        : 'All Events',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1225,12 +1231,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               data: (games) {
                 final filtered = games.where((g) {
                   final isLiveOrPending = _isLiveOrPendingGame(g);
-                  final isCompleted = g.isCompleted || g.isCancelled || !isLiveOrPending;
+                  final isCancelled = g.isCancelled;
+                  final isCompleted = g.isCompleted || (!isLiveOrPending && !isCancelled);
 
-                  if (_organizerFilter == 'ACTIVE') return isLiveOrPending && (g.isInProgress || g.isLobbyOpen);
+                  if (_organizerFilter == 'ACTIVE') return isLiveOrPending && !isCancelled && (g.isInProgress || g.isLobbyOpen);
                   if (_organizerFilter == 'LIVE') return g.isInProgress && isLiveOrPending;
-                  if (_organizerFilter == 'LOBBY') return g.isLobbyOpen && isLiveOrPending;
-                  if (_organizerFilter == 'COMPLETED') return isCompleted;
+                  if (_organizerFilter == 'LOBBY') return g.isLobbyOpen && isLiveOrPending && !isCancelled;
+                  if (_organizerFilter == 'COMPLETED') return isCompleted && !isCancelled;
+                  if (_organizerFilter == 'CANCELLED') return isCancelled;
                   return true;
                 }).toList();
 
