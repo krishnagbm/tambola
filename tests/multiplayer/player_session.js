@@ -180,6 +180,46 @@ export class PlayerSession {
   }
 
   /**
+   * Automatically handles and fills the "Enter Your Name" dialog if presented
+   */
+  async handleMandatoryNameDialog() {
+    try {
+      const isDialogVisible = await this.page.evaluate(() => {
+        const text = document.body.innerText || document.body.textContent || '';
+        return text.includes('Enter Your Name') || text.includes('Please set your name') || text.includes('Save & Join');
+      });
+
+      if (isDialogVisible) {
+        this.log(`Detected mandatory "Enter Your Name" dialog. Entering name "${this.name}"...`);
+        const inputs = this.page.locator('input');
+        const count = await inputs.count();
+        let filled = false;
+        for (let i = count - 1; i >= 0; i--) {
+          const inp = inputs.nth(i);
+          if (await inp.isVisible().catch(() => false)) {
+            await inp.click().catch(() => {});
+            await inp.fill(this.name).catch(() => {});
+            filled = true;
+            break;
+          }
+        }
+
+        if (!filled) {
+          await this.page.keyboard.press('Control+A').catch(() => {});
+          await this.page.keyboard.type(this.name).catch(() => {});
+        }
+
+        await this.page.waitForTimeout(300);
+        this.log('Submitting "Save & Join"...');
+        await this.clickFlutterButton('Save & Join', true);
+        await this.page.waitForTimeout(1000);
+      }
+    } catch (err) {
+      this.log(`Error handling name dialog: ${err.message}`);
+    }
+  }
+
+  /**
    * Complete the join and registration flow
    */
   async joinGame(joinUrl) {
@@ -239,10 +279,15 @@ export class PlayerSession {
         if (clickedChange) {
           await this.page.waitForTimeout(600);
           const nameInput = this.page.locator('input').last();
-          if (await nameInput.isVisible({ timeout: 2500 })) {
+          if (await nameInput.isVisible({ timeout: 2500 }).catch(() => false)) {
             await nameInput.fill('');
             await nameInput.fill(this.name);
             await this.page.waitForTimeout(200);
+            await this.clickFlutterButton('Save Profile', true);
+            await this.page.waitForTimeout(800);
+          } else {
+            await this.page.keyboard.press('Control+A').catch(() => {});
+            await this.page.keyboard.type(this.name).catch(() => {});
             await this.clickFlutterButton('Save Profile', true);
             await this.page.waitForTimeout(800);
           }
@@ -261,6 +306,10 @@ export class PlayerSession {
       this.registrationAttempts = attempt;
       this.log(`Registering into game (attempt ${attempt})...`);
       await this.clickFlutterButton('Register & Get Ticket');
+      await this.page.waitForTimeout(600);
+
+      // Handle mandatory name modal if prompted
+      await this.handleMandatoryNameDialog();
 
       isRegistered = await this.page.waitForFunction(() => {
         const url = window.location.href;
