@@ -298,7 +298,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
               children: [
                 _buildCapacityOptionButton(ctx, '+5 Seats', 5, isRecommended: waitingCount > 0 && waitingCount <= 5),
                 _buildCapacityOptionButton(ctx, '+10 Seats', 10, isRecommended: waitingCount > 5 && waitingCount <= 10),
-                _buildCapacityOptionButton(ctx, '+25 Seats', 25, isRecommended: waitingCount > 10 && waitingCount <= 25),
+                _buildCapacityOptionButton(ctx, '+15 Seats', 15, isRecommended: waitingCount > 10 && waitingCount <= 15),
+                _buildCapacityOptionButton(ctx, '+25 Seats', 25, isRecommended: waitingCount > 15 && waitingCount <= 25),
                 _buildCapacityOptionButton(ctx, '+50 Seats', 50, isRecommended: waitingCount > 25),
               ],
             ),

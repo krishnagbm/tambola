@@ -721,9 +721,9 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _isProcessing ? null : () => _handleExpandCapacity(25),
+                  onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingPlayers.length),
                   icon: const Icon(Icons.group_add, size: 18),
-                  label: const Text('+25 Seats Capacity'),
+                  label: const Text('+ Add Seats (+5, +10, +15, +25)'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -738,9 +738,9 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           )
         else
           OutlinedButton.icon(
-            onPressed: _isProcessing ? null : () => _handleExpandCapacity(25),
+            onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingPlayers.length),
             icon: const Icon(Icons.group_add, size: 18),
-            label: const Text('+25 Seats Capacity'),
+            label: const Text('+ Add Seats (+5, +10, +15, +25)'),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           ),
         const SizedBox(height: 10),
@@ -754,6 +754,100 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showAddCapacityDialog(BuildContext context, int waitingCount) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.group_add_rounded, color: AppTheme.secondaryColor, size: 26),
+            SizedBox(width: 8),
+            Text('Add Seats Capacity', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (waitingCount > 0) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentWarning.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentWarning.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: AppTheme.accentWarning, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '$waitingCount player${waitingCount > 1 ? "s are" : " is"} waiting in the overflow queue and will be confirmed immediately upon adding seats.',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFFDE68A)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+            const Text(
+              'Select seats boost to add to this room:',
+              style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _buildCapacityOptionButton(ctx, '+5 Seats', 5, isRecommended: waitingCount > 0 && waitingCount <= 5),
+                _buildCapacityOptionButton(ctx, '+10 Seats', 10, isRecommended: waitingCount > 5 && waitingCount <= 10),
+                _buildCapacityOptionButton(ctx, '+15 Seats', 15, isRecommended: waitingCount > 10 && waitingCount <= 15),
+                _buildCapacityOptionButton(ctx, '+25 Seats', 25, isRecommended: waitingCount > 15 && waitingCount <= 25),
+                _buildCapacityOptionButton(ctx, '+50 Seats', 50, isRecommended: waitingCount > 25),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+                Navigator.of(ctx, rootNavigator: true).pop();
+              }
+            },
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCapacityOptionButton(BuildContext ctx, String label, int seats, {bool isRecommended = false}) {
+    return ElevatedButton(
+      onPressed: () {
+        if (Navigator.of(ctx, rootNavigator: true).canPop()) {
+          Navigator.of(ctx, rootNavigator: true).pop();
+        }
+        _handleExpandCapacity(seats);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isRecommended ? AppTheme.secondaryColor : AppTheme.darkSurface,
+        foregroundColor: isRecommended ? AppTheme.primaryDark : Colors.white,
+        side: BorderSide(color: isRecommended ? AppTheme.secondaryColor : const Color(0xFF3B4163)),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: isRecommended ? AppTheme.primaryDark : Colors.white),
+      ),
     );
   }
 
