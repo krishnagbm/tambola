@@ -9,7 +9,7 @@ export class PlayerSession {
    * @param {string} name - Player display name (e.g. "DabTest Player 1")
    * @param {object} windowBounds - { x, y, width, height }
    */
-  constructor(id, name, windowBounds = { x: 0, y: 0, width: 440, height: 780 }) {
+  constructor(id, name, windowBounds = { x: 0, y: 0, width: 440, height: 860 }) {
     this.id = id;
     this.name = name;
     this.bounds = windowBounds;
@@ -97,10 +97,6 @@ export class PlayerSession {
           placeholder.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
         }
       });
-      const placeholderLoc = this.page.locator('flt-semantics-placeholder');
-      if (await placeholderLoc.count() > 0) {
-        await placeholderLoc.first().click({ force: true }).catch(() => {});
-      }
       await this.page.waitForTimeout(300);
     } catch (_) {}
   }
@@ -130,7 +126,7 @@ export class PlayerSession {
 
   /**
    * Safe click on text elements across Flutter CanvasKit / HTML modes
-   * Sorts matches by text length ascending to ensure the smallest/leaf target is clicked
+   * Sorts matches by area ascending to ensure the smallest leaf button target is clicked
    */
   async clickFlutterButton(text, exact = false) {
     try {
@@ -142,17 +138,17 @@ export class PlayerSession {
           if (isExact) {
             return l === targetText || t === targetText;
           }
-          if (l.includes(targetText)) return true;
-          if (t.includes(targetText) && t.length <= targetText.length + 30) return true;
+          if (l === targetText || t === targetText) return true;
+          if ((l.includes(targetText) && l.length <= targetText.length + 15) || (t.includes(targetText) && t.length <= targetText.length + 15)) return true;
           return false;
         });
 
         if (matches.length > 0) {
-          // Sort by text/aria length ascending so we get the most specific/innermost element
+          // Sort by area ascending so we get the leaf element
           matches.sort((a, b) => {
-            const lenA = (a.getAttribute('aria-label') || a.innerText || '').length;
-            const lenB = (b.getAttribute('aria-label') || b.innerText || '').length;
-            return lenA - lenB;
+            const rA = a.getBoundingClientRect();
+            const rB = b.getBoundingClientRect();
+            return (rA.width * rA.height) - (rB.width * rB.height);
           });
           const target = matches[0];
           target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
@@ -162,7 +158,7 @@ export class PlayerSession {
 
           const r = target.getBoundingClientRect();
           if (r.width > 0 && r.height > 0) {
-            return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
           }
           return { clicked: true };
         }
@@ -195,15 +191,15 @@ export class PlayerSession {
     });
 
     this.context = await this.browser.newContext({
-      viewport: { width: this.bounds.width, height: this.bounds.height - 80 },
+      viewport: { width: this.bounds.width, height: this.bounds.height - 40 },
       userAgent: `DabHousie-TestPlayer-${this.id}`,
     });
 
     // Pre-seed local storage so Flutter's SharedPreferences immediately starts with this real player name
     await this.context.addInitScript((playerName) => {
       try {
-        localStorage.setItem('flutter.mpt_player_name', playerName);
-        localStorage.setItem('flutter.mpt_player_avatar', 'avatar_lion');
+        localStorage.setItem('flutter.mpt_player_name', JSON.stringify(playerName));
+        localStorage.setItem('flutter.mpt_player_avatar', JSON.stringify('avatar_lion'));
       } catch (_) {}
     }, this.name);
 
@@ -226,27 +222,15 @@ export class PlayerSession {
 
       if (isDialogVisible) {
         this.log(`Detected mandatory "Enter Your Name" dialog. Entering name "${this.name}"...`);
-        const inputs = this.page.locator('input');
-        const count = await inputs.count();
-        let filled = false;
-        for (let i = count - 1; i >= 0; i--) {
-          const inp = inputs.nth(i);
-          if (await inp.isVisible().catch(() => false)) {
-            await inp.click().catch(() => {});
-            await inp.fill(this.name).catch(() => {});
-            filled = true;
-            break;
-          }
-        }
+        // Flutter's TextField has autofocus: true; type directly
+        await this.page.keyboard.type(this.name, { delay: 50 });
+        await this.page.waitForTimeout(400);
 
-        if (!filled) {
-          await this.page.keyboard.press('Control+A').catch(() => {});
-          await this.page.keyboard.type(this.name).catch(() => {});
-        }
-
-        await this.page.waitForTimeout(300);
         this.log('Submitting "Save & Join"...');
-        await this.clickFlutterButton('Save & Join', true);
+        const clicked = await this.clickFlutterButton('Save & Join', false);
+        if (!clicked) {
+          await this.page.keyboard.press('Enter');
+        }
         await this.page.waitForTimeout(1000);
       }
     } catch (err) {
@@ -338,18 +322,22 @@ export class PlayerSession {
           const text = document.body.innerText || document.body.textContent || '';
           const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
           const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
-          const has = (t) => text.includes(t) || labels.some(l => l.includes(t));
+          const textUpper = text.toUpperCase();
+          const labelsUpper = labels.join(' ').toUpperCase();
+          const isConfirmed = (
+            url.includes('/game-status/') ||
+            url.includes('/play/') ||
+            textUpper.includes('SEAT CONFIRMED') ||
+            textUpper.includes('WAITING FOR ORGANIZER') ||
+            textUpper.includes('QUEUE POSITION') ||
+            textUpper.includes('DABHOUSIE TICKET') ||
+            labelsUpper.includes('SEAT CONFIRMED') ||
+            labelsUpper.includes('WAITING FOR ORGANIZER') ||
+            labelsUpper.includes('QUEUE POSITION') ||
+            labelsUpper.includes('DABHOUSIE TICKET')
+          );
 
-          return {
-            url,
-            isConfirmed: (
-              url.includes('/game-status/') ||
-              url.includes('/play/') ||
-              has('SEAT CONFIRMED') ||
-              has('Waiting for Organizer') ||
-              has('DABHOUSIE TICKET')
-            ),
-          };
+          return { url, isConfirmed };
         });
 
         if (state.isConfirmed) {

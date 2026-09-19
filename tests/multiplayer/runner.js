@@ -81,7 +81,7 @@ Options:
 `);
 
   const windowWidth = 430;
-  const windowHeight = 780;
+  const windowHeight = 860;
   const players = [];
 
   const REAL_NAMES = [
