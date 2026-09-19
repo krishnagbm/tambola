@@ -6,7 +6,13 @@
 --      and properly validate all prize types (Early Five, Lines, Four Corners, Full House).
 -- =====================================================================
 
--- 1. Add INSERT/ALL RLS Policies for MPT_claims
+-- 1. Add SELECT, INSERT, and UPDATE RLS Policies for MPT_claims (public read for room claims)
+DROP POLICY IF EXISTS "MPT_claims_read" ON public."MPT_claims";
+CREATE POLICY "MPT_claims_read"
+ON public."MPT_claims"
+FOR SELECT
+USING (true);
+
 DROP POLICY IF EXISTS "MPT_claims_insert_self" ON public."MPT_claims";
 CREATE POLICY "MPT_claims_insert_self"
 ON public."MPT_claims"
@@ -19,7 +25,13 @@ ON public."MPT_claims"
 FOR UPDATE
 USING (auth.uid() = user_id);
 
--- 2. Add INSERT/ALL RLS Policies for MPT_rewards
+-- 2. Add SELECT and INSERT RLS Policies for MPT_rewards
+DROP POLICY IF EXISTS "MPT_rewards_read" ON public."MPT_rewards";
+CREATE POLICY "MPT_rewards_read"
+ON public."MPT_rewards"
+FOR SELECT
+USING (true);
+
 DROP POLICY IF EXISTS "MPT_rewards_insert_self" ON public."MPT_rewards";
 CREATE POLICY "MPT_rewards_insert_self"
 ON public."MPT_rewards"
