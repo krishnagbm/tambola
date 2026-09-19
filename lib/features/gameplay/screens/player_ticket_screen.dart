@@ -460,6 +460,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         );
                       },
                     ),
+                    const SizedBox(height: 24),
+                    Center(
+                      child: OutlinedButton.icon(
+                        onPressed: _handleLeaveGame,
+                        icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 18),
+                        label: const Text(
+                          'Quit / Leave Game Room',
+                          style: TextStyle(color: AppTheme.accentDanger, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               );
@@ -524,9 +541,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.18),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.6)),
+              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
             ),
             child: Text(
               'Ticket #${ticket.ticketNumber}',
@@ -536,6 +553,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 color: AppTheme.secondaryColor,
               ),
             ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 22),
+            tooltip: 'Quit Game Room',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: _handleLeaveGame,
           ),
         ],
       ),
