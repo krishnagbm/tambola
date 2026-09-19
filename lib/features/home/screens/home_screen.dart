@@ -228,10 +228,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return false;
     }
 
-    // Stale games started > 12h ago or created > 24h ago are considered past history
+    // Stale games started > 3h ago or created > 12h ago are considered past history
     final now = DateTime.now();
-    if (startedAt != null && now.difference(startedAt).inHours >= 12) return false;
-    if (createdAt != null && now.difference(createdAt).inHours >= 24) return false;
+    if (startedAt != null && now.difference(startedAt).inHours >= 3) return false;
+    if (createdAt != null && now.difference(createdAt).inHours >= 12) return false;
 
     return true;
   }
@@ -882,13 +882,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 final filtered = joined.where((reg) {
                   final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                   final status = (gameData['status'] ?? 'OPEN').toString();
-                  final isCompleted = status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED';
+                  final isLiveOrPending = _isLiveOrPendingGame(gameData);
+                  final isCompleted = status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED' || !isLiveOrPending;
 
                   if (_playerFilter == 'ACTIVE') {
-                    return !isCompleted && (status == 'IN_PROGRESS' || status == 'OPEN' || status == 'READY_TO_START');
+                    return isLiveOrPending;
                   }
-                  if (_playerFilter == 'LIVE') return status == 'IN_PROGRESS';
-                  if (_playerFilter == 'WAITING') return status == 'OPEN' || status == 'READY_TO_START';
+                  if (_playerFilter == 'LIVE') return status == 'IN_PROGRESS' && isLiveOrPending;
+                  if (_playerFilter == 'WAITING') return (status == 'OPEN' || status == 'READY_TO_START') && isLiveOrPending;
                   if (_playerFilter == 'COMPLETED') return isCompleted;
                   return true;
                 }).toList();
@@ -923,11 +924,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final gameData = reg['game'] as Map<String, dynamic>? ?? {};
                     final gameId = (reg['game_id'] ?? '').toString();
                     final gameName = (gameData['name'] ?? 'DabHousie Game').toString();
+                    final inviteCode = (gameData['invite_code'] ?? '').toString();
                     final gameStatus = (gameData['status'] ?? 'OPEN').toString();
                     final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
 
-                    final isLive = gameStatus == 'IN_PROGRESS';
-                    final isCompleted = gameStatus == 'COMPLETED';
+                    final isLiveOrPending = _isLiveOrPendingGame(gameData);
+                    final isLive = gameStatus == 'IN_PROGRESS' && isLiveOrPending;
+                    final isCompleted = gameStatus == 'COMPLETED' || !isLiveOrPending;
                     final isCancelled = gameStatus == 'CANCELLED';
                     final isConfirmed = seatStatus == 'CONFIRMED' || seatStatus == 'ELIGIBLE';
 
@@ -955,10 +958,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    gameName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-                                    overflow: TextOverflow.ellipsis,
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          gameName,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (inviteCode.isNotEmpty) ...[
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                                          ),
+                                          child: Text(
+                                            'Code: $inviteCode',
+                                            style: const TextStyle(
+                                              fontSize: 10.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.secondaryColor,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                   const SizedBox(height: 4),
                                   Row(
@@ -1019,11 +1048,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: isLive
                                     ? AppTheme.accentSuccess
-                                    : isCancelled
+                                    : (isCompleted || isCancelled)
                                         ? const Color(0xFF2E334D)
-                                        : isCompleted
-                                            ? const Color(0xFF2E334D)
-                                            : AppTheme.primaryColor,
+                                        : AppTheme.primaryColor,
                                 foregroundColor: (isCompleted || isCancelled) ? AppTheme.secondaryColor : Colors.white,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                                 textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
@@ -1197,10 +1224,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (games) {
                 final filtered = games.where((g) {
-                  if (_organizerFilter == 'ACTIVE') return !g.isCompleted && !g.isCancelled && (g.isInProgress || g.isLobbyOpen);
-                  if (_organizerFilter == 'LIVE') return g.isInProgress;
-                  if (_organizerFilter == 'LOBBY') return g.isLobbyOpen;
-                  if (_organizerFilter == 'COMPLETED') return g.isCompleted || g.isCancelled;
+                  final isLiveOrPending = _isLiveOrPendingGame(g);
+                  final isCompleted = g.isCompleted || g.isCancelled || !isLiveOrPending;
+
+                  if (_organizerFilter == 'ACTIVE') return isLiveOrPending && (g.isInProgress || g.isLobbyOpen);
+                  if (_organizerFilter == 'LIVE') return g.isInProgress && isLiveOrPending;
+                  if (_organizerFilter == 'LOBBY') return g.isLobbyOpen && isLiveOrPending;
+                  if (_organizerFilter == 'COMPLETED') return isCompleted;
                   return true;
                 }).toList();
 
@@ -1231,8 +1261,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (ctx, idx) {
                     final game = filtered[idx];
-                    final isLive = game.isInProgress;
-                    final isLobby = game.isLobbyOpen;
+                    final isLiveOrPending = _isLiveOrPendingGame(game);
+                    final isLive = game.isInProgress && isLiveOrPending;
+                    final isLobby = game.isLobbyOpen && isLiveOrPending;
                     final isCancelled = game.isCancelled;
 
                     Color statusColor = isLive

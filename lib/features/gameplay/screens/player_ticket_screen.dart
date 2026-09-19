@@ -119,6 +119,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       if (status == 'APPROVED') {
         final refCode = res['claim_reference'] as String? ?? 'N/A';
         _showWinnerDialog(prizeType, refCode);
+        if (prizeType == 'FULL_HOUSE') {
+          try {
+            await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
+            ref.invalidate(gameStreamProvider(widget.gameId));
+          } catch (_) {}
+        }
       } else if (status == 'BOGEY') {
         _showBogeyDialog(res['reason'] as String? ?? 'Invalid claim numbers');
       } else {
