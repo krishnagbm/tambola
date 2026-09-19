@@ -125,12 +125,19 @@ Options:
 
     // 2. Join all players to the game
     console.log('\n[CONNECTING] Connecting and registering players into game room...');
-    const joinResults = await Promise.allSettled(
-      players.map(p => p.joinGame(options.joinUrl))
-    );
+    const joinResults = [];
+    for (const p of players) {
+      try {
+        const res = await p.joinGame(options.joinUrl);
+        joinResults.push({ status: res ? 'fulfilled' : 'rejected' });
+      } catch (err) {
+        joinResults.push({ status: 'rejected', reason: err });
+      }
+      await new Promise(r => setTimeout(r, 600));
+    }
 
     const successfulJoins = players.filter((p, idx) => 
-      joinResults[idx].status === 'fulfilled' && 
+      joinResults[idx]?.status === 'fulfilled' && 
       (p.successfulRegistrations > 0 || p.seatStatus === 'CONFIRMED' || p.status.includes('REGISTERED'))
     );
 

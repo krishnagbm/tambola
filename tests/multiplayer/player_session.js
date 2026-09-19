@@ -530,18 +530,43 @@ export class PlayerSession {
           }
         }
 
-        // 2. Strict text parsing: ONLY inspect line immediately after 'CURRENT CALL'
+        // 2. Resilient text parsing: Inspect line with 'CURRENT CALL' and its immediate successor
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        const idx = lines.findIndex(l => l.toUpperCase() === 'CURRENT CALL');
-        if (idx !== -1 && idx + 1 < lines.length) {
-          const nextLine = lines[idx + 1].trim();
-          if (nextLine.toUpperCase() === 'READY') {
-            return { number: null, isCompleted: false };
+        const idx = lines.findIndex(l => l.toUpperCase().includes('CURRENT CALL'));
+        if (idx !== -1) {
+          // Check inline match (e.g. "CURRENT CALL: 45" or "CURRENT CALL 45")
+          const inlineMatch = lines[idx].match(/CURRENT\s+CALL\s*[:\-]?\s*(\d{1,2})\b/i);
+          if (inlineMatch) {
+            const val = parseInt(inlineMatch[1], 10);
+            if (val >= 1 && val <= 90) return { number: val, isCompleted: false };
           }
-          if (/^\d{1,2}$/.test(nextLine)) {
-            const val = parseInt(nextLine, 10);
-            if (val >= 1 && val <= 90) {
-              return { number: val, isCompleted: false };
+
+          // Check line directly after CURRENT CALL
+          if (idx + 1 < lines.length) {
+            const nextLine = lines[idx + 1].trim();
+            if (nextLine.toUpperCase() === 'READY') {
+              return { number: null, isCompleted: false };
+            }
+            if (/^\d{1,2}$/.test(nextLine)) {
+              const val = parseInt(nextLine, 10);
+              if (val >= 1 && val <= 90) {
+                return { number: val, isCompleted: false };
+              }
+            }
+          }
+        }
+
+        // 3. Fallback: Check semantics elements around CURRENT CALL
+        for (let i = 0; i < allSemantics.length; i++) {
+          const t = (allSemantics[i].getAttribute('aria-label') || allSemantics[i].innerText || '').trim();
+          if (t.toUpperCase().includes('CURRENT CALL')) {
+            if (i + 1 < allSemantics.length) {
+              const nextText = (allSemantics[i + 1].getAttribute('aria-label') || allSemantics[i + 1].innerText || '').trim();
+              if (nextText.toUpperCase() === 'READY') return { number: null, isCompleted: false };
+              if (/^\d{1,2}$/.test(nextText)) {
+                const val = parseInt(nextText, 10);
+                if (val >= 1 && val <= 90) return { number: val, isCompleted: false };
+              }
             }
           }
         }
