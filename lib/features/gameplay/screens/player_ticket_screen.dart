@@ -285,6 +285,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   }
 
   Future<void> _handleLeaveGame() async {
+    final currentGame = ref.read(gameStreamProvider(widget.gameId)).value;
+    if (currentGame?.status == 'COMPLETED' || currentGame?.status == 'CANCELLED') {
+      context.go('/');
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -410,11 +416,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             tooltip: 'My Rewards',
             onPressed: () => context.push('/rewards'),
           ),
-          IconButton(
-            icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger),
-            tooltip: 'Quit / Leave Game Room',
-            onPressed: _handleLeaveGame,
-          ),
+          if (gameStream.value?.status != 'COMPLETED' && gameStream.value?.status != 'CANCELLED')
+            IconButton(
+              icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger),
+              tooltip: 'Quit / Leave Game Room',
+              onPressed: _handleLeaveGame,
+            ),
         ],
       ),
       body: ticketAsync.when(
@@ -489,7 +496,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isCompact: true),
+                                    _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isCompact: true, isGameEnded: isGameEnded || currentGame?.status == 'CANCELLED'),
                                     const SizedBox(height: 8),
                                     _buildLatestNumberBanner(latestCalled, calledNumbers.length, isGameEnded: isGameEnded, context: context, isCompact: true),
                                     const SizedBox(height: 8),
@@ -549,17 +556,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         );
                                       },
                                     ),
-                                    const SizedBox(height: 14),
-                                    OutlinedButton.icon(
-                                      onPressed: _handleLeaveGame,
-                                      icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 16),
-                                      label: const Text('Leave Game Room', style: TextStyle(color: AppTheme.accentDanger, fontSize: 12)),
-                                      style: OutlinedButton.styleFrom(
-                                        side: const BorderSide(color: Color(0xFFEF4444)),
-                                        padding: const EdgeInsets.symmetric(vertical: 8),
-                                        visualDensity: VisualDensity.compact,
+                                    if (!isGameEnded && currentGame?.status != 'CANCELLED') ...[
+                                      const SizedBox(height: 14),
+                                      OutlinedButton.icon(
+                                        onPressed: _handleLeaveGame,
+                                        icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 16),
+                                        label: const Text('Leave Game Room', style: TextStyle(color: AppTheme.accentDanger, fontSize: 12)),
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Color(0xFFEF4444)),
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                     const SizedBox(height: 12),
                                   ],
                                 ),
@@ -579,7 +588,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Player Identity & Ticket Number Card
-                          _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame),
+                          _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isGameEnded: isGameEnded || currentGame?.status == 'CANCELLED'),
                           const SizedBox(height: 10),
 
                           // Latest Called Ball / Game Concluded Banner
@@ -631,22 +640,24 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 24),
-                          Center(
-                            child: OutlinedButton.icon(
-                              onPressed: _handleLeaveGame,
-                              icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 18),
-                              label: const Text(
-                                'Quit / Leave Game Room',
-                                style: TextStyle(color: AppTheme.accentDanger, fontSize: 14, fontWeight: FontWeight.bold),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          if (!isGameEnded && currentGame?.status != 'CANCELLED') ...[
+                            const SizedBox(height: 24),
+                            Center(
+                              child: OutlinedButton.icon(
+                                onPressed: _handleLeaveGame,
+                                icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 18),
+                                label: const Text(
+                                  'Quit / Leave Game Room',
+                                  style: TextStyle(color: AppTheme.accentDanger, fontSize: 14, fontWeight: FontWeight.bold),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                           const SizedBox(height: 24),
                         ],
                       ),
@@ -661,7 +672,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket, {MptGame? game, bool isCompact = false}) {
+  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket, {MptGame? game, bool isCompact = false, bool isGameEnded = false}) {
     final emoji = Formatters.getAvatarEmoji(user?.avatar);
     final name = (user?.displayName != null && user!.displayName.trim().isNotEmpty)
         ? user.displayName
@@ -730,14 +741,16 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 6),
-          IconButton(
-            icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 20),
-            tooltip: 'Quit Game Room',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            onPressed: _handleLeaveGame,
-          ),
+          if (!isGameEnded) ...[
+            const SizedBox(width: 6),
+            IconButton(
+              icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 20),
+              tooltip: 'Quit Game Room',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: _handleLeaveGame,
+            ),
+          ],
         ],
       ),
     );
