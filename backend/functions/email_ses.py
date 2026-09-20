@@ -200,7 +200,15 @@ def send_purchase_email(
         💡 <em>Credits are valid for 1 year from your most recent paid game and are deducted automatically at game start based on confirmed players.</em>
       </p>
 
-      <a href="{BASE_URL}/#/wallet" class="btn">Go to My DabHousie Wallet →</a>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top:20px;">
+        <tr>
+          <td align="center" bgcolor="#0B3D91" style="background-color:#0B3D91; border-radius:10px; border:1px solid #3b82f6; padding:0;">
+            <a href="{BASE_URL}/#/wallet" target="_blank" style="background-color:#0B3D91; color:#ffffff !important; display:block; width:100%; box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:bold; text-decoration:none; text-align:center; padding:16px 20px; border-radius:10px; line-height:1.2;">
+              Go to My DabHousie Wallet &rarr;
+            </a>
+          </td>
+        </tr>
+      </table>
     </div>
     <div class="footer">
       DabHousie &bull; <a href="{BASE_URL}" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a><br>
@@ -359,11 +367,13 @@ def send_private_party_otps_email(
                 {otp_table_rows}
               </table>
 
-              <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;">
+              <!-- CTA Button (Bulletproof email button for Outlook, Hotmail, and Gmail) -->
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 0 auto;">
                 <tr>
-                  <td align="center">
-                    <a href="{dashboard_url}" target="_blank" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#000000; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:14px 32px; border-radius:8px; box-shadow:0 4px 12px rgba(245,158,11,0.3); border:1px solid #fbbf24;">Open Host Dashboard &rarr;</a>
+                  <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:8px; border:1px solid #d97706; padding:0;">
+                    <a href="{dashboard_url}" target="_blank" style="background-color:#f59e0b; color:#0f172a !important; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:14px 32px; border-radius:8px; line-height:1.2; letter-spacing:0.3px;">
+                      Open Host Dashboard &rarr;
+                    </a>
                   </td>
                 </tr>
               </table>
