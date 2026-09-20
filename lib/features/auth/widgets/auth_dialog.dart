@@ -36,13 +36,18 @@ class AuthDialog extends ConsumerStatefulWidget {
   ConsumerState<AuthDialog> createState() => _AuthDialogState();
 }
 
+enum _AuthStep { socialList, emailInput, otpVerification }
+
 class _AuthDialogState extends ConsumerState<AuthDialog> {
   final _emailController = TextEditingController();
+  final _otpController = TextEditingController();
+  _AuthStep _authStep = _AuthStep.socialList;
   bool _isLoading = false;
   String? _loadingProvider;
-  bool _showEmailOption = false;
   String? _statusMessage;
   bool _isSuccess = false;
+  Timer? _resendTimer;
+  int _resendSecondsLeft = 0;
 
   /// Control flag to reveal Apple button.
   static const bool _showApple = true;
@@ -50,13 +55,31 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
   /// Control flag to reveal Microsoft button.
   static const bool _showMicrosoft = false;
 
-  /// Control flag for email magic link. Disabled to avoid unbranded/junk email issues.
-  static const bool _enableEmailMagicLink = false;
-
   @override
   void dispose() {
     _emailController.dispose();
+    _otpController.dispose();
+    _resendTimer?.cancel();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() => _resendSecondsLeft = 30);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        if (_resendSecondsLeft > 1) {
+          _resendSecondsLeft--;
+        } else {
+          _resendSecondsLeft = 0;
+          timer.cancel();
+        }
+      });
+    });
   }
 
   Future<void> _handleOAuthSignIn(String provider, Future<void> Function() signInAction) async {
@@ -99,7 +122,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     await _handleOAuthSignIn('Apple', () => authRepo.signInWithApple());
   }
 
-  Future<void> _handleEmailSignIn() async {
+  Future<void> _handleSendEmailOtp() async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
       setState(() {
@@ -117,22 +140,20 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      await authRepo.signInWithEmail(email);
+      await authRepo.sendEmailOtp(email);
       if (mounted) {
         setState(() {
           _isLoading = false;
           _loadingProvider = null;
-          _statusMessage = '✨ Magic link sent to $email! Please check your inbox.';
+          _authStep = _AuthStep.otpVerification;
+          _statusMessage = '✨ 6-digit verification code sent to $email!';
           _isSuccess = true;
         });
+        _startResendTimer();
       }
-    } on AuthException catch (e) {
+    } catch (e) {
       if (mounted) {
-        String msg = e.message;
-        if (msg.toLowerCase().contains('email logins are disabled') ||
-            e.statusCode == '422') {
-          msg = 'Email sign-in is disabled in Supabase. Please use Google Sign-In.';
-        }
+        var msg = e.toString().replaceFirst('Exception: ', '').replaceFirst('AuthApiException: ', '');
         setState(() {
           _isLoading = false;
           _loadingProvider = null;
@@ -140,11 +161,41 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
           _isSuccess = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleVerifyEmailOtp() async {
+    final email = _emailController.text.trim();
+    final token = _otpController.text.trim();
+    if (token.isEmpty || token.length < 6) {
+      setState(() {
+        _statusMessage = 'Please enter the full 6-digit verification code';
+        _isSuccess = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _loadingProvider = 'verify_otp';
+      _statusMessage = null;
+    });
+
+    try {
+      final authRepo = ref.read(authRepositoryProvider);
+      await authRepo.verifyEmailOtp(email: email, token: token);
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(authRepositoryProvider);
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onAuthenticated?.call();
+      }
     } catch (e) {
       if (mounted) {
-        var msg = e.toString().replaceFirst('Exception: ', '');
-        if (msg.toLowerCase().contains('email logins are disabled')) {
-          msg = 'Email sign-in is disabled in Supabase. Please use Google Sign-In.';
+        var msg = e.toString().replaceFirst('Exception: ', '').replaceFirst('AuthApiException: ', '');
+        if (msg.toLowerCase().contains('invalid') || msg.toLowerCase().contains('expired')) {
+          msg = 'Invalid or expired verification code. Please request a new code.';
         }
         setState(() {
           _isLoading = false;
@@ -172,15 +223,33 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header with DabHousie Logo & Close
+              // Header with DabHousie Logo & Back / Close button
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Image.asset(
-                    AppAssets.horizontalLogo,
-                    height: 38,
-                    fit: BoxFit.contain,
-                  ),
+                  if (_authStep != _AuthStep.socialList)
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Color(0xFFA0AEC0)),
+                      tooltip: 'Back to all options',
+                      onPressed: () {
+                        setState(() {
+                          _authStep = _AuthStep.socialList;
+                          _statusMessage = null;
+                        });
+                      },
+                    )
+                  else
+                    Image.asset(
+                      AppAssets.horizontalLogo,
+                      height: 38,
+                      fit: BoxFit.contain,
+                    ),
+                  if (_authStep != _AuthStep.socialList)
+                    Image.asset(
+                      AppAssets.horizontalLogo,
+                      height: 32,
+                      fit: BoxFit.contain,
+                    ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Color(0xFFA0AEC0)),
                     onPressed: () => Navigator.pop(context),
@@ -191,9 +260,13 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
 
               // Title
               Text(
-                widget.isHostContext
-                    ? 'Sign in to Host & Schedule'
-                    : 'Sign In to DabHousie',
+                _authStep == _AuthStep.otpVerification
+                    ? 'Enter 6-Digit Code'
+                    : _authStep == _AuthStep.emailInput
+                        ? 'Sign In with Email'
+                        : widget.isHostContext
+                            ? 'Sign in to Host & Schedule'
+                            : 'Sign In to DabHousie',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -205,9 +278,13 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
 
               // Description
               Text(
-                widget.isHostContext
-                    ? 'Hosting live DabHousie parties, scheduling games, and managing room seats requires an authenticated account.'
-                    : 'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
+                _authStep == _AuthStep.otpVerification
+                    ? 'We sent a verification code to ${_emailController.text.trim()}. Enter it below to sign in.'
+                    : _authStep == _AuthStep.emailInput
+                        ? 'Enter your work or personal email address. We will send a secure 6-digit passcode directly to your inbox.'
+                        : widget.isHostContext
+                            ? 'Hosting live DabHousie parties, scheduling games, and managing room seats requires an authenticated account.'
+                            : 'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
                 style: const TextStyle(fontSize: 13, color: Color(0xFFCBD5E1), height: 1.4),
               ),
               const SizedBox(height: 24),
@@ -249,102 +326,249 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                 const SizedBox(height: 18),
               ],
 
-              // OAuth Buttons Section (PocketBull style)
-              _buildOAuthButton(
-                icon: const CustomPaint(
-                  size: Size(22, 22),
-                  painter: GoogleLogoPainter(),
-                ),
-                title: 'Google',
-                subtitle: 'Continue with your Google Account',
-                isLoading: _isLoading && _loadingProvider == 'Google',
-                onTap: _isLoading ? null : _handleGoogleSignIn,
-              ),
-              if (_showApple) ...[
-                const SizedBox(height: 10),
+              // ========================================================
+              // STEP 1: SOCIAL LIST (Default view with Google, Apple, Email)
+              // ========================================================
+              if (_authStep == _AuthStep.socialList) ...[
                 _buildOAuthButton(
                   icon: const CustomPaint(
                     size: Size(22, 22),
-                    painter: AppleLogoPainter(),
+                    painter: GoogleLogoPainter(),
                   ),
-                  title: 'Apple',
-                  subtitle: 'Continue with your Apple ID',
-                  isLoading: _isLoading && _loadingProvider == 'Apple',
-                  onTap: _isLoading ? null : _handleAppleSignIn,
+                  title: 'Google',
+                  subtitle: 'Continue with your Google Account',
+                  isLoading: _isLoading && _loadingProvider == 'Google',
+                  onTap: _isLoading ? null : _handleGoogleSignIn,
                 ),
-              ],
-              if (_showMicrosoft) ...[
-                const SizedBox(height: 10),
-                _buildOAuthButton(
-                  icon: const CustomPaint(
-                    size: Size(22, 22),
-                    painter: MicrosoftLogoPainter(),
-                  ),
-                  title: 'Microsoft',
-                  subtitle: 'Continue with Microsoft Account',
-                  isLoading: _isLoading && _loadingProvider == 'Microsoft',
-                  onTap: _isLoading ? null : _handleMicrosoftSignIn,
-                ),
-              ],
-              if (_enableEmailMagicLink) ...[
-                const SizedBox(height: 16),
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: Color(0xFF2E334D))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade500),
-                      ),
-                    ),
-                    const Expanded(child: Divider(color: Color(0xFF2E334D))),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Email Magic Link Toggle / Input
-                if (!_showEmailOption)
-                  OutlinedButton.icon(
-                    onPressed: () => setState(() => _showEmailOption = true),
-                    icon: const Icon(Icons.email_outlined, size: 18, color: AppTheme.secondaryColor),
-                    label: const Text('Sign in with Email Link', style: TextStyle(color: AppTheme.secondaryColor)),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: const BorderSide(color: Color(0xFF2E334D)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  )
-                else ...[
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'Email Address',
-                      hintText: 'you@example.com',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.send_rounded, color: AppTheme.primaryColor),
-                        onPressed: _isLoading ? null : _handleEmailSignIn,
-                      ),
-                    ),
-                    onSubmitted: (_) => _handleEmailSignIn(),
-                  ),
+                if (_showApple) ...[
                   const SizedBox(height: 10),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _handleEmailSignIn,
-                    icon: const Icon(Icons.send_rounded, size: 16),
-                    label: const Text('Send Magic Link'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  _buildOAuthButton(
+                    icon: const CustomPaint(
+                      size: Size(22, 22),
+                      painter: AppleLogoPainter(),
                     ),
+                    title: 'Apple',
+                    subtitle: 'Continue with your Apple ID',
+                    isLoading: _isLoading && _loadingProvider == 'Apple',
+                    onTap: _isLoading ? null : _handleAppleSignIn,
                   ),
                 ],
+                if (_showMicrosoft) ...[
+                  const SizedBox(height: 10),
+                  _buildOAuthButton(
+                    icon: const CustomPaint(
+                      size: Size(22, 22),
+                      painter: MicrosoftLogoPainter(),
+                    ),
+                    title: 'Microsoft',
+                    subtitle: 'Continue with Microsoft Account',
+                    isLoading: _isLoading && _loadingProvider == 'Microsoft',
+                    onTap: _isLoading ? null : _handleMicrosoftSignIn,
+                  ),
+                ],
+                const SizedBox(height: 10),
+                _buildOAuthButton(
+                  icon: const Icon(Icons.email_outlined, color: AppTheme.secondaryColor, size: 22),
+                  title: 'Email (OTP Code)',
+                  subtitle: 'Sign in with your email & 6-digit passcode',
+                  isLoading: _isLoading && _loadingProvider == 'email',
+                  onTap: () {
+                    setState(() {
+                      _authStep = _AuthStep.emailInput;
+                      _statusMessage = null;
+                    });
+                  },
+                ),
+              ],
+
+              // ========================================================
+              // STEP 2: EMAIL INPUT
+              // ========================================================
+              if (_authStep == _AuthStep.emailInput) ...[
+                TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autofocus: true,
+                  style: const TextStyle(color: Colors.white, fontSize: 15),
+                  decoration: InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'name@company.com or personal email',
+                    prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.secondaryColor),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2E334D)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF2E334D)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 1.5),
+                    ),
+                  ),
+                  onSubmitted: (_) => _handleSendEmailOtp(),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _handleSendEmailOtp,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryDark),
+                        )
+                      : const Icon(Icons.send_rounded, size: 18),
+                  label: Text(
+                    _isLoading ? 'Sending Code...' : 'Send 6-Digit Code',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: AppTheme.primaryDark,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _authStep = _AuthStep.socialList;
+                      _statusMessage = null;
+                    });
+                  },
+                  child: const Text('Back to all sign-in options', style: TextStyle(color: Color(0xFF94A3B8))),
+                ),
+              ],
+
+              // ========================================================
+              // STEP 3: OTP VERIFICATION
+              // ========================================================
+              if (_authStep == _AuthStep.otpVerification) ...[
+                // Email Display Chip with Change Option
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.mail_outline_rounded, size: 16, color: AppTheme.secondaryColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _emailController.text.trim(),
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _authStep = _AuthStep.emailInput;
+                            _statusMessage = null;
+                          });
+                        },
+                        child: const Text(
+                          'Change',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 6-Digit Code Input
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  textAlign: TextAlign.center,
+                  maxLength: 6,
+                  style: const TextStyle(
+                    color: AppTheme.secondaryColor,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 10,
+                    fontFamily: 'monospace',
+                  ),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: '000000',
+                    hintStyle: TextStyle(
+                      color: const Color(0xFF475569),
+                      fontSize: 26,
+                      letterSpacing: 10,
+                      fontFamily: 'monospace',
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF0F172A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF2E334D)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF2E334D)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppTheme.secondaryColor, width: 2),
+                    ),
+                  ),
+                  onSubmitted: (_) => _handleVerifyEmailOtp(),
+                ),
+                const SizedBox(height: 16),
+
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _handleVerifyEmailOtp,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryDark),
+                        )
+                      : const Icon(Icons.verified_user_rounded, size: 18),
+                  label: Text(
+                    _isLoading ? 'Verifying...' : 'Verify & Sign In',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: AppTheme.primaryDark,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Resend Timer Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Didn't receive the code?", style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                    const SizedBox(width: 6),
+                    if (_resendSecondsLeft > 0)
+                      Text(
+                        'Resend in ${_resendSecondsLeft}s',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                      )
+                    else
+                      InkWell(
+                        onTap: _isLoading ? null : _handleSendEmailOtp,
+                        child: const Text(
+                          'Resend Code',
+                          style: TextStyle(fontSize: 12, color: AppTheme.secondaryColor, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
               ],
               const SizedBox(height: 18),
 

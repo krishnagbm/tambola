@@ -59,6 +59,44 @@ class AuthRepository {
     );
   }
 
+  /// Sends a 6-digit OTP code to the given email
+  Future<void> sendEmailOtp(String email) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty || !cleanEmail.contains('@')) {
+      throw Exception('Please enter a valid email address');
+    }
+    await _supabase.auth.signInWithOtp(
+      email: cleanEmail,
+      shouldCreateUser: true,
+    );
+  }
+
+  /// Verifies the 6-digit OTP token entered by the user
+  Future<AuthResponse> verifyEmailOtp({
+    required String email,
+    required String token,
+  }) async {
+    final cleanEmail = email.trim();
+    final cleanToken = token.trim();
+    if (cleanEmail.isEmpty) throw Exception('Email address is required');
+    if (cleanToken.isEmpty || cleanToken.length < 6) {
+      throw Exception('Please enter a valid 6-digit verification code');
+    }
+
+    final response = await _supabase.auth.verifyOTP(
+      email: cleanEmail,
+      token: cleanToken,
+      type: OtpType.email,
+    );
+
+    // Sync profile after OTP verification
+    try {
+      await initializeAuth();
+    } catch (_) {}
+
+    return response;
+  }
+
   /// Sends a magic sign-in link (OTP) to the given email
   Future<void> signInWithEmail(String email, {String? redirectTo}) async {
     final cleanEmail = email.trim();
