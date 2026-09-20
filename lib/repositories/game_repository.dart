@@ -40,7 +40,7 @@ class GameRepository {
         final game = MptGame.fromJson(res);
         // If private, trigger organizer email in background
         if (isPrivate) {
-          sendPrivatePartyEmail(gameId: game.id).catchError((_) => false);
+          sendPrivatePartyEmail(gameId: game.id).catchError((_) => <String, dynamic>{'success': false});
         }
         return game;
       }

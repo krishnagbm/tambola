@@ -58,7 +58,8 @@ final appRouter = GoRouter(
       path: '/admin-control/:gameId',
       builder: (context, state) {
         final gameId = state.pathParameters['gameId']!;
-        return AdminGameControlScreen(gameId: gameId);
+        final autoPilot = state.uri.queryParameters['autopilot'] == 'true';
+        return AdminGameControlScreen(gameId: gameId, autoPilot: autoPilot);
       },
     ),
     GoRoute(

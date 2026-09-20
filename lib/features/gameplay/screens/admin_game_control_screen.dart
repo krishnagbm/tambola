@@ -17,8 +17,13 @@ import '../../../providers/app_providers.dart';
 
 class AdminGameControlScreen extends ConsumerStatefulWidget {
   final String gameId;
+  final bool autoPilot;
 
-  const AdminGameControlScreen({super.key, required this.gameId});
+  const AdminGameControlScreen({
+    super.key,
+    required this.gameId,
+    this.autoPilot = false,
+  });
 
   @override
   ConsumerState<AdminGameControlScreen> createState() => _AdminGameControlScreenState();
@@ -32,16 +37,92 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
   int _knownApprovedCount = -1;
   String? _celebrationMessage;
 
+  // Auto-Pilot Host State
+  bool _isAutoPilotEnabled = false;
+  bool _isAutoPilotPaused = false;
+  int _autoCallIntervalSeconds = 15;
+  int _countdownSecondsLeft = 15;
+  Timer? _autoCallTimer;
+
   @override
   void initState() {
     super.initState();
     _isMuted = TambolaAudioCaller().isMuted;
+    if (widget.autoPilot) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startAutoPilot();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _autoCallTimer?.cancel();
     _celebrationTimer?.cancel();
     super.dispose();
+  }
+
+  void _startAutoPilot() {
+    _autoCallTimer?.cancel();
+    setState(() {
+      _isAutoPilotEnabled = true;
+      _isAutoPilotPaused = false;
+      _countdownSecondsLeft = _autoCallIntervalSeconds;
+    });
+
+    _autoCallTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (!_isAutoPilotEnabled) {
+        timer.cancel();
+        return;
+      }
+      // If celebrating a winner or currently making an async call or paused, hold the countdown
+      if (_celebrationSecondsLeft > 0 || _isCalling || _isAutoPilotPaused) {
+        return;
+      }
+
+      setState(() {
+        if (_countdownSecondsLeft > 1) {
+          _countdownSecondsLeft--;
+        } else {
+          _countdownSecondsLeft = _autoCallIntervalSeconds;
+          _handleCallNext();
+        }
+      });
+    });
+  }
+
+  void _pauseAutoPilot() {
+    setState(() {
+      _isAutoPilotPaused = true;
+    });
+  }
+
+  void _resumeAutoPilot() {
+    setState(() {
+      _isAutoPilotPaused = false;
+    });
+  }
+
+  void _stopAutoPilot() {
+    _autoCallTimer?.cancel();
+    setState(() {
+      _isAutoPilotEnabled = false;
+      _isAutoPilotPaused = false;
+      _countdownSecondsLeft = _autoCallIntervalSeconds;
+    });
+  }
+
+  void _updateAutoCallInterval(int seconds) {
+    setState(() {
+      _autoCallIntervalSeconds = seconds;
+      if (_countdownSecondsLeft > seconds) {
+        _countdownSecondsLeft = seconds;
+      }
+    });
   }
 
   void _triggerCelebrationPause(String message) {
@@ -49,6 +130,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
     setState(() {
       _celebrationSecondsLeft = 10;
       _celebrationMessage = message;
+      // Reset countdown to full interval so players have ample time after celebration
+      _countdownSecondsLeft = _autoCallIntervalSeconds;
     });
 
     _celebrationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -91,7 +174,10 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
   }
 
   Future<void> _handleCallNext() async {
-    setState(() => _isCalling = true);
+    setState(() {
+      _isCalling = true;
+      _countdownSecondsLeft = _autoCallIntervalSeconds;
+    });
     try {
       final num = await ref.read(gameplayRepositoryProvider).callNextNumber(widget.gameId);
       ref.invalidate(calledNumbersStreamProvider(widget.gameId));
@@ -100,6 +186,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
         TambolaAudioCaller().announceNumber(num);
       } else {
         if (!mounted) return;
+        _autoCallTimer?.cancel();
+        setState(() => _isAutoPilotEnabled = false);
         await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
         ref.invalidate(gameStreamProvider(widget.gameId));
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1014,39 +1102,437 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
       );
     }
 
-    if (_celebrationSecondsLeft > 0) {
-      return ElevatedButton.icon(
-        onPressed: null,
-        icon: Icon(Icons.celebration_rounded, size: iconSize, color: AppTheme.secondaryColor),
-        label: Text(
-          '🎉 Celebrating Winner... (${_celebrationSecondsLeft}s)',
-          style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
-        ),
-        style: ElevatedButton.styleFrom(
-          disabledBackgroundColor: const Color(0xFF222639),
-          disabledForegroundColor: AppTheme.secondaryColor,
-          padding: EdgeInsets.symmetric(vertical: verticalPadding),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppTheme.secondaryColor, width: 1.5)),
-        ),
-      );
-    }
+    final isCelebrating = _celebrationSecondsLeft > 0;
 
-    return ElevatedButton.icon(
-      onPressed: disableCalling ? null : _handleCallNext,
-      icon: Icon(Icons.campaign_rounded, size: iconSize),
-      label: _isCalling
-          ? const Text('Selecting Number...')
-          : Text(
-              calledCount == 0 ? 'CALL FIRST NUMBER' : 'CALL NEXT NUMBER',
-              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isAutoPilotEnabled ? AppTheme.secondaryColor.withValues(alpha: 0.6) : const Color(0xFF2E334D),
+          width: _isAutoPilotEnabled ? 1.5 : 1.0,
+        ),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. Host Mode Selector Tabs
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF1E293B)),
             ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppTheme.accentSuccess,
-        foregroundColor: Colors.white,
-        disabledBackgroundColor: const Color(0xFF222639),
-        disabledForegroundColor: const Color(0xFF718096),
-        padding: EdgeInsets.symmetric(vertical: verticalPadding),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: _isAutoPilotEnabled ? null : () => _startAutoPilot(),
+                    borderRadius: BorderRadius.circular(9),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _isAutoPilotEnabled ? AppTheme.secondaryColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                        boxShadow: _isAutoPilotEnabled
+                            ? [
+                                BoxShadow(
+                                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.smart_toy_rounded,
+                            size: 17,
+                            color: _isAutoPilotEnabled ? AppTheme.primaryDark : const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '🤖 Auto-Pilot Host',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: _isAutoPilotEnabled ? AppTheme.primaryDark : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                          if (_isAutoPilotEnabled) ...[
+                            const SizedBox(width: 5),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: InkWell(
+                    onTap: !_isAutoPilotEnabled ? null : () => _stopAutoPilot(),
+                    borderRadius: BorderRadius.circular(9),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: !_isAutoPilotEnabled ? AppTheme.primaryColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.mic_none_rounded,
+                            size: 17,
+                            color: !_isAutoPilotEnabled ? Colors.white : const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '🎙️ Live Master Host',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: !_isAutoPilotEnabled ? Colors.white : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // 2. Body based on Selected Mode
+          if (_isAutoPilotEnabled) ...[
+            // ----------------------------------------------------
+            // AUTO-PILOT ACTIVE PANEL
+            // ----------------------------------------------------
+            // Pace Selector & Slider
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.speed_rounded, size: 16, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Calling Pace: ${_autoCallIntervalSeconds}s / ball',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    _buildPacePresetChip('8s Fast', 8),
+                    const SizedBox(width: 4),
+                    _buildPacePresetChip('15s Std', 15),
+                    const SizedBox(width: 4),
+                    _buildPacePresetChip('20s Slow', 20),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: AppTheme.secondaryColor,
+                inactiveTrackColor: const Color(0xFF1E293B),
+                thumbColor: AppTheme.secondaryColor,
+                overlayColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                trackHeight: 4,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              ),
+              child: Slider(
+                value: _autoCallIntervalSeconds.toDouble(),
+                min: 5,
+                max: 30,
+                divisions: 25,
+                label: '${_autoCallIntervalSeconds}s',
+                onChanged: (val) => _updateAutoCallInterval(val.round()),
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            // Live Countdown Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isCelebrating
+                      ? AppTheme.secondaryColor.withValues(alpha: 0.5)
+                      : _isAutoPilotPaused
+                          ? AppTheme.accentWarning.withValues(alpha: 0.5)
+                          : const Color(0xFF1E293B),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isCelebrating
+                                ? Icons.celebration_rounded
+                                : _isAutoPilotPaused
+                                    ? Icons.pause_circle_outline_rounded
+                                    : _isCalling
+                                        ? Icons.autorenew_rounded
+                                        : Icons.timer_outlined,
+                            size: 16,
+                            color: isCelebrating
+                                ? AppTheme.secondaryColor
+                                : _isAutoPilotPaused
+                                    ? AppTheme.accentWarning
+                                    : const Color(0xFF38BDF8),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isCelebrating
+                                ? '🎉 Winner Spotlight Pause (${_celebrationSecondsLeft}s)'
+                                : _isAutoPilotPaused
+                                    ? '⏸️ Auto-Pilot Paused'
+                                    : _isCalling
+                                        ? '⚡ Selecting & Announcing Number...'
+                                        : '⚡ Next number in ${_countdownSecondsLeft}s',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: isCelebrating
+                                  ? AppTheme.secondaryColor
+                                  : _isAutoPilotPaused
+                                      ? AppTheme.accentWarning
+                                      : Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        isCelebrating
+                            ? '${_celebrationSecondsLeft}s'
+                            : _isAutoPilotPaused
+                                ? 'PAUSED'
+                                : '${_countdownSecondsLeft}s',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isCelebrating
+                              ? AppTheme.secondaryColor
+                              : _isAutoPilotPaused
+                                  ? AppTheme.accentWarning
+                                  : const Color(0xFF38BDF8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: isCelebrating
+                          ? (_celebrationSecondsLeft / 10.0).clamp(0.0, 1.0)
+                          : _isAutoPilotPaused
+                              ? 1.0
+                              : ((_autoCallIntervalSeconds - _countdownSecondsLeft) / _autoCallIntervalSeconds).clamp(0.0, 1.0),
+                      minHeight: 6,
+                      backgroundColor: const Color(0xFF1E293B),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isCelebrating
+                            ? AppTheme.secondaryColor
+                            : _isAutoPilotPaused
+                                ? AppTheme.accentWarning
+                                : const Color(0xFF38BDF8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Action Buttons Bar
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isAutoPilotPaused)
+                      ElevatedButton.icon(
+                        onPressed: _resumeAutoPilot,
+                        icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                        label: const Text('Resume Auto-Pilot'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      )
+                    else
+                      ElevatedButton.icon(
+                        onPressed: _pauseAutoPilot,
+                        icon: const Icon(Icons.pause_rounded, size: 18),
+                        label: const Text('Pause Auto-Pilot'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF334155),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: disableCalling ? null : _handleCallNext,
+                      icon: const Icon(Icons.skip_next_rounded, size: 18),
+                      label: const Text('Draw Ball Now'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: _stopAutoPilot,
+                  icon: const Icon(Icons.mic_none_rounded, size: 16),
+                  label: const Text('Manual Mode'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF94A3B8),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            // ----------------------------------------------------
+            // MANUAL LIVE MASTER HOST PANEL
+            // ----------------------------------------------------
+            if (isCelebrating)
+              ElevatedButton.icon(
+                onPressed: null,
+                icon: Icon(Icons.celebration_rounded, size: iconSize, color: AppTheme.secondaryColor),
+                label: Text(
+                  '🎉 Celebrating Winner... (${_celebrationSecondsLeft}s)',
+                  style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                ),
+                style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledForegroundColor: AppTheme.secondaryColor,
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: AppTheme.secondaryColor, width: 1.5),
+                  ),
+                ),
+              )
+            else
+              ElevatedButton.icon(
+                onPressed: disableCalling ? null : _handleCallNext,
+                icon: Icon(Icons.campaign_rounded, size: iconSize),
+                label: _isCalling
+                    ? const Text('Selecting Number...')
+                    : Text(
+                        calledCount == 0 ? 'CALL FIRST NUMBER' : 'CALL NEXT NUMBER',
+                        style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentSuccess,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledForegroundColor: const Color(0xFF718096),
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            const SizedBox(height: 10),
+            // Switch to Auto-Pilot prompt card
+            InkWell(
+              onTap: () => _startAutoPilot(),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.smart_toy_outlined, size: 18, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Want hands-free calling? Switch to Auto-Pilot Host to draw numbers automatically every 15s.',
+                        style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'Launch Auto',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryDark),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPacePresetChip(String label, int seconds) {
+    final isSelected = _autoCallIntervalSeconds == seconds;
+    return InkWell(
+      onTap: () => _updateAutoCallInterval(seconds),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.secondaryColor : const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: isSelected ? AppTheme.secondaryColor : const Color(0xFF334155)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? AppTheme.primaryDark : const Color(0xFF94A3B8),
+          ),
+        ),
       ),
     );
   }

@@ -964,8 +964,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               const SizedBox(height: 4),
               Text(
                 _scheduledDateTime == null
-                    ? 'Game will be playable immediately when you start the lobby.'
-                    : 'Scheduled for: ${_formatDateTime(_scheduledDateTime!)}',
+                    ? 'Play immediately on launch in 🤖 Auto-Pilot or 🎙️ Manual Host mode.'
+                    : 'Scheduled for: ${_formatDateTime(_scheduledDateTime!)} (Supports 🤖 Auto-Pilot)',
                 style: TextStyle(
                   fontSize: 13,
                   color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),

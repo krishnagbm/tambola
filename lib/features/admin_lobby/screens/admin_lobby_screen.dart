@@ -143,32 +143,79 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    final launchMode = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.darkCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Start Game & Charge Credits?', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(
-          'Starting the game will lock the room with $confirmedCount Confirmed players and charge $creditsNeeded credits.\n\n'
-          'After start, no new registrations or capacity changes can be made for this game.',
-          style: const TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
+        title: const Row(
+          children: [
+            Icon(Icons.rocket_launch_rounded, color: AppTheme.secondaryColor),
+            SizedBox(width: 8),
+            Text('Start Game & Launch', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Starting the game will lock the room with $confirmedCount Confirmed players and charge $creditsNeeded credits.\n\n'
+              'Choose your hosting style to begin:',
+              style: const TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.smart_toy_rounded, color: AppTheme.secondaryColor, size: 24),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('🤖 Auto-Pilot Host (Recommended)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.secondaryColor)),
+                        SizedBox(height: 2),
+                        Text('Automated 15s draws with audio speech caller, celebration pauses, and auto-finish.', style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentSuccess,
+          TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Cancel')),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'manual'),
+            icon: const Icon(Icons.mic_none_rounded, size: 16),
+            label: const Text('🎙️ Live Host (Manual)'),
+            style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFF475569)),
             ),
-            child: const Text('Confirm & Start Game'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, 'autopilot'),
+            icon: const Icon(Icons.smart_toy_rounded, size: 16),
+            label: const Text('🤖 Launch Auto-Pilot'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: AppTheme.primaryDark,
+            ),
           ),
         ],
       ),
     );
 
-    if (confirm != true) return;
+    if (launchMode == null) return;
 
     setState(() => _isProcessing = true);
     try {
@@ -177,7 +224,11 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       ref.invalidate(gameStreamProvider(widget.gameId));
 
       if (!mounted) return;
-      context.go('/admin-control/${widget.gameId}');
+      if (launchMode == 'autopilot') {
+        context.go('/admin-control/${widget.gameId}?autopilot=true');
+      } else {
+        context.go('/admin-control/${widget.gameId}');
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
