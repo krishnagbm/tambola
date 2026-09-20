@@ -259,25 +259,32 @@ def send_private_party_otps_email(
     scheduled_at: Optional[str] = None,
 ) -> bool:
     """
-    Sends the Private Party join link and list of single-use Seat OTPs to the organizer.
+    Sends the Private Party join link and list of single-use Seat OTPs to the organizer
+    with official DabHousie branding and high-contrast email client styling.
     """
     if not to_email:
         print("  [ SES ] No recipient email provided. Skipping email dispatch.")
         return False
 
-    subject = f"Private Party Access Codes: {game_name} (Code: {invite_code})"
+    subject = f"Private Party Passcodes: {game_name} (Code: {invite_code})"
     join_url = f"{BASE_URL}/#/join/{invite_code}"
+    dashboard_url = f"{BASE_URL}/#/admin/lobby/{invite_code}"
 
-    otp_rows_html = ""
+    otp_table_rows = ""
     otp_rows_text = ""
     for idx, item in enumerate(otps_list, 1):
         seat_num = item.get("seat_number", idx) if isinstance(item, dict) else idx
         otp_code = item.get("otp_code", item) if isinstance(item, dict) else str(item)
-        otp_rows_html += f"""
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; background:#161b22; border:1px solid #30363d; border-radius:8px;">
-          <span style="font-weight:600; color:#94a3b8; font-size:13px;">Seat #{seat_num}</span>
-          <span style="font-family:monospace; font-size:16px; font-weight:700; letter-spacing:2px; color:#38bdf8; background:#0f172a; padding:4px 10px; border-radius:6px; border:1px solid #1e293b;">{otp_code}</span>
-        </div>
+        otp_table_rows += f"""
+        <tr>
+          <td style="background:#161f30; padding:10px 14px; border-radius:8px 0 0 8px; border:1px solid #293548; border-right:none; color:#f8fafc; font-size:14px; font-weight:700;">
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; margin-right:8px; vertical-align:middle;"></span>
+            Seat #{seat_num}
+          </td>
+          <td align="right" style="background:#161f30; padding:10px 14px; border-radius:0 8px 8px 0; border:1px solid #293548; border-left:none;">
+            <span style="background:#0284c7; color:#ffffff; font-family:Courier, 'Courier New', monospace; font-size:16px; font-weight:800; letter-spacing:2px; padding:6px 14px; border-radius:6px; display:inline-block;">{otp_code}</span>
+          </td>
+        </tr>
         """
         otp_rows_text += f"Seat #{seat_num}: Passcode {otp_code}\n"
 
@@ -287,118 +294,93 @@ def send_private_party_otps_email(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Private Party Passcodes - {game_name}</title>
-  <style>
-    body {{
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #0d1117;
-      color: #e6edf3;
-      margin: 0;
-      padding: 24px;
-    }}
-    .container {{
-      max-width: 600px;
-      margin: 0 auto;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }}
-    .header {{
-      background: linear-gradient(135deg, #0B3D91 0%, #1e293b 100%);
-      padding: 28px 24px;
-      text-align: center;
-      border-bottom: 2px solid #FFC107;
-    }}
-    .header h1 {{
-      margin: 0;
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 700;
-    }}
-    .header p {{
-      margin: 6px 0 0 0;
-      color: #FFC107;
-      font-size: 14px;
-      font-weight: 600;
-    }}
-    .content {{
-      padding: 28px 24px;
-    }}
-    .info-card {{
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }}
-    .btn {{
-      display: inline-block;
-      background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
-      color: #000000;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 12px 24px;
-      border-radius: 8px;
-      margin: 12px 0 20px 0;
-      text-align: center;
-    }}
-    .instructions {{
-      background: #0f172a;
-      border-left: 4px solid #38bdf8;
-      padding: 14px 16px;
-      border-radius: 0 8px 8px 0;
-      margin-bottom: 20px;
-      font-size: 13.5px;
-      line-height: 1.5;
-    }}
-    .footer {{
-      background: #0d1117;
-      border-top: 1px solid #21262d;
-      padding: 18px 24px;
-      text-align: center;
-      font-size: 12px;
-      color: #8b949e;
-    }}
-  </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>🔒 Private Party Access Passcodes</h1>
-      <p>{game_name}</p>
-    </div>
-    <div class="content">
-      <div class="info-card">
-        <div style="font-size:13px; color:#8b949e; margin-bottom:4px;">Master Join Link</div>
-        <div style="font-size:15px; font-weight:600; color:#f8fafc; word-break:break-all;">
-          <a href="{join_url}" style="color:#38bdf8; text-decoration:underline;">{join_url}</a>
-        </div>
-        <div style="margin-top:10px; font-size:13px; color:#8b949e;">Party Code: <strong style="color:#FFC107; font-size:15px;">{invite_code}</strong> &bull; Seats: <strong>{len(otps_list)}</strong></div>
-      </div>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <!-- Header with Official Brand Logo -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 12px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Multiplayer Tambola &bull; Housie &bull; Bingo</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">🔒 Private Party Access Passcodes</h1>
+              <p style="margin:6px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
 
-      <div class="instructions">
-        <strong>📌 How to Distribute to Your Team:</strong><br>
-        1. Share the Master Join Link with your team.<br>
-        2. Assign <strong>one unique passcode</strong> to each invited member.<br>
-        3. Once a member enters their passcode, their seat is locked to their device. If an uninvited guest uses a passcode, that seat is claimed.
-      </div>
+          <!-- Main Content Body -->
+          <tr>
+            <td style="padding:28px 24px;">
+              <!-- Master Join Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:20px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="font-size:12px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px;">Master Join Link</div>
+                    <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px 14px; margin-bottom:12px; word-break:break-all;">
+                      <a href="{join_url}" target="_blank" style="color:#38bdf8; font-size:14px; font-weight:700; text-decoration:underline;">{join_url}</a>
+                    </div>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="color:#94a3b8; font-size:13px;">
+                          Party Code: <span style="background:#f59e0b; color:#000000; font-family:Courier,'Courier New',monospace; font-weight:800; font-size:14px; padding:3px 8px; border-radius:5px;">{invite_code}</span>
+                        </td>
+                        <td align="right" style="color:#94a3b8; font-size:13px;">
+                          Reserved Seats: <strong style="color:#ffffff; font-size:14px;">{len(otps_list)}</strong>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-      <h3 style="font-size:15px; color:#f1f5f9; margin-bottom:12px;">🎟️ Single-Use Seat Passcodes ({len(otps_list)} Total):</h3>
-      <div style="max-height:360px; overflow-y:auto; padding-right:4px;">
-        {otp_rows_html}
-      </div>
+              <!-- Distribution Instructions (High Contrast) -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0c203a; border:1px solid #1e40af; border-left:4px solid #38bdf8; border-radius:0 10px 10px 0; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="color:#38bdf8; font-size:14px; font-weight:700; margin-bottom:8px;">📌 How to Distribute to Your Team:</div>
+                    <p style="margin:0 0 6px 0; color:#e2e8f0; font-size:13.5px; line-height:1.5;"><strong>1.</strong> Share the Master Join Link with your team members.</p>
+                    <p style="margin:0 0 6px 0; color:#e2e8f0; font-size:13.5px; line-height:1.5;"><strong>2.</strong> Assign <strong>one unique passcode</strong> below to each invited member.</p>
+                    <p style="margin:0; color:#e2e8f0; font-size:13.5px; line-height:1.5;"><strong>3.</strong> Each passcode is single-use and binds securely to that player's device.</p>
+                  </td>
+                </tr>
+              </table>
 
-      <div style="text-align:center; margin-top:20px;">
-        <a href="{BASE_URL}/#/admin/lobby/{invite_code}" class="btn">Open Host Dashboard →</a>
-      </div>
-    </div>
-    <div class="footer">
-      DabHousie &bull; Zero-PII Private Entertainment<br>
-      Questions or support? Contact <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8;">{FROM_EMAIL}</a>
-    </div>
-  </div>
+              <!-- Single-Use Seat Passcodes Header -->
+              <div style="font-size:15px; font-weight:700; color:#f8fafc; margin-bottom:12px;">
+                🎟️ Single-Use Seat Passcodes ({len(otps_list)} Total):
+              </div>
+
+              <!-- Passcodes Table -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0 8px;">
+                {otp_table_rows}
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;">
+                <tr>
+                  <td align="center">
+                    <a href="{dashboard_url}" target="_blank" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#000000; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:14px 32px; border-radius:8px; box-shadow:0 4px 12px rgba(245,158,11,0.3); border:1px solid #fbbf24;">Open Host Dashboard &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer / Trust Badges -->
+          <tr>
+            <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Architecture</strong> &bull; Player emails and phone numbers are never collected or stored.</p>
+              <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 """
@@ -409,12 +391,13 @@ Join Link: {join_url}
 Total Seats: {len(otps_list)}
 
 How to Distribute:
-Share the join link and give one unique passcode to each member. Once entered, the seat is bound to that player.
+1. Share the Master Join Link with your team.
+2. Give one unique passcode to each member. Once entered, the seat binds to that device.
 
 Passcodes:
 {otp_rows_text}
-
-Host Dashboard: {BASE_URL}/#/admin/lobby/{invite_code}
+Host Dashboard: {dashboard_url}
+Support: {FROM_EMAIL}
 """
 
     if boto3 is None:
