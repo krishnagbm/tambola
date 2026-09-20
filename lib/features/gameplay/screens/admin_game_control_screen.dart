@@ -701,8 +701,8 @@ class _AdminGameControlScreenState extends ConsumerState<AdminGameControlScreen>
           ),
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
-            tooltip: 'Live Display (Open in New Tab / Window)',
-            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
+            tooltip: 'Display Game on TV / Projector',
+            onPressed: () => LiveDisplayHelper.showDisplayOnTvDialog(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),

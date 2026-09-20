@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/live_display_helper.dart';
@@ -303,8 +304,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
-            tooltip: 'Live Display (Open in New Tab / Window)',
-            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
+            tooltip: 'Display Game on TV / Projector',
+            onPressed: () => LiveDisplayHelper.showDisplayOnTvDialog(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -749,6 +750,16 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             label: const Text('Add Seats (+5, +10, +15, +25)'),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _isProcessing ? null : () => LiveDisplayHelper.showDisplayOnTvDialog(context, game.id),
+          icon: const Icon(Icons.tv, size: 18, color: AppTheme.secondaryColor),
+          label: const Text('Display Game on TV / Projector', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.8)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           onPressed: _isProcessing ? null : () => _handleCancelGame(game),
