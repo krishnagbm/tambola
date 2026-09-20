@@ -208,6 +208,8 @@ class DashboardHeroSection extends ConsumerWidget {
                 children: const [
                   Text('💃 Instant for Kitty Parties', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('🛡️ Private Parties (Seat OTPs)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('📺 Live Projector & TV Mode', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('⚡ Smart Waitlist Auto-Promotion', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
@@ -215,8 +217,6 @@ class DashboardHeroSection extends ConsumerWidget {
                   Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🛡️ Private Parties (Seat OTPs)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🙅 Zero app download for guests', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                 ],

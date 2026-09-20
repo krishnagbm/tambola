@@ -53,6 +53,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     return 325;
   }
 
+  String _getPrivateCreditBreakdownText(int maxPlayers) {
+    if (maxPlayers <= 5) return 'Free + 5 = 5 Credits';
+    if (maxPlayers <= 15) return '15 + 5 = 20 Credits';
+    if (maxPlayers <= 25) return '25 + 10 = 35 Credits';
+    if (maxPlayers <= 50) return '50 + 20 = 70 Credits';
+    if (maxPlayers <= 100) return '100 + 35 = 135 Credits';
+    return '250 + 75 = 325 Credits';
+  }
+
   DateTime? _scheduledDateTime;
 
   final Map<String, bool> _prizes = {
@@ -690,7 +699,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Text(
-                          'RESTRICTED',
+                          'RESTRICTED • EXTRA CHARGES APPLY',
                           style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
@@ -700,7 +709,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 const SizedBox(height: 3),
                 Text(
                   _isPrivate
-                      ? 'Single-use OTPs generated for each seat. Only invited team members can join (Zero PII).'
+                      ? 'Single-use OTP passcodes generated for each seat (Zero PII). Additional credit charges apply.'
                       : 'Standard party: Anyone with the 6-character code can enter and join.',
                   style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                 ),
@@ -709,7 +718,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ),
           Switch.adaptive(
             value: _isPrivate,
-            activeColor: AppTheme.accentPartyPurple,
+            activeThumbColor: AppTheme.accentPartyPurple,
             onChanged: (val) => setState(() => _isPrivate = val),
           ),
         ],
@@ -738,7 +747,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           final isSelected = _selectedTierId == tier.id ||
               (_selectedTierId == null && _selectedCapacity == tier.maxPlayers) ||
               (_selectedCapacity == tier.maxPlayers);
-          final privateCredits = _getPrivateCredits(tier.maxPlayers);
+          final breakdownText = _getPrivateCreditBreakdownText(tier.maxPlayers);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -775,13 +784,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         ),
                         Text(
                           _isPrivate
-                              ? '${tier.minPlayers}–${tier.maxPlayers} Seats • $privateCredits Credits (Private OTP)'
+                              ? '${tier.minPlayers}–${tier.maxPlayers} Seats • $breakdownText (Private OTP)'
                               : (tier.creditsRequired == 0
                                   ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
                                   : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits'),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: (!_isPrivate && tier.creditsRequired == 0) ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: (!_isPrivate && tier.creditsRequired == 0)
+                                ? FontWeight.bold
+                                : (_isPrivate ? FontWeight.w600 : FontWeight.normal),
                             color: _isPrivate
                                 ? AppTheme.accentPartyPurple
                                 : (tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor),
@@ -812,12 +823,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildStaticCapacityOptions() {
     final options = [
-      {'capacity': 5, 'label': '1–5 Players', 'publicDesc': 'Family Pack • Free (0 Credits)*', 'privateCredits': 5},
-      {'capacity': 15, 'label': '6–15 Players', 'publicDesc': 'Small Party • 15 Credits', 'privateCredits': 20},
-      {'capacity': 25, 'label': '16–25 Players', 'publicDesc': 'Medium Group • 25 Credits', 'privateCredits': 35},
-      {'capacity': 50, 'label': '26–50 Players', 'publicDesc': 'Large Group • 50 Credits', 'privateCredits': 70},
-      {'capacity': 100, 'label': '51–100 Players', 'publicDesc': 'Club Event • 100 Credits', 'privateCredits': 135},
-      {'capacity': 250, 'label': '101–250 Players', 'publicDesc': 'Mega Event • 250 Credits', 'privateCredits': 325},
+      {'capacity': 5, 'label': '1–5 Players', 'publicDesc': 'Family Pack • Free (0 Credits)*'},
+      {'capacity': 15, 'label': '6–15 Players', 'publicDesc': 'Small Party • 15 Credits'},
+      {'capacity': 25, 'label': '16–25 Players', 'publicDesc': 'Medium Group • 25 Credits'},
+      {'capacity': 50, 'label': '26–50 Players', 'publicDesc': 'Large Group • 50 Credits'},
+      {'capacity': 100, 'label': '51–100 Players', 'publicDesc': 'Club Event • 100 Credits'},
+      {'capacity': 250, 'label': '101–250 Players', 'publicDesc': 'Mega Event • 250 Credits'},
     ];
 
     return Column(
@@ -825,7 +836,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ...options.map((opt) {
           final cap = opt['capacity'] as int;
           final isSelected = _selectedCapacity == cap;
-          final privCredits = opt['privateCredits'] as int;
+          final breakdownText = _getPrivateCreditBreakdownText(cap);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -851,10 +862,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         Text(opt['label'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         Text(
                           _isPrivate
-                              ? '$cap Seats • $privCredits Credits (Private OTP)'
+                              ? '$cap Seats • $breakdownText (Private OTP)'
                               : opt['publicDesc'] as String,
                           style: TextStyle(
                             fontSize: 12,
+                            fontWeight: _isPrivate ? FontWeight.w600 : FontWeight.normal,
                             color: _isPrivate ? AppTheme.accentPartyPurple : const Color(0xFFA0AEC0),
                           ),
                         ),
