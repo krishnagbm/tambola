@@ -11,6 +11,7 @@ class MptGame {
   final DateTime? scheduledAt;
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final bool isPrivate;
   final List<String> prizesConfig;
   final int stateVersion;
   final DateTime createdAt;
@@ -29,6 +30,7 @@ class MptGame {
     this.scheduledAt,
     this.startedAt,
     this.completedAt,
+    this.isPrivate = false,
     required this.prizesConfig,
     this.stateVersion = 1,
     required this.createdAt,
@@ -62,6 +64,7 @@ class MptGame {
       scheduledAt: json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at']) : null,
       startedAt: json['started_at'] != null ? DateTime.parse(json['started_at']) : null,
       completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+      isPrivate: json['is_private'] as bool? ?? false,
       prizesConfig: parsePrizes(json['prizes_config']),
       stateVersion: json['state_version'] as int? ?? 1,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
@@ -83,6 +86,7 @@ class MptGame {
       'scheduled_at': scheduledAt?.toIso8601String(),
       'started_at': startedAt?.toIso8601String(),
       'completed_at': completedAt?.toIso8601String(),
+      'is_private': isPrivate,
       'prizes_config': prizesConfig,
       'state_version': stateVersion,
       'created_at': createdAt.toIso8601String(),

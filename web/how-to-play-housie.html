@@ -153,54 +153,102 @@
     <!-- 3x9 Ticket Architecture -->
     <div class="content-card">
       <h2>🎫 Housie Ticket Anatomy (3×9 Grid)</h2>
-      <p>
-        A standard Housie ticket consists of <strong>3 rows and 9 columns (27 cells in total)</strong>:
-      </p>
-      <ul style="padding-left: 20px; margin-bottom: 14px;">
-        <li>Every row has exactly <strong>5 numbers</strong> and <strong>4 blank squares</strong> (total 15 numbers per ticket).</li>
-        <li>Numbers in each column are neatly grouped by numerical decade (1–9, 10–19, 20–29 ... 80–90).</li>
-        <li>All numbers in each column appear in ascending order from top to bottom.</li>
-      </ul>
+      
+      <div class="ticket-arch-layout">
+        <!-- Left Column: Rules & Column Breakup -->
+        <div class="ticket-arch-info">
+          <p>
+            A standard Housie ticket consists of <strong>3 horizontal rows and 9 vertical columns (27 cells total)</strong> containing exactly <strong>15 numbers</strong>:
+          </p>
+          <ul style="padding-left: 20px; margin-bottom: 12px;">
+            <li>Every row contains exactly <strong>5 numbers</strong> and <strong>4 blank squares</strong>.</li>
+            <li>Numbers in each column are grouped by numerical decade (1–9, 10–19, 20–29 ... 80–90).</li>
+            <li>All numbers in each vertical column appear in strict <strong>ascending order</strong> from top to bottom.</li>
+          </ul>
 
-      <!-- Sample Interactive Visual Ticket -->
-      <div class="sample-ticket" style="margin: 20px 0;">
-        <div class="ticket-header-strip">
-          <span>SAMPLE DABHOUSIE HOUSIE TICKET</span>
-          <span>ROOM #300EC1</span>
+          <div class="ticket-columns-chip-grid">
+            <div class="col-chip"><strong>Col 1:</strong> 1–9</div>
+            <div class="col-chip"><strong>Col 2:</strong> 10–19</div>
+            <div class="col-chip"><strong>Col 3:</strong> 20–29</div>
+            <div class="col-chip"><strong>Col 4:</strong> 30–39</div>
+            <div class="col-chip"><strong>Col 5:</strong> 40–49</div>
+            <div class="col-chip"><strong>Col 6:</strong> 50–59</div>
+            <div class="col-chip"><strong>Col 7:</strong> 60–69</div>
+            <div class="col-chip"><strong>Col 8:</strong> 70–79</div>
+            <div class="col-chip"><strong>Col 9:</strong> 80–90</div>
+          </div>
+
+          <p style="font-size:13px; color:#94A3B8; margin-top: 14px;">
+            💡 <em>DabHousie generates tickets from an 8.1 trillion combination permutation algorithm to guarantee zero duplicate tickets across all players in your room.</em>
+          </p>
         </div>
-        <div class="ticket-grid">
-          <!-- Row 1 -->
-          <div class="ticket-cell active">8</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">21</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">45</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">63</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">88</div>
 
-          <!-- Row 2 -->
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">12</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">34</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">58</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">74</div>
-          <div class="ticket-cell active">81</div>
-
-          <!-- Row 3 -->
-          <div class="ticket-cell active">5</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">27</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">49</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">66</div>
-          <div class="ticket-cell active">77</div>
-          <div class="ticket-cell blank"></div>
+        <!-- Right Column: Sample 3x9 Ticket Visual -->
+        <div class="ticket-preview-wrapper">
+          <div class="ticket-preview-header">
+            <span class="ticket-brand">🎟️ Sample DabHousie Ticket</span>
+            <span class="ticket-meta">Ticket #018 • Room #300EC1</span>
+          </div>
+          <div class="ticket-scroll-wrap">
+            <table class="ticket-grid-table" aria-label="Sample 3x9 Housie Ticket">
+              <thead>
+                <tr>
+                  <th class="ticket-col-header">1–9</th>
+                  <th class="ticket-col-header">10–19</th>
+                  <th class="ticket-col-header">20–29</th>
+                  <th class="ticket-col-header">30–39</th>
+                  <th class="ticket-col-header">40–49</th>
+                  <th class="ticket-col-header">50–59</th>
+                  <th class="ticket-col-header">60–69</th>
+                  <th class="ticket-col-header">70–79</th>
+                  <th class="ticket-col-header">80–90</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <!-- Row 1: 5 numbers (8, 21, 45, 63, 88) -->
+                  <td class="ticket-cell dabbed"><span class="dab-mark">8</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">21</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">45</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">63</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">88</span></td>
+                </tr>
+                <tr>
+                  <!-- Row 2: 5 numbers (12, 34, 58, 74, 81) -->
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">12</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">34</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">58</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">74</td>
+                  <td class="ticket-cell number">81</td>
+                </tr>
+                <tr>
+                  <!-- Row 3: 5 numbers (5, 27, 49, 66, 77) -->
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">27</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">49</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">66</td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">77</span></td>
+                  <td class="ticket-cell number">90</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ticket-legend">
+            <span class="legend-item"><span class="legend-chip dabbed"></span> <strong>Dabbed</strong></span>
+            <span class="legend-item"><span class="legend-chip number"></span> <strong>Active (15 Total)</strong></span>
+            <span class="legend-item"><span class="legend-chip empty"></span> <strong>Blank (4/Row)</strong></span>
+          </div>
         </div>
       </div>
     </div>

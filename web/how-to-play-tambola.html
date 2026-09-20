@@ -153,59 +153,104 @@
     <!-- 3x9 Ticket Architecture -->
     <div class="content-card">
       <h2>🎫 Tambola Ticket Layout (3×9 Grid)</h2>
-      <p>
-        Every Tambola ticket consists of a <strong>3-row by 9-column grid (27 total cells)</strong> containing exactly <strong>15 numbers</strong>:
-      </p>
-      <ul style="padding-left: 20px; margin-bottom: 14px;">
-        <li>Each row has exactly <strong>5 numbers</strong> and <strong>4 blank spaces</strong>.</li>
-        <li>Numbers in each column are arranged in ascending order from top to bottom.</li>
-        <li>Columns represent distinct 10-digit decades (Column 1 is 1–9, Column 2 is 10–19, through Column 9 for 80–90).</li>
-      </ul>
+      
+      <div class="ticket-arch-layout">
+        <!-- Left Column: Rules & Column Breakup -->
+        <div class="ticket-arch-info">
+          <p>
+            Every Tambola ticket consists of a <strong>3-row by 9-column grid (27 total cells)</strong> containing exactly <strong>15 numbers</strong>:
+          </p>
+          <ul style="padding-left: 20px; margin-bottom: 12px;">
+            <li>Each horizontal row contains exactly <strong>5 numbers</strong> and <strong>4 blank spaces</strong>.</li>
+            <li>Numbers in each vertical column are arranged in strict <strong>ascending order</strong> from top to bottom.</li>
+            <li>Each column represents a distinct 10-digit decade range:</li>
+          </ul>
 
-      <!-- Sample Interactive Visual Ticket -->
-      <div class="sample-ticket" style="margin: 20px 0;">
-        <div class="ticket-header-strip">
-          <span>SAMPLE DABHOUSIE TAMBOLA TICKET</span>
-          <span>ROOM #7C2354</span>
+          <div class="ticket-columns-chip-grid">
+            <div class="col-chip"><strong>Col 1:</strong> 1–9</div>
+            <div class="col-chip"><strong>Col 2:</strong> 10–19</div>
+            <div class="col-chip"><strong>Col 3:</strong> 20–29</div>
+            <div class="col-chip"><strong>Col 4:</strong> 30–39</div>
+            <div class="col-chip"><strong>Col 5:</strong> 40–49</div>
+            <div class="col-chip"><strong>Col 6:</strong> 50–59</div>
+            <div class="col-chip"><strong>Col 7:</strong> 60–69</div>
+            <div class="col-chip"><strong>Col 8:</strong> 70–79</div>
+            <div class="col-chip"><strong>Col 9:</strong> 80–90</div>
+          </div>
+
+          <p style="font-size:13px; color:#94A3B8; margin-top: 14px;">
+            💡 <em>DabHousie generates tickets from an 8.1 trillion combination permutation algorithm to guarantee zero duplicate tickets across all players in your room.</em>
+          </p>
         </div>
-        <div class="ticket-grid">
-          <!-- Row 1 -->
-          <div class="ticket-cell active">4</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">23</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">47</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">62</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">89</div>
 
-          <!-- Row 2 -->
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">15</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">38</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">54</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">71</div>
-          <div class="ticket-cell active">83</div>
-
-          <!-- Row 3 -->
-          <div class="ticket-cell active">7</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">29</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">41</div>
-          <div class="ticket-cell blank"></div>
-          <div class="ticket-cell active">68</div>
-          <div class="ticket-cell active">79</div>
-          <div class="ticket-cell blank"></div>
+        <!-- Right Column: Sample 3x9 Ticket Visual -->
+        <div class="ticket-preview-wrapper">
+          <div class="ticket-preview-header">
+            <span class="ticket-brand">🎟️ Sample DabHousie Ticket</span>
+            <span class="ticket-meta">Ticket #042 • Room #7C2354</span>
+          </div>
+          <div class="ticket-scroll-wrap">
+            <table class="ticket-grid-table" aria-label="Sample 3x9 Tambola Ticket">
+              <thead>
+                <tr>
+                  <th class="ticket-col-header">1–9</th>
+                  <th class="ticket-col-header">10–19</th>
+                  <th class="ticket-col-header">20–29</th>
+                  <th class="ticket-col-header">30–39</th>
+                  <th class="ticket-col-header">40–49</th>
+                  <th class="ticket-col-header">50–59</th>
+                  <th class="ticket-col-header">60–69</th>
+                  <th class="ticket-col-header">70–79</th>
+                  <th class="ticket-col-header">80–90</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <!-- Row 1: 5 numbers (4, 21, 47, 53, 72) -->
+                  <td class="ticket-cell dabbed"><span class="dab-mark">4</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">21</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">47</td>
+                  <td class="ticket-cell number">53</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">72</span></td>
+                  <td class="ticket-cell empty"></td>
+                </tr>
+                <tr>
+                  <!-- Row 2: 5 numbers (15, 34, 58, 65, 83) -->
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">15</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">34</span></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">58</td>
+                  <td class="ticket-cell number">65</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">83</td>
+                </tr>
+                <tr>
+                  <!-- Row 3: 5 numbers (7, 28, 49, 78, 90) -->
+                  <td class="ticket-cell number">7</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">28</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell number">49</td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell empty"></td>
+                  <td class="ticket-cell dabbed"><span class="dab-mark">78</span></td>
+                  <td class="ticket-cell number">90</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="ticket-legend">
+            <span class="legend-item"><span class="legend-chip dabbed"></span> <strong>Dabbed</strong></span>
+            <span class="legend-item"><span class="legend-chip number"></span> <strong>Active (15 Total)</strong></span>
+            <span class="legend-item"><span class="legend-chip empty"></span> <strong>Blank (4/Row)</strong></span>
+          </div>
         </div>
       </div>
-      <p style="font-size:13px; color:#94A3B8;">
-        💡 <em>DabHousie generates tickets from an 8.1 trillion permutation algorithm to guarantee zero duplicate tickets across all players in your room.</em>
-      </p>
     </div>
 
     <!-- Winning Patterns & Dividends -->

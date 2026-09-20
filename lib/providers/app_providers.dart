@@ -7,6 +7,7 @@ import '../models/mpt_claim.dart';
 import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
 import '../models/mpt_reward.dart';
+import '../models/mpt_seat_otp.dart';
 import '../models/mpt_ticket.dart';
 import '../models/mpt_user.dart';
 import '../models/mpt_wallet.dart';
@@ -185,5 +186,10 @@ final myHostedGamesProvider = FutureProvider.autoDispose<List<MptGame>>((ref) as
 // My Joined Games Provider (Player Dashboard)
 final myJoinedGamesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   return ref.watch(gameRepositoryProvider).getMyJoinedGames();
+});
+
+// Live Seat OTPs Stream Provider (Admin Private Party Lobby)
+final gameSeatOtpsStreamProvider = StreamProvider.autoDispose.family<List<MptSeatOtp>, String>((ref, gameId) {
+  return ref.watch(gameRepositoryProvider).watchGameSeatOtps(gameId);
 });
 

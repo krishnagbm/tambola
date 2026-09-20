@@ -9,6 +9,7 @@ import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
+import '../../../models/mpt_seat_otp.dart';
 import '../../../providers/app_providers.dart';
 
 class AdminLobbyScreen extends ConsumerStatefulWidget {
@@ -453,6 +454,11 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
 
                         _buildActionButtons(game, confirmed.length, waiting.length, walletCredits),
                         const SizedBox(height: 24),
+
+                        if (game.isPrivate) ...[
+                          _buildPrivateSeatsManagementSection(game),
+                          const SizedBox(height: 24),
+                        ],
 
                         _buildRegistrationsSection(registrations),
                       ],
@@ -928,4 +934,437 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       ],
     );
   }
+
+  Widget _buildPrivateSeatsManagementSection(MptGame game) {
+    final otpsStream = ref.watch(gameSeatOtpsStreamProvider(game.id));
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.lock_rounded, color: AppTheme.accentPartyPurple, size: 22),
+                    SizedBox(width: 8),
+                    Text(
+                      'Private Party Seat Passcodes',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentPartyPurple.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.accentPartyPurple),
+                  ),
+                  child: const Text(
+                    'ZERO-PII',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentPartyPurple),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Distribute one unique passcode to each member. Once entered, the seat is bound to that player.',
+              style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
+            ),
+            const SizedBox(height: 14),
+
+            otpsStream.when(
+              loading: () => const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator())),
+              error: (e, _) => Text('Error loading seats: $e', style: const TextStyle(color: AppTheme.accentDanger)),
+              data: (otps) {
+                final claimedCount = otps.where((o) => o.isClaimed).length;
+                final unclaimedCount = otps.where((o) => o.isUnclaimed).length;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats and Batch Actions Bar
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          'Seats: ${otps.length} Total  •  $claimedCount Claimed  •  $unclaimedCount Unclaimed',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFE2E8F0)),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _handleCopyAllOtps(game, otps),
+                              icon: const Icon(Icons.copy, size: 14, color: AppTheme.secondaryColor),
+                              label: const Text('Copy All', style: TextStyle(fontSize: 12, color: AppTheme.secondaryColor)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                side: const BorderSide(color: AppTheme.secondaryColor),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              onPressed: () => _handleResendEmail(game),
+                              icon: const Icon(Icons.email_outlined, size: 14, color: AppTheme.primaryLight),
+                              label: const Text('Email List', style: TextStyle(fontSize: 12, color: AppTheme.primaryLight)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                side: const BorderSide(color: AppTheme.primaryLight),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: () => _handleAddPrivateSeatsDialog(game),
+                              icon: const Icon(Icons.add, size: 14),
+                              label: const Text('+ Add Seats', style: TextStyle(fontSize: 12)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.accentPartyPurple,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Grid / List of Seats
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 280),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: otps.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 6),
+                        itemBuilder: (ctx, index) {
+                          final seat = otps[index];
+                          Color badgeBg;
+                          Color badgeColor;
+                          String badgeText;
+
+                          if (seat.isClaimed) {
+                            badgeBg = AppTheme.accentSuccess.withValues(alpha: 0.2);
+                            badgeColor = AppTheme.accentSuccess;
+                            badgeText = 'CLAIMED';
+                          } else if (seat.isRevoked) {
+                            badgeBg = Colors.grey.withValues(alpha: 0.2);
+                            badgeColor = Colors.grey;
+                            badgeText = 'REVOKED';
+                          } else {
+                            badgeBg = AppTheme.accentPartyPurple.withValues(alpha: 0.2);
+                            badgeColor = AppTheme.accentPartyPurple;
+                            badgeText = 'UNCLAIMED';
+                          }
+
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkSurface,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFF2E334D)),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 13,
+                                  backgroundColor: AppTheme.accentPartyPurple.withValues(alpha: 0.2),
+                                  child: Text(
+                                    '#${seat.seatNumber}',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.accentPartyPurple),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: badgeBg,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    badgeText,
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: SelectableText(
+                                    seat.isRevoked ? '---' : seat.otpCode,
+                                    style: TextStyle(
+                                      fontFamily: 'monospace',
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 2,
+                                      color: seat.isClaimed ? const Color(0xFF94A3B8) : Colors.white,
+                                      decoration: seat.isRevoked ? TextDecoration.lineThrough : null,
+                                    ),
+                                  ),
+                                ),
+                                if (seat.isUnclaimed)
+                                  IconButton(
+                                    icon: const Icon(Icons.copy, size: 16, color: AppTheme.primaryLight),
+                                    tooltip: 'Copy Seat Passcode',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      Clipboard.setData(ClipboardData(text: seat.otpCode));
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Seat #${seat.seatNumber} passcode (${seat.otpCode}) copied!')),
+                                      );
+                                    },
+                                  ),
+                                const SizedBox(width: 8),
+                                PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
+                                  color: AppTheme.darkCard,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  onSelected: (val) {
+                                    if (val == 'reissue') {
+                                      _handleReissueSeatOtp(game, seat);
+                                    } else if (val == 'revoke') {
+                                      _handleRevokeSeatOtp(game, seat);
+                                    }
+                                  },
+                                  itemBuilder: (_) => [
+                                    const PopupMenuItem(
+                                      value: 'reissue',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.refresh, size: 16, color: AppTheme.secondaryColor),
+                                          SizedBox(width: 8),
+                                          Text('Reissue Fresh Passcode', style: TextStyle(fontSize: 13)),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!seat.isRevoked)
+                                      const PopupMenuItem(
+                                        value: 'revoke',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.block, size: 16, color: AppTheme.accentDanger),
+                                            SizedBox(width: 8),
+                                            Text('Revoke Seat', style: TextStyle(fontSize: 13, color: AppTheme.accentDanger)),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleReissueSeatOtp(MptGame game, MptSeatOtp seat) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.refresh, color: AppTheme.secondaryColor),
+            SizedBox(width: 8),
+            Text('Reissue Seat Passcode', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Reissue a brand new passcode for Seat #${seat.seatNumber}?\n\n'
+          'The old passcode (${seat.otpCode}) will immediately stop working, and any player currently holding this seat will be removed.',
+          style: const TextStyle(fontSize: 13.5, color: Color(0xFFCBD5E1)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: Colors.black),
+            child: const Text('Reissue', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).reissueSeatOtp(gameId: game.id, seatId: seat.id);
+      ref.invalidate(gameSeatOtpsStreamProvider(game.id));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Seat #${seat.seatNumber} passcode reissued successfully!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to reissue passcode: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  Future<void> _handleRevokeSeatOtp(MptGame game, MptSeatOtp seat) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.block, color: AppTheme.accentDanger),
+            SizedBox(width: 8),
+            Text('Revoke Seat', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Revoke Seat #${seat.seatNumber}?\n\n'
+          'This seat will be marked as REVOKED and cannot be used by anyone.',
+          style: const TextStyle(fontSize: 13.5, color: Color(0xFFCBD5E1)),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentDanger, foregroundColor: Colors.white),
+            child: const Text('Revoke', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).revokeSeatOtp(gameId: game.id, seatId: seat.id);
+      ref.invalidate(gameSeatOtpsStreamProvider(game.id));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Seat #${seat.seatNumber} revoked.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to revoke seat: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  void _handleAddPrivateSeatsDialog(MptGame game) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.add_circle_outline, color: AppTheme.accentPartyPurple),
+            SizedBox(width: 8),
+            Text('Add Private Seats', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Select how many additional seats & single-use passcodes to generate:',
+              style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [5, 10, 15, 25].map((count) {
+                return ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await ref.read(gameRepositoryProvider).addSeatOtps(gameId: game.id, additionalSeats: count);
+                      ref.invalidate(gameStreamProvider(game.id));
+                      ref.invalidate(gameSeatOtpsStreamProvider(game.id));
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('+$count private seats added successfully!')),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to add seats: $e'), backgroundColor: AppTheme.accentDanger),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.darkSurface),
+                  child: Text('+$count Seats', style: const TextStyle(fontWeight: FontWeight.bold)),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ],
+      ),
+    );
+  }
+
+  void _handleCopyAllOtps(MptGame game, List<MptSeatOtp> otps) {
+    final joinUrl = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
+    final buffer = StringBuffer();
+    buffer.writeln('🔒 Private Party: ${game.name}');
+    buffer.writeln('👉 Join Link: $joinUrl');
+    buffer.writeln('🔑 Party Code: ${game.inviteCode}');
+    buffer.writeln('\nSingle-Use Seat Passcodes:');
+
+    for (final seat in otps) {
+      if (!seat.isRevoked) {
+        buffer.writeln('Seat #${seat.seatNumber}: ${seat.otpCode}');
+      }
+    }
+
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('All private party passcodes copied to clipboard!')),
+    );
+  }
+
+  Future<void> _handleResendEmail(MptGame game) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Sending private party passcodes to your email...')),
+    );
+    try {
+      final success = await ref.read(gameRepositoryProvider).sendPrivatePartyEmail(gameId: game.id);
+      if (!mounted) return;
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email with passcodes sent successfully!'), backgroundColor: AppTheme.accentSuccess),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Passcodes generated. You can copy them directly using "Copy All".')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can copy the passcodes directly using the "Copy All" button.')),
+      );
+    }
+  }
 }
+

@@ -21,6 +21,7 @@ class JoinGameScreen extends ConsumerStatefulWidget {
 
 class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   late TextEditingController _codeController;
+  final TextEditingController _otpController = TextEditingController();
   final TextEditingController _nameInputController = TextEditingController();
   MptGame? _previewGame;
   bool _isSearching = false;
@@ -39,6 +40,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   @override
   void dispose() {
     _codeController.dispose();
+    _otpController.dispose();
     _nameInputController.dispose();
     super.dispose();
   }
@@ -88,6 +90,21 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
       );
       return;
     }
+
+    // Validate OTP if private game
+    if (_previewGame!.isPrivate) {
+      final otpText = _otpController.text.trim();
+      if (otpText.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('This is a Private Party. Please enter your single-use Seat Passcode / OTP provided by your host.'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
+    }
+
     final user = ref.read(currentUserProvider).value;
     if (user == null) return;
 
@@ -162,18 +179,40 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
 
     setState(() => _isRegistering = true);
     try {
-      await ref.read(gameRepositoryProvider).registerPlayer(
-            gameId: _previewGame!.id,
-            displayName: effectiveDisplayName,
-            avatar: effectiveAvatar,
-          );
+      final gameRepo = ref.read(gameRepositoryProvider);
+
+      // If private party, claim seat OTP first
+      if (_previewGame!.isPrivate) {
+        final otpText = _otpController.text.trim();
+        await gameRepo.claimSeatOtp(
+          gameId: _previewGame!.id,
+          otpCode: otpText,
+        );
+      }
+
+      await gameRepo.registerPlayer(
+        gameId: _previewGame!.id,
+        displayName: effectiveDisplayName,
+        avatar: effectiveAvatar,
+      );
 
       if (!mounted) return;
       context.go('/game-status/${_previewGame!.id}');
     } catch (e) {
       if (!mounted) return;
+      String errorMsg = e.toString();
+      if (errorMsg.contains('OTP_ALREADY_CLAIMED')) {
+        errorMsg = 'This seat passcode has already been claimed by another player.';
+      } else if (errorMsg.contains('INVALID_OTP')) {
+        errorMsg = 'Invalid seat passcode. Please verify the OTP given by your organizer.';
+      } else if (errorMsg.contains('OTP_REVOKED')) {
+        errorMsg = 'This seat passcode has been revoked by the organizer.';
+      } else if (errorMsg.contains('PRIVATE_GAME_OTP_REQUIRED')) {
+        errorMsg = 'A valid seat passcode is required to join this private party.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration failed: $e'), backgroundColor: AppTheme.accentDanger),
+        SnackBar(content: Text('Join failed: $errorMsg'), backgroundColor: AppTheme.accentDanger),
       );
     } finally {
       if (mounted) setState(() => _isRegistering = false);
@@ -248,6 +287,12 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                   _buildGamePreviewCard(_previewGame!),
                   const SizedBox(height: 20),
 
+                  // Private Party Seat OTP Input
+                  if (_previewGame!.isPrivate) ...[
+                    _buildPrivateOtpCard(),
+                    const SizedBox(height: 20),
+                  ],
+
                   // Player Gameplay Identity Check
                   userState.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
@@ -282,6 +327,56 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
     );
   }
 
+  Widget _buildPrivateOtpCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.accentPartyPurple.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.lock_rounded, color: AppTheme.accentPartyPurple, size: 22),
+              SizedBox(width: 8),
+              Text(
+                'Private Party — Seat Passcode Required',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'This is a private corporate/team party. Enter the unique 6-digit seat passcode assigned to you by your organizer:',
+            style: TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _otpController,
+            keyboardType: TextInputType.text,
+            textCapitalization: TextCapitalization.characters,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 2, color: AppTheme.accentPartyPurple),
+            decoration: InputDecoration(
+              labelText: 'Single-Use Seat Passcode / OTP',
+              hintText: 'e.g. 581924',
+              prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppTheme.accentPartyPurple),
+              filled: true,
+              fillColor: AppTheme.darkSurface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppTheme.accentPartyPurple, width: 2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGamePreviewCard(MptGame game) {
     return Card(
       child: Padding(
@@ -293,9 +388,36 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    game.name,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          game.name,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                      if (game.isPrivate) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentPartyPurple,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock_rounded, size: 10, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'PRIVATE',
+                                style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 Container(
@@ -318,7 +440,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                 const Icon(Icons.people_outline, size: 18, color: AppTheme.secondaryColor),
                 const SizedBox(width: 8),
                 Text(
-                  'Funded Capacity: ${game.fundedCapacity} Seats',
+                  'Funded Capacity: ${game.fundedCapacity} Seats ${game.isPrivate ? "(Private OTP)" : ""}',
                   style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
                 ),
               ],

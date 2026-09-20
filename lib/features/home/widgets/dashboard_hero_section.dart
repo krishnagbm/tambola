@@ -216,6 +216,8 @@ class DashboardHeroSection extends ConsumerWidget {
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                   Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
+                  Text('🛡️ Private Parties (Seat OTPs)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
                   Text('🙅 Zero app download for guests', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
                 ],
               ),

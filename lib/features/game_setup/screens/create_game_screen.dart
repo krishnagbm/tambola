@@ -41,7 +41,17 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   late final TextEditingController _nameController;
   int _selectedCapacity = 5;
   String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
+  bool _isPrivate = false;
   bool _isLoading = false;
+
+  int _getPrivateCredits(int maxPlayers) {
+    if (maxPlayers <= 5) return 5;
+    if (maxPlayers <= 15) return 20;
+    if (maxPlayers <= 25) return 35;
+    if (maxPlayers <= 50) return 70;
+    if (maxPlayers <= 100) return 135;
+    return 325;
+  }
 
   DateTime? _scheduledDateTime;
 
@@ -109,6 +119,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         plannedCapacityTierId: tierUuid,
         scheduledAt: _scheduledDateTime,
         prizesConfig: activePrizes,
+        isPrivate: _isPrivate,
       );
 
       if (!mounted) return;
@@ -207,6 +218,29 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               'Initial Funded Capacity: ${game.fundedCapacity} Seats (Overflow players will automatically join the Waiting List).',
               style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
             ),
+            if (game.isPrivate) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.lock_outline_rounded, color: AppTheme.accentPartyPurple, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '🔒 Private Party Mode: Single-use passcodes for each seat have been created & emailed to you. You can view, copy, and manage them anytime in your Organizer Lobby.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
         actions: [
@@ -311,7 +345,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     ),
                     validator: (val) => val == null || val.trim().isEmpty ? 'Please enter game name' : null,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  _buildPrivatePartyToggle(),
+                  const SizedBox(height: 16),
 
                   _buildSchedulePicker(),
                   const SizedBox(height: 24),
@@ -608,6 +645,78 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
+  Widget _buildPrivatePartyToggle() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: _isPrivate ? AppTheme.accentPartyPurple.withValues(alpha: 0.15) : AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isPrivate ? AppTheme.accentPartyPurple : const Color(0xFF2E334D),
+          width: _isPrivate ? 1.5 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _isPrivate ? AppTheme.accentPartyPurple.withValues(alpha: 0.25) : AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _isPrivate ? Icons.lock_rounded : Icons.public_rounded,
+              color: _isPrivate ? AppTheme.accentPartyPurple : const Color(0xFF94A3B8),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Private Party Mode',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    if (_isPrivate) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentPartyPurple,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'RESTRICTED',
+                          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _isPrivate
+                      ? 'Single-use OTPs generated for each seat. Only invited team members can join (Zero PII).'
+                      : 'Standard party: Anyone with the 6-character code can enter and join.',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: _isPrivate,
+            activeColor: AppTheme.accentPartyPurple,
+            onChanged: (val) => setState(() => _isPrivate = val),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCapacitySelector() {
     final tiersState = ref.watch(capacityTiersProvider);
     final tiers = tiersState.value ?? MptCapacityTier.defaultTiers;
@@ -629,6 +738,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           final isSelected = _selectedTierId == tier.id ||
               (_selectedTierId == null && _selectedCapacity == tier.maxPlayers) ||
               (_selectedCapacity == tier.maxPlayers);
+          final privateCredits = _getPrivateCredits(tier.maxPlayers);
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
@@ -653,15 +764,27 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Row(
+                          children: [
+                            Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            if (_isPrivate) ...[
+                              const SizedBox(width: 6),
+                              const Icon(Icons.lock_outline, size: 13, color: AppTheme.accentPartyPurple),
+                            ],
+                          ],
+                        ),
                         Text(
-                          tier.creditsRequired == 0
-                              ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
-                              : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits',
+                          _isPrivate
+                              ? '${tier.minPlayers}–${tier.maxPlayers} Seats • $privateCredits Credits (Private OTP)'
+                              : (tier.creditsRequired == 0
+                                  ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
+                                  : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits'),
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight: tier.creditsRequired == 0 ? FontWeight.bold : FontWeight.normal,
-                            color: tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                            fontWeight: (!_isPrivate && tier.creditsRequired == 0) ? FontWeight.bold : FontWeight.normal,
+                            color: _isPrivate
+                                ? AppTheme.accentPartyPurple
+                                : (tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor),
                           ),
                         ),
                       ],
@@ -669,7 +792,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     Radio<String>(
                       value: tier.id,
                       groupValue: isSelected ? tier.id : null,
-                      activeColor: AppTheme.primaryColor,
+                      activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
                       onChanged: (val) => setState(() {
                         _selectedTierId = tier.id;
                         _selectedCapacity = tier.maxPlayers;
@@ -689,12 +812,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildStaticCapacityOptions() {
     final options = [
-      {'capacity': 5, 'label': '1–5 Players', 'desc': 'Family Pack • Free (0 Credits)*'},
-      {'capacity': 15, 'label': '6–15 Players', 'desc': 'Small Party • 15 Credits'},
-      {'capacity': 25, 'label': '16–25 Players', 'desc': 'Medium Group • 25 Credits'},
-      {'capacity': 50, 'label': '26–50 Players', 'desc': 'Large Group • 50 Credits'},
-      {'capacity': 100, 'label': '51–100 Players', 'desc': 'Club Event • 100 Credits'},
-      {'capacity': 250, 'label': '101–250 Players', 'desc': 'Mega Event • 250 Credits'},
+      {'capacity': 5, 'label': '1–5 Players', 'publicDesc': 'Family Pack • Free (0 Credits)*', 'privateCredits': 5},
+      {'capacity': 15, 'label': '6–15 Players', 'publicDesc': 'Small Party • 15 Credits', 'privateCredits': 20},
+      {'capacity': 25, 'label': '16–25 Players', 'publicDesc': 'Medium Group • 25 Credits', 'privateCredits': 35},
+      {'capacity': 50, 'label': '26–50 Players', 'publicDesc': 'Large Group • 50 Credits', 'privateCredits': 70},
+      {'capacity': 100, 'label': '51–100 Players', 'publicDesc': 'Club Event • 100 Credits', 'privateCredits': 135},
+      {'capacity': 250, 'label': '101–250 Players', 'publicDesc': 'Mega Event • 250 Credits', 'privateCredits': 325},
     ];
 
     return Column(
@@ -702,6 +825,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ...options.map((opt) {
           final cap = opt['capacity'] as int;
           final isSelected = _selectedCapacity == cap;
+          final privCredits = opt['privateCredits'] as int;
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
@@ -724,13 +849,21 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(opt['label'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        Text(opt['desc'] as String, style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+                        Text(
+                          _isPrivate
+                              ? '$cap Seats • $privCredits Credits (Private OTP)'
+                              : opt['publicDesc'] as String,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _isPrivate ? AppTheme.accentPartyPurple : const Color(0xFFA0AEC0),
+                          ),
+                        ),
                       ],
                     ),
                     Radio<int>(
                       value: cap,
                       groupValue: _selectedCapacity,
-                      activeColor: AppTheme.primaryColor,
+                      activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
                       onChanged: (val) => setState(() => _selectedCapacity = val!),
                     ),
                   ],

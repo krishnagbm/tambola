@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
+import '../models/mpt_seat_otp.dart';
 
 class GameRepository {
   final SupabaseClient _supabase;
@@ -14,6 +15,7 @@ class GameRepository {
     String? plannedCapacityTierId,
     DateTime? scheduledAt,
     List<String>? prizesConfig,
+    bool isPrivate = false,
   }) async {
     // Validate UUID format; pass null if not a valid UUID string
     String? effectiveTierId = plannedCapacityTierId;
@@ -29,11 +31,16 @@ class GameRepository {
         'p_planned_capacity': plannedCapacity,
         'p_scheduled_at': scheduledAt?.toIso8601String(),
         'p_prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
-        'p_planned_capacity_tier_id': effectiveTierId,
+        'p_is_private': isPrivate,
       });
 
       if (res is Map<String, dynamic>) {
-        return MptGame.fromJson(res);
+        final game = MptGame.fromJson(res);
+        // If private, trigger organizer email in background
+        if (isPrivate) {
+          sendPrivatePartyEmail(gameId: game.id).catchError((_) => false);
+        }
+        return game;
       }
       throw Exception('Invalid response format when creating game');
     } catch (e) {
@@ -49,6 +56,7 @@ class GameRepository {
         'initial_funded_capacity': plannedCapacity,
         'funded_capacity': plannedCapacity,
         'scheduled_at': scheduledAt?.toIso8601String(),
+        'is_private': isPrivate,
         'prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
       }).select().single();
       return MptGame.fromJson(row);
@@ -283,6 +291,108 @@ class GameRepository {
         yield list;
       } catch (_) {}
       await Future.delayed(const Duration(seconds: 2));
+    }
+  }
+
+  /// Claims a single-use seat OTP for the current user
+  Future<Map<String, dynamic>> claimSeatOtp({
+    required String gameId,
+    required String otpCode,
+  }) async {
+    final res = await _supabase.rpc('MPT_claim_seat_otp', params: {
+      'p_game_id': gameId,
+      'p_otp_code': otpCode.trim().toUpperCase(),
+    });
+    if (res is Map<String, dynamic>) {
+      return res;
+    }
+    return {'success': true};
+  }
+
+  /// Fetches all seat OTPs for a private game (Admin only)
+  Future<List<MptSeatOtp>> getGameSeatOtps(String gameId) async {
+    try {
+      final res = await _supabase
+          .from('MPT_game_seat_otps')
+          .select()
+          .eq('game_id', gameId)
+          .order('seat_number', ascending: true);
+
+      return (res as List).map((e) => MptSeatOtp.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Smart polling stream for seat OTPs in Admin Lobby (2s interval)
+  Stream<List<MptSeatOtp>> watchGameSeatOtps(String gameId) async* {
+    while (true) {
+      try {
+        final list = await getGameSeatOtps(gameId);
+        yield list;
+      } catch (_) {}
+      await Future.delayed(const Duration(seconds: 2));
+    }
+  }
+
+  /// Reissues a fresh single-use OTP for a seat
+  Future<void> reissueSeatOtp({
+    required String gameId,
+    required String seatId,
+  }) async {
+    await _supabase.rpc('MPT_reissue_seat_otp', params: {
+      'p_game_id': gameId,
+      'p_seat_id': seatId,
+    });
+  }
+
+  /// Adds additional seat OTPs to a private party
+  Future<void> addSeatOtps({
+    required String gameId,
+    required int additionalSeats,
+  }) async {
+    await _supabase.rpc('MPT_add_seat_otps', params: {
+      'p_game_id': gameId,
+      'p_additional_seats': additionalSeats,
+    });
+  }
+
+  /// Revokes a seat OTP
+  Future<void> revokeSeatOtp({
+    required String gameId,
+    required String seatId,
+  }) async {
+    await _supabase.rpc('MPT_revoke_seat_otp', params: {
+      'p_game_id': gameId,
+      'p_seat_id': seatId,
+    });
+  }
+
+  /// Triggers email delivery of OTP passcodes to the organizer
+  Future<bool> sendPrivatePartyEmail({required String gameId}) async {
+    try {
+      final game = await getGame(gameId);
+      final otps = await getGameSeatOtps(gameId);
+      final adminProfile = await _supabase
+          .from('MPT_admin_profiles')
+          .select('email')
+          .eq('user_id', game.adminUserId)
+          .maybeSingle();
+
+      final email = adminProfile?['email'] as String? ?? _supabase.auth.currentUser?.email;
+      if (email == null || email.isEmpty) return false;
+
+      // Call the backend Edge function / API endpoint if configured
+      await _supabase.functions.invoke('send-private-party-email', body: {
+        'to_email': email,
+        'game_name': game.name,
+        'invite_code': game.inviteCode,
+        'otps': otps.map((o) => {'seat_number': o.seatNumber, 'otp_code': o.otpCode}).toList(),
+        'scheduled_at': game.scheduledAt?.toIso8601String(),
+      });
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }

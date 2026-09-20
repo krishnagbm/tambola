@@ -15,6 +15,13 @@ class UspGridSection extends StatelessWidget {
       'actionTopic': null,
     },
     {
+      'icon': Icons.lock_rounded,
+      'title': 'Private Parties & Zero-PII',
+      'desc': 'Single-use OTPs for teams. Zero data liabilities—no emails or phone numbers stored.',
+      'color': AppTheme.accentPartyPurple, // Purple
+      'actionTopic': null,
+    },
+    {
       'icon': Icons.confirmation_number_outlined,
       'title': '100K+ Unique Tickets',
       'desc': 'Built on an 8.1 trillion-combination ticket space designed to eliminate duplicate tickets.',
@@ -32,7 +39,7 @@ class UspGridSection extends StatelessWidget {
       'icon': Icons.auto_awesome_rounded,
       'title': 'Custom Winning Patterns',
       'desc': 'Standard Jaldi 5, Lines, Full House, or bespoke corporate patterns on demand.',
-      'color': AppTheme.accentPartyPurple, // Purple
+      'color': AppTheme.secondaryColor, // Yellow
       'actionTopic': 'Custom Winning Patterns',
     },
     {
@@ -40,13 +47,6 @@ class UspGridSection extends StatelessWidget {
       'title': 'Big-Screen Caller Cast',
       'desc': 'Cast live board & numbers to TV or projector for room-wide excitement.',
       'color': AppTheme.primaryLight, // Navy
-      'actionTopic': null,
-    },
-    {
-      'icon': Icons.bolt_outlined,
-      'title': 'Instant Guest Join',
-      'desc': 'No app download or account needed. Just enter code & pick an avatar.',
-      'color': AppTheme.secondaryColor, // Yellow
       'actionTopic': null,
     },
   ];

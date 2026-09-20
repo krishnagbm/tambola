@@ -5,7 +5,6 @@ import 'package:tambola/core/config/app_config.dart';
 import 'package:tambola/core/constants/app_assets.dart';
 import 'package:tambola/core/theme/app_theme.dart';
 import 'package:tambola/features/auth/widgets/auth_dialog.dart';
-import 'package:tambola/features/home/widgets/dashboard_footer.dart';
 import 'package:tambola/features/home/widgets/dashboard_hero_section.dart';
 import 'package:tambola/features/home/widgets/how_it_works_section.dart';
 import 'package:tambola/features/home/widgets/opening_screen.dart';
@@ -45,14 +44,14 @@ void main() {
     );
 
     expect(find.text('🎉 Live Tambola, Housie & 90-Ball Bingo'), findsOneWidget);
-    expect(find.text('Play Tambola, Housie & 90-Ball Bingo.\nConnect. Win.'), findsOneWidget);
-    expect(find.textContaining('Live multiplayer for friends, family, parties'), findsOneWidget);
-    expect(find.textContaining('Join a Game'), findsOneWidget);
-    expect(find.textContaining('Host Game'), findsOneWidget);
-    expect(find.textContaining('Host Party'), findsOneWidget);
+    expect(find.text('Play Tambola. Connect. Win.'), findsOneWidget);
+    expect(find.textContaining('Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family'), findsOneWidget);
+    expect(find.textContaining('Join a Game'), findsWidgets);
+    expect(find.textContaining('Host a Game'), findsWidgets);
     expect(find.text('📺 Live Projector & TV Mode'), findsOneWidget);
     expect(find.text('⚡ Smart Waitlist Auto-Promotion'), findsOneWidget);
     expect(find.text('✅ 100K+ Unique tickets (8.1T space)'), findsOneWidget);
+    expect(find.text('🛡️ Private Parties (Seat OTPs)'), findsOneWidget);
   });
 
   testWidgets('OrganizerPlayerSplit renders dual split cards', (tester) async {
@@ -102,11 +101,11 @@ void main() {
 
     expect(find.text('Why DabHousie?'), findsOneWidget);
     expect(find.text('Fair Play, Guaranteed'), findsOneWidget);
+    expect(find.text('Private Parties & Zero-PII'), findsOneWidget);
     expect(find.text('100K+ Unique Tickets'), findsOneWidget);
     expect(find.text('Mega-X Enterprise Scale'), findsOneWidget);
     expect(find.text('Custom Winning Patterns'), findsOneWidget);
     expect(find.text('Big-Screen Caller Cast'), findsOneWidget);
-    expect(find.text('Instant Guest Join'), findsOneWidget);
   });
 
   testWidgets('HowItWorksSection and PerfectForChipsSection render properly', (tester) async {
@@ -119,7 +118,6 @@ void main() {
               children: [
                 HowItWorksSection(),
                 PerfectForChipsSection(),
-                DashboardFooter(),
               ],
             ),
           ),
@@ -132,9 +130,9 @@ void main() {
     expect(find.text('Guests join free'), findsOneWidget);
     expect(find.text('Call numbers live'), findsOneWidget);
     expect(find.text('Perfect For Every Celebration'), findsOneWidget);
+    expect(find.text('Private Team Parties (OTP)'), findsOneWidget);
     expect(find.text('Kitty Parties & Socials'), findsOneWidget);
     expect(find.text('Family Game Nights'), findsOneWidget);
-    expect(find.text('Play • Connect • Win'), findsOneWidget);
   });
 
   testWidgets('OpeningScreen renders with DabHousie tagline and pulsing indicators', (tester) async {
