@@ -159,14 +159,71 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
-          TextButton(
-            onPressed: () => launchUrl(
-              Uri.parse('${AppConfig.appBaseUrl}/90-ball-bingo.html'),
-              webOnlyWindowName: '_self',
+          PopupMenuButton<String>(
+            tooltip: 'Game Guides',
+            offset: const Offset(0, 40),
+            color: AppTheme.darkCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: Color(0xFF2E334D)),
             ),
-            child: const Text(
-              '90-Ball Bingo Guide',
-              style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
+            onSelected: (url) {
+              launchUrl(Uri.parse(url), webOnlyWindowName: '_self');
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/how-to-play-tambola.html',
+                child: const Row(
+                  children: [
+                    Text('🎯', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tambola Guide (Jaldi 5 & Rules)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/how-to-play-housie.html',
+                child: const Row(
+                  children: [
+                    Text('🎲', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Housie Guide (Party Rules & Caller)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/90-ball-bingo.html',
+                child: const Row(
+                  children: [
+                    Text('🎱', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      '90-Ball Bingo Guide (Standard Rules)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Game Guides',
+                    style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(width: 2),
+                  Icon(Icons.arrow_drop_down, color: Color(0xFFCBD5E1), size: 16),
+                ],
+              ),
             ),
           ),
           TextButton(
