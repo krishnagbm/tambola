@@ -109,6 +109,28 @@ Resources:
             Path: /credits/webhook
             Method: post
 
+  # ── 3. Email Dispatch Function ─────────────────────────────────────
+  SendEmailFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: functions.send_email.handler
+      Description: Dispatches Private Party passcodes and notifications via AWS SES
+      Policies:
+        - SESCrudPolicy:
+            IdentityName: '*'
+      Events:
+        EmailPost:
+          Type: Api
+          Properties:
+            Path: /email/private-party
+            Method: post
+        EmailOptions:
+          Type: Api
+          Properties:
+            Path: /email/private-party
+            Method: options
+
 Outputs:
   CheckoutApiEndpoint:
     Description: 'API Gateway endpoint URL for Checkout'
@@ -116,3 +138,6 @@ Outputs:
   WebhookApiEndpoint:
     Description: 'Webhook URL to configure in Stripe Dashboard'
     Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook'
+  EmailApiEndpoint:
+    Description: 'API Gateway endpoint URL for Private Party Email Dispatch'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/private-party'

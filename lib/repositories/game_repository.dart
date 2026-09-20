@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
@@ -369,30 +371,80 @@ class GameRepository {
   }
 
   /// Triggers email delivery of OTP passcodes to the organizer
-  Future<bool> sendPrivatePartyEmail({required String gameId}) async {
+  Future<Map<String, dynamic>> sendPrivatePartyEmail({required String gameId, String? targetEmail}) async {
     try {
       final game = await getGame(gameId);
       final otps = await getGameSeatOtps(gameId);
-      final adminProfile = await _supabase
-          .from('MPT_admin_profiles')
-          .select('email')
-          .eq('user_id', game.adminUserId)
-          .maybeSingle();
+      
+      String? email = targetEmail;
+      if (email == null || email.isEmpty) {
+        final adminProfile = await _supabase
+            .from('MPT_admin_profiles')
+            .select('email')
+            .eq('user_id', game.adminUserId)
+            .maybeSingle();
 
-      final email = adminProfile?['email'] as String? ?? _supabase.auth.currentUser?.email;
-      if (email == null || email.isEmpty) return false;
+        email = adminProfile?['email'] as String? ?? _supabase.auth.currentUser?.email;
+      }
 
-      // Call the backend Edge function / API endpoint if configured
-      await _supabase.functions.invoke('send-private-party-email', body: {
+      if (email == null || email.isEmpty) {
+        return {
+          'success': false,
+          'email': null,
+          'message': 'No organizer email address found for this account.',
+        };
+      }
+
+      final payload = {
         'to_email': email,
         'game_name': game.name,
         'invite_code': game.inviteCode,
         'otps': otps.map((o) => {'seat_number': o.seatNumber, 'otp_code': o.otpCode}).toList(),
         'scheduled_at': game.scheduledAt?.toIso8601String(),
-      });
-      return true;
-    } catch (_) {
-      return false;
+      };
+
+      // 1. Try AWS API Gateway Lambda endpoint
+      try {
+        final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+        final response = await http.post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(payload),
+        );
+        if (response.statusCode == 200) {
+          return {
+            'success': true,
+            'email': email,
+            'message': 'Passcodes successfully emailed to $email',
+          };
+        }
+      } catch (_) {
+        // Fallback to Supabase functions
+      }
+
+      // 2. Try Supabase Edge function invocation
+      try {
+        final res = await _supabase.functions.invoke('send-private-party-email', body: payload);
+        if (res.status == 200) {
+          return {
+            'success': true,
+            'email': email,
+            'message': 'Passcodes successfully emailed to $email',
+          };
+        }
+      } catch (_) {}
+
+      return {
+        'success': false,
+        'email': email,
+        'message': 'Sent request to $email. (Note: In AWS SES Sandbox mode, the destination email must be verified in AWS SES Console).',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'email': null,
+        'message': e.toString(),
+      };
     }
   }
 }

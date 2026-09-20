@@ -1309,7 +1309,10 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.darkSurface),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryLight,
+                    foregroundColor: Colors.white,
+                  ),
                   child: Text('+$count Seats', style: const TextStyle(fontWeight: FontWeight.bold)),
                 );
               }).toList(),
@@ -1344,27 +1347,107 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleResendEmail(MptGame game) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sending private party passcodes to your email...')),
+    final user = ref.read(currentUserProvider).value;
+    final email = user?.email ?? '';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.email_rounded, color: AppTheme.secondaryColor),
+            SizedBox(width: 8),
+            Text('Email Seat Passcodes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'A complete list of your single-use seat passcodes will be sent to your account email:',
+              style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.account_circle_outlined, size: 16, color: AppTheme.secondaryColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      email.isNotEmpty ? email : 'Your registered host email',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryLight,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Send Email'),
+          ),
+        ],
+      ),
     );
+
+    if (confirm != true || !mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sending passcodes to $email...')),
+    );
+
     try {
-      final success = await ref.read(gameRepositoryProvider).sendPrivatePartyEmail(gameId: game.id);
+      final res = await ref.read(gameRepositoryProvider).sendPrivatePartyEmail(
+        gameId: game.id,
+        targetEmail: email.isNotEmpty ? email : null,
+      );
       if (!mounted) return;
+
+      final success = res['success'] == true;
+      final target = res['email'] ?? email;
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email with passcodes sent successfully!'), backgroundColor: AppTheme.accentSuccess),
+          SnackBar(
+            content: Text('Passcodes successfully emailed to $target! 🎉'),
+            backgroundColor: AppTheme.accentSuccess,
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Passcodes generated. You can copy them directly using "Copy All".')),
+          SnackBar(
+            content: Text(
+              target != null && target.toString().isNotEmpty
+                  ? 'Attempted email to $target. (If using SES Sandbox, please verify $target in AWS SES Console).'
+                  : 'Email delivery attempted. You can also copy all passcodes directly using "Copy All".',
+            ),
+            backgroundColor: AppTheme.accentWarning,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You can copy the passcodes directly using the "Copy All" button.')),
+        SnackBar(content: Text('Email error: $e. You can use "Copy All" anytime.')),
       );
     }
   }
 }
-
