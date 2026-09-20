@@ -729,7 +729,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingCount),
                   icon: const Icon(Icons.group_add, size: 18),
-                  label: const Text('+ Add Seats (+5, +10, +15, +25)'),
+                  label: const Text('Add Seats (+5, +10, +15, +25)'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -746,7 +746,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           OutlinedButton.icon(
             onPressed: _isProcessing ? null : () => _showAddCapacityDialog(context, waitingCount),
             icon: const Icon(Icons.group_add, size: 18),
-            label: const Text('+ Add Seats (+5, +10, +15, +25)'),
+            label: const Text('Add Seats (+5, +10, +15, +25)'),
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
           ),
         const SizedBox(height: 10),
@@ -1025,7 +1025,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                             ElevatedButton.icon(
                               onPressed: () => _handleAddPrivateSeatsDialog(game),
                               icon: const Icon(Icons.add, size: 14),
-                              label: const Text('+ Add Seats', style: TextStyle(fontSize: 12)),
+                              label: const Text('Add Seats', style: TextStyle(fontSize: 12)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.accentPartyPurple,
                                 foregroundColor: Colors.white,
@@ -1347,8 +1347,22 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleResendEmail(MptGame game) async {
-    final user = ref.read(currentUserProvider).value;
-    final email = user?.email ?? '';
+    String email = ref.read(currentUserProvider).value?.email ?? '';
+    if (email.isEmpty) {
+      email = Supabase.instance.client.auth.currentUser?.email ?? '';
+    }
+    if (email.isEmpty) {
+      try {
+        final profile = await Supabase.instance.client
+            .from('MPT_admin_profiles')
+            .select('email')
+            .eq('user_id', game.adminUserId)
+            .maybeSingle();
+        if (profile != null && profile['email'] != null && (profile['email'] as String).isNotEmpty) {
+          email = profile['email'] as String;
+        }
+      } catch (_) {}
+    }
 
     final confirm = await showDialog<bool>(
       context: context,
