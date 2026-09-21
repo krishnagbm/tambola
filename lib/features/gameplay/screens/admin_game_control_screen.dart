@@ -1139,9 +1139,11 @@ class _AdminGameControlScreenState
                                 if (_celebrationSecondsLeft > 0)
                                   _buildCelebrationPauseBanner(),
                                 _buildCallerHeader(
+                                  game,
                                   latest,
                                   calledNumbers.length,
                                   calledNumbers,
+                                  isGameCompleted,
                                 ),
                                 const SizedBox(height: 8),
                                 _buildMainActionButton(
@@ -1227,9 +1229,11 @@ class _AdminGameControlScreenState
                                     if (_celebrationSecondsLeft > 0)
                                       _buildCelebrationPauseBanner(),
                                     _buildCallerHeader(
+                                      game,
                                       latest,
                                       calledNumbers.length,
                                       calledNumbers,
+                                      isGameCompleted,
                                     ),
                                     const SizedBox(height: 14),
                                     _buildMainActionButton(
@@ -1331,9 +1335,11 @@ class _AdminGameControlScreenState
                         if (_celebrationSecondsLeft > 0)
                           _buildCelebrationPauseBanner(),
                         _buildCallerHeader(
+                          game,
                           latest,
                           calledNumbers.length,
                           calledNumbers,
+                          isGameCompleted,
                         ),
                         const SizedBox(height: 14),
                         _buildMainActionButton(
@@ -2352,62 +2358,13 @@ class _AdminGameControlScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Top Row: Title, Edit, Status & Tier badges + Players joined (x/y)
+          // Top Row: Capacity Tier & Number of Players Joined (+ Add Seats)
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(
-                Icons.celebration,
-                size: 22,
-                color: AppTheme.secondaryColor,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  game?.name ?? 'DabHousie Event',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.edit,
-                  size: 18,
-                  color: AppTheme.primaryLight,
-                ),
-                tooltip: 'Edit Event Name',
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                constraints: const BoxConstraints(),
-                onPressed: () => _showEditGameNameDialog(game?.name ?? ''),
-              ),
-              const SizedBox(width: 6),
-              // Status Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: isGameCompleted
-                      ? const Color(0xFF718096).withValues(alpha: 0.2)
-                      : AppTheme.accentSuccess.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: isGameCompleted
-                        ? const Color(0xFFA0AEC0)
-                        : AppTheme.accentSuccess,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
               // Capacity Tier Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppTheme.secondaryColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(6),
@@ -2419,72 +2376,75 @@ class _AdminGameControlScreenState
                 child: Text(
                   isFreeTier ? '5-Player (Free)' : '$capacity-Member Game',
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.secondaryColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              // Number of Players Joined Badge (x/y)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppTheme.primaryLight.withValues(alpha: 0.5),
-                    width: 0.8,
-                  ),
-                ),
-                child: Text(
-                  '👥 $confirmedCount/$capacity Joined',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Switch Plan / Add Seats Chip
-              InkWell(
-                onTap: () =>
-                    _showCapacityUpgradeDialog(context, game, waitingCount),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: AppTheme.secondaryColor,
-                      width: 0.8,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppTheme.primaryLight.withValues(alpha: 0.5),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      '👥 $confirmedCount/$capacity Joined',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.upgrade_rounded,
-                        size: 13,
-                        color: AppTheme.secondaryColor,
+                  const SizedBox(width: 6),
+                  // Switch Plan / Add Seats Chip
+                  InkWell(
+                    onTap: () =>
+                        _showCapacityUpgradeDialog(context, game, waitingCount),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      SizedBox(width: 2),
-                      Text(
-                        '+ Seats',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
                           color: AppTheme.secondaryColor,
+                          width: 0.8,
                         ),
                       ),
-                    ],
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.upgrade_rounded,
+                            size: 13,
+                            color: AppTheme.secondaryColor,
+                          ),
+                          SizedBox(width: 2),
+                          Text(
+                            '+ Seats',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -2799,16 +2759,20 @@ class _AdminGameControlScreenState
   }
 
   Widget _buildCallerHeader(
+    MptGame? game,
     int? latest,
     int totalCalled, [
     List<MptCalledNumber>? calledNumbers,
+    bool isGameCompleted = false,
   ]) {
     final recent = (calledNumbers != null && calledNumbers.isNotEmpty)
         ? calledNumbers.reversed.skip(1).take(6).toList()
         : <MptCalledNumber>[];
+    final capacity = game?.fundedCapacity ?? 5;
+    final isFreeTier = capacity <= 5;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: AppTheme.primaryDark,
         borderRadius: BorderRadius.circular(12),
@@ -2818,6 +2782,84 @@ class _AdminGameControlScreenState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Event Title & Badges Bar (Prominent in Middle Header)
+          if (game != null) ...[
+            Row(
+              children: [
+                const Icon(
+                  Icons.celebration,
+                  size: 20,
+                  color: AppTheme.secondaryColor,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    game.name,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.edit,
+                    size: 16,
+                    color: AppTheme.primaryLight,
+                  ),
+                  tooltip: 'Edit Event Name',
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  constraints: const BoxConstraints(),
+                  onPressed: () => _showEditGameNameDialog(game.name),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isGameCompleted
+                        ? const Color(0xFF718096).withValues(alpha: 0.2)
+                        : AppTheme.accentSuccess.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isGameCompleted ? 'COMPLETED' : '🟢 LIVE',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isGameCompleted
+                          ? const Color(0xFFA0AEC0)
+                          : AppTheme.accentSuccess,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    isFreeTier ? '5-Player (Free)' : '$capacity-Member Game',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            const SizedBox(height: 8),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
