@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import { PlayerSession } from './player_session.js';
+import { generateTestReport } from './report_generator.js';
 
 // Parse command line arguments
 function parseArgs() {
@@ -71,18 +72,20 @@ Options:
 
   console.log(`
 ===================================================================
-  DABHOUSIE MULTIPLAYER TEST HARNESS (Phase 1)
+  DABHOUSIE MULTIPLAYER TEST HARNESS & STRESS SUITE
 ===================================================================
   Target Game Code : ${options.gameCode}
   Target Join URL  : ${options.joinUrl}
   Automated Players: ${options.playersCount}
-  Mode             : ${options.headless ? 'Headless' : 'Headed (Visible Windows)'}
+  Mode             : ${options.headless ? 'Headless (Background)' : 'Headed (Visible Windows)'}
 ===================================================================
 `);
 
   const windowWidth = 430;
   const windowHeight = 860;
   const players = [];
+  const drawnCallsList = [];
+  const startTime = Date.now();
 
   const REAL_NAMES = [
     'Aarav', 'Priya', 'Rohan', 'Maya', 'Liam', 'Sophia', 'Noah', 'Ananya',
@@ -92,12 +95,30 @@ Options:
   ];
   const shuffledNames = [...REAL_NAMES].sort(() => 0.5 - Math.random());
 
+  function saveFinalReport(status = 'COMPLETED') {
+    try {
+      const playersData = players.map(p => p.getSessionSummary());
+      const allClaims = players.flatMap(p => p.claimsHistory || []);
+      const durationSec = Math.round((Date.now() - startTime) / 1000);
+      const gameMetadata = {
+        gameCode: options.gameCode,
+        gameId: players[0]?.gameId || options.gameCode,
+        status,
+        durationSeconds: durationSec,
+      };
+      generateTestReport(gameMetadata, playersData, drawnCallsList, allClaims);
+    } catch (err) {
+      console.error('Error generating final test report:', err.message);
+    }
+  }
+
   // Register clean shutdown
   let isShuttingDown = false;
   async function cleanup() {
     if (isShuttingDown) return;
     isShuttingDown = true;
     console.log('\nStopping automated player sessions...');
+    saveFinalReport('STOPPED');
     await Promise.allSettled(players.map(p => p.close()));
     console.log('All player sessions stopped cleanly.');
     process.exit(0);
@@ -127,8 +148,10 @@ Options:
     console.log('\n[CONNECTING] Connecting and registering players into game room...');
     const joinResults = [];
     for (const p of players) {
+      const tStart = Date.now();
       try {
         const res = await p.joinGame(options.joinUrl);
+        p.registrationTimeMs = Date.now() - tStart;
         joinResults.push({ status: res ? 'fulfilled' : 'rejected' });
       } catch (err) {
         joinResults.push({ status: 'rejected', reason: err });
@@ -223,6 +246,7 @@ Game status: IN_PROGRESS
           if (!processedCallSeqs.has(seq)) {
             processedCallSeqs.add(seq);
             processedNumbers.add(num);
+            drawnCallsList.push({ sequence: seq, number: num, timestamp: new Date().toISOString() });
             console.log(`\n>>> [CALL #${seq}] NUMBER ANNOUNCED: ${num} <<<`);
             for (const p of successfulJoins) {
               await p.processCalledNumber(num, seq);
@@ -233,6 +257,7 @@ Game status: IN_PROGRESS
         const seq = processedCallSeqs.size + 1;
         processedCallSeqs.add(seq);
         processedNumbers.add(singleActiveNum);
+        drawnCallsList.push({ sequence: seq, number: singleActiveNum, timestamp: new Date().toISOString() });
         console.log(`\n>>> [CALL #${seq}] NUMBER ANNOUNCED: ${singleActiveNum} <<<`);
         for (const p of successfulJoins) {
           await p.processCalledNumber(singleActiveNum, seq);
@@ -246,9 +271,10 @@ Game status: IN_PROGRESS
       console.log(`
 =====================================================
 Game status: COMPLETED
-All 90 numbers called or game concluded.
+All numbers called or game concluded.
 =====================================================
 `);
+      saveFinalReport('COMPLETED');
     }
 
     console.log('Test run finished. Press Ctrl+C to close player windows.');
@@ -258,6 +284,7 @@ All 90 numbers called or game concluded.
 
   } catch (err) {
     console.error('\nMultiplayer test runner encountered an error:', err.message);
+    saveFinalReport('ERROR');
     console.log('Keeping any active browser sessions open for inspection. Press Ctrl+C to exit.');
     while (!isShuttingDown) {
       await new Promise(r => setTimeout(r, 5000));

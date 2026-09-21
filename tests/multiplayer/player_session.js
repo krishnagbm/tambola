@@ -33,6 +33,10 @@ export class PlayerSession {
     this.finalUrl = null;
     this.registrationSeq = null;
     this.seatStatus = null;
+    this.registrationStartTime = null;
+    this.registrationTimeMs = null;
+    this.lastCallSequence = 0;
+    this.claimsHistory = [];
 
     if (!fs.existsSync(SCREENSHOTS_DIR)) {
       fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
@@ -684,6 +688,7 @@ export class PlayerSession {
     }
 
     this.lastCalledNumber = calledNum;
+    this.lastCallSequence = callSequence;
 
     // If initial ticket extraction was incomplete (<15 numbers), re-extract
     if (this.ticketNumbers.length < 15) {
@@ -812,6 +817,20 @@ export class PlayerSession {
           return { status: 'UNKNOWN' };
         });
 
+        const claimEvent = {
+          playerId: this.id,
+          playerName: this.name,
+          userUuid: this.userUuid,
+          ticketNumber: this.registrationSeq || this.id,
+          prizeId: prize.id,
+          prizeName: prize.name,
+          callSequence: this.lastCallSequence || 0,
+          calledNumber: this.lastCalledNumber || null,
+          timestamp: new Date().toISOString(),
+          status: claimResult.status === 'APPROVED' ? 'APPROVED' : (claimResult.status === 'BOGEY' ? 'BOGEY' : 'SUBMITTED'),
+        };
+        this.claimsHistory.push(claimEvent);
+
         if (claimResult.status === 'APPROVED') {
           this.log(`🎉 [CLAIM APPROVED] Player ${this.id} (${this.name}) won "${prize.name}"! Organizer received approval.`);
           await this.captureScreenshot(`won_${prize.id.toLowerCase()}`);
@@ -845,6 +864,27 @@ export class PlayerSession {
         await this.page.waitForTimeout(600);
       }
     }
+  }
+
+  /**
+   * Returns a clean telemetry snapshot for test report generation
+   */
+  getSessionSummary() {
+    return {
+      id: this.id,
+      name: this.name,
+      userUuid: this.userUuid,
+      ticketNumber: this.registrationSeq || this.id,
+      ticketMatrix: this.ticketMatrix,
+      ticketNumbers: this.ticketNumbers,
+      dabbedNumbers: Array.from(this.dabbedNumbers),
+      claimedPrizes: Array.from(this.claimedPrizes),
+      claimsHistory: this.claimsHistory,
+      registrationTimeMs: this.registrationTimeMs,
+      seatStatus: this.seatStatus,
+      gameId: this.gameId,
+      inviteCode: this.inviteCode,
+    };
   }
 
   /**
