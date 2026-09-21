@@ -191,22 +191,30 @@ export class PlayerSession {
   /**
    * Launch and initialize the player session
    */
-  async launch(browserType, headless = false) {
-    this.log(`Opening browser window at position (${this.bounds.x}, ${this.bounds.y})...`);
-    
-    this.browser = await browserType.launch({
-      headless,
-      args: [
-        `--window-position=${this.bounds.x},${this.bounds.y}`,
-        `--window-size=${this.bounds.width},${this.bounds.height}`,
-        '--disable-notifications',
-      ],
-    });
-
-    this.context = await this.browser.newContext({
-      viewport: { width: this.bounds.width, height: this.bounds.height - 40 },
-      userAgent: `DabHousie-TestPlayer-${this.id}`,
-    });
+  async launch(browserOrType, headless = false) {
+    if (browserOrType.newContext) {
+      // Shared browser instance passed in
+      this.browser = null;
+      this.context = await browserOrType.newContext({
+        viewport: { width: this.bounds.width, height: this.bounds.height - 40 },
+        userAgent: `DabHousie-TestPlayer-${this.id}`,
+      });
+    } else {
+      this.log(`Opening browser window at position (${this.bounds.x}, ${this.bounds.y})...`);
+      this.browser = await browserOrType.launch({
+        headless,
+        args: [
+          `--window-position=${this.bounds.x},${this.bounds.y}`,
+          `--window-size=${this.bounds.width},${this.bounds.height}`,
+          '--disable-notifications',
+          '--disable-dev-shm-usage',
+        ],
+      });
+      this.context = await this.browser.newContext({
+        viewport: { width: this.bounds.width, height: this.bounds.height - 40 },
+        userAgent: `DabHousie-TestPlayer-${this.id}`,
+      });
+    }
 
     // Pre-seed local storage so Flutter's SharedPreferences immediately starts with this real player name
     await this.context.addInitScript((playerName) => {
@@ -228,23 +236,31 @@ export class PlayerSession {
    */
   async handleMandatoryNameDialog() {
     try {
-      const isDialogVisible = await this.page.evaluate(() => {
-        const text = document.body.innerText || document.body.textContent || '';
-        return text.includes('Enter Your Name') || text.includes('Please set your name') || text.includes('Save & Join');
-      });
+      for (let check = 0; check < 5; check++) {
+        const isDialogVisible = await this.page.evaluate(() => {
+          const text = document.body.innerText || document.body.textContent || '';
+          return text.includes('Enter Your Name') || text.includes('Please set your name') || text.includes('Save & Join');
+        });
 
-      if (isDialogVisible) {
-        this.log(`Detected mandatory "Enter Your Name" dialog. Entering name "${this.name}"...`);
-        // Flutter's TextField has autofocus: true; type directly
-        await this.page.keyboard.type(this.name, { delay: 50 });
-        await this.page.waitForTimeout(400);
+        if (isDialogVisible) {
+          this.log(`Detected mandatory "Enter Your Name" dialog. Entering name "${this.name}"...`);
+          // Click into input area
+          await this.clickFlutterButton('Your Name / Nickname');
+          await this.page.waitForTimeout(200);
+          await this.page.keyboard.press('Control+A').catch(() => {});
+          await this.page.keyboard.press('Backspace').catch(() => {});
+          await this.page.keyboard.type(this.name, { delay: 30 });
+          await this.page.waitForTimeout(400);
 
-        this.log('Submitting "Save & Join"...');
-        const clicked = await this.clickFlutterButton('Save & Join', false);
-        if (!clicked) {
-          await this.page.keyboard.press('Enter');
+          this.log('Submitting "Save & Join"...');
+          const clicked = await this.clickFlutterButton('Save & Join', false);
+          if (!clicked) {
+            await this.page.keyboard.press('Enter');
+          }
+          await this.page.waitForTimeout(1000);
+          break;
         }
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(300);
       }
     } catch (err) {
       this.log(`Error handling name dialog: ${err.message}`);
@@ -260,16 +276,25 @@ export class PlayerSession {
     this.inviteCode = codeMatch ? codeMatch[1].toUpperCase() : 'UNKNOWN';
 
     await this.page.goto(joinUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
-    await this.page.waitForTimeout(3000);
-    await this.enableFlutterSemantics();
+    
+    // Wait for Flutter web engine to bootstrap
+    for (let waitBootstrap = 0; waitBootstrap < 20; waitBootstrap++) {
+      const isMounted = await this.page.evaluate(() => {
+        const text = document.body.innerText || document.body.textContent || '';
+        return text.length > 5 || !!document.querySelector('flt-semantics') || !!document.querySelector('flt-glass-pane');
+      });
+      if (isMounted) break;
+      await this.page.waitForTimeout(500);
+    }
 
+    await this.enableFlutterSemantics();
     this.userUuid = await this.getAnonymousUserUuid();
     this.log(`Session Auth UUID: ${this.userUuid}`);
 
     // 1. If landed on Home screen, navigate into Join screen
-    for (let step = 0; step < 5; step++) {
+    for (let step = 0; step < 3; step++) {
       const currentUrl = await this.page.evaluate(() => window.location.href);
-      const isJoinScreen = currentUrl.includes('/join');
+      const isJoinScreen = currentUrl.includes('/join') || currentUrl.includes('/game-status/') || currentUrl.includes('/play/');
       if (isJoinScreen) break;
 
       this.log('Landed on Home screen. Clicking "Enter Code to Join"...');
@@ -277,12 +302,14 @@ export class PlayerSession {
       if (!clickedJoin) {
         await this.clickFlutterButton('Join Game');
       }
-      await this.page.waitForTimeout(2000);
+      await this.page.waitForTimeout(1500);
     }
 
     // 2. Ensure invite code is entered and looked up
     this.log(`Looking up game code ${this.inviteCode}...`);
-    for (let lookupAttempt = 0; lookupAttempt < 5; lookupAttempt++) {
+    let previewFound = false;
+    for (let lookupAttempt = 0; lookupAttempt < 15; lookupAttempt++) {
+      await this.enableFlutterSemantics();
       const hasRegisterBtn = await this.page.evaluate(() => {
         const text = document.body.innerText || document.body.textContent || '';
         const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
@@ -292,27 +319,31 @@ export class PlayerSession {
 
       if (hasRegisterBtn) {
         this.log('Game preview found! "Register & Get Ticket" button is ready.');
+        previewFound = true;
         break;
       }
 
-      // Enter code into input
-      try {
-        const inputs = this.page.locator('input');
-        const count = await inputs.count();
-        if (count > 0) {
-          const firstInput = inputs.first();
-          await firstInput.click().catch(() => {});
-          await firstInput.fill(this.inviteCode).catch(() => {});
-        }
-      } catch (_) {}
+      // If after 3 attempts it's not found, re-submit invite code and click Find
+      if (lookupAttempt >= 2 && lookupAttempt % 3 === 0) {
+        try {
+          const inputs = this.page.locator('input');
+          const count = await inputs.count();
+          if (count > 0) {
+            const firstInput = inputs.first();
+            await firstInput.click().catch(() => {});
+            await firstInput.fill(this.inviteCode).catch(() => {});
+          }
+        } catch (_) {}
 
-      await this.clickFlutterButton('Find', true);
-      await this.page.waitForTimeout(2000);
+        await this.clickFlutterButton('Find', true);
+      }
+
+      await this.page.waitForTimeout(1000);
     }
 
     // 3. Register into the game
     let isRegistered = false;
-    for (let attempt = 1; attempt <= 3; attempt++) {
+    for (let attempt = 1; attempt <= 4; attempt++) {
       let currentUrl = await this.page.evaluate(() => window.location.href);
       if (currentUrl.includes('/game-status/') || currentUrl.includes('/play/')) {
         isRegistered = true;
@@ -323,13 +354,13 @@ export class PlayerSession {
       this.registrationAttempts = attempt;
       this.log(`Registering into game (attempt ${attempt})...`);
       await this.clickFlutterButton('Register & Get Ticket');
-      await this.page.waitForTimeout(1000);
+      await this.page.waitForTimeout(600);
 
       // Handle mandatory name modal if prompted
       await this.handleMandatoryNameDialog();
 
       // Wait up to 12 seconds for registration to complete and route to transition
-      for (let waitStep = 0; waitStep < 24; waitStep++) {
+      for (let waitStep = 0; waitStep < 20; waitStep++) {
         const state = await this.page.evaluate(() => {
           const url = window.location.href;
           const text = document.body.innerText || document.body.textContent || '';

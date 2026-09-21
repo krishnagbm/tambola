@@ -112,6 +112,8 @@ Options:
     }
   }
 
+  let browserInstance = null;
+
   // Register clean shutdown
   let isShuttingDown = false;
   async function cleanup() {
@@ -120,6 +122,9 @@ Options:
     console.log('\nStopping automated player sessions...');
     saveFinalReport('STOPPED');
     await Promise.allSettled(players.map(p => p.close()));
+    if (browserInstance) {
+      try { await browserInstance.close(); } catch (_) {}
+    }
     console.log('All player sessions stopped cleanly.');
     process.exit(0);
   }
@@ -128,7 +133,20 @@ Options:
   process.on('SIGTERM', cleanup);
 
   try {
-    // 1. Launch players with side-by-side desktop positioning
+    // 1. Launch shared Chromium browser
+    console.log(`\n[BROWSER] Launching Chromium browser (${options.headless ? 'Headless' : 'Headed'})...`);
+    browserInstance = await chromium.launch({
+      headless: options.headless,
+      args: [
+        '--disable-notifications',
+        '--disable-dev-shm-usage',
+      ],
+    });
+
+    // 2. Connect and register players into game room
+    console.log('\n[CONNECTING] Connecting and registering players into game room...');
+    const joinResults = [];
+
     for (let i = 1; i <= options.playersCount; i++) {
       const xPos = (i - 1) * (windowWidth + 15) + 30;
       const yPos = 40;
@@ -140,23 +158,18 @@ Options:
         height: windowHeight,
       });
 
-      await player.launch(chromium, options.headless);
+      await player.launch(browserInstance, options.headless);
       players.push(player);
-    }
 
-    // 2. Join all players to the game
-    console.log('\n[CONNECTING] Connecting and registering players into game room...');
-    const joinResults = [];
-    for (const p of players) {
       const tStart = Date.now();
       try {
-        const res = await p.joinGame(options.joinUrl);
-        p.registrationTimeMs = Date.now() - tStart;
+        const res = await player.joinGame(options.joinUrl);
+        player.registrationTimeMs = Date.now() - tStart;
         joinResults.push({ status: res ? 'fulfilled' : 'rejected' });
       } catch (err) {
         joinResults.push({ status: 'rejected', reason: err });
       }
-      await new Promise(r => setTimeout(r, 600));
+      await new Promise(r => setTimeout(r, 400));
     }
 
     const successfulJoins = players.filter((p, idx) => 
