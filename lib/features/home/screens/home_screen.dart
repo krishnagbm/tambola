@@ -16,6 +16,7 @@ import '../../auth/widgets/auth_dialog.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 import '../widgets/dashboard_footer.dart';
 import '../widgets/dashboard_hero_section.dart';
+import '../widgets/gameplay_showcase_section.dart';
 import '../widgets/how_it_works_section.dart';
 import '../widgets/opening_screen.dart';
 import '../widgets/perfect_for_chips_section.dart';
@@ -324,15 +325,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const HowItWorksSection(),
             const SizedBox(height: 14),
 
-            // 4. Quick Rules & How to Win Helper
+            // 4. See DabHousie in Action (Live Gameplay Visual Showcase)
+            const GameplayShowcaseSection(),
+            const SizedBox(height: 14),
+
+            // 5. Quick Rules & How to Win Helper
             _buildHowToPlayCard(context),
             const SizedBox(height: 14),
 
-            // 5. Why DabHousie (USP Grid - Instant Play, Auto Win Verification, 100% Free Family Play)
+            // 6. Why DabHousie (USP Grid - Instant Play, Auto Win Verification, 100% Free Family Play)
             const UspGridSection(),
             const SizedBox(height: 14),
 
-            // 6. Dashboard Footer Tagline
+            // 7. Dashboard Footer Tagline
             const DashboardFooter(),
           ],
         ),
