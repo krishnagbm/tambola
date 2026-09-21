@@ -16,11 +16,11 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   static const _slides = [
     {
       'title': 'Player Ticket & Instant Play',
-      'tabLabel': '📱 Player Ticket',
+      'tabLabel': '📱 Player Tickets',
       'badge': '100% WEB PLAY • NO APP REQUIRED',
       'image': 'assets/screenshots/screenshot_mobile_ticket.png',
-      'desc': 'Crisp 3×9 digital tickets in any mobile browser (Safari, Chrome). Players tap drawn numbers, track game progress, and claim winning prizes with zero downloads.',
-      'aspectRatio': 0.65, // vertical phone screenshot
+      'desc': 'Crisp 3×9 digital tickets in any browser (Safari, Chrome). Players dab called numbers in real time, track drawn balls, and submit instant prize claims.',
+      'aspectRatio': 1.08,
     },
     {
       'title': 'Organizer Auto-Pilot & 1–90 Board',
@@ -35,15 +35,15 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'tabLabel': '⚡ Instant Win Checks',
       'badge': 'SERVER-SIDE BOGEY CLAIM VALIDATION',
       'image': 'assets/screenshots/screenshot_multiplayer_claims.png',
-      'desc': 'Instant server validation for Early 5, Lines, and Full House. False or premature claims are caught instantly by the server to eliminate disputes.',
-      'aspectRatio': 1.85,
+      'desc': 'Multiplayer live sync: instant server validation for Early 5, Lines, and Full House. Premature claims trigger smart Bogey alerts to eliminate disputes.',
+      'aspectRatio': 1.67,
     },
     {
       'title': 'Private Party Single-Use Passcodes',
       'tabLabel': '🛡️ Seat Passcodes',
       'badge': 'EXCLUSIVE EVENT & PARTY SECURITY',
       'image': 'assets/screenshots/screenshot_private_passcodes.png',
-      'desc': 'Generate unique, single-use seat OTPs for private kitty parties, family reunions, and corporate galas to ensure only invited guests can join.',
+      'desc': 'Generate single-use seat OTPs for private kitty parties, society clubs, and corporate galas to ensure only invited guests can join.',
       'aspectRatio': 1.01,
     },
   ];
