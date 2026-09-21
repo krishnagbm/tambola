@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test:multiplayer": "node tests/multiplayer/runner.js"
+    "test:multiplayer": "node tests/multiplayer/direct_runner.js",
+    "test:fast": "node tests/multiplayer/direct_runner.js",
+    "test:browser": "node tests/multiplayer/runner.js"
   }
 }

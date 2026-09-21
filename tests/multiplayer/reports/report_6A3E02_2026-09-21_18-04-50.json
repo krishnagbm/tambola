@@ -1,0 +1,66 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-21T18:04:50.543Z",
+    "gameId": "c150f859-c0a7-46e0-b463-a270a3bc6c6b",
+    "gameCode": "6A3E02",
+    "totalPlayersRegistered": 2,
+    "totalCalls": 0,
+    "gameStatus": "STOPPED",
+    "durationSeconds": 29
+  },
+  "ticketUniqueness": {
+    "totalTickets": 2,
+    "uniqueTicketsCount": 1,
+    "duplicateCount": 1,
+    "is100PercentUnique": false,
+    "duplicates": [
+      {
+        "playerA": 1,
+        "playerB": 2,
+        "ticketNumbers": []
+      }
+    ],
+    "maxCommonNumbersBetweenAnyTwoTickets": 0,
+    "minDistinctNumbersBetweenAnyTwoTickets": 15
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 0,
+    "approvedClaimsCount": 0,
+    "bogeyClaimsCount": 0,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [],
+  "claims": [],
+  "players": [
+    {
+      "id": 1,
+      "name": "Aisha",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 1,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 5650
+    },
+    {
+      "id": 2,
+      "name": "Carlos",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 2,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    }
+  ]
+}

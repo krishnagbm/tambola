@@ -1,0 +1,226 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-21T18:36:18.402Z",
+    "gameId": "0092560f-513f-4c9b-ab5c-e460a2d1746f",
+    "gameCode": "4C0384",
+    "totalPlayersRegistered": 10,
+    "totalCalls": 0,
+    "gameStatus": "STOPPED",
+    "durationSeconds": 1837
+  },
+  "ticketUniqueness": {
+    "totalTickets": 10,
+    "uniqueTicketsCount": 1,
+    "duplicateCount": 9,
+    "is100PercentUnique": false,
+    "duplicates": [
+      {
+        "playerA": 1,
+        "playerB": 2,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 3,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 4,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 5,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 6,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 7,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 8,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 9,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 10,
+        "ticketNumbers": []
+      }
+    ],
+    "maxCommonNumbersBetweenAnyTwoTickets": 0,
+    "minDistinctNumbersBetweenAnyTwoTickets": 15
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 0,
+    "approvedClaimsCount": 0,
+    "bogeyClaimsCount": 0,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [],
+  "claims": [],
+  "players": [
+    {
+      "id": 1,
+      "name": "Diya",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 1,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 5781
+    },
+    {
+      "id": 2,
+      "name": "Lucas",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 2,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 8572
+    },
+    {
+      "id": 3,
+      "name": "Chloe",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 3,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 41045
+    },
+    {
+      "id": 4,
+      "name": "Aditya",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 4,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 98061
+    },
+    {
+      "id": 5,
+      "name": "Aisha",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 5,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 183970
+    },
+    {
+      "id": 6,
+      "name": "Mia",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 6,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 108409
+    },
+    {
+      "id": 7,
+      "name": "Emma",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 7,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 134154
+    },
+    {
+      "id": 8,
+      "name": "Zara",
+      "userUuid": null,
+      "ticketNumber": 8,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 9,
+      "name": "Meera",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 9,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 180198
+    },
+    {
+      "id": 10,
+      "name": "Aarav",
+      "userUuid": "LOCAL-ANON-SESSION",
+      "ticketNumber": 10,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 140674
+    }
+  ]
+}

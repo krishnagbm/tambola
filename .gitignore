@@ -23,6 +23,7 @@ docs/generated_250_tickets.json
 docs/sql_generated_250_tickets.json
 docs/AmplifyLogs
 docs/secrets
+test/multiplayerTestOutputs
 
 
 # IntelliJ related
