@@ -250,7 +250,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
             tooltip: 'My Rewards',
             onPressed: () => context.push('/rewards'),
           ),
-        if (showWallet)
+        if (showWallet && user != null && user.isRegistered)
           walletState.when(
             data: (w) {
               final credits = w.availableCredits;

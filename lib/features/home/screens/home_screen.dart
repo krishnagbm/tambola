@@ -1180,9 +1180,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 14),
             ],
 
-            // Organizer Wallet Preview Card
-            _buildWalletPreviewCard(context, ref, walletState),
-            const SizedBox(height: 16),
+            // Organizer Wallet Preview Card (Only visible to registered hosts)
+            if (user.isRegistered) ...[
+              _buildWalletPreviewCard(context, ref, walletState),
+              const SizedBox(height: 16),
+            ],
 
             // Hosted Games Header & Filters
             Row(
@@ -1638,6 +1640,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       isLoading: _isSigningIn && _loadingProvider == 'Apple',
                       onTap: _isSigningIn ? null : _handleAppleSignIn,
                     ),
+                    const SizedBox(height: 10),
+
+                    // Email (OTP Code) Sign In
+                    _buildOAuthButton(
+                      icon: const Icon(Icons.email_outlined, color: AppTheme.secondaryColor, size: 22),
+                      title: 'Email (OTP Code)',
+                      subtitle: 'Sign in with your email & 6-digit passcode',
+                      isLoading: false,
+                      onTap: () => AuthDialog.show(context, startWithEmailOtp: true),
+                    ),
                     const SizedBox(height: 16),
 
                     // Legal Note
@@ -1717,13 +1729,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             color: AppTheme.darkSurface,
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.secondaryColor),
-                  title: const Text('Organizer Credits & Wallet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/wallet'),
-                ),
-                const Divider(height: 1, color: Color(0xFF2E334D)),
+                if (isRegistered) ...[
+                  ListTile(
+                    leading: const Icon(Icons.account_balance_wallet_outlined, color: AppTheme.secondaryColor),
+                    title: const Text('Organizer Credits & Wallet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/wallet'),
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2E334D)),
+                ],
                 ListTile(
                   leading: const Icon(Icons.emoji_events_outlined, color: AppTheme.primaryLight),
                   title: const Text('My Rewards & Vouchers', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
@@ -1836,7 +1850,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     walletState.when(
                       loading: () => const Text('Loading...', style: TextStyle(fontSize: 16)),
-                      error: (_, __) => const Text('10 Credits', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
+                      error: (_, __) => const Text('0 Credits', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor)),
                       data: (w) => Text(
                         '${Formatters.formatCredits(w.availableCredits)} Credits',
                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),

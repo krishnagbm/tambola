@@ -9,6 +9,7 @@ import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_wallet.dart';
 import '../../../providers/app_providers.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
+import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
@@ -84,6 +85,52 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (ref.watch(currentUserProvider).value?.isRegistered != true) ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 24),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Organizer Account Required',
+                                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Guests cannot hold organizer credits or host games. Sign in with Google, Apple, or Email OTP to unlock organizer hosting & credit purchases.',
+                                    style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () => AuthDialog.show(context, isHostContext: true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                minimumSize: Size.zero,
+                              ),
+                              child: const Text('Sign In'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     // Wallet Balance Card
                     _buildBalanceCard(wallet),
                     const SizedBox(height: 20),

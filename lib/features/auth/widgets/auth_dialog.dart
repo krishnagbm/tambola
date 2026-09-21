@@ -11,23 +11,27 @@ import '../../../providers/app_providers.dart';
 
 class AuthDialog extends ConsumerStatefulWidget {
   final bool isHostContext;
+  final bool startWithEmailOtp;
   final VoidCallback? onAuthenticated;
 
   const AuthDialog({
     super.key,
     this.isHostContext = false,
+    this.startWithEmailOtp = false,
     this.onAuthenticated,
   });
 
   static Future<void> show(
     BuildContext context, {
     bool isHostContext = false,
+    bool startWithEmailOtp = false,
     VoidCallback? onAuthenticated,
   }) {
     return showDialog(
       context: context,
       builder: (ctx) => AuthDialog(
         isHostContext: isHostContext,
+        startWithEmailOtp: startWithEmailOtp,
         onAuthenticated: onAuthenticated,
       ),
     );
@@ -55,6 +59,14 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
 
   /// Control flag to reveal Microsoft button.
   static const bool _showMicrosoft = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.startWithEmailOtp) {
+      _authStep = _AuthStep.emailInput;
+    }
+  }
 
   @override
   void dispose() {
