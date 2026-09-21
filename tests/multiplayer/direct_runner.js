@@ -56,39 +56,36 @@ class DirectPlayer {
   }
 
   /**
-   * 1. Authenticate anonymously
+   * 1. Authenticate anonymously (No email rate limit)
    */
   async authenticate() {
-    try {
-      const authRes = await this.fetchApi('/auth/v1/signup', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: `dab_test_${this.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@dabhousie.internal`,
-          password: `P@ss_${crypto.randomUUID()}`,
-          data: {
-            full_name: this.name,
-            avatar: this.avatar,
-          },
-        }),
-      });
-
-      this.token = authRes.access_token;
-      this.userId = authRes.user.id;
-    } catch (e) {
-      // Fallback to anonymous sign-in endpoint
+    let retries = 5;
+    let delay = 300;
+    while (retries > 0) {
       try {
-        const anonRes = await this.fetchApi('/auth/v1/anonymous', {
+        const authRes = await this.fetchApi('/auth/v1/signup', {
           method: 'POST',
           body: JSON.stringify({
-            data: { full_name: this.name, avatar: this.avatar },
+            data: {
+              full_name: this.name,
+              avatar: this.avatar,
+            },
           }),
         });
-        this.token = anonRes.access_token;
-        this.userId = anonRes.user.id;
-      } catch (err) {
-        // Mock fallback UUID
-        this.userId = crypto.randomUUID();
-        this.token = SUPABASE_ANON;
+
+        if (authRes?.access_token && authRes?.user?.id) {
+          this.token = authRes.access_token;
+          this.userId = authRes.user.id;
+          break;
+        }
+        throw new Error('No access token returned from auth endpoint');
+      } catch (e) {
+        retries--;
+        if (retries === 0) {
+          throw new Error(`Auth failed after retries: ${e.message}`);
+        }
+        await new Promise(r => setTimeout(r, delay + Math.random() * 200));
+        delay *= 1.5;
       }
     }
 
@@ -399,14 +396,25 @@ Usage: node tests/multiplayer/direct_runner.js --game=XXXXXX --players=10
   // 1. Connect all players in parallel!
   console.log(`\n[1/3] Registering ${playersCount} players concurrently...`);
   const joinPromises = [];
+  const BATCH_SIZE = 15;
   for (let i = 1; i <= playersCount; i++) {
     const name = REAL_NAMES[(i - 1) % REAL_NAMES.length];
     const p = new DirectPlayer(i, name);
     players.push(p);
-    joinPromises.push(p.joinGame(gameCode).catch(err => {
-      p.error(`Join failed: ${err.message}`);
-      return false;
-    }));
+
+    const task = async () => {
+      // Small stagger between batches
+      const batchIndex = Math.floor((i - 1) / BATCH_SIZE);
+      if (batchIndex > 0) {
+        await new Promise(r => setTimeout(r, batchIndex * 60 + Math.random() * 40));
+      }
+      return p.joinGame(gameCode).catch(err => {
+        p.error(`Join failed: ${err.message}`);
+        return false;
+      });
+    };
+
+    joinPromises.push(task());
   }
 
   const results = await Promise.all(joinPromises);
