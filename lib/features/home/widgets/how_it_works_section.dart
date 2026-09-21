@@ -8,17 +8,17 @@ class HowItWorksSection extends StatelessWidget {
     {
       'num': '1',
       'title': 'Create your game',
-      'desc': 'Name it, set capacity, pick prizes, get instant invite code.',
+      'desc': 'Name it, set capacity & prizes.\nGet instant invite code.',
     },
     {
       'num': '2',
       'title': 'Guests join free',
-      'desc': 'Code or link, zero app download — ticket ready in 5 seconds.',
+      'desc': 'Join on any web browser.\nZero app download needed.',
     },
     {
       'num': '3',
       'title': 'Call numbers live',
-      'desc': 'Wins verified on server instantly. Winners get QR vouchers.',
+      'desc': 'Automated live number caller.\nInstant server win checks.',
     },
   ];
 
@@ -61,8 +61,12 @@ class HowItWorksSection extends StatelessWidget {
                       Expanded(child: _buildStepItem(_steps[i])),
                       if (i < _steps.length - 1)
                         const Padding(
-                          padding: EdgeInsets.only(top: 10),
-                          child: Icon(Icons.arrow_forward_rounded, color: Color(0xFF718096), size: 16),
+                          padding: EdgeInsets.only(top: 8, left: 10, right: 10),
+                          child: Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Color(0xFF94A3B8),
+                            size: 22,
+                          ),
                         ),
                     ],
                   ],
@@ -74,8 +78,14 @@ class HowItWorksSection extends StatelessWidget {
                       _buildStepItem(_steps[i]),
                       if (i < _steps.length - 1)
                         const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4),
-                          child: Icon(Icons.arrow_downward_rounded, color: Color(0xFF718096), size: 14),
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Center(
+                            child: Icon(
+                              Icons.arrow_downward_rounded,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
+                          ),
                         ),
                     ],
                   ],
@@ -93,15 +103,15 @@ class HowItWorksSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 26,
-          height: 26,
+          width: 28,
+          height: 28,
           decoration: BoxDecoration(
             color: AppTheme.primaryColor,
             shape: BoxShape.circle,
             border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.secondaryColor.withOpacity(0.25),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.25),
                 blurRadius: 4,
               ),
             ],
@@ -124,18 +134,18 @@ class HowItWorksSection extends StatelessWidget {
               Text(
                 step['title']!,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 3),
               Text(
                 step['desc']!,
                 style: const TextStyle(
                   fontSize: 11.5,
                   color: Color(0xFFCBD5E1),
-                  height: 1.3,
+                  height: 1.35,
                 ),
               ),
             ],

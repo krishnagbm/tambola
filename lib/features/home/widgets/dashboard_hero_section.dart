@@ -199,32 +199,66 @@ class DashboardHeroSection extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Trust Strip
+              // Trust Strip (Structured 2-line layout without orphan leading dots)
               const Divider(color: Color(0xFF2E334D), height: 1),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 10,
-                runSpacing: 4,
-                children: const [
-                  Text('💃 Instant for Kitty Parties', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🛡️ Private Parties (Seat OTPs)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('📺 Live Projector & TV Mode', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('⚡ Smart Waitlist Auto-Promotion', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('✅ 100K+ Unique tickets (8.1T space)', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🔒 Auto server claims', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                  Text('·', style: TextStyle(fontSize: 10.5, color: Color(0xFF718096))),
-                  Text('🙅 Zero app download for guests', style: TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                ],
-              ),
+              const SizedBox(height: 10),
+              _buildTrustStrip(),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTrustStrip() {
+    const line1 = [
+      '💃 Instant for Kitty Parties',
+      '🛡️ Private Parties (Seat OTPs)',
+      '📺 Live Projector & TV Mode',
+      '⚡ Smart Waitlist Auto-Promotion',
+    ];
+    const line2 = [
+      '🔒 Auto server claims',
+      '🙅 Zero app download for guests',
+      '✅ 100K+ Unique tickets (8.1T space)',
+    ];
+
+    Widget buildLine(List<String> items) {
+      return Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            Text(
+              items[i],
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFFA0AEC0),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (i < items.length - 1)
+              const Text(
+                '•',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF718096),
+                ),
+              ),
+          ],
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        buildLine(line1),
+        const SizedBox(height: 5),
+        buildLine(line2),
+      ],
     );
   }
 }
