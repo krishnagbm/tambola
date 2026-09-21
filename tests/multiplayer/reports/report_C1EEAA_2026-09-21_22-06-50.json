@@ -1,0 +1,2194 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-21T22:06:50.007Z",
+    "gameId": "5c36ebf3-bdba-43ed-86c9-17f5e53b7549",
+    "gameCode": "C1EEAA",
+    "totalPlayersRegistered": 50,
+    "totalCalls": 0,
+    "gameStatus": "STOPPED",
+    "durationSeconds": 387
+  },
+  "ticketUniqueness": {
+    "totalTickets": 50,
+    "uniqueTicketsCount": 43,
+    "duplicateCount": 7,
+    "is100PercentUnique": false,
+    "duplicates": [
+      {
+        "playerA": 43,
+        "playerB": 44,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 45,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 46,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 47,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 48,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 49,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 43,
+        "playerB": 50,
+        "ticketNumbers": []
+      }
+    ],
+    "maxCommonNumbersBetweenAnyTwoTickets": 7,
+    "minDistinctNumbersBetweenAnyTwoTickets": 8
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 0,
+    "approvedClaimsCount": 0,
+    "bogeyClaimsCount": 0,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [],
+  "claims": [],
+  "players": [
+    {
+      "id": 1,
+      "name": "Aarav",
+      "ticketNumber": 4,
+      "ticketMatrix": [
+        [
+          8,
+          26,
+          44,
+          62,
+          82
+        ],
+        [
+          15,
+          33,
+          51,
+          73,
+          89
+        ],
+        [
+          9,
+          29,
+          48,
+          56,
+          74
+        ]
+      ],
+      "ticketNumbers": [
+        8,
+        26,
+        44,
+        62,
+        82,
+        15,
+        33,
+        51,
+        73,
+        89,
+        9,
+        29,
+        48,
+        56,
+        74
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 645
+    },
+    {
+      "id": 2,
+      "name": "Priya",
+      "ticketNumber": 8,
+      "ticketMatrix": [
+        [
+          1,
+          24,
+          41,
+          62,
+          80
+        ],
+        [
+          14,
+          35,
+          50,
+          74,
+          88
+        ],
+        [
+          3,
+          25,
+          48,
+          53,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        24,
+        41,
+        62,
+        80,
+        14,
+        35,
+        50,
+        74,
+        88,
+        3,
+        25,
+        48,
+        53,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 827
+    },
+    {
+      "id": 3,
+      "name": "Rohan",
+      "ticketNumber": 3,
+      "ticketMatrix": [
+        [
+          11,
+          36,
+          51,
+          66,
+          82
+        ],
+        [
+          2,
+          20,
+          39,
+          75,
+          87
+        ],
+        [
+          13,
+          22,
+          45,
+          59,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        11,
+        36,
+        51,
+        66,
+        82,
+        2,
+        20,
+        39,
+        75,
+        87,
+        13,
+        22,
+        45,
+        59,
+        79
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 630
+    },
+    {
+      "id": 4,
+      "name": "Maya",
+      "ticketNumber": 6,
+      "ticketMatrix": [
+        [
+          5,
+          10,
+          36,
+          50,
+          75
+        ],
+        [
+          15,
+          20,
+          44,
+          64,
+          79
+        ],
+        [
+          8,
+          37,
+          48,
+          53,
+          81
+        ]
+      ],
+      "ticketNumbers": [
+        5,
+        10,
+        36,
+        50,
+        75,
+        15,
+        20,
+        44,
+        64,
+        79,
+        8,
+        37,
+        48,
+        53,
+        81
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 697
+    },
+    {
+      "id": 5,
+      "name": "Liam",
+      "ticketNumber": 2,
+      "ticketMatrix": [
+        [
+          3,
+          23,
+          44,
+          60,
+          86
+        ],
+        [
+          15,
+          31,
+          54,
+          73,
+          87
+        ],
+        [
+          6,
+          24,
+          49,
+          59,
+          74
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        23,
+        44,
+        60,
+        86,
+        15,
+        31,
+        54,
+        73,
+        87,
+        6,
+        24,
+        49,
+        59,
+        74
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 622
+    },
+    {
+      "id": 6,
+      "name": "Sophia",
+      "ticketNumber": 1,
+      "ticketMatrix": [
+        [
+          1,
+          23,
+          40,
+          69,
+          80
+        ],
+        [
+          10,
+          39,
+          51,
+          77,
+          85
+        ],
+        [
+          5,
+          28,
+          43,
+          58,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        23,
+        40,
+        69,
+        80,
+        10,
+        39,
+        51,
+        77,
+        85,
+        5,
+        28,
+        43,
+        58,
+        79
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 617
+    },
+    {
+      "id": 7,
+      "name": "Noah",
+      "ticketNumber": 7,
+      "ticketMatrix": [
+        [
+          10,
+          33,
+          54,
+          66,
+          87
+        ],
+        [
+          1,
+          23,
+          39,
+          71,
+          88
+        ],
+        [
+          13,
+          25,
+          48,
+          59,
+          74
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        33,
+        54,
+        66,
+        87,
+        1,
+        23,
+        39,
+        71,
+        88,
+        13,
+        25,
+        48,
+        59,
+        74
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 702
+    },
+    {
+      "id": 8,
+      "name": "Ananya",
+      "ticketNumber": 5,
+      "ticketMatrix": [
+        [
+          8,
+          25,
+          43,
+          55,
+          80
+        ],
+        [
+          17,
+          31,
+          58,
+          65,
+          89
+        ],
+        [
+          9,
+          29,
+          34,
+          67,
+          71
+        ]
+      ],
+      "ticketNumbers": [
+        8,
+        25,
+        43,
+        55,
+        80,
+        17,
+        31,
+        58,
+        65,
+        89,
+        9,
+        29,
+        34,
+        67,
+        71
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 644
+    },
+    {
+      "id": 9,
+      "name": "Kabir",
+      "ticketNumber": 9,
+      "ticketMatrix": [
+        [
+          1,
+          10,
+          48,
+          55,
+          70
+        ],
+        [
+          9,
+          22,
+          30,
+          66,
+          79
+        ],
+        [
+          15,
+          37,
+          49,
+          68,
+          83
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        10,
+        48,
+        55,
+        70,
+        9,
+        22,
+        30,
+        66,
+        79,
+        15,
+        37,
+        49,
+        68,
+        83
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 137
+    },
+    {
+      "id": 10,
+      "name": "Emma",
+      "ticketNumber": 12,
+      "ticketMatrix": [
+        [
+          1,
+          20,
+          40,
+          51,
+          84
+        ],
+        [
+          15,
+          31,
+          59,
+          64,
+          88
+        ],
+        [
+          5,
+          23,
+          39,
+          65,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        20,
+        40,
+        51,
+        84,
+        15,
+        31,
+        59,
+        64,
+        88,
+        5,
+        23,
+        39,
+        65,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 347
+    },
+    {
+      "id": 11,
+      "name": "Oliver",
+      "ticketNumber": 10,
+      "ticketMatrix": [
+        [
+          7,
+          20,
+          36,
+          58,
+          73
+        ],
+        [
+          9,
+          11,
+          59,
+          64,
+          85
+        ],
+        [
+          14,
+          21,
+          48,
+          67,
+          87
+        ]
+      ],
+      "ticketNumbers": [
+        7,
+        20,
+        36,
+        58,
+        73,
+        9,
+        11,
+        59,
+        64,
+        85,
+        14,
+        21,
+        48,
+        67,
+        87
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 142
+    },
+    {
+      "id": 12,
+      "name": "Diya",
+      "ticketNumber": 13,
+      "ticketMatrix": [
+        [
+          3,
+          21,
+          45,
+          60,
+          81
+        ],
+        [
+          13,
+          31,
+          50,
+          70,
+          89
+        ],
+        [
+          5,
+          23,
+          46,
+          55,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        21,
+        45,
+        60,
+        81,
+        13,
+        31,
+        50,
+        70,
+        89,
+        5,
+        23,
+        46,
+        55,
+        76
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 529
+    },
+    {
+      "id": 13,
+      "name": "Carlos",
+      "ticketNumber": 11,
+      "ticketMatrix": [
+        [
+          2,
+          28,
+          41,
+          56,
+          87
+        ],
+        [
+          12,
+          32,
+          57,
+          63,
+          90
+        ],
+        [
+          6,
+          29,
+          35,
+          67,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        2,
+        28,
+        41,
+        56,
+        87,
+        12,
+        32,
+        57,
+        63,
+        90,
+        6,
+        29,
+        35,
+        67,
+        75
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 146
+    },
+    {
+      "id": 14,
+      "name": "Chloe",
+      "ticketNumber": 14,
+      "ticketMatrix": [
+        [
+          13,
+          30,
+          40,
+          64,
+          72
+        ],
+        [
+          3,
+          14,
+          48,
+          55,
+          83
+        ],
+        [
+          7,
+          26,
+          33,
+          58,
+          74
+        ]
+      ],
+      "ticketNumbers": [
+        13,
+        30,
+        40,
+        64,
+        72,
+        3,
+        14,
+        48,
+        55,
+        83,
+        7,
+        26,
+        33,
+        58,
+        74
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 737
+    },
+    {
+      "id": 15,
+      "name": "Arjun",
+      "ticketNumber": 15,
+      "ticketMatrix": [
+        [
+          10,
+          30,
+          51,
+          65,
+          84
+        ],
+        [
+          2,
+          20,
+          36,
+          71,
+          85
+        ],
+        [
+          16,
+          27,
+          41,
+          53,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        30,
+        51,
+        65,
+        84,
+        2,
+        20,
+        36,
+        71,
+        85,
+        16,
+        27,
+        41,
+        53,
+        73
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 943
+    },
+    {
+      "id": 16,
+      "name": "Sneha",
+      "ticketNumber": 16,
+      "ticketMatrix": [
+        [
+          3,
+          26,
+          43,
+          68,
+          85
+        ],
+        [
+          19,
+          31,
+          51,
+          73,
+          88
+        ],
+        [
+          4,
+          27,
+          49,
+          57,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        26,
+        43,
+        68,
+        85,
+        19,
+        31,
+        51,
+        73,
+        88,
+        4,
+        27,
+        49,
+        57,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1118
+    },
+    {
+      "id": 17,
+      "name": "Vikram",
+      "ticketNumber": 17,
+      "ticketMatrix": [
+        [
+          3,
+          29,
+          35,
+          62,
+          72
+        ],
+        [
+          15,
+          36,
+          40,
+          65,
+          81
+        ],
+        [
+          8,
+          19,
+          48,
+          52,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        29,
+        35,
+        62,
+        72,
+        15,
+        36,
+        40,
+        65,
+        81,
+        8,
+        19,
+        48,
+        52,
+        73
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 585
+    },
+    {
+      "id": 18,
+      "name": "Aisha",
+      "ticketNumber": 18,
+      "ticketMatrix": [
+        [
+          11,
+          33,
+          42,
+          69,
+          71
+        ],
+        [
+          3,
+          15,
+          43,
+          57,
+          86
+        ],
+        [
+          7,
+          25,
+          36,
+          59,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        11,
+        33,
+        42,
+        69,
+        71,
+        3,
+        15,
+        43,
+        57,
+        86,
+        7,
+        25,
+        36,
+        59,
+        75
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 718
+    },
+    {
+      "id": 19,
+      "name": "Ethan",
+      "ticketNumber": 19,
+      "ticketMatrix": [
+        [
+          1,
+          26,
+          42,
+          64,
+          86
+        ],
+        [
+          16,
+          34,
+          51,
+          70,
+          89
+        ],
+        [
+          6,
+          27,
+          47,
+          55,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        26,
+        42,
+        64,
+        86,
+        16,
+        34,
+        51,
+        70,
+        89,
+        6,
+        27,
+        47,
+        55,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 911
+    },
+    {
+      "id": 20,
+      "name": "Mia",
+      "ticketNumber": 20,
+      "ticketMatrix": [
+        [
+          4,
+          12,
+          30,
+          54,
+          71
+        ],
+        [
+          15,
+          21,
+          41,
+          68,
+          79
+        ],
+        [
+          8,
+          31,
+          46,
+          55,
+          89
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        12,
+        30,
+        54,
+        71,
+        15,
+        21,
+        41,
+        68,
+        79,
+        8,
+        31,
+        46,
+        55,
+        89
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1109
+    },
+    {
+      "id": 21,
+      "name": "Rahul",
+      "ticketNumber": 21,
+      "ticketMatrix": [
+        [
+          5,
+          23,
+          31,
+          67,
+          73
+        ],
+        [
+          13,
+          38,
+          42,
+          69,
+          80
+        ],
+        [
+          6,
+          17,
+          46,
+          54,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        5,
+        23,
+        31,
+        67,
+        73,
+        13,
+        38,
+        42,
+        69,
+        80,
+        6,
+        17,
+        46,
+        54,
+        75
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1286
+    },
+    {
+      "id": 22,
+      "name": "Zara",
+      "ticketNumber": 22,
+      "ticketMatrix": [
+        [
+          2,
+          25,
+          36,
+          62,
+          75
+        ],
+        [
+          14,
+          37,
+          42,
+          66,
+          82
+        ],
+        [
+          6,
+          19,
+          48,
+          50,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        2,
+        25,
+        36,
+        62,
+        75,
+        14,
+        37,
+        42,
+        66,
+        82,
+        6,
+        19,
+        48,
+        50,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1465
+    },
+    {
+      "id": 23,
+      "name": "Siddharth",
+      "ticketNumber": 23,
+      "ticketMatrix": [
+        [
+          7,
+          10,
+          41,
+          56,
+          72
+        ],
+        [
+          9,
+          20,
+          32,
+          61,
+          75
+        ],
+        [
+          18,
+          39,
+          42,
+          67,
+          87
+        ]
+      ],
+      "ticketNumbers": [
+        7,
+        10,
+        41,
+        56,
+        72,
+        9,
+        20,
+        32,
+        61,
+        75,
+        18,
+        39,
+        42,
+        67,
+        87
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1655
+    },
+    {
+      "id": 24,
+      "name": "Elena",
+      "ticketNumber": 24,
+      "ticketMatrix": [
+        [
+          13,
+          30,
+          51,
+          61,
+          81
+        ],
+        [
+          1,
+          26,
+          36,
+          72,
+          82
+        ],
+        [
+          19,
+          29,
+          43,
+          52,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        13,
+        30,
+        51,
+        61,
+        81,
+        1,
+        26,
+        36,
+        72,
+        82,
+        19,
+        29,
+        43,
+        52,
+        73
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1842
+    },
+    {
+      "id": 25,
+      "name": "Kavya",
+      "ticketNumber": 25,
+      "ticketMatrix": [
+        [
+          1,
+          21,
+          43,
+          52,
+          82
+        ],
+        [
+          16,
+          30,
+          53,
+          62,
+          85
+        ],
+        [
+          2,
+          24,
+          33,
+          67,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        21,
+        43,
+        52,
+        82,
+        16,
+        30,
+        53,
+        62,
+        85,
+        2,
+        24,
+        33,
+        67,
+        79
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 327
+    },
+    {
+      "id": 26,
+      "name": "Leo",
+      "ticketNumber": 26,
+      "ticketMatrix": [
+        [
+          4,
+          24,
+          41,
+          63,
+          81
+        ],
+        [
+          13,
+          33,
+          53,
+          70,
+          89
+        ],
+        [
+          7,
+          25,
+          45,
+          58,
+          72
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        24,
+        41,
+        63,
+        81,
+        13,
+        33,
+        53,
+        70,
+        89,
+        7,
+        25,
+        45,
+        58,
+        72
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 533
+    },
+    {
+      "id": 27,
+      "name": "Tara",
+      "ticketNumber": 27,
+      "ticketMatrix": [
+        [
+          3,
+          23,
+          46,
+          64,
+          84
+        ],
+        [
+          18,
+          33,
+          56,
+          73,
+          85
+        ],
+        [
+          4,
+          27,
+          48,
+          59,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        23,
+        46,
+        64,
+        84,
+        18,
+        33,
+        56,
+        73,
+        85,
+        4,
+        27,
+        48,
+        59,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 718
+    },
+    {
+      "id": 28,
+      "name": "Aditya",
+      "ticketNumber": 28,
+      "ticketMatrix": [
+        [
+          4,
+          13,
+          30,
+          55,
+          70
+        ],
+        [
+          17,
+          24,
+          44,
+          66,
+          78
+        ],
+        [
+          7,
+          37,
+          48,
+          58,
+          80
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        13,
+        30,
+        55,
+        70,
+        17,
+        24,
+        44,
+        66,
+        78,
+        7,
+        37,
+        48,
+        58,
+        80
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1036
+    },
+    {
+      "id": 29,
+      "name": "Meera",
+      "ticketNumber": 29,
+      "ticketMatrix": [
+        [
+          3,
+          23,
+          46,
+          55,
+          85
+        ],
+        [
+          11,
+          32,
+          57,
+          60,
+          86
+        ],
+        [
+          6,
+          25,
+          36,
+          64,
+          72
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        23,
+        46,
+        55,
+        85,
+        11,
+        32,
+        57,
+        60,
+        86,
+        6,
+        25,
+        36,
+        64,
+        72
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1105
+    },
+    {
+      "id": 30,
+      "name": "Sam",
+      "ticketNumber": 30,
+      "ticketMatrix": [
+        [
+          16,
+          33,
+          41,
+          62,
+          71
+        ],
+        [
+          4,
+          18,
+          49,
+          51,
+          81
+        ],
+        [
+          8,
+          24,
+          37,
+          56,
+          74
+        ]
+      ],
+      "ticketNumbers": [
+        16,
+        33,
+        41,
+        62,
+        71,
+        4,
+        18,
+        49,
+        51,
+        81,
+        8,
+        24,
+        37,
+        56,
+        74
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1400
+    },
+    {
+      "id": 31,
+      "name": "Rhea",
+      "ticketNumber": 31,
+      "ticketMatrix": [
+        [
+          4,
+          22,
+          37,
+          50,
+          72
+        ],
+        [
+          9,
+          15,
+          57,
+          62,
+          80
+        ],
+        [
+          16,
+          23,
+          45,
+          66,
+          85
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        22,
+        37,
+        50,
+        72,
+        9,
+        15,
+        57,
+        62,
+        80,
+        16,
+        23,
+        45,
+        66,
+        85
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1596
+    },
+    {
+      "id": 32,
+      "name": "Lucas",
+      "ticketNumber": 32,
+      "ticketMatrix": [
+        [
+          3,
+          27,
+          44,
+          67,
+          88
+        ],
+        [
+          19,
+          39,
+          55,
+          70,
+          90
+        ],
+        [
+          6,
+          29,
+          47,
+          57,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        27,
+        44,
+        67,
+        88,
+        19,
+        39,
+        55,
+        70,
+        90,
+        6,
+        29,
+        47,
+        57,
+        76
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1806
+    },
+    {
+      "id": 33,
+      "name": "Aarav",
+      "ticketNumber": 33,
+      "ticketMatrix": [
+        [
+          2,
+          11,
+          42,
+          57,
+          70
+        ],
+        [
+          9,
+          25,
+          36,
+          60,
+          73
+        ],
+        [
+          15,
+          38,
+          43,
+          66,
+          82
+        ]
+      ],
+      "ticketNumbers": [
+        2,
+        11,
+        42,
+        57,
+        70,
+        9,
+        25,
+        36,
+        60,
+        73,
+        15,
+        38,
+        43,
+        66,
+        82
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 335
+    },
+    {
+      "id": 34,
+      "name": "Priya",
+      "ticketNumber": 34,
+      "ticketMatrix": [
+        [
+          6,
+          21,
+          48,
+          51,
+          87
+        ],
+        [
+          16,
+          35,
+          52,
+          61,
+          89
+        ],
+        [
+          8,
+          22,
+          39,
+          65,
+          72
+        ]
+      ],
+      "ticketNumbers": [
+        6,
+        21,
+        48,
+        51,
+        87,
+        16,
+        35,
+        52,
+        61,
+        89,
+        8,
+        22,
+        39,
+        65,
+        72
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 508
+    },
+    {
+      "id": 35,
+      "name": "Rohan",
+      "ticketNumber": 35,
+      "ticketMatrix": [
+        [
+          7,
+          22,
+          31,
+          52,
+          78
+        ],
+        [
+          9,
+          17,
+          54,
+          60,
+          83
+        ],
+        [
+          18,
+          26,
+          41,
+          67,
+          84
+        ]
+      ],
+      "ticketNumbers": [
+        7,
+        22,
+        31,
+        52,
+        78,
+        9,
+        17,
+        54,
+        60,
+        83,
+        18,
+        26,
+        41,
+        67,
+        84
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 720
+    },
+    {
+      "id": 36,
+      "name": "Maya",
+      "ticketNumber": 36,
+      "ticketMatrix": [
+        [
+          1,
+          26,
+          34,
+          63,
+          70
+        ],
+        [
+          15,
+          35,
+          40,
+          65,
+          84
+        ],
+        [
+          8,
+          16,
+          47,
+          52,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        26,
+        34,
+        63,
+        70,
+        15,
+        35,
+        40,
+        65,
+        84,
+        8,
+        16,
+        47,
+        52,
+        73
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 909
+    },
+    {
+      "id": 37,
+      "name": "Liam",
+      "ticketNumber": 37,
+      "ticketMatrix": [
+        [
+          2,
+          21,
+          31,
+          66,
+          70
+        ],
+        [
+          15,
+          39,
+          44,
+          69,
+          89
+        ],
+        [
+          7,
+          16,
+          48,
+          56,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        2,
+        21,
+        31,
+        66,
+        70,
+        15,
+        39,
+        44,
+        69,
+        89,
+        7,
+        16,
+        48,
+        56,
+        75
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1092
+    },
+    {
+      "id": 38,
+      "name": "Sophia",
+      "ticketNumber": 38,
+      "ticketMatrix": [
+        [
+          16,
+          31,
+          45,
+          65,
+          72
+        ],
+        [
+          1,
+          17,
+          47,
+          57,
+          84
+        ],
+        [
+          6,
+          28,
+          37,
+          58,
+          77
+        ]
+      ],
+      "ticketNumbers": [
+        16,
+        31,
+        45,
+        65,
+        72,
+        1,
+        17,
+        47,
+        57,
+        84,
+        6,
+        28,
+        37,
+        58,
+        77
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1286
+    },
+    {
+      "id": 39,
+      "name": "Noah",
+      "ticketNumber": 39,
+      "ticketMatrix": [
+        [
+          1,
+          22,
+          36,
+          61,
+          78
+        ],
+        [
+          11,
+          38,
+          40,
+          62,
+          87
+        ],
+        [
+          2,
+          17,
+          41,
+          56,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        22,
+        36,
+        61,
+        78,
+        11,
+        38,
+        40,
+        62,
+        87,
+        2,
+        17,
+        41,
+        56,
+        79
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1462
+    },
+    {
+      "id": 40,
+      "name": "Ananya",
+      "ticketNumber": 40,
+      "ticketMatrix": [
+        [
+          1,
+          23,
+          38,
+          65,
+          71
+        ],
+        [
+          10,
+          39,
+          40,
+          66,
+          81
+        ],
+        [
+          9,
+          17,
+          49,
+          53,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        23,
+        38,
+        65,
+        71,
+        10,
+        39,
+        40,
+        66,
+        81,
+        9,
+        17,
+        49,
+        53,
+        79
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1657
+    },
+    {
+      "id": 41,
+      "name": "Kabir",
+      "ticketNumber": 41,
+      "ticketMatrix": [
+        [
+          12,
+          31,
+          51,
+          68,
+          81
+        ],
+        [
+          5,
+          22,
+          36,
+          74,
+          88
+        ],
+        [
+          19,
+          29,
+          45,
+          57,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        12,
+        31,
+        51,
+        68,
+        81,
+        5,
+        22,
+        36,
+        74,
+        88,
+        19,
+        29,
+        45,
+        57,
+        76
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 128881
+    },
+    {
+      "id": 42,
+      "name": "Emma",
+      "ticketNumber": 42,
+      "ticketMatrix": [
+        [
+          3,
+          17,
+          32,
+          50,
+          70
+        ],
+        [
+          19,
+          23,
+          40,
+          64,
+          78
+        ],
+        [
+          9,
+          35,
+          42,
+          56,
+          89
+        ]
+      ],
+      "ticketNumbers": [
+        3,
+        17,
+        32,
+        50,
+        70,
+        19,
+        23,
+        40,
+        64,
+        78,
+        9,
+        35,
+        42,
+        56,
+        89
+      ],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": 236987
+    },
+    {
+      "id": 43,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 44,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 45,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 46,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 47,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 48,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 49,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 50,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    }
+  ]
+}

@@ -1,0 +1,732 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-21T18:52:39.033Z",
+    "gameId": "361850e8-b527-42e1-ae72-8dcf196ada99",
+    "gameCode": "71A94C",
+    "totalPlayersRegistered": 10,
+    "totalCalls": 35,
+    "gameStatus": "COMPLETED",
+    "durationSeconds": 574
+  },
+  "ticketUniqueness": {
+    "totalTickets": 10,
+    "uniqueTicketsCount": 10,
+    "duplicateCount": 0,
+    "is100PercentUnique": true,
+    "duplicates": [],
+    "maxCommonNumbersBetweenAnyTwoTickets": 5,
+    "minDistinctNumbersBetweenAnyTwoTickets": 10
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 5,
+    "approvedClaimsCount": 0,
+    "bogeyClaimsCount": 5,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [
+    {
+      "number": 54,
+      "sequence": 1
+    },
+    {
+      "number": 36,
+      "sequence": 2
+    },
+    {
+      "number": 53,
+      "sequence": 3
+    },
+    {
+      "number": 87,
+      "sequence": 4
+    },
+    {
+      "number": 2,
+      "sequence": 5
+    },
+    {
+      "number": 12,
+      "sequence": 6
+    },
+    {
+      "number": 59,
+      "sequence": 7
+    },
+    {
+      "number": 18,
+      "sequence": 8
+    },
+    {
+      "number": 47,
+      "sequence": 9
+    },
+    {
+      "number": 11,
+      "sequence": 10
+    },
+    {
+      "number": 61,
+      "sequence": 11
+    },
+    {
+      "number": 38,
+      "sequence": 12
+    },
+    {
+      "number": 17,
+      "sequence": 13
+    },
+    {
+      "number": 69,
+      "sequence": 14
+    },
+    {
+      "number": 10,
+      "sequence": 15
+    },
+    {
+      "number": 43,
+      "sequence": 16
+    },
+    {
+      "number": 73,
+      "sequence": 17
+    },
+    {
+      "number": 37,
+      "sequence": 18
+    },
+    {
+      "number": 15,
+      "sequence": 19
+    },
+    {
+      "number": 35,
+      "sequence": 20
+    },
+    {
+      "number": 70,
+      "sequence": 21
+    },
+    {
+      "number": 62,
+      "sequence": 22
+    },
+    {
+      "number": 30,
+      "sequence": 23
+    },
+    {
+      "number": 48,
+      "sequence": 24
+    },
+    {
+      "number": 23,
+      "sequence": 25
+    },
+    {
+      "number": 86,
+      "sequence": 26
+    },
+    {
+      "number": 60,
+      "sequence": 27
+    },
+    {
+      "number": 33,
+      "sequence": 28
+    },
+    {
+      "number": 16,
+      "sequence": 29
+    },
+    {
+      "number": 5,
+      "sequence": 30
+    },
+    {
+      "number": 25,
+      "sequence": 31
+    },
+    {
+      "number": 90,
+      "sequence": 32
+    },
+    {
+      "number": 45,
+      "sequence": 33
+    },
+    {
+      "number": 66,
+      "sequence": 34
+    },
+    {
+      "number": 67,
+      "sequence": 35
+    }
+  ],
+  "claims": [
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 20,
+      "callNumber": 35,
+      "status": "BOGEY",
+      "reason": "HTTP 404 Not Found: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.MPT_claim_prize_atomic with parameters p_call_sequence, p_game_id, p_prize_id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":\"Perhaps you meant to call the function public.MPT_claim_seat_otp\",\"message\":\"Could not find the function public.MPT_claim_prize_atomic(p_call_sequence, p_game_id, p_prize_id) in the schema cache\"}",
+      "timestamp": "2026-09-21T18:46:03.710Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 20,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 4,
+      "playerName": "Maya",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 19,
+      "callNumber": 15,
+      "status": "BOGEY",
+      "reason": "HTTP 404 Not Found: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.MPT_claim_prize_atomic with parameters p_call_sequence, p_game_id, p_prize_id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":\"Perhaps you meant to call the function public.MPT_claim_seat_otp\",\"message\":\"Could not find the function public.MPT_claim_prize_atomic(p_call_sequence, p_game_id, p_prize_id) in the schema cache\"}",
+      "timestamp": "2026-09-21T18:45:55.490Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 19,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 7,
+      "playerName": "Noah",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 17,
+      "callNumber": 73,
+      "status": "BOGEY",
+      "reason": "HTTP 404 Not Found: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.MPT_claim_prize_atomic with parameters p_call_sequence, p_game_id, p_prize_id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":\"Perhaps you meant to call the function public.MPT_claim_seat_otp\",\"message\":\"Could not find the function public.MPT_claim_prize_atomic(p_call_sequence, p_game_id, p_prize_id) in the schema cache\"}",
+      "timestamp": "2026-09-21T18:45:39.020Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 17,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 8,
+      "playerName": "Ananya",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 26,
+      "callNumber": 86,
+      "status": "BOGEY",
+      "reason": "HTTP 404 Not Found: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.MPT_claim_prize_atomic with parameters p_call_sequence, p_game_id, p_prize_id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":\"Perhaps you meant to call the function public.MPT_claim_seat_otp\",\"message\":\"Could not find the function public.MPT_claim_prize_atomic(p_call_sequence, p_game_id, p_prize_id) in the schema cache\"}",
+      "timestamp": "2026-09-21T18:46:51.478Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 26,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 10,
+      "playerName": "Emma",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 33,
+      "callNumber": 45,
+      "status": "BOGEY",
+      "reason": "HTTP 404 Not Found: {\"code\":\"PGRST202\",\"details\":\"Searched for the function public.MPT_claim_prize_atomic with parameters p_call_sequence, p_game_id, p_prize_id or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache.\",\"hint\":\"Perhaps you meant to call the function public.MPT_claim_seat_otp\",\"message\":\"Could not find the function public.MPT_claim_prize_atomic(p_call_sequence, p_game_id, p_prize_id) in the schema cache\"}",
+      "timestamp": "2026-09-21T18:47:49.006Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 33,
+      "matchedNumbersCount": 5
+    }
+  ],
+  "players": [
+    {
+      "id": 1,
+      "name": "Aarav",
+      "ticketNumber": 4,
+      "ticketMatrix": [
+        [
+          1,
+          28,
+          43,
+          62,
+          83
+        ],
+        [
+          11,
+          35,
+          51,
+          70,
+          86
+        ],
+        [
+          7,
+          29,
+          46,
+          54,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        28,
+        43,
+        62,
+        83,
+        11,
+        35,
+        51,
+        70,
+        86,
+        7,
+        29,
+        46,
+        54,
+        73
+      ],
+      "dabbedCount": 8,
+      "prizesClaimed": [
+        "EARLY_FIVE"
+      ],
+      "registrationTimeMs": 1393
+    },
+    {
+      "id": 2,
+      "name": "Priya",
+      "ticketNumber": 10,
+      "ticketMatrix": [
+        [
+          14,
+          31,
+          51,
+          64,
+          81
+        ],
+        [
+          6,
+          24,
+          39,
+          74,
+          90
+        ],
+        [
+          19,
+          27,
+          43,
+          56,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        14,
+        31,
+        51,
+        64,
+        81,
+        6,
+        24,
+        39,
+        74,
+        90,
+        19,
+        27,
+        43,
+        56,
+        75
+      ],
+      "dabbedCount": 2,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1441
+    },
+    {
+      "id": 3,
+      "name": "Rohan",
+      "ticketNumber": 8,
+      "ticketMatrix": [
+        [
+          10,
+          38,
+          55,
+          68,
+          80
+        ],
+        [
+          4,
+          25,
+          39,
+          78,
+          82
+        ],
+        [
+          19,
+          29,
+          42,
+          57,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        38,
+        55,
+        68,
+        80,
+        4,
+        25,
+        39,
+        78,
+        82,
+        19,
+        29,
+        42,
+        57,
+        79
+      ],
+      "dabbedCount": 3,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1393
+    },
+    {
+      "id": 4,
+      "name": "Maya",
+      "ticketNumber": 7,
+      "ticketMatrix": [
+        [
+          6,
+          27,
+          33,
+          64,
+          75
+        ],
+        [
+          11,
+          37,
+          47,
+          69,
+          81
+        ],
+        [
+          9,
+          15,
+          48,
+          57,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        6,
+        27,
+        33,
+        64,
+        75,
+        11,
+        37,
+        47,
+        69,
+        81,
+        9,
+        15,
+        48,
+        57,
+        79
+      ],
+      "dabbedCount": 7,
+      "prizesClaimed": [
+        "EARLY_FIVE"
+      ],
+      "registrationTimeMs": 1375
+    },
+    {
+      "id": 5,
+      "name": "Liam",
+      "ticketNumber": 2,
+      "ticketMatrix": [
+        [
+          1,
+          10,
+          40,
+          54,
+          78
+        ],
+        [
+          6,
+          26,
+          32,
+          65,
+          79
+        ],
+        [
+          14,
+          37,
+          45,
+          68,
+          80
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        10,
+        40,
+        54,
+        78,
+        6,
+        26,
+        32,
+        65,
+        79,
+        14,
+        37,
+        45,
+        68,
+        80
+      ],
+      "dabbedCount": 4,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1350
+    },
+    {
+      "id": 6,
+      "name": "Sophia",
+      "ticketNumber": 1,
+      "ticketMatrix": [
+        [
+          10,
+          35,
+          51,
+          65,
+          81
+        ],
+        [
+          5,
+          23,
+          39,
+          71,
+          88
+        ],
+        [
+          14,
+          28,
+          44,
+          52,
+          72
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        35,
+        51,
+        65,
+        81,
+        5,
+        23,
+        39,
+        71,
+        88,
+        14,
+        28,
+        44,
+        52,
+        72
+      ],
+      "dabbedCount": 4,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1345
+    },
+    {
+      "id": 7,
+      "name": "Noah",
+      "ticketNumber": 6,
+      "ticketMatrix": [
+        [
+          4,
+          24,
+          31,
+          60,
+          73
+        ],
+        [
+          14,
+          37,
+          41,
+          61,
+          88
+        ],
+        [
+          7,
+          18,
+          47,
+          59,
+          78
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        24,
+        31,
+        60,
+        73,
+        14,
+        37,
+        41,
+        61,
+        88,
+        7,
+        18,
+        47,
+        59,
+        78
+      ],
+      "dabbedCount": 7,
+      "prizesClaimed": [
+        "EARLY_FIVE"
+      ],
+      "registrationTimeMs": 1368
+    },
+    {
+      "id": 8,
+      "name": "Ananya",
+      "ticketNumber": 9,
+      "ticketMatrix": [
+        [
+          14,
+          31,
+          48,
+          68,
+          74
+        ],
+        [
+          2,
+          18,
+          49,
+          55,
+          86
+        ],
+        [
+          3,
+          26,
+          32,
+          59,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        14,
+        31,
+        48,
+        68,
+        74,
+        2,
+        18,
+        49,
+        55,
+        86,
+        3,
+        26,
+        32,
+        59,
+        79
+      ],
+      "dabbedCount": 5,
+      "prizesClaimed": [
+        "EARLY_FIVE"
+      ],
+      "registrationTimeMs": 1400
+    },
+    {
+      "id": 9,
+      "name": "Kabir",
+      "ticketNumber": 3,
+      "ticketMatrix": [
+        [
+          1,
+          21,
+          42,
+          50,
+          84
+        ],
+        [
+          17,
+          32,
+          51,
+          63,
+          90
+        ],
+        [
+          8,
+          24,
+          33,
+          68,
+          70
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        21,
+        42,
+        50,
+        84,
+        17,
+        32,
+        51,
+        63,
+        90,
+        8,
+        24,
+        33,
+        68,
+        70
+      ],
+      "dabbedCount": 4,
+      "prizesClaimed": [],
+      "registrationTimeMs": 1356
+    },
+    {
+      "id": 10,
+      "name": "Emma",
+      "ticketNumber": 5,
+      "ticketMatrix": [
+        [
+          8,
+          13,
+          45,
+          54,
+          72
+        ],
+        [
+          9,
+          20,
+          35,
+          66,
+          76
+        ],
+        [
+          18,
+          39,
+          49,
+          67,
+          86
+        ]
+      ],
+      "ticketNumbers": [
+        8,
+        13,
+        45,
+        54,
+        72,
+        9,
+        20,
+        35,
+        66,
+        76,
+        18,
+        39,
+        49,
+        67,
+        86
+      ],
+      "dabbedCount": 7,
+      "prizesClaimed": [
+        "EARLY_FIVE"
+      ],
+      "registrationTimeMs": 1363
+    }
+  ]
+}

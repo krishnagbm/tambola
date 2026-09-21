@@ -1,0 +1,1540 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-21T19:09:07.480Z",
+    "gameId": "70b8a3ac-3323-47cb-9fef-789436521133",
+    "gameCode": "711448",
+    "totalPlayersRegistered": 10,
+    "totalCalls": 80,
+    "gameStatus": "COMPLETED",
+    "durationSeconds": 723
+  },
+  "ticketUniqueness": {
+    "totalTickets": 10,
+    "uniqueTicketsCount": 10,
+    "duplicateCount": 0,
+    "is100PercentUnique": true,
+    "duplicates": [],
+    "maxCommonNumbersBetweenAnyTwoTickets": 7,
+    "minDistinctNumbersBetweenAnyTwoTickets": 8
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 38,
+    "approvedClaimsCount": 38,
+    "bogeyClaimsCount": 0,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [
+    {
+      "number": 26,
+      "sequence": 1
+    },
+    {
+      "number": 35,
+      "sequence": 2
+    },
+    {
+      "number": 22,
+      "sequence": 3
+    },
+    {
+      "number": 10,
+      "sequence": 4
+    },
+    {
+      "number": 21,
+      "sequence": 5
+    },
+    {
+      "number": 34,
+      "sequence": 6
+    },
+    {
+      "number": 7,
+      "sequence": 7
+    },
+    {
+      "number": 78,
+      "sequence": 8
+    },
+    {
+      "number": 56,
+      "sequence": 9
+    },
+    {
+      "number": 12,
+      "sequence": 10
+    },
+    {
+      "number": 84,
+      "sequence": 11
+    },
+    {
+      "number": 86,
+      "sequence": 12
+    },
+    {
+      "number": 23,
+      "sequence": 13
+    },
+    {
+      "number": 64,
+      "sequence": 14
+    },
+    {
+      "number": 31,
+      "sequence": 15
+    },
+    {
+      "number": 39,
+      "sequence": 16
+    },
+    {
+      "number": 45,
+      "sequence": 17
+    },
+    {
+      "number": 37,
+      "sequence": 18
+    },
+    {
+      "number": 41,
+      "sequence": 19
+    },
+    {
+      "number": 30,
+      "sequence": 20
+    },
+    {
+      "number": 74,
+      "sequence": 21
+    },
+    {
+      "number": 58,
+      "sequence": 22
+    },
+    {
+      "number": 20,
+      "sequence": 23
+    },
+    {
+      "number": 60,
+      "sequence": 24
+    },
+    {
+      "number": 54,
+      "sequence": 25
+    },
+    {
+      "number": 79,
+      "sequence": 26
+    },
+    {
+      "number": 51,
+      "sequence": 27
+    },
+    {
+      "number": 75,
+      "sequence": 28
+    },
+    {
+      "number": 62,
+      "sequence": 29
+    },
+    {
+      "number": 89,
+      "sequence": 30
+    },
+    {
+      "number": 81,
+      "sequence": 31
+    },
+    {
+      "number": 83,
+      "sequence": 32
+    },
+    {
+      "number": 90,
+      "sequence": 33
+    },
+    {
+      "number": 25,
+      "sequence": 34
+    },
+    {
+      "number": 44,
+      "sequence": 35
+    },
+    {
+      "number": 68,
+      "sequence": 36
+    },
+    {
+      "number": 1,
+      "sequence": 37
+    },
+    {
+      "number": 57,
+      "sequence": 38
+    },
+    {
+      "number": 80,
+      "sequence": 39
+    },
+    {
+      "number": 19,
+      "sequence": 40
+    },
+    {
+      "number": 46,
+      "sequence": 41
+    },
+    {
+      "number": 61,
+      "sequence": 42
+    },
+    {
+      "number": 6,
+      "sequence": 43
+    },
+    {
+      "number": 71,
+      "sequence": 44
+    },
+    {
+      "number": 13,
+      "sequence": 45
+    },
+    {
+      "number": 69,
+      "sequence": 46
+    },
+    {
+      "number": 17,
+      "sequence": 47
+    },
+    {
+      "number": 32,
+      "sequence": 48
+    },
+    {
+      "number": 73,
+      "sequence": 49
+    },
+    {
+      "number": 4,
+      "sequence": 50
+    },
+    {
+      "number": 50,
+      "sequence": 51
+    },
+    {
+      "number": 87,
+      "sequence": 52
+    },
+    {
+      "number": 29,
+      "sequence": 53
+    },
+    {
+      "number": 48,
+      "sequence": 54
+    },
+    {
+      "number": 14,
+      "sequence": 55
+    },
+    {
+      "number": 42,
+      "sequence": 56
+    },
+    {
+      "number": 2,
+      "sequence": 57
+    },
+    {
+      "number": 55,
+      "sequence": 58
+    },
+    {
+      "number": 11,
+      "sequence": 59
+    },
+    {
+      "number": 66,
+      "sequence": 60
+    },
+    {
+      "number": 76,
+      "sequence": 61
+    },
+    {
+      "number": 5,
+      "sequence": 62
+    },
+    {
+      "number": 67,
+      "sequence": 63
+    },
+    {
+      "number": 85,
+      "sequence": 64
+    },
+    {
+      "number": 16,
+      "sequence": 65
+    },
+    {
+      "number": 40,
+      "sequence": 66
+    },
+    {
+      "number": 18,
+      "sequence": 67
+    },
+    {
+      "number": 53,
+      "sequence": 68
+    },
+    {
+      "number": 59,
+      "sequence": 69
+    },
+    {
+      "number": 47,
+      "sequence": 70
+    },
+    {
+      "number": 15,
+      "sequence": 71
+    },
+    {
+      "number": 82,
+      "sequence": 72
+    },
+    {
+      "number": 9,
+      "sequence": 73
+    },
+    {
+      "number": 77,
+      "sequence": 74
+    },
+    {
+      "number": 33,
+      "sequence": 75
+    },
+    {
+      "number": 3,
+      "sequence": 76
+    },
+    {
+      "number": 43,
+      "sequence": 77
+    },
+    {
+      "number": 49,
+      "sequence": 78
+    },
+    {
+      "number": 36,
+      "sequence": 79
+    },
+    {
+      "number": 63,
+      "sequence": 80
+    }
+  ],
+  "claims": [
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 26,
+      "callNumber": 79,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "ba83929f-9077-4819-b19a-3bf50d45b1f1"
+      },
+      "timestamp": "2026-09-21T19:01:02.949Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 26,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "MIDDLE_LINE",
+      "prizeName": "Middle Line",
+      "callSequence": 57,
+      "callNumber": 2,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "0f061917-54c8-4c67-9b74-14f7f9ea4ca4"
+      },
+      "timestamp": "2026-09-21T19:05:44.276Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 57,
+      "matchedNumbersCount": 12
+    },
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 64,
+      "callNumber": 85,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "f7a5768f-7f3b-4a3a-ae18-94dc92ca67e3"
+      },
+      "timestamp": "2026-09-21T19:06:39.846Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 64,
+      "matchedNumbersCount": 13
+    },
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 68,
+      "callNumber": 53,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "245d8d22-ba58-44e5-9301-598f6710c5c6"
+      },
+      "timestamp": "2026-09-21T19:07:24.530Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 68,
+      "matchedNumbersCount": 14
+    },
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 78,
+      "callNumber": 49,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "23040929-7b25-448c-9bfc-7403344c2f1c"
+      },
+      "timestamp": "2026-09-21T19:08:44.805Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 78,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 1,
+      "playerName": "Aarav",
+      "prizeId": "FULL_HOUSE",
+      "prizeName": "Full House",
+      "callSequence": 78,
+      "callNumber": 49,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "1bb8f4d3-cdfe-429f-9fb7-5e64d40c3af9"
+      },
+      "timestamp": "2026-09-21T19:08:44.896Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 78,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 2,
+      "playerName": "Priya",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 38,
+      "callNumber": 57,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "5512fa90-6b0d-4540-9cbf-4b7674a12f3c"
+      },
+      "timestamp": "2026-09-21T19:02:42.917Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 38,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 2,
+      "playerName": "Priya",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 62,
+      "callNumber": 5,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "cbad29c5-752b-4820-b1b4-7b3f0ebc137c"
+      },
+      "timestamp": "2026-09-21T19:06:24.684Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 62,
+      "matchedNumbersCount": 9
+    },
+    {
+      "playerId": 2,
+      "playerName": "Priya",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 69,
+      "callNumber": 59,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "93266989-ce54-4fd2-84e5-43178e7bde21"
+      },
+      "timestamp": "2026-09-21T19:07:32.620Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 69,
+      "matchedNumbersCount": 12
+    },
+    {
+      "playerId": 2,
+      "playerName": "Priya",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 75,
+      "callNumber": 33,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "00c0489a-acc9-41dd-a96c-7cdb2685a798"
+      },
+      "timestamp": "2026-09-21T19:08:19.860Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 75,
+      "matchedNumbersCount": 13
+    },
+    {
+      "playerId": 3,
+      "playerName": "Rohan",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 38,
+      "callNumber": 57,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "cc1da9db-bde6-4cfa-8fa2-5480da895136"
+      },
+      "timestamp": "2026-09-21T19:02:43.020Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 38,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 3,
+      "playerName": "Rohan",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 48,
+      "callNumber": 32,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "5927d4c6-bdf4-4fcc-a929-d6b2232391c3"
+      },
+      "timestamp": "2026-09-21T19:04:32.405Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 48,
+      "matchedNumbersCount": 8
+    },
+    {
+      "playerId": 3,
+      "playerName": "Rohan",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 61,
+      "callNumber": 76,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "fd5f266a-365b-4977-bf11-d750d5e56493"
+      },
+      "timestamp": "2026-09-21T19:06:15.931Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 61,
+      "matchedNumbersCount": 10
+    },
+    {
+      "playerId": 4,
+      "playerName": "Maya",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 22,
+      "callNumber": 58,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "89b6f355-0360-46b4-82fb-420f0dc17707"
+      },
+      "timestamp": "2026-09-21T19:00:31.427Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 22,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 4,
+      "playerName": "Maya",
+      "prizeId": "MIDDLE_LINE",
+      "prizeName": "Middle Line",
+      "callSequence": 47,
+      "callNumber": 17,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "582ffff7-479b-4728-a74b-4a2e080ff2b8"
+      },
+      "timestamp": "2026-09-21T19:04:23.871Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 47,
+      "matchedNumbersCount": 8
+    },
+    {
+      "playerId": 4,
+      "playerName": "Maya",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 78,
+      "callNumber": 49,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "0eb64d2e-596d-42f1-9ee0-93636301a16e"
+      },
+      "timestamp": "2026-09-21T19:08:44.966Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 78,
+      "matchedNumbersCount": 14
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 21,
+      "callNumber": 74,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "d0bbddb2-5865-42bd-bd5b-feed275b1ff9"
+      },
+      "timestamp": "2026-09-21T19:00:23.280Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 21,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "MIDDLE_LINE",
+      "prizeName": "Middle Line",
+      "callSequence": 42,
+      "callNumber": 61,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T19:03:27.331Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 42,
+      "matchedNumbersCount": 9
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 49,
+      "callNumber": 73,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "401cee98-3f27-42ae-b22b-f7082473946d"
+      },
+      "timestamp": "2026-09-21T19:04:40.698Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 49,
+      "matchedNumbersCount": 11
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 66,
+      "callNumber": 40,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "a3f426e6-5e29-49ea-92e5-87bac240bff8"
+      },
+      "timestamp": "2026-09-21T19:07:08.212Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 66,
+      "matchedNumbersCount": 13
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 75,
+      "callNumber": 33,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "b55b5101-3c6c-4578-b171-5b47df667a1f"
+      },
+      "timestamp": "2026-09-21T19:08:19.934Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 75,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 5,
+      "playerName": "Liam",
+      "prizeId": "FULL_HOUSE",
+      "prizeName": "Full House",
+      "callSequence": 75,
+      "callNumber": 33,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "988d6b71-ba3b-4eaa-bf77-3d24ba7097cf"
+      },
+      "timestamp": "2026-09-21T19:08:20.013Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 75,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 6,
+      "playerName": "Sophia",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 24,
+      "callNumber": 60,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "6f4a13dd-917e-40a6-85ce-9285fa197c6c"
+      },
+      "timestamp": "2026-09-21T19:00:46.675Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 24,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 6,
+      "playerName": "Sophia",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 66,
+      "callNumber": 40,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "8b5c43ca-a037-4f13-839a-db4c83fa8bf5"
+      },
+      "timestamp": "2026-09-21T19:07:08.285Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 66,
+      "matchedNumbersCount": 11
+    },
+    {
+      "playerId": 7,
+      "playerName": "Noah",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 23,
+      "callNumber": 20,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "313a3ff1-b56f-4b43-b4a1-1d1cd6e26ebd"
+      },
+      "timestamp": "2026-09-21T19:00:39.639Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 23,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 7,
+      "playerName": "Noah",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 67,
+      "callNumber": 18,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "a465a480-b25a-4d9c-89e9-47f5e65eea2b"
+      },
+      "timestamp": "2026-09-21T19:07:16.469Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 67,
+      "matchedNumbersCount": 11
+    },
+    {
+      "playerId": 8,
+      "playerName": "Ananya",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 24,
+      "callNumber": 60,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "0ef6f14a-03dd-4657-a82b-e6eca3abc60f"
+      },
+      "timestamp": "2026-09-21T19:00:46.781Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 24,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 8,
+      "playerName": "Ananya",
+      "prizeId": "MIDDLE_LINE",
+      "prizeName": "Middle Line",
+      "callSequence": 65,
+      "callNumber": 16,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "2ab67065-4de4-40a5-a2bf-1b9edcc49542"
+      },
+      "timestamp": "2026-09-21T19:07:00.038Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 65,
+      "matchedNumbersCount": 11
+    },
+    {
+      "playerId": 8,
+      "playerName": "Ananya",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 78,
+      "callNumber": 49,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "db0c0b01-d80d-4715-bb29-01e421224bba"
+      },
+      "timestamp": "2026-09-21T19:08:45.240Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 78,
+      "matchedNumbersCount": 14
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 18,
+      "callNumber": 37,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T18:59:48.122Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 18,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 41,
+      "callNumber": 46,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T19:03:06.797Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 41,
+      "matchedNumbersCount": 12
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "BOTTOM_LINE",
+      "prizeName": "Bottom Line",
+      "callSequence": 44,
+      "callNumber": 71,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T19:03:43.839Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 44,
+      "matchedNumbersCount": 14
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 44,
+      "callNumber": 71,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T19:03:44.158Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 44,
+      "matchedNumbersCount": 14
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "MIDDLE_LINE",
+      "prizeName": "Middle Line",
+      "callSequence": 64,
+      "callNumber": 85,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "e5ae3c56-3574-42f7-bbaf-2b3775e247b5"
+      },
+      "timestamp": "2026-09-21T19:06:39.933Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 64,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 9,
+      "playerName": "Kabir",
+      "prizeId": "FULL_HOUSE",
+      "prizeName": "Full House",
+      "callSequence": 64,
+      "callNumber": 85,
+      "status": "APPROVED",
+      "response": null,
+      "timestamp": "2026-09-21T19:06:40.126Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 64,
+      "matchedNumbersCount": 15
+    },
+    {
+      "playerId": 10,
+      "playerName": "Emma",
+      "prizeId": "EARLY_FIVE",
+      "prizeName": "Early 5",
+      "callSequence": 27,
+      "callNumber": 51,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "5dcf47d5-cda6-48c5-90e1-747ebc01034d"
+      },
+      "timestamp": "2026-09-21T19:01:11.071Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 27,
+      "matchedNumbersCount": 5
+    },
+    {
+      "playerId": 10,
+      "playerName": "Emma",
+      "prizeId": "FOUR_CORNERS",
+      "prizeName": "Four Corners",
+      "callSequence": 49,
+      "callNumber": 73,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "ede5acd1-2c39-4904-88dc-2cacfe8ba0ed"
+      },
+      "timestamp": "2026-09-21T19:04:40.819Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 49,
+      "matchedNumbersCount": 10
+    },
+    {
+      "playerId": 10,
+      "playerName": "Emma",
+      "prizeId": "TOP_LINE",
+      "prizeName": "Top Line",
+      "callSequence": 56,
+      "callNumber": 42,
+      "status": "APPROVED",
+      "response": {
+        "reason": "Prize already won by another player",
+        "status": "REJECTED",
+        "claim_id": "b4f3a4a3-4c99-465a-8434-d4cb7c3315c3"
+      },
+      "timestamp": "2026-09-21T19:05:36.074Z",
+      "mathematicallyValid": true,
+      "drawnCountAtClaim": 56,
+      "matchedNumbersCount": 12
+    }
+  ],
+  "players": [
+    {
+      "id": 1,
+      "name": "Aarav",
+      "ticketNumber": 4,
+      "ticketMatrix": [
+        [
+          10,
+          34,
+          53,
+          61,
+          85
+        ],
+        [
+          2,
+          20,
+          37,
+          71,
+          90
+        ],
+        [
+          13,
+          29,
+          49,
+          57,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        34,
+        53,
+        61,
+        85,
+        2,
+        20,
+        37,
+        71,
+        90,
+        13,
+        29,
+        49,
+        57,
+        79
+      ],
+      "dabbedCount": 15,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "MIDDLE_LINE",
+        "FOUR_CORNERS",
+        "TOP_LINE",
+        "BOTTOM_LINE",
+        "FULL_HOUSE"
+      ],
+      "registrationTimeMs": 1579
+    },
+    {
+      "id": 2,
+      "name": "Priya",
+      "ticketNumber": 10,
+      "ticketMatrix": [
+        [
+          4,
+          16,
+          33,
+          57,
+          71
+        ],
+        [
+          18,
+          23,
+          43,
+          65,
+          73
+        ],
+        [
+          5,
+          35,
+          45,
+          59,
+          83
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        16,
+        33,
+        57,
+        71,
+        18,
+        23,
+        43,
+        65,
+        73,
+        5,
+        35,
+        45,
+        59,
+        83
+      ],
+      "dabbedCount": 14,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "FOUR_CORNERS",
+        "BOTTOM_LINE",
+        "TOP_LINE"
+      ],
+      "registrationTimeMs": 1708
+    },
+    {
+      "id": 3,
+      "name": "Rohan",
+      "ticketNumber": 6,
+      "ticketMatrix": [
+        [
+          12,
+          32,
+          57,
+          61,
+          81
+        ],
+        [
+          4,
+          24,
+          33,
+          74,
+          85
+        ],
+        [
+          17,
+          28,
+          45,
+          59,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        12,
+        32,
+        57,
+        61,
+        81,
+        4,
+        24,
+        33,
+        74,
+        85,
+        17,
+        28,
+        45,
+        59,
+        76
+      ],
+      "dabbedCount": 13,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "TOP_LINE",
+        "FOUR_CORNERS"
+      ],
+      "registrationTimeMs": 1556
+    },
+    {
+      "id": 4,
+      "name": "Maya",
+      "ticketNumber": 7,
+      "ticketMatrix": [
+        [
+          2,
+          26,
+          33,
+          64,
+          70
+        ],
+        [
+          17,
+          39,
+          41,
+          68,
+          83
+        ],
+        [
+          9,
+          18,
+          49,
+          58,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        2,
+        26,
+        33,
+        64,
+        70,
+        17,
+        39,
+        41,
+        68,
+        83,
+        9,
+        18,
+        49,
+        58,
+        76
+      ],
+      "dabbedCount": 14,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "MIDDLE_LINE",
+        "BOTTOM_LINE"
+      ],
+      "registrationTimeMs": 1564
+    },
+    {
+      "id": 5,
+      "name": "Liam",
+      "ticketNumber": 3,
+      "ticketMatrix": [
+        [
+          1,
+          14,
+          40,
+          54,
+          73
+        ],
+        [
+          7,
+          22,
+          30,
+          61,
+          74
+        ],
+        [
+          19,
+          33,
+          47,
+          69,
+          86
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        14,
+        40,
+        54,
+        73,
+        7,
+        22,
+        30,
+        61,
+        74,
+        19,
+        33,
+        47,
+        69,
+        86
+      ],
+      "dabbedCount": 15,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "MIDDLE_LINE",
+        "FOUR_CORNERS",
+        "TOP_LINE",
+        "BOTTOM_LINE",
+        "FULL_HOUSE"
+      ],
+      "registrationTimeMs": 1542
+    },
+    {
+      "id": 6,
+      "name": "Sophia",
+      "ticketNumber": 8,
+      "ticketMatrix": [
+        [
+          12,
+          31,
+          40,
+          60,
+          75
+        ],
+        [
+          6,
+          18,
+          42,
+          52,
+          90
+        ],
+        [
+          8,
+          23,
+          36,
+          58,
+          79
+        ]
+      ],
+      "ticketNumbers": [
+        12,
+        31,
+        40,
+        60,
+        75,
+        6,
+        18,
+        42,
+        52,
+        90,
+        8,
+        23,
+        36,
+        58,
+        79
+      ],
+      "dabbedCount": 13,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "TOP_LINE"
+      ],
+      "registrationTimeMs": 1581
+    },
+    {
+      "id": 7,
+      "name": "Noah",
+      "ticketNumber": 2,
+      "ticketMatrix": [
+        [
+          10,
+          37,
+          51,
+          65,
+          80
+        ],
+        [
+          1,
+          20,
+          38,
+          73,
+          86
+        ],
+        [
+          18,
+          23,
+          49,
+          52,
+          75
+        ]
+      ],
+      "ticketNumbers": [
+        10,
+        37,
+        51,
+        65,
+        80,
+        1,
+        20,
+        38,
+        73,
+        86,
+        18,
+        23,
+        49,
+        52,
+        75
+      ],
+      "dabbedCount": 12,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "FOUR_CORNERS"
+      ],
+      "registrationTimeMs": 1423
+    },
+    {
+      "id": 8,
+      "name": "Ananya",
+      "ticketNumber": 9,
+      "ticketMatrix": [
+        [
+          4,
+          25,
+          31,
+          60,
+          72
+        ],
+        [
+          16,
+          37,
+          41,
+          69,
+          81
+        ],
+        [
+          9,
+          18,
+          49,
+          56,
+          76
+        ]
+      ],
+      "ticketNumbers": [
+        4,
+        25,
+        31,
+        60,
+        72,
+        16,
+        37,
+        41,
+        69,
+        81,
+        9,
+        18,
+        49,
+        56,
+        76
+      ],
+      "dabbedCount": 14,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "MIDDLE_LINE",
+        "BOTTOM_LINE"
+      ],
+      "registrationTimeMs": 1671
+    },
+    {
+      "id": 9,
+      "name": "Kabir",
+      "ticketNumber": 1,
+      "ticketMatrix": [
+        [
+          1,
+          20,
+          46,
+          57,
+          84
+        ],
+        [
+          10,
+          30,
+          58,
+          61,
+          85
+        ],
+        [
+          7,
+          23,
+          37,
+          68,
+          71
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        20,
+        46,
+        57,
+        84,
+        10,
+        30,
+        58,
+        61,
+        85,
+        7,
+        23,
+        37,
+        68,
+        71
+      ],
+      "dabbedCount": 15,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "TOP_LINE",
+        "BOTTOM_LINE",
+        "FOUR_CORNERS",
+        "MIDDLE_LINE",
+        "FULL_HOUSE"
+      ],
+      "registrationTimeMs": 1419
+    },
+    {
+      "id": 10,
+      "name": "Emma",
+      "ticketNumber": 5,
+      "ticketMatrix": [
+        [
+          1,
+          22,
+          42,
+          64,
+          86
+        ],
+        [
+          14,
+          39,
+          51,
+          72,
+          90
+        ],
+        [
+          6,
+          27,
+          47,
+          57,
+          73
+        ]
+      ],
+      "ticketNumbers": [
+        1,
+        22,
+        42,
+        64,
+        86,
+        14,
+        39,
+        51,
+        72,
+        90,
+        6,
+        27,
+        47,
+        57,
+        73
+      ],
+      "dabbedCount": 13,
+      "prizesClaimed": [
+        "EARLY_FIVE",
+        "FOUR_CORNERS",
+        "TOP_LINE"
+      ],
+      "registrationTimeMs": 1547
+    }
+  ]
+}

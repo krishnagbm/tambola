@@ -23,6 +23,22 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'aspectRatio': 1.08,
     },
     {
+      'title': 'TV Screen & Projector Big Display',
+      'tabLabel': '📺 TV & Projector Mode',
+      'badge': 'PERFECT FOR PARTIES & 50+ PLAYER GALAS',
+      'image': 'assets/screenshots/screenshot_tv_mode.png',
+      'desc': 'Cast live to big screen TVs, clubhouse projectors, and auditoriums. Features glowing 1–90 board, automated audio caller, and synchronized real-time game status.',
+      'aspectRatio': 1.93,
+    },
+    {
+      'title': '50+ Player High-Capacity Multiplayer',
+      'tabLabel': '👥 50+ Players Live',
+      'badge': 'SCALABLE TO 250+ CONCURRENT PLAYERS',
+      'image': 'assets/screenshots/screenshot_50_players.png',
+      'desc': 'Battle-tested for large gatherings. Synchronized real-time dabs, instant multi-device win notifications, and guaranteed 100% unique non-duplicate tickets.',
+      'aspectRatio': 2.07,
+    },
+    {
       'title': 'Organizer Auto-Pilot & 1–90 Board',
       'tabLabel': '🎙️ Auto-Pilot Host',
       'badge': 'AUTOMATED CALLER & MASTER BOARD',

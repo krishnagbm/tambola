@@ -1,8 +1,175 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { generateTestReport } from './report_generator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const AUTH_CACHE_FILE = path.join(__dirname, '.auth_cache.json');
 
 const SUPABASE_URL = 'https://itfcnurjrnyalauwwdkj.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI';
+
+class AuthManager {
+  constructor() {
+    this.cache = this.loadCache();
+    this.authQueue = Promise.resolve();
+  }
+
+  loadCache() {
+    try {
+      if (fs.existsSync(AUTH_CACHE_FILE)) {
+        return JSON.parse(fs.readFileSync(AUTH_CACHE_FILE, 'utf8'));
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  saveCache() {
+    try {
+      fs.writeFileSync(AUTH_CACHE_FILE, JSON.stringify(this.cache, null, 2), 'utf8');
+    } catch (_) {}
+  }
+
+  async getSession(playerId, name, avatar) {
+    const existing = this.cache[playerId];
+    const now = Math.floor(Date.now() / 1000);
+
+    // 1. If valid cached token exists (valid for at least 2 more minutes)
+    if (existing && existing.accessToken && existing.userId) {
+      if (existing.expiresAt && existing.expiresAt > now + 120) {
+        return {
+          token: existing.accessToken,
+          userId: existing.userId,
+        };
+      }
+
+      // 2. Refresh token if expired
+      if (existing.refreshToken) {
+        try {
+          const refreshed = await this.refreshToken(existing.refreshToken);
+          if (refreshed?.access_token && refreshed?.user?.id) {
+            this.cache[playerId] = {
+              playerId,
+              name,
+              avatar,
+              userId: refreshed.user.id,
+              accessToken: refreshed.access_token,
+              refreshToken: refreshed.refresh_token || existing.refreshToken,
+              expiresAt: refreshed.expires_at || (now + (refreshed.expires_in || 3600)),
+            };
+            this.saveCache();
+            return {
+              token: refreshed.access_token,
+              userId: refreshed.user.id,
+            };
+          }
+        } catch (_) {
+          // Fall through to signup if refresh fails
+        }
+      }
+    }
+
+    // 3. Queue signup request to avoid hammering rate limits
+    return this.enqueueSignup(playerId, name, avatar);
+  }
+
+  async refreshToken(refreshToken) {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Refresh failed HTTP ${res.status}: ${err}`);
+    }
+    return await res.json();
+  }
+
+  enqueueSignup(playerId, name, avatar) {
+    const task = this.authQueue.then(async () => {
+      await new Promise(r => setTimeout(r, 100));
+      return this.performSignupWithBackoff(playerId, name, avatar);
+    });
+
+    this.authQueue = task.catch(() => {});
+    return task;
+  }
+
+  async performSignupWithBackoff(playerId, name, avatar) {
+    let retries = 25;
+    let delay = 2000;
+
+    while (retries > 0) {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${SUPABASE_ANON}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            data: {
+              full_name: name,
+              avatar: avatar,
+            },
+          }),
+        });
+
+        if (res.status === 429) {
+          retries--;
+          console.warn(`[AUTH] Player ${playerId} (${name}) rate limited (HTTP 429). Waiting ${Math.round(delay)}ms...`);
+          await new Promise(r => setTimeout(r, delay + Math.random() * 800));
+          delay = Math.min(delay * 1.5, 20000);
+          continue;
+        }
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          throw new Error(`HTTP ${res.status} ${res.statusText}: ${errText}`);
+        }
+
+        const authRes = await res.json();
+        if (authRes?.access_token && authRes?.user?.id) {
+          const now = Math.floor(Date.now() / 1000);
+          this.cache[playerId] = {
+            playerId,
+            name,
+            avatar,
+            userId: authRes.user.id,
+            accessToken: authRes.access_token,
+            refreshToken: authRes.refresh_token,
+            expiresAt: authRes.expires_at || (now + (authRes.expires_in || 3600)),
+          };
+          this.saveCache();
+          return {
+            token: authRes.access_token,
+            userId: authRes.user.id,
+          };
+        }
+        throw new Error('No access token returned from auth endpoint');
+      } catch (err) {
+        retries--;
+        if (retries === 0) {
+          throw new Error(`Auth failed for Player ${playerId}: ${err.message || 'Rate limit exceeded'}`);
+        }
+        await new Promise(r => setTimeout(r, delay + Math.random() * 800));
+        delay = Math.min(delay * 1.5, 20000);
+      }
+    }
+    throw new Error(`Auth failed for Player ${playerId}: Max retries exhausted due to Supabase Auth rate limit.`);
+  }
+}
+
+const globalAuthManager = new AuthManager();
 
 class DirectPlayer {
   constructor(id, name) {
@@ -56,40 +223,14 @@ class DirectPlayer {
   }
 
   /**
-   * 1. Authenticate anonymously (No email rate limit)
+   * 1. Authenticate with session cache & rate limit protection
    */
   async authenticate() {
-    let retries = 5;
-    let delay = 300;
-    while (retries > 0) {
-      try {
-        const authRes = await this.fetchApi('/auth/v1/signup', {
-          method: 'POST',
-          body: JSON.stringify({
-            data: {
-              full_name: this.name,
-              avatar: this.avatar,
-            },
-          }),
-        });
+    const session = await globalAuthManager.getSession(this.id, this.name, this.avatar);
+    this.token = session.token;
+    this.userId = session.userId;
 
-        if (authRes?.access_token && authRes?.user?.id) {
-          this.token = authRes.access_token;
-          this.userId = authRes.user.id;
-          break;
-        }
-        throw new Error('No access token returned from auth endpoint');
-      } catch (e) {
-        retries--;
-        if (retries === 0) {
-          throw new Error(`Auth failed after retries: ${e.message}`);
-        }
-        await new Promise(r => setTimeout(r, delay + Math.random() * 200));
-        delay *= 1.5;
-      }
-    }
-
-    // Upsert user profile
+    // Upsert user profile (best-effort)
     try {
       await this.fetchApi('/rest/v1/rpc/MPT_upsert_user', {
         method: 'POST',
@@ -104,19 +245,22 @@ class DirectPlayer {
   /**
    * 2. Join and register for game
    */
-  async joinGame(gameCode) {
+  async joinGame(gameCode, cachedGame = null) {
     const t0 = Date.now();
     this.inviteCode = gameCode.toUpperCase();
 
     await this.authenticate();
 
-    // Look up game
-    const games = await this.fetchApi(`/rest/v1/MPT_games?invite_code=eq.${this.inviteCode}&select=*`);
-    if (!games || games.length === 0) {
-      throw new Error(`Game code ${this.inviteCode} not found.`);
+    // Look up game if not passed
+    let game = cachedGame;
+    if (!game) {
+      const games = await this.fetchApi(`/rest/v1/MPT_games?invite_code=eq.${this.inviteCode}&select=*`);
+      if (!games || games.length === 0) {
+        throw new Error(`Game code ${this.inviteCode} not found.`);
+      }
+      game = games[0];
     }
 
-    const game = games[0];
     this.gameId = game.id;
 
     if (game.status === 'CANCELLED') {
@@ -126,15 +270,26 @@ class DirectPlayer {
       throw new Error('Game has already completed.');
     }
 
-    // Register player
-    const regRes = await this.fetchApi('/rest/v1/rpc/MPT_register_player', {
-      method: 'POST',
-      body: JSON.stringify({
-        p_game_id: this.gameId,
-        p_display_name: this.name,
-        p_avatar: this.avatar,
-      }),
-    });
+    // Register player with retry on transient lock/concurrency
+    let regRes = null;
+    let regRetries = 3;
+    while (regRetries > 0) {
+      try {
+        regRes = await this.fetchApi('/rest/v1/rpc/MPT_register_player', {
+          method: 'POST',
+          body: JSON.stringify({
+            p_game_id: this.gameId,
+            p_display_name: this.name,
+            p_avatar: this.avatar,
+          }),
+        });
+        break;
+      } catch (err) {
+        regRetries--;
+        if (regRetries === 0) throw err;
+        await new Promise(r => setTimeout(r, 200 + Math.random() * 300));
+      }
+    }
 
     const reg = regRes?.registration || regRes;
     this.seatStatus = reg?.seat_status || 'CONFIRMED';
@@ -393,31 +548,61 @@ Usage: node tests/multiplayer/direct_runner.js --game=XXXXXX --players=10
     process.exit(0);
   });
 
+  // 0. Pre-fetch game once
+  console.log(`[0/3] Fetching game details for code ${gameCode.toUpperCase()}...`);
+  let game = null;
+  try {
+    const gamesRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?invite_code=eq.${gameCode.toUpperCase()}&select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON,
+        'Authorization': `Bearer ${SUPABASE_ANON}`,
+      },
+    });
+    const games = await gamesRes.json();
+    if (!games || games.length === 0) {
+      console.error(`ERROR: Game code ${gameCode.toUpperCase()} not found.`);
+      process.exit(1);
+    }
+    game = games[0];
+  } catch (e) {
+    console.error(`ERROR: Failed to fetch game: ${e.message}`);
+    process.exit(1);
+  }
+
   // 1. Connect all players in parallel!
+  const cachedCount = Object.keys(globalAuthManager.cache || {}).length;
   console.log(`\n[1/3] Registering ${playersCount} players concurrently...`);
-  const joinPromises = [];
-  const BATCH_SIZE = 15;
+  if (cachedCount < playersCount) {
+    console.log(`ℹ️  Auth pool has ${cachedCount} cached accounts. ${playersCount - cachedCount} accounts will be created on-the-fly.`);
+    console.log(`   (Tip: You can pre-seed 50+ accounts anytime with: npm run test:seed -- --count=50)`);
+  } else {
+    console.log(`⚡ Using ${playersCount} pre-authenticated cached player sessions (Instant Zero-Delay Join).`);
+  }
   for (let i = 1; i <= playersCount; i++) {
     const name = REAL_NAMES[(i - 1) % REAL_NAMES.length];
     const p = new DirectPlayer(i, name);
     players.push(p);
-
-    const task = async () => {
-      // Small stagger between batches
-      const batchIndex = Math.floor((i - 1) / BATCH_SIZE);
-      if (batchIndex > 0) {
-        await new Promise(r => setTimeout(r, batchIndex * 60 + Math.random() * 40));
-      }
-      return p.joinGame(gameCode).catch(err => {
-        p.error(`Join failed: ${err.message}`);
-        return false;
-      });
-    };
-
-    joinPromises.push(task());
   }
 
-  const results = await Promise.all(joinPromises);
+  // Concurrency-limited registration (10 concurrent joins)
+  const CONCURRENCY = 8;
+  const results = [];
+  for (let i = 0; i < players.length; i += CONCURRENCY) {
+    const batch = players.slice(i, i + CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(p =>
+        p.joinGame(gameCode, game).catch(err => {
+          p.error(`Join failed: ${err.message}`);
+          return false;
+        })
+      )
+    );
+    results.push(...batchResults);
+    if (i + CONCURRENCY < players.length) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+  }
+
   const successCount = results.filter(Boolean).length;
   console.log(`\n✅ Registered ${successCount}/${playersCount} players successfully!`);
 

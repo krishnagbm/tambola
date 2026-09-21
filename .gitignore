@@ -24,6 +24,8 @@ docs/sql_generated_250_tickets.json
 docs/AmplifyLogs
 docs/secrets
 test/multiplayerTestOutputs
+tests/multiplayer/.auth_cache.json
+*.auth_cache.json
 
 
 # IntelliJ related

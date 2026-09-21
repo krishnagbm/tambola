@@ -5,6 +5,8 @@
   "scripts": {
     "test:multiplayer": "node tests/multiplayer/direct_runner.js",
     "test:fast": "node tests/multiplayer/direct_runner.js",
-    "test:browser": "node tests/multiplayer/runner.js"
+    "test:browser": "node tests/multiplayer/runner.js",
+    "test:seed": "node tests/multiplayer/seed_auth.js",
+    "test:mint": "node tests/multiplayer/mint_tokens.js"
   }
 }
