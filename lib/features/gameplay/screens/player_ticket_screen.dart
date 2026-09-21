@@ -94,23 +94,35 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   }) async {
     // 1. Strict validation: check for uncalled marked numbers (Bogey)
     var effectiveCalledSet = Set<int>.from(calledSet);
-    var uncalled = _markedNumbers.where((n) => !effectiveCalledSet.contains(n)).toList();
+    var uncalled = _markedNumbers
+        .where((n) => !effectiveCalledSet.contains(n))
+        .toList();
     if (uncalled.isNotEmpty) {
       // Re-fetch latest called numbers from server to avoid false Bogey on stream latency
       try {
-        final latestCalls = await ref.read(gameplayRepositoryProvider).getCalledNumbers(widget.gameId);
+        final latestCalls = await ref
+            .read(gameplayRepositoryProvider)
+            .getCalledNumbers(widget.gameId);
         effectiveCalledSet = latestCalls.map((e) => e.number).toSet();
-        uncalled = _markedNumbers.where((n) => !effectiveCalledSet.contains(n)).toList();
+        uncalled = _markedNumbers
+            .where((n) => !effectiveCalledSet.contains(n))
+            .toList();
       } catch (_) {}
 
       if (uncalled.isNotEmpty) {
-        _showBogeyDialog('Invalid Claim: You have marked numbers that have not been called yet: ${uncalled.join(', ')}');
+        _showBogeyDialog(
+          'Invalid Claim: You have marked numbers that have not been called yet: ${uncalled.join(', ')}',
+        );
         return;
       }
     }
 
     // 2. Strict validation: check pattern is complete (Item 15)
-    final isPatternValid = TambolaTicketHelper.validatePrizePattern(ticket.matrix, _markedNumbers, prizeType);
+    final isPatternValid = TambolaTicketHelper.validatePrizePattern(
+      ticket.matrix,
+      _markedNumbers,
+      prizeType,
+    );
     if (!isPatternValid) {
       _showIncompletePatternDialog(prizeType);
       return;
@@ -118,7 +130,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
     setState(() => _isClaiming = true);
     try {
-      final res = await ref.read(gameplayRepositoryProvider).submitClaim(
+      final res = await ref
+          .read(gameplayRepositoryProvider)
+          .submitClaim(
             gameId: widget.gameId,
             prizeType: prizeType,
             markedNumbers: _markedNumbers.toList(),
@@ -149,7 +163,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Claim error: $e'), backgroundColor: AppTheme.accentDanger),
+        SnackBar(
+          content: Text('Claim error: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isClaiming = false);
@@ -178,10 +195,15 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Congratulations! Your claim for "${Formatters.formatPrizeName(prizeType)}" is APPROVED.',
-                style: const TextStyle(fontSize: 14)),
+            Text(
+              'Congratulations! Your claim for "${Formatters.formatPrizeName(prizeType)}" is APPROVED.',
+              style: const TextStyle(fontSize: 14),
+            ),
             const SizedBox(height: 16),
-            const Text('Voucher Claim Reference Code:', style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+            const Text(
+              'Voucher Claim Reference Code:',
+              style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+            ),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -192,7 +214,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
               child: SelectableText(
                 claimRef,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppTheme.secondaryColor),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: AppTheme.secondaryColor,
+                ),
               ),
             ),
             const SizedBox(height: 14),
@@ -201,17 +228,27 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               decoration: BoxDecoration(
                 color: AppTheme.secondaryColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withOpacity(0.3),
+                ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.info_outline, size: 16, color: AppTheme.secondaryColor),
+                  const Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AppTheme.secondaryColor,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Prizes must be claimed directly from your game organizer by presenting this voucher reference or QR code. DabHousie is a gameplay platform and does not distribute prizes.',
-                      style: TextStyle(fontSize: 11, color: Colors.amber.shade200, height: 1.3),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.amber.shade200,
+                        height: 1.3,
+                      ),
                     ),
                   ),
                 ],
@@ -256,7 +293,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           children: [
             Icon(Icons.info_outline, color: AppTheme.accentWarning, size: 26),
             SizedBox(width: 8),
-            Text('Pattern Incomplete', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Pattern Incomplete',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: Text(
@@ -287,7 +327,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           children: [
             Icon(Icons.cancel_outlined, color: AppTheme.accentDanger, size: 28),
             SizedBox(width: 8),
-            Text('Bogey Claim ⚠️', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'Bogey Claim ⚠️',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: Text(
@@ -310,7 +353,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
   Future<void> _handleLeaveGame() async {
     final currentGame = ref.read(gameStreamProvider(widget.gameId)).value;
-    if (currentGame?.status == 'COMPLETED' || currentGame?.status == 'CANCELLED') {
+    if (currentGame?.status == 'COMPLETED' ||
+        currentGame?.status == 'CANCELLED') {
       context.go('/');
       return;
     }
@@ -322,7 +366,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 28),
+            Icon(
+              Icons.exit_to_app_rounded,
+              color: AppTheme.accentDanger,
+              size: 28,
+            ),
             SizedBox(width: 8),
             Text('Leave Game?', style: TextStyle(fontWeight: FontWeight.bold)),
           ],
@@ -364,7 +412,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error leaving game: $e'), backgroundColor: AppTheme.accentDanger),
+        SnackBar(
+          content: Text('Error leaving game: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
       );
     }
   }
@@ -386,7 +437,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     // Announce number if voice enabled
     if (_voiceEnabled) {
       calledStream.whenData((calledNumbers) {
-        if (calledNumbers.isNotEmpty && calledNumbers.length > _lastAnnouncedSeq) {
+        if (calledNumbers.isNotEmpty &&
+            calledNumbers.length > _lastAnnouncedSeq) {
           _lastAnnouncedSeq = calledNumbers.length;
           final latestNum = calledNumbers.last.number;
           TambolaAudioCaller().announceNumber(latestNum);
@@ -424,7 +476,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(_voiceEnabled ? Icons.volume_up : Icons.volume_off, color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey),
+            icon: Icon(
+              _voiceEnabled ? Icons.volume_up : Icons.volume_off,
+              color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey,
+            ),
             tooltip: _voiceEnabled ? 'Voice Calling ON' : 'Voice Calling OFF',
             onPressed: () {
               setState(() => _voiceEnabled = !_voiceEnabled);
@@ -433,16 +488,21 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
             tooltip: 'Live Board (Open in New Tab / Window)',
-            onPressed: () => LiveDisplayHelper.openInNewWindow(context, widget.gameId),
+            onPressed: () =>
+                LiveDisplayHelper.openInNewWindow(context, widget.gameId),
           ),
           IconButton(
             icon: const Icon(Icons.emoji_events_outlined),
             tooltip: 'My Rewards',
             onPressed: () => context.push('/rewards'),
           ),
-          if (gameStream.value?.status != 'COMPLETED' && gameStream.value?.status != 'CANCELLED')
+          if (gameStream.value?.status != 'COMPLETED' &&
+              gameStream.value?.status != 'CANCELLED')
             IconButton(
-              icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger),
+              icon: const Icon(
+                Icons.exit_to_app_rounded,
+                color: AppTheme.accentDanger,
+              ),
               tooltip: 'Quit / Leave Game Room',
               onPressed: _handleLeaveGame,
             ),
@@ -456,27 +516,42 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline_rounded, color: AppTheme.accentDanger, size: 48),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppTheme.accentDanger,
+                  size: 48,
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'Unable to load your ticket',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Please tap retry to fetch your assigned ticket for this room.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.7)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.refresh(playerTicketProvider(widget.gameId)),
+                  onPressed: () =>
+                      ref.refresh(playerTicketProvider(widget.gameId)),
                   icon: const Icon(Icons.refresh_rounded, size: 18),
                   label: const Text('Retry Ticket'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryLight,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ],
@@ -488,11 +563,24 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
             data: (calledNumbers) {
-              final latestCalled = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
+              final latestCalled = calledNumbers.isNotEmpty
+                  ? calledNumbers.last.number
+                  : null;
               final calledSet = calledNumbers.map((e) => e.number).toSet();
               final currentGame = gameStream.value;
-              final isGameEnded = currentGame?.status == 'COMPLETED' || calledNumbers.length >= 90;
-              final activePrizes = currentGame?.prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
+              final isGameEnded =
+                  currentGame?.status == 'COMPLETED' ||
+                  calledNumbers.length >= 90;
+              final activePrizes =
+                  currentGame?.prizesConfig ??
+                  [
+                    'EARLY_FIVE',
+                    'TOP_LINE',
+                    'MIDDLE_LINE',
+                    'BOTTOM_LINE',
+                    'FOUR_CORNERS',
+                    'FULL_HOUSE',
+                  ];
               final currentUser = ref.watch(currentUserProvider).value;
 
               return CelebrationOverlay(
@@ -500,7 +588,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 child: LayoutBuilder(
                   builder: (ctx, constraints) {
                     final orientation = MediaQuery.of(ctx).orientation;
-                    final isLandscape = orientation == Orientation.landscape && constraints.maxWidth > 560;
+                    final isLandscape =
+                        orientation == Orientation.landscape &&
+                        constraints.maxWidth > 560;
 
                     if (isLandscape) {
                       // ========================================================
@@ -509,7 +599,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       // Right: Recent Calls, Prize Claims Panel, Quit Game
                       // ========================================================
                       return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -518,13 +611,33 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               flex: 5,
                               child: SingleChildScrollView(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isCompact: true, isGameEnded: isGameEnded || currentGame?.status == 'CANCELLED'),
+                                    _buildPlayerIdentityBanner(
+                                      currentUser,
+                                      ticket,
+                                      game: currentGame,
+                                      isCompact: true,
+                                      isGameEnded:
+                                          isGameEnded ||
+                                          currentGame?.status == 'CANCELLED',
+                                    ),
                                     const SizedBox(height: 8),
-                                    _buildLatestNumberBanner(latestCalled, calledNumbers.length, isGameEnded: isGameEnded, context: context, isCompact: true),
+                                    _buildLatestNumberBanner(
+                                      latestCalled,
+                                      calledNumbers.length,
+                                      isGameEnded: isGameEnded,
+                                      context: context,
+                                      isCompact: true,
+                                    ),
                                     const SizedBox(height: 8),
-                                    _buildTicketMatrix(ticket, calledSet, isGameEnded: isGameEnded, cellHeight: 52),
+                                    _buildTicketMatrix(
+                                      ticket,
+                                      calledSet,
+                                      isGameEnded: isGameEnded,
+                                      cellHeight: 52,
+                                    ),
                                     const SizedBox(height: 12),
                                   ],
                                 ),
@@ -537,7 +650,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               flex: 4,
                               child: SingleChildScrollView(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     if (calledNumbers.isNotEmpty) ...[
                                       _buildRecentCallsBar(calledNumbers),
@@ -553,17 +667,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         isGameEnded: isGameEnded,
                                         isCompact: true,
                                       ),
-                                      error: (_, __) => _buildPrizeClaimsSection(
-                                        activePrizes,
-                                        {},
-                                        currentUserId,
-                                        ticket,
-                                        calledSet,
-                                        isGameEnded: isGameEnded,
-                                        isCompact: true,
-                                      ),
+                                      error: (_, __) =>
+                                          _buildPrizeClaimsSection(
+                                            activePrizes,
+                                            {},
+                                            currentUserId,
+                                            ticket,
+                                            calledSet,
+                                            isGameEnded: isGameEnded,
+                                            isCompact: true,
+                                          ),
                                       data: (claims) {
-                                        final approvedClaims = <String, MptClaim>{};
+                                        final approvedClaims =
+                                            <String, MptClaim>{};
                                         for (final c in claims) {
                                           if (c.status == 'APPROVED') {
                                             approvedClaims[c.prizeType] = c;
@@ -580,15 +696,30 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         );
                                       },
                                     ),
-                                    if (!isGameEnded && currentGame?.status != 'CANCELLED') ...[
+                                    if (!isGameEnded &&
+                                        currentGame?.status != 'CANCELLED') ...[
                                       const SizedBox(height: 14),
                                       OutlinedButton.icon(
                                         onPressed: _handleLeaveGame,
-                                        icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 16),
-                                        label: const Text('Leave Game Room', style: TextStyle(color: AppTheme.accentDanger, fontSize: 12)),
+                                        icon: const Icon(
+                                          Icons.exit_to_app_rounded,
+                                          color: AppTheme.accentDanger,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'Leave Game Room',
+                                          style: TextStyle(
+                                            color: AppTheme.accentDanger,
+                                            fontSize: 12,
+                                          ),
+                                        ),
                                         style: OutlinedButton.styleFrom(
-                                          side: const BorderSide(color: Color(0xFFEF4444)),
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                          side: const BorderSide(
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
                                           visualDensity: VisualDensity.compact,
                                         ),
                                       ),
@@ -607,16 +738,31 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     // PORTRAIT / NARROW 1-COLUMN LAYOUT
                     // ========================================================
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Player Identity & Ticket Number Card
-                          _buildPlayerIdentityBanner(currentUser, ticket, game: currentGame, isGameEnded: isGameEnded || currentGame?.status == 'CANCELLED'),
+                          _buildPlayerIdentityBanner(
+                            currentUser,
+                            ticket,
+                            game: currentGame,
+                            isGameEnded:
+                                isGameEnded ||
+                                currentGame?.status == 'CANCELLED',
+                          ),
                           const SizedBox(height: 10),
 
                           // Latest Called Ball / Game Concluded Banner
-                          _buildLatestNumberBanner(latestCalled, calledNumbers.length, isGameEnded: isGameEnded, context: context),
+                          _buildLatestNumberBanner(
+                            latestCalled,
+                            calledNumbers.length,
+                            isGameEnded: isGameEnded,
+                            context: context,
+                          ),
                           const SizedBox(height: 12),
 
                           // Recent Calls List
@@ -626,7 +772,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           ],
 
                           // Interactive 3x9 Ticket (Manual marking, no auto-yellow)
-                          _buildTicketMatrix(ticket, calledSet, isGameEnded: isGameEnded),
+                          _buildTicketMatrix(
+                            ticket,
+                            calledSet,
+                            isGameEnded: isGameEnded,
+                          ),
                           const SizedBox(height: 20),
 
                           // Prize Claims Section
@@ -664,20 +814,37 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               );
                             },
                           ),
-                          if (!isGameEnded && currentGame?.status != 'CANCELLED') ...[
+                          if (!isGameEnded &&
+                              currentGame?.status != 'CANCELLED') ...[
                             const SizedBox(height: 24),
                             Center(
                               child: OutlinedButton.icon(
                                 onPressed: _handleLeaveGame,
-                                icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 18),
+                                icon: const Icon(
+                                  Icons.exit_to_app_rounded,
+                                  color: AppTheme.accentDanger,
+                                  size: 18,
+                                ),
                                 label: const Text(
                                   'Quit / Leave Game Room',
-                                  style: TextStyle(color: AppTheme.accentDanger, fontSize: 14, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    color: AppTheme.accentDanger,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  side: const BorderSide(
+                                    color: Color(0xFFEF4444),
+                                    width: 1.5,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                 ),
                               ),
                             ),
@@ -696,14 +863,24 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildPlayerIdentityBanner(MptUser? user, MptTicket ticket, {MptGame? game, bool isCompact = false, bool isGameEnded = false}) {
+  Widget _buildPlayerIdentityBanner(
+    MptUser? user,
+    MptTicket ticket, {
+    MptGame? game,
+    bool isCompact = false,
+    bool isGameEnded = false,
+  }) {
     final emoji = Formatters.getAvatarEmoji(user?.avatar);
-    final name = (user?.displayName != null && user!.displayName.trim().isNotEmpty)
+    final name =
+        (user?.displayName != null && user!.displayName.trim().isNotEmpty)
         ? user.displayName
         : 'Player';
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14, vertical: isCompact ? 6 : 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 10 : 14,
+        vertical: isCompact ? 6 : 10,
+      ),
       decoration: BoxDecoration(
         color: AppTheme.darkCard,
         borderRadius: BorderRadius.circular(12),
@@ -738,7 +915,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  game != null ? '${game.name} • Code: ${game.inviteCode}' : 'Playing Live Game',
+                  game != null
+                      ? '${game.name} • Code: ${game.inviteCode}'
+                      : 'Playing Live Game',
                   style: TextStyle(
                     fontSize: isCompact ? 9.5 : 11,
                     color: AppTheme.secondaryColor,
@@ -754,7 +933,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             decoration: BoxDecoration(
               color: AppTheme.secondaryColor.withValues(alpha: 0.18),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+              border: Border.all(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+              ),
             ),
             child: Text(
               'Ticket #${ticket.ticketNumber}',
@@ -768,7 +949,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           if (!isGameEnded) ...[
             const SizedBox(width: 6),
             IconButton(
-              icon: const Icon(Icons.exit_to_app_rounded, color: AppTheme.accentDanger, size: 20),
+              icon: const Icon(
+                Icons.exit_to_app_rounded,
+                color: AppTheme.accentDanger,
+                size: 20,
+              ),
               tooltip: 'Quit Game Room',
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -799,7 +984,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
           boxShadow: [
-            BoxShadow(color: AppTheme.secondaryColor.withOpacity(0.25), blurRadius: 14, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: AppTheme.secondaryColor.withOpacity(0.25),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
@@ -807,11 +996,20 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.celebration, color: AppTheme.secondaryColor, size: 22),
+                const Icon(
+                  Icons.celebration,
+                  color: AppTheme.secondaryColor,
+                  size: 22,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'GAME CONCLUDED 🎉',
-                  style: TextStyle(fontSize: isCompact ? 15 : 18, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor, letterSpacing: 0.8),
+                  style: TextStyle(
+                    fontSize: isCompact ? 15 : 18,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.secondaryColor,
+                    letterSpacing: 0.8,
+                  ),
                 ),
               ],
             ),
@@ -820,7 +1018,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               totalCalled >= 90
                   ? 'All 90 numbers called! Prize claiming is now finalized.'
                   : 'Game concluded! Check your rewards below.',
-              style: TextStyle(fontSize: isCompact ? 11.5 : 13, color: Colors.white, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: isCompact ? 11.5 : 13,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
@@ -837,8 +1039,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.secondaryColor,
                       foregroundColor: AppTheme.primaryDark,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 if (context != null)
@@ -849,7 +1057,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: const BorderSide(color: Colors.white54),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       textStyle: const TextStyle(fontSize: 12),
                     ),
                   ),
@@ -861,12 +1072,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     }
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isCompact ? 14 : 20, vertical: isCompact ? 10 : 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 14 : 20,
+        vertical: isCompact ? 10 : 16,
+      ),
       decoration: BoxDecoration(
         color: AppTheme.primaryColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: AppTheme.primaryColor.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -875,27 +1093,55 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('CURRENT CALL', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1, color: Colors.white70)),
+              const Text(
+                'CURRENT CALL',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                  color: Colors.white70,
+                ),
+              ),
               const SizedBox(height: 2),
               Semantics(
-                label: latestNumber != null ? 'CURRENT_CALLED_NUMBER_$latestNumber' : 'CURRENT_CALLED_NUMBER_READY',
+                label: latestNumber != null
+                    ? 'CURRENT_CALLED_NUMBER_$latestNumber'
+                    : 'CURRENT_CALLED_NUMBER_READY',
                 child: Text(
                   latestNumber != null ? '$latestNumber' : 'READY',
-                  style: TextStyle(fontSize: isCompact ? 32 : 42, fontWeight: FontWeight.w900, color: Colors.white, height: 1.1),
+                  style: TextStyle(
+                    fontSize: isCompact ? 32 : 42,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14, vertical: isCompact ? 6 : 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 10 : 14,
+              vertical: isCompact ? 6 : 8,
+            ),
             decoration: BoxDecoration(
               color: Colors.black26,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
-                Text('$totalCalled / 90', style: TextStyle(fontSize: isCompact ? 14 : 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                const Text('Called', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                Text(
+                  '$totalCalled / 90',
+                  style: TextStyle(
+                    fontSize: isCompact ? 14 : 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const Text(
+                  'Called',
+                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                ),
               ],
             ),
           ),
@@ -935,10 +1181,18 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildTicketMatrix(MptTicket ticket, Set<int> calledSet, {bool isGameEnded = false, double cellHeight = 48}) {
+  Widget _buildTicketMatrix(
+    MptTicket ticket,
+    Set<int> calledSet, {
+    bool isGameEnded = false,
+    double cellHeight = 48,
+  }) {
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: AppTheme.primaryLight, width: 1.5)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.primaryLight, width: 1.5),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(10),
         child: Column(
@@ -946,10 +1200,22 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('DABHOUSIE TICKET #${ticket.ticketNumber}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.primaryLight)),
                 Text(
-                  isGameEnded ? '${_markedNumbers.length} / 15 Marked (Final)' : '${_markedNumbers.length} / 15 Marked',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                  'DABHOUSIE TICKET #${ticket.ticketNumber}',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryLight,
+                  ),
+                ),
+                Text(
+                  isGameEnded
+                      ? '${_markedNumbers.length} / 15 Marked (Final)'
+                      : '${_markedNumbers.length} / 15 Marked',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFA0AEC0),
+                  ),
                 ),
               ],
             ),
@@ -961,7 +1227,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   children: [
                     for (int c = 0; c < 9; c++)
                       Expanded(
-                        child: _buildTicketCell(ticket.matrix[r][c], calledSet, isGameEnded: isGameEnded, height: cellHeight),
+                        child: _buildTicketCell(
+                          ticket.matrix[r][c],
+                          calledSet,
+                          isGameEnded: isGameEnded,
+                          height: cellHeight,
+                        ),
                       ),
                   ],
                 ),
@@ -972,7 +1243,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  Widget _buildTicketCell(int numVal, Set<int> calledSet, {bool isGameEnded = false, double height = 48}) {
+  Widget _buildTicketCell(
+    int numVal,
+    Set<int> calledSet, {
+    bool isGameEnded = false,
+    double height = 48,
+  }) {
     if (numVal == 0) {
       return Container(
         height: height,
@@ -1006,7 +1282,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               color: bgColor,
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                color: isMarked ? AppTheme.accentSuccess : const Color(0xFF3B4163),
+                color: isMarked
+                    ? AppTheme.accentSuccess
+                    : const Color(0xFF3B4163),
                 width: isMarked ? 1.5 : 1,
               ),
             ),
@@ -1035,6 +1313,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     bool isGameEnded = false,
     bool isCompact = false,
   }) {
+    final registrations =
+        ref.watch(registrationsStreamProvider(widget.gameId)).value ?? [];
+    final regMap = {for (final r in registrations) r.userId: r};
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1043,7 +1325,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           children: [
             Text(
               'Claim Winning Prize',
-              style: TextStyle(fontSize: isCompact ? 14 : 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: isCompact ? 14 : 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             if (isGameEnded)
               Container(
@@ -1055,7 +1341,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 ),
                 child: const Text(
                   'CONCLUDED',
-                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFFA0AEC0)),
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFA0AEC0),
+                  ),
                 ),
               ),
           ],
@@ -1065,7 +1355,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           isGameEnded
               ? 'Game is over. Prize claiming is closed.'
               : 'Tap when completed. Server will validate your ticket.',
-          style: TextStyle(fontSize: isCompact ? 11 : 12, color: const Color(0xFFA0AEC0)),
+          style: TextStyle(
+            fontSize: isCompact ? 11 : 12,
+            color: const Color(0xFFA0AEC0),
+          ),
         ),
         const SizedBox(height: 10),
         GridView.count(
@@ -1078,29 +1371,60 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           children: activePrizes.map((prize) {
             final approvedClaim = approvedClaims[prize];
             final isApproved = approvedClaim != null;
-            final isWonByMe = isApproved && approvedClaim.userId == currentUserId;
+            final isWonByMe =
+                isApproved && approvedClaim.userId == currentUserId;
 
             if (isApproved) {
+              final playerReg = regMap[approvedClaim.userId];
+              final displayName = (playerReg?.displayName.isNotEmpty == true)
+                  ? playerReg!.displayName
+                  : (approvedClaim.userName != null &&
+                        approvedClaim.userName != 'Player')
+                  ? approvedClaim.userName!
+                  : 'Player';
+
               return ElevatedButton(
                 onPressed: null, // Disabled
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isWonByMe ? AppTheme.accentSuccess.withOpacity(0.2) : Colors.black26,
-                  disabledBackgroundColor: isWonByMe ? AppTheme.accentSuccess.withOpacity(0.25) : const Color(0xFF222639),
-                  disabledForegroundColor: isWonByMe ? AppTheme.accentSuccess : const Color(0xFF718096),
-                  side: BorderSide(color: isWonByMe ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                  backgroundColor: isWonByMe
+                      ? AppTheme.accentSuccess.withOpacity(0.2)
+                      : Colors.black26,
+                  disabledBackgroundColor: isWonByMe
+                      ? AppTheme.accentSuccess.withOpacity(0.25)
+                      : const Color(0xFF222639),
+                  disabledForegroundColor: isWonByMe
+                      ? AppTheme.accentSuccess
+                      : const Color(0xFF718096),
+                  side: BorderSide(
+                    color: isWonByMe
+                        ? AppTheme.accentSuccess
+                        : const Color(0xFF2E334D),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 6,
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       Formatters.formatPrizeName(prize),
-                      style: TextStyle(fontSize: isCompact ? 11 : 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: isCompact ? 11 : 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      isWonByMe ? '🏆 Won by You!' : '✓ Won by ${approvedClaim.userName ?? "Player"}',
-                      style: TextStyle(fontSize: isCompact ? 9 : 10, fontWeight: FontWeight.bold, color: isWonByMe ? AppTheme.accentSuccess : const Color(0xFFA0AEC0)),
+                      isWonByMe ? '🏆 Won by You!' : '✓ Won by $displayName',
+                      style: TextStyle(
+                        fontSize: isCompact ? 9 : 10,
+                        fontWeight: FontWeight.bold,
+                        color: isWonByMe
+                            ? AppTheme.accentSuccess
+                            : const Color(0xFFA0AEC0),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1116,14 +1440,20 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   disabledBackgroundColor: const Color(0xFF1E2235),
                   disabledForegroundColor: const Color(0xFF64748B),
                   side: const BorderSide(color: Color(0xFF2E334D)),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       Formatters.formatPrizeName(prize),
-                      style: TextStyle(fontSize: isCompact ? 11 : 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: isCompact ? 11 : 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const Text(
@@ -1139,10 +1469,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               onPressed: _isClaiming
                   ? null
                   : () => _handleClaimPrize(
-                        prizeType: prize,
-                        ticket: ticket,
-                        calledSet: calledSet,
-                      ),
+                      prizeType: prize,
+                      ticket: ticket,
+                      calledSet: calledSet,
+                    ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.darkSurface,
                 foregroundColor: Colors.white,
@@ -1151,7 +1481,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
               child: Text(
                 Formatters.formatPrizeName(prize),
-                style: TextStyle(fontSize: isCompact ? 12 : 13, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: isCompact ? 12 : 13,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
             );

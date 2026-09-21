@@ -2,6 +2,8 @@
 User-agent: *
 Allow: /
 Allow: /how-it-works.html
+Allow: /how-to-play-tambola.html
+Allow: /how-to-play-housie.html
 Allow: /90-ball-bingo.html
 Allow: /pricing.html
 Allow: /privacy-policy.html

@@ -73,7 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
-        '👉 Tap the link below to open the app or download it:\n$link';
+        '👉 Tap the link below to join directly in your browser:\n$link';
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
@@ -312,31 +312,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 12),
             ],
 
-            // 1. Dashboard Hero Section (Free for 1-5, Optional App, 3 CTAs)
+            // 1. Dashboard Hero Section
             const DashboardHeroSection(),
             const SizedBox(height: 14),
 
-            // 2. USP Grid (Instant Play, Auto Win Verification, 100% Free Family Play)
-            const UspGridSection(),
+            // 2. Perfect For (Chip row)
+            const PerfectForChipsSection(),
             const SizedBox(height: 14),
 
             // 3. How It Works (3-step flow)
             const HowItWorksSection(),
             const SizedBox(height: 14),
 
-            // 4. Perfect For (Chip row)
-            const PerfectForChipsSection(),
+            // 4. Quick Rules & How to Win Helper
+            _buildHowToPlayCard(context),
             const SizedBox(height: 14),
 
-            // 5. Mobile Apps Download Badges Section (Temporarily hidden until native mobile apps are released & approved by app stores)
-            // _buildAppDownloadSection(context),
-            // const SizedBox(height: 12),
+            // 5. Why DabHousie (USP Grid - Instant Play, Auto Win Verification, 100% Free Family Play)
+            const UspGridSection(),
+            const SizedBox(height: 14),
 
-            // 6. Quick Rules & How to Win Helper
-            _buildHowToPlayCard(context),
-            const SizedBox(height: 8),
-
-            // 7. Dashboard Footer Tagline
+            // 6. Dashboard Footer Tagline
             const DashboardFooter(),
           ],
         ),
@@ -639,99 +635,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildAppDownloadSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.darkCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2E334D)),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryColor.withOpacity(0.12),
-            AppTheme.darkCard,
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.phone_android_rounded, color: AppTheme.secondaryColor, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Keep DabHousie Ready',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Use the mobile app for scheduled games, push reminders and quick access to ad-hoc games. Guests can join directly on web with zero app download.',
-            style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStoreButton(
-                  title: 'Google Play',
-                  subtitle: 'Android App',
-                  icon: Icons.play_arrow_rounded,
-                  onTap: () => _launchURL(AppConfig.appBaseUrl),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildStoreButton(
-                  title: 'App Store',
-                  subtitle: 'iOS / iPhone',
-                  icon: Icons.apple,
-                  onTap: () => _launchURL(AppConfig.appBaseUrl),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildStoreButton({required String title, required String subtitle, required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppTheme.darkSurface,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF3B4163)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 22, color: Colors.white),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(subtitle, style: const TextStyle(fontSize: 8.5, color: Color(0xFFA0AEC0)), overflow: TextOverflow.ellipsis),
-                  Text(title, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white), overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildHowToPlayCard(BuildContext context) {
     return Card(

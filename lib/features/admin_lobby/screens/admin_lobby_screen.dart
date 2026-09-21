@@ -45,7 +45,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
         '🔑 Invite Code: ${game.inviteCode}\n\n'
-        '👉 Tap the link below to open the app or download it:\n$link';
+        '👉 Tap the link below to join directly in your browser:\n$link';
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 

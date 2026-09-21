@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/config/app_config.dart';
@@ -19,7 +18,8 @@ class LiveGameDisplayScreen extends ConsumerStatefulWidget {
   const LiveGameDisplayScreen({super.key, required this.gameId});
 
   @override
-  ConsumerState<LiveGameDisplayScreen> createState() => _LiveGameDisplayScreenState();
+  ConsumerState<LiveGameDisplayScreen> createState() =>
+      _LiveGameDisplayScreenState();
 }
 
 class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
@@ -67,7 +67,8 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
 
     // Announce new number if sequence increased
     calledStream.whenData((calledNumbers) {
-      if (calledNumbers.isNotEmpty && calledNumbers.length > _lastAnnouncedSeq) {
+      if (calledNumbers.isNotEmpty &&
+          calledNumbers.length > _lastAnnouncedSeq) {
         _lastAnnouncedSeq = calledNumbers.length;
         final latestNum = calledNumbers.last.number;
         TambolaAudioCaller().announceNumber(latestNum);
@@ -81,13 +82,21 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.asset(AppAssets.horizontalLogo, height: 48, fit: BoxFit.contain),
+              Image.asset(
+                AppAssets.horizontalLogo,
+                height: 48,
+                fit: BoxFit.contain,
+              ),
               const SizedBox(height: 24),
               const CircularProgressIndicator(color: AppTheme.secondaryColor),
               const SizedBox(height: 16),
               const Text(
                 'Connecting to Live Game Display...',
-                style: TextStyle(fontSize: 16, color: Color(0xFFCBD5E1), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFFCBD5E1),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 6),
               const Text(
@@ -112,11 +121,19 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.wifi_off_rounded, size: 54, color: AppTheme.accentWarning),
+                const Icon(
+                  Icons.wifi_off_rounded,
+                  size: 54,
+                  color: AppTheme.accentWarning,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Connection Interrupted',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -132,7 +149,10 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.secondaryColor,
                     foregroundColor: AppTheme.primaryDark,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -146,12 +166,19 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(AppAssets.horizontalLogo, height: 28, fit: BoxFit.contain),
+                Image.asset(
+                  AppAssets.horizontalLogo,
+                  height: 28,
+                  fit: BoxFit.contain,
+                ),
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
                     '• ${game.name}',
-                    style: const TextStyle(fontSize: 15, color: Color(0xFFA0AEC0)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFFA0AEC0),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -160,16 +187,25 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
             actions: [
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.secondaryColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.vpn_key_outlined, size: 14, color: AppTheme.secondaryColor),
+                    const Icon(
+                      Icons.vpn_key_outlined,
+                      size: 14,
+                      color: AppTheme.secondaryColor,
+                    ),
                     const SizedBox(width: 5),
                     Text(
                       game.inviteCode,
@@ -211,16 +247,28 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.sync_problem, size: 40, color: AppTheme.accentWarning),
+                  const Icon(
+                    Icons.sync_problem,
+                    size: 40,
+                    color: AppTheme.accentWarning,
+                  ),
                   const SizedBox(height: 10),
-                  const Text('Reconnecting to numbers board...', style: TextStyle(color: Color(0xFFCBD5E1))),
+                  const Text(
+                    'Reconnecting to numbers board...',
+                    style: TextStyle(color: Color(0xFFCBD5E1)),
+                  ),
                   const SizedBox(height: 12),
-                  OutlinedButton(onPressed: _retryConnection, child: const Text('Retry')),
+                  OutlinedButton(
+                    onPressed: _retryConnection,
+                    child: const Text('Retry'),
+                  ),
                 ],
               ),
             ),
             data: (calledNumbers) {
-              final latest = calledNumbers.isNotEmpty ? calledNumbers.last.number : null;
+              final latest = calledNumbers.isNotEmpty
+                  ? calledNumbers.last.number
+                  : null;
               final calledSet = calledNumbers.map((e) => e.number).toSet();
 
               return LayoutBuilder(
@@ -235,16 +283,27 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: _buildBoardGrid(calledSet, calledNumbers),
+                                child: _buildBoardGrid(
+                                  calledSet,
+                                  calledNumbers,
+                                ),
                               ),
                               const SizedBox(width: 16),
                               Expanded(
                                 flex: 2,
                                 child: Column(
                                   children: [
-                                    _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                    _buildCurrentBallHero(
+                                      game,
+                                      latest,
+                                      calledNumbers.length,
+                                    ),
                                     const SizedBox(height: 14),
-                                    Expanded(child: _buildLiveWinnersPanel(claimsStream)),
+                                    Expanded(
+                                      child: _buildLiveWinnersPanel(
+                                        claimsStream,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -253,7 +312,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                         : SingleChildScrollView(
                             child: Column(
                               children: [
-                                _buildCurrentBallHero(game, latest, calledNumbers.length),
+                                _buildCurrentBallHero(
+                                  game,
+                                  latest,
+                                  calledNumbers.length,
+                                ),
                                 const SizedBox(height: 16),
                                 _buildBoardGrid(calledSet, calledNumbers),
                                 const SizedBox(height: 16),
@@ -294,7 +357,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: (isGameEnded ? const Color(0xFF0F766E) : const Color(0xFF4338CA)).withValues(alpha: 0.45),
+            color:
+                (isGameEnded
+                        ? const Color(0xFF0F766E)
+                        : const Color(0xFF4338CA))
+                    .withValues(alpha: 0.45),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -316,7 +383,9 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                     fontSize: 11.5,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.8,
-                    color: isGameEnded ? AppTheme.secondaryColor : Colors.white70,
+                    color: isGameEnded
+                        ? AppTheme.secondaryColor
+                        : Colors.white70,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -339,7 +408,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                         ? const Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.emoji_events_rounded, color: Color(0xFF0F766E), size: 26),
+                              Icon(
+                                Icons.emoji_events_rounded,
+                                color: Color(0xFF0F766E),
+                                size: 26,
+                              ),
                               SizedBox(height: 2),
                               Text(
                                 'Game Over',
@@ -366,7 +439,9 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 Text(
                   isGameEnded
                       ? 'Game Over • $totalCalled Called'
-                      : (totalCalled > 0 ? '$totalCalled / 90 Called' : 'Waiting for Start'),
+                      : (totalCalled > 0
+                            ? '$totalCalled / 90 Called'
+                            : 'Waiting for Start'),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -392,7 +467,10 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(6),
@@ -400,7 +478,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.qr_code_scanner, size: 11, color: AppTheme.secondaryColor),
+                      Icon(
+                        Icons.qr_code_scanner,
+                        size: 11,
+                        color: AppTheme.secondaryColor,
+                      ),
                       SizedBox(width: 4),
                       Text(
                         'SCAN TO PLAY',
@@ -441,7 +523,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                   children: [
                     const Text(
                       'Code: ',
-                      style: TextStyle(fontSize: 10.5, color: Colors.white70, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     SelectableText(
                       game.inviteCode,
@@ -524,17 +610,30 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Called Numbers Board', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Called Numbers Board',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.secondaryColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         '${calledSet.length}/90',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.secondaryColor,
+                        ),
                       ),
                     ),
                   ],
@@ -559,12 +658,23 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                           ...recentCalls.map((item) {
                             final n = item.number;
                             return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 2.5,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryLight.withValues(alpha: 0.25),
+                                color: AppTheme.primaryLight.withValues(
+                                  alpha: 0.25,
+                                ),
                                 borderRadius: BorderRadius.circular(5),
-                                border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+                                border: Border.all(
+                                  color: AppTheme.primaryLight.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                ),
                               ),
                               child: Text(
                                 '$n',
@@ -598,9 +708,15 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 final isCalled = calledSet.contains(num);
                 return Container(
                   decoration: BoxDecoration(
-                    color: isCalled ? AppTheme.accentSuccess : AppTheme.darkSurface,
+                    color: isCalled
+                        ? AppTheme.accentSuccess
+                        : AppTheme.darkSurface,
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: isCalled ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
+                    border: Border.all(
+                      color: isCalled
+                          ? AppTheme.accentSuccess
+                          : const Color(0xFF2E334D),
+                    ),
                   ),
                   child: Center(
                     child: Text(
@@ -608,7 +724,9 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isCalled ? Colors.white : const Color(0xFFA0AEC0),
+                        color: isCalled
+                            ? Colors.white
+                            : const Color(0xFFA0AEC0),
                       ),
                     ),
                   ),
@@ -631,9 +749,16 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
           children: [
             const Row(
               children: [
-                Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 20),
+                Icon(
+                  Icons.emoji_events,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
-                Text('Winners Board', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                Text(
+                  'Winners Board',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             const Divider(color: Color(0xFF2E334D)),
@@ -641,23 +766,50 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const Text('Unable to load winners'),
               data: (claims) {
-                final winners = claims.where((c) => c.status == 'APPROVED').toList();
+                final winners = claims
+                    .where((c) => c.status == 'APPROVED')
+                    .toList();
                 if (winners.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('No winners declared yet.', style: TextStyle(color: Color(0xFFA0AEC0), fontSize: 12)),
+                    child: Text(
+                      'No winners declared yet.',
+                      style: TextStyle(color: Color(0xFFA0AEC0), fontSize: 12),
+                    ),
                   );
                 }
 
+                final regList =
+                    ref
+                        .watch(registrationsStreamProvider(widget.gameId))
+                        .value ??
+                    [];
+                final regMap = {for (final r in regList) r.userId: r};
+
                 return Column(
                   children: winners.map((w) {
+                    final playerReg = regMap[w.userId];
+                    final displayName =
+                        (playerReg?.displayName.isNotEmpty == true)
+                        ? playerReg!.displayName
+                        : (w.userName != null && w.userName != 'Player')
+                        ? w.userName!
+                        : 'Player';
+                    final avatar =
+                        playerReg?.avatar ?? w.userAvatar ?? 'avatar_1';
+
                     return Container(
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.secondaryColor.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
+                        border: Border.all(
+                          color: AppTheme.secondaryColor.withOpacity(0.4),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -670,7 +822,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              Formatters.getAvatarEmoji(w.userAvatar),
+                              Formatters.getAvatarEmoji(avatar),
                               style: const TextStyle(fontSize: 16),
                             ),
                           ),
@@ -681,18 +833,29 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                               children: [
                                 Text(
                                   Formatters.formatPrizeName(w.prizeType),
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Colors.white,
+                                  ),
                                 ),
                                 Text(
-                                  'Won by: ${w.userName ?? "Player"}',
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.secondaryColor),
+                                  'Won by: $displayName',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.secondaryColor,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           Text(
                             Formatters.formatShortDate(w.submittedAt),
-                            style: const TextStyle(fontSize: 10, color: Color(0xFFA0AEC0)),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFFA0AEC0),
+                            ),
                           ),
                         ],
                       ),
