@@ -45,6 +45,9 @@ class _AdminGameControlScreenState
   int _autoCallIntervalSeconds = 15;
   int _countdownSecondsLeft = 15;
   Timer? _autoCallTimer;
+  bool _hasAutoConcluded = false;
+  int _autoEndSecondsLeft = 0;
+  Timer? _autoEndTimer;
 
   @override
   void initState() {
@@ -61,6 +64,7 @@ class _AdminGameControlScreenState
   void dispose() {
     _autoCallTimer?.cancel();
     _celebrationTimer?.cancel();
+    _autoEndTimer?.cancel();
     super.dispose();
   }
 
@@ -77,12 +81,15 @@ class _AdminGameControlScreenState
         timer.cancel();
         return;
       }
-      if (!_isAutoPilotEnabled) {
+      if (!_isAutoPilotEnabled || _hasAutoConcluded) {
         timer.cancel();
         return;
       }
-      // If celebrating a winner or currently making an async call or paused, hold the countdown
-      if (_celebrationSecondsLeft > 0 || _isCalling || _isAutoPilotPaused) {
+      // If celebrating a winner or currently making an async call, auto-concluding, or paused, hold the countdown
+      if (_celebrationSecondsLeft > 0 ||
+          _isCalling ||
+          _isAutoPilotPaused ||
+          _autoEndSecondsLeft > 0) {
         return;
       }
 
@@ -152,6 +159,52 @@ class _AdminGameControlScreenState
     });
   }
 
+  void _triggerAutoConclusion() {
+    if (_hasAutoConcluded) return;
+    _hasAutoConcluded = true;
+    _stopAutoPilot();
+    _autoEndTimer?.cancel();
+
+    setState(() {
+      _autoEndSecondsLeft = 10;
+    });
+
+    _autoEndTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_autoEndSecondsLeft > 1) {
+        setState(() {
+          _autoEndSecondsLeft--;
+        });
+      } else {
+        timer.cancel();
+        setState(() {
+          _autoEndSecondsLeft = 0;
+        });
+        await _autoFinalizeGame();
+      }
+    });
+  }
+
+  Future<void> _autoFinalizeGame() async {
+    try {
+      await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '🏆 All prizes won! Game concluded and final results published.',
+            ),
+            backgroundColor: AppTheme.accentSuccess,
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
   void _handleCopyCode(String inviteCode) {
     Clipboard.setData(ClipboardData(text: inviteCode));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -177,6 +230,34 @@ class _AdminGameControlScreenState
   }
 
   Future<void> _handleCallNext() async {
+    final game = ref.read(gameStreamProvider(widget.gameId)).value;
+    if (game?.status == 'COMPLETED') {
+      _stopAutoPilot();
+      return;
+    }
+    final claims = ref.read(claimsStreamProvider(widget.gameId)).value ?? [];
+    final activePrizes = game?.prizesConfig ??
+        [
+          'EARLY_FIVE',
+          'TOP_LINE',
+          'MIDDLE_LINE',
+          'BOTTOM_LINE',
+          'FOUR_CORNERS',
+          'FULL_HOUSE',
+        ];
+    final approvedClaimPrizes = claims
+        .where((c) => c.status == 'APPROVED')
+        .map((c) => c.prizeType)
+        .toSet();
+    final allPrizesWon = activePrizes.isNotEmpty &&
+        activePrizes.every((p) => approvedClaimPrizes.contains(p));
+
+    if (allPrizesWon) {
+      _stopAutoPilot();
+      _triggerAutoConclusion();
+      return;
+    }
+
     setState(() {
       _isCalling = true;
       _countdownSecondsLeft = _autoCallIntervalSeconds;
@@ -950,6 +1031,14 @@ class _AdminGameControlScreenState
         activePrizes.isNotEmpty &&
         activePrizes.every((p) => approvedClaimPrizes.contains(p));
     final regMap = {for (final r in registrations) r.userId: r};
+
+    if (allPrizesWon && !isGameCompleted && !_hasAutoConcluded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasAutoConcluded) {
+          _triggerAutoConclusion();
+        }
+      });
+    }
 
     if (_knownApprovedCount == -1) {
       _knownApprovedCount = approvedClaimsList.length;
@@ -1992,30 +2081,60 @@ class _AdminGameControlScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.emoji_events,
                 color: AppTheme.secondaryColor,
                 size: 28,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'All Prizes Won! 🏆',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppTheme.secondaryColor,
-                      ),
+                    Row(
+                      children: [
+                        const Text(
+                          'All Prizes Won! 🏆',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                        if (_autoEndSecondsLeft > 0) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Auto-concluding in ${_autoEndSecondsLeft}s',
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.primaryDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    SizedBox(height: 2),
+                    const SizedBox(height: 2),
                     Text(
-                      'All configured prizes have approved winners. Number calling is concluded. Tap below to finalize and publish results.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                      _autoEndSecondsLeft > 0
+                          ? 'All prizes have approved winners! Auto-Pilot has stopped. Game will automatically conclude in $_autoEndSecondsLeft seconds.'
+                          : 'All configured prizes have approved winners. Number calling is concluded. Tap below to finalize and publish results.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCBD5E1),
+                      ),
                     ),
                   ],
                 ),
@@ -2024,16 +2143,23 @@ class _AdminGameControlScreenState
           ),
           const SizedBox(height: 10),
           ElevatedButton.icon(
-            onPressed: _handleEndGame,
+            onPressed: () async {
+              _autoEndTimer?.cancel();
+              setState(() => _autoEndSecondsLeft = 0);
+              await _autoFinalizeGame();
+            },
             icon: const Icon(Icons.flag_rounded, size: 18),
             label: const Text(
-              'End Game & Conclude Event',
+              'Conclude Now & Finalize',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentDanger,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              padding: const EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
