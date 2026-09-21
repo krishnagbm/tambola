@@ -64,6 +64,16 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
+    final registrationsStream =
+        ref.watch(registrationsStreamProvider(widget.gameId));
+
+    final confirmedPlayers = registrationsStream.value
+            ?.where((r) => r.isConfirmed)
+            .toList() ??
+        [];
+    final totalPlayers = confirmedPlayers.isNotEmpty
+        ? confirmedPlayers.length
+        : (gameStream.value?.fundedCapacity ?? 1);
 
     // Announce new number if sequence increased
     calledStream.whenData((calledNumbers) {
@@ -122,13 +132,13 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.wifi_off_rounded,
-                  size: 54,
-                  color: AppTheme.accentWarning,
+                  Icons.error_outline,
+                  color: AppTheme.accentDanger,
+                  size: 48,
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Connection Interrupted',
+                  'Game Not Found',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -136,24 +146,18 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Attempting automatic reconnection to the game...',
+                Text(
+                  'Could not load live game display: $e',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFFA0AEC0),
+                  ),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _retryConnection,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reconnect Now'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.secondaryColor,
-                    foregroundColor: AppTheme.primaryDark,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                  ),
+                ElevatedButton(
+                  onPressed: () => context.go('/'),
+                  child: const Text('Back to Home'),
                 ),
               ],
             ),
@@ -161,10 +165,21 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
         ),
       ),
       data: (game) {
+        if (game == null) {
+          return const Scaffold(body: Center(child: Text('Game not found')));
+        }
+
         return Scaffold(
+          backgroundColor: AppTheme.primaryDark,
           appBar: AppBar(
+            backgroundColor: AppTheme.darkCard,
+            elevation: 2,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Back to Home',
+              onPressed: () => context.go('/'),
+            ),
             title: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
                   AppAssets.horizontalLogo,
@@ -185,6 +200,40 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               ],
             ),
             actions: [
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.groups_rounded,
+                      size: 14,
+                      color: Color(0xFF38BDF8),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '$totalPlayers Players',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Color(0xFF38BDF8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 padding: const EdgeInsets.symmetric(

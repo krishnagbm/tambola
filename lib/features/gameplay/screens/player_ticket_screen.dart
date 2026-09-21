@@ -143,7 +143,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
       if (status == 'APPROVED') {
         final refCode = res['claim_reference'] as String? ?? 'N/A';
-        _showWinnerDialog(prizeType, refCode);
+        final regList =
+            ref.read(registrationsStreamProvider(widget.gameId)).value ?? [];
+        final confirmedCount = regList.where((r) => r.isConfirmed).length;
+        final totalPlayers = confirmedCount > 0
+            ? confirmedCount
+            : (ref.read(gameStreamProvider(widget.gameId)).value?.fundedCapacity ??
+                1);
+        _showWinnerDialog(prizeType, refCode, totalPlayers);
         if (prizeType == 'FULL_HOUSE') {
           try {
             await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
@@ -173,7 +180,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     }
   }
 
-  void _showWinnerDialog(String prizeType, String claimRef) {
+  void _showWinnerDialog(String prizeType, String claimRef, int totalPlayers) {
     setState(() => _showCelebration = true);
     Future.delayed(const Duration(seconds: 5), () {
       if (mounted) setState(() => _showCelebration = false);
@@ -184,11 +191,35 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.darkCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
-            SizedBox(width: 8),
-            Text('WINNER! 🏆', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'WINNER! 🏆',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (totalPlayers > 1)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Text(
+                  '1 of $totalPlayers Players',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
           ],
         ),
         content: Column(
@@ -196,7 +227,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Congratulations! Your claim for "${Formatters.formatPrizeName(prizeType)}" is APPROVED.',
+              totalPlayers > 1
+                  ? '🎉 Congratulations! You won "${Formatters.formatPrizeName(prizeType)}" competing against $totalPlayers players in this game!'
+                  : 'Congratulations! Your claim for "${Formatters.formatPrizeName(prizeType)}" is APPROVED.',
               style: const TextStyle(fontSize: 14),
             ),
             const SizedBox(height: 16),
@@ -432,7 +465,17 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
+    final registrationsStream =
+        ref.watch(registrationsStreamProvider(widget.gameId));
     final currentUserId = ref.watch(currentUserProvider).value?.id;
+
+    final confirmedPlayers = registrationsStream.value
+            ?.where((r) => r.isConfirmed)
+            .toList() ??
+        [];
+    final totalPlayers = confirmedPlayers.isNotEmpty
+        ? confirmedPlayers.length
+        : (gameStream.value?.fundedCapacity ?? 1);
 
     // Announce number if voice enabled
     if (_voiceEnabled) {
@@ -463,14 +506,44 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               overflow: TextOverflow.ellipsis,
             ),
             if (gameStream.value != null)
-              Text(
-                'Code: ${gameStream.value!.inviteCode}',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: AppTheme.secondaryColor,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Code: ${gameStream.value!.inviteCode}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.secondaryColor,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  if (totalPlayers > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        '👥 $totalPlayers',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF38BDF8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
           ],
         ),
@@ -618,6 +691,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       currentUser,
                                       ticket,
                                       game: currentGame,
+                                      totalPlayers: totalPlayers,
                                       isCompact: true,
                                       isGameEnded:
                                           isGameEnded ||
@@ -627,6 +701,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                     _buildLatestNumberBanner(
                                       latestCalled,
                                       calledNumbers.length,
+                                      totalPlayers: totalPlayers,
                                       isGameEnded: isGameEnded,
                                       context: context,
                                       isCompact: true,
@@ -750,6 +825,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                             currentUser,
                             ticket,
                             game: currentGame,
+                            totalPlayers: totalPlayers,
                             isGameEnded:
                                 isGameEnded ||
                                 currentGame?.status == 'CANCELLED',
@@ -760,6 +836,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           _buildLatestNumberBanner(
                             latestCalled,
                             calledNumbers.length,
+                            totalPlayers: totalPlayers,
                             isGameEnded: isGameEnded,
                             context: context,
                           ),
@@ -867,6 +944,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     MptUser? user,
     MptTicket ticket, {
     MptGame? game,
+    int totalPlayers = 1,
     bool isCompact = false,
     bool isGameEnded = false,
   }) {
@@ -946,6 +1024,36 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
             ),
           ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: const Color(0xFF38BDF8).withValues(alpha: 0.6),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.groups_rounded,
+                  size: 13,
+                  color: Color(0xFF38BDF8),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$totalPlayers Players',
+                  style: TextStyle(
+                    fontSize: isCompact ? 10.5 : 11.5,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF38BDF8),
+                  ),
+                ),
+              ],
+            ),
+          ),
           if (!isGameEnded) ...[
             const SizedBox(width: 6),
             IconButton(
@@ -968,6 +1076,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   Widget _buildLatestNumberBanner(
     int? latestNumber,
     int totalCalled, {
+    int totalPlayers = 1,
     bool isGameEnded = false,
     BuildContext? context,
     bool isCompact = false,
@@ -1016,8 +1125,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             const SizedBox(height: 4),
             Text(
               totalCalled >= 90
-                  ? 'All 90 numbers called! Prize claiming is now finalized.'
-                  : 'Game concluded! Check your rewards below.',
+                  ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
+                  : 'Game concluded across $totalPlayers players! Check your rewards below.',
               style: TextStyle(
                 fontSize: isCompact ? 11.5 : 13,
                 color: Colors.white,
@@ -1417,7 +1526,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      isWonByMe ? '🏆 Won by You!' : '✓ Won by $displayName',
+                      isWonByMe
+                          ? (registrations.length > 1
+                              ? '🏆 You Won (1 of ${registrations.length})'
+                              : '🏆 Won by You!')
+                          : '✓ Won by $displayName',
                       style: TextStyle(
                         fontSize: isCompact ? 9 : 10,
                         fontWeight: FontWeight.bold,
