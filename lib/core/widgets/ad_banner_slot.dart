@@ -28,7 +28,7 @@ class AdBannerSlot extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B).withOpacity(0.8),
+          color: const Color(0xFF1E293B).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: const Color(0xFF334155)),
         ),
@@ -67,7 +67,7 @@ class AdBannerSlot extends StatelessWidget {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF4338CA).withOpacity(0.4)),
+                border: Border.all(color: const Color(0xFF4338CA).withValues(alpha: 0.4)),
               ),
               child: Stack(
                 alignment: Alignment.center,
@@ -105,23 +105,23 @@ class AdBannerSlot extends StatelessWidget {
     // Standard Banner
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A).withOpacity(0.9),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF334155).withOpacity(0.6)),
+        color: const Color(0xFF0F172A).withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF334155).withValues(alpha: 0.6)),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.local_offer_rounded, color: AppTheme.secondaryColor, size: 16),
+            child: const Icon(Icons.local_offer_rounded, color: AppTheme.secondaryColor, size: 18),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,7 +131,7 @@ class AdBannerSlot extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     const SizedBox(width: 6),
                     Container(
@@ -144,9 +144,10 @@ class AdBannerSlot extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 2),
                 Text(
                   subtitle ?? 'Free live multiplayer with instant verification',
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

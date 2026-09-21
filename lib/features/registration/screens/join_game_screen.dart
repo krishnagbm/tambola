@@ -273,9 +273,9 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.accentDanger.withOpacity(0.15),
+                      color: AppTheme.accentDanger.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppTheme.accentDanger.withOpacity(0.3)),
+                      border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.3)),
                     ),
                     child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.accentDanger, fontSize: 13)),
                   ),
@@ -299,13 +299,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                     error: (e, _) => Text('Error: $e'),
                     data: (user) => _buildPlayerProfileBar(user),
                   ),
-                  const SizedBox(height: 16),
-                  const AdBannerSlot(
-                    slotType: AdSlotType.banner,
-                    title: 'DabHousie Live Tambola',
-                    subtitle: 'Play live with family & friends • Instant web verification',
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   ElevatedButton(
                     onPressed: _isRegistering ? null : _handleRegister,
@@ -318,7 +312,15 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Text('Register & Get Ticket', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
+                  const SizedBox(height: 20),
                 ],
+
+                // Always-Visible Sponsor / Ad Banner Slot
+                const AdBannerSlot(
+                  slotType: AdSlotType.banner,
+                  title: 'DabHousie Live Tambola',
+                  subtitle: 'Play live with family & friends • Instant web verification',
+                ),
               ],
             ),
           ),
