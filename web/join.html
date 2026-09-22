@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join a Game — Enter Room Code | DabHousie</title>
+  <meta name="description" content="Enter your 6-digit DabHousie invite code to join a live multiplayer Tambola, Housie, or 90-Ball Bingo game instantly in your browser with zero downloads.">
+  <link rel="canonical" href="https://www.dabhousie.com/join.html">
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Join Live Tambola & Housie Game — DabHousie">
+  <meta property="og:description" content="Enter your 6-digit room code to join live multiplayer Tambola, Housie, and 90-Ball Bingo. 100% web play with zero app downloads.">
+  <meta property="og:url" content="https://www.dabhousie.com/join.html">
+  <meta property="og:image" content="https://www.dabhousie.com/og-banner.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Join Live Tambola & Housie Game — DabHousie">
+  <meta name="twitter:description" content="Enter your 6-digit room code to join live multiplayer Tambola, Housie, and 90-Ball Bingo.">
+  <meta name="twitter:image" content="https://www.dabhousie.com/og-banner.png">
+
+  <!-- Google tag (gtag.js) - Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-E46BLPH29F');
+  </script>
+
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6136000774092015" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" href="/css/site.css">
+
+  <style>
+    .join-container {
+      max-width: 580px;
+      margin: 40px auto 60px;
+      padding: 0 20px;
+      width: 100%;
+    }
+
+    .join-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 36px 32px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .join-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #3B82F6, #FFC107, #10B981);
+    }
+
+    .join-icon-badge {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 18px;
+      background: rgba(255, 193, 7, 0.12);
+      border: 1px solid rgba(255, 193, 7, 0.35);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .join-card h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFFFFF;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .join-card p.subtitle {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .code-input-wrapper {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .code-input {
+      width: 100%;
+      max-width: 320px;
+      height: 64px;
+      background: #0A0E17;
+      border: 2px solid var(--card-border);
+      border-radius: 14px;
+      color: var(--accent);
+      font-size: 28px;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      outline: none;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+    }
+
+    .code-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2), inset 0 2px 6px rgba(0,0,0,0.5);
+      background: #0d1320;
+    }
+
+    .code-input::placeholder {
+      color: #334155;
+      letter-spacing: 4px;
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .btn-submit-join {
+      width: 100%;
+      max-width: 320px;
+      height: 52px;
+      background: var(--accent);
+      color: #000000;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 20px rgba(255, 193, 7, 0.25);
+    }
+
+    .btn-submit-join:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 193, 7, 0.35);
+    }
+
+    .btn-submit-join:active {
+      transform: translateY(0);
+    }
+
+    .join-error {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #FCA5A5;
+      font-size: 13.5px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .join-perks {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid var(--card-border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      text-align: center;
+    }
+
+    .perk-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .perk-item span.icon {
+      font-size: 20px;
+    }
+
+    .perk-item span.text {
+      font-size: 11.5px;
+      color: #94A3B8;
+      font-weight: 600;
+    }
+
+    /* Ad Banner Slot Container */
+    .ad-slot-wrapper {
+      margin: 32px auto 0;
+      max-width: 580px;
+      min-height: 90px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748B;
+      font-size: 12px;
+    }
+
+    .host-switch-note {
+      margin-top: 24px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .host-switch-note a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .join-card {
+        padding: 28px 18px;
+      }
+      .code-input {
+        max-width: 100%;
+        font-size: 24px;
+        letter-spacing: 6px;
+      }
+      .btn-submit-join {
+        max-width: 100%;
+      }
+      .join-perks {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .perk-item {
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+      }
+    }
+  </style>
+
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "DabHousie Game Portal",
+    "url": "https://www.dabhousie.com/join.html",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "All modern web browsers",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "description": "Join live multiplayer Tambola, Housie, and 90-Ball Bingo games by entering your 6-digit room code."
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="brand">
+          <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
+        </a>
+      </div>
+
+      <div class="nav-right">
+        <ul class="nav-links">
+          <li><a href="/how-it-works.html">How It Works</a></li>
+          <li class="nav-dropdown">
+            <a href="/how-to-play-tambola.html" class="nav-dropdown-toggle">Game Guides <span class="arrow-icon">▾</span></a>
+            <ul class="dropdown-menu">
+              <li><a href="/how-to-play-tambola.html">🎯 Tambola Guide (Jaldi 5 &amp; Rules)</a></li>
+              <li><a href="/how-to-play-housie.html">🎲 Housie Guide (Party Rules &amp; Caller)</a></li>
+              <li><a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide (Standard Rules)</a></li>
+            </ul>
+          </li>
+          <li><a href="/pricing.html">Pricing</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <div id="nav-auth-container">
+            <a href="/#/" class="nav-signin-btn">Sign In</a>
+          </div>
+          <a href="/#/create-game" class="btn-nav-host">Host a Game</a>
+          <a href="/join.html" class="btn-nav-join active">🔑 Join a Game</a>
+          <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/how-to-play-tambola.html">🎯 Tambola Guide</a>
+    <a href="/how-to-play-housie.html">🎲 Housie Guide</a>
+    <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide</a>
+    <a href="/pricing.html">Pricing &amp; Credit Packs</a>
+    <a href="/join.html" style="color:var(--accent); font-weight: bold;">🔑 Join a Game</a>
+    <a href="/#/create-game">👨‍👩‍👧‍👦 Host a Game</a>
+  </div>
+
+  <main class="join-container">
+
+    <div class="join-card">
+      <div class="join-icon-badge">🔑</div>
+      <h1>Join a Live Game</h1>
+      <p class="subtitle">Enter the 6-character room code provided by your game organizer to enter the lobby.</p>
+
+      <form id="join-form" onsubmit="handleJoinSubmit(event)">
+        <div id="join-error" class="join-error">Please enter a valid 6-character game code.</div>
+
+        <div class="code-input-wrapper">
+          <input 
+            type="text" 
+            id="game-code-input" 
+            class="code-input" 
+            placeholder="CODE" 
+            maxlength="6" 
+            autocomplete="off" 
+            autocorrect="off" 
+            autocapitalize="characters" 
+            spellcheck="false" 
+            required 
+            autofocus
+          >
+        </div>
+
+        <button type="submit" id="join-btn" class="btn-submit-join">
+          <span>Enter Game Lobby</span>
+          <span>→</span>
+        </button>
+      </form>
+
+      <div class="host-switch-note">
+        Want to organize your own game? <a href="/#/create-game">Host a Game Free</a>
+      </div>
+
+      <div class="join-perks">
+        <div class="perk-item">
+          <span class="icon">✨</span>
+          <span class="text">100% Free for Guests</span>
+        </div>
+        <div class="perk-item">
+          <span class="icon">⚡</span>
+          <span class="text">No App Download</span>
+        </div>
+        <div class="perk-item">
+          <span class="icon">🎟️</span>
+          <span class="text">Instant Unique Ticket</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AdSense Banner Container Placeholder -->
+    <div class="ad-slot-wrapper">
+      <!-- Google AdSense Display Unit: Replace with <ins class="adsbygoogle"> when active -->
+      <span>📢 Advertisement Area</span>
+    </div>
+
+    <!-- Quick Player Guide & FAQs for SEO and User Clarity -->
+    <div style="margin-top: 36px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 28px 24px;">
+      <h2 style="font-size: 19px; font-weight: 800; margin-bottom: 14px; color: #FFFFFF;">Frequently Asked Questions</h2>
+      
+      <div style="margin-bottom: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">Where do I find my game code?</h3>
+        <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">Your room organizer or host will share a 6-character code (e.g. <code>14A3F7</code>) via WhatsApp, chat, or by projecting it on a TV or screen.</p>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">Do I need to download an app or create an account?</h3>
+        <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">No. DabHousie runs 100% in your mobile or desktop web browser (Safari, Chrome, Firefox, Edge). No app store downloads or sign-ups required.</p>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">Is joining as a player free?</h3>
+        <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">Yes! Joining and playing in any DabHousie room is always 100% free for players and guests.</p>
+      </div>
+
+      <div>
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 4px;">How does winning work?</h3>
+        <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">As numbers are drawn, tap them on your digital ticket to dab them. When you complete a pattern (like Early 5, Lines, or Full House), tap <strong>Claim Prize</strong> for instant automated validation.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="/">Home</a> <span>•</span>
+      <a href="/join.html">Join Game</a> <span>•</span>
+      <a href="/how-it-works.html">How It Works</a> <span>•</span>
+      <a href="/how-to-play-tambola.html">Tambola Guide</a> <span>•</span>
+      <a href="/how-to-play-housie.html">Housie Guide</a> <span>•</span>
+      <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> <span>•</span>
+      <a href="/pricing.html">Pricing</a> <span>•</span>
+      <a href="/terms-conditions.html">Terms &amp; Conditions</a> <span>•</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+    <p>&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
+    <p class="disclaimer-text">
+      * Free hosting for 1–5 players is offered for a limited promotional period and is subject to terms of service and fair usage policies.
+    </p>
+  </footer>
+
+  <script src="/js/nav.js"></script>
+  <script>
+    const input = document.getElementById('game-code-input');
+    const errorEl = document.getElementById('join-error');
+
+    // Auto-uppercase and strip invalid characters
+    input.addEventListener('input', (e) => {
+      errorEl.style.display = 'none';
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+
+    // Check for ?code= or ?game= in URL query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const codeParam = urlParams.get('code') || urlParams.get('game');
+    if (codeParam) {
+      input.value = codeParam.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+    }
+
+    function handleJoinSubmit(e) {
+      e.preventDefault();
+      const code = input.value.trim().toUpperCase();
+
+      if (!code || code.length < 3) {
+        errorEl.textContent = 'Please enter a valid game code (e.g. 14A3F7).';
+        errorEl.style.display = 'block';
+        input.focus();
+        return;
+      }
+
+      // Smoothly forward into Flutter Canvas Game Room with code pre-filled
+      window.location.href = `/#/join/${encodeURIComponent(code)}`;
+    }
+  </script>
+</body>
+</html>
