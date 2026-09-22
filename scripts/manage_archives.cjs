@@ -49,6 +49,9 @@ async function listArchives() {
   for (const a of archives) {
     console.log(`• [${a.invite_code}] "${a.name}"`);
     console.log(`  Players: ${a.player_count} | Calls: ${a.numbers_called_count} | Duration: ${a.duration_seconds}s | Completed: ${a.completed_at || a.created_at}`);
+    if (a.organization_name) {
+      console.log(`  🏢 Organization: ${a.organization_name} (Logo: ${a.organization_logo_approved ? 'Approved' : 'Unapproved/None'})`);
+    }
     if (a.winners_roster && a.winners_roster.length > 0) {
       a.winners_roster.forEach(w => {
         console.log(`    🏅 ${w.prize_type.padEnd(12)}: ${w.winner_name || 'Player'} (Ref: ${w.claim_reference || 'N/A'})`);
