@@ -94,11 +94,11 @@ async function main() {
 
   for (let i = 0; i < args.length; i++) {
     if (args[i].startsWith('--count=')) {
-      targetCount = parseInt(args[i].split('=')[1], 10) || 250;
+      targetCount = parseInt(args[i].slice(args[i].indexOf('=') + 1), 10) || 250;
     } else if (args[i] === '--count' && args[i + 1]) {
       targetCount = parseInt(args[++i], 10) || 250;
     } else if (args[i].startsWith('--secret=')) {
-      jwtSecret = args[i].split('=')[1].trim();
+      jwtSecret = args[i].slice(args[i].indexOf('=') + 1).trim();
     } else if (args[i] === '--secret' && args[i + 1]) {
       jwtSecret = args[++i].trim();
     }
@@ -135,7 +135,9 @@ async function main() {
     const sessionId = crypto.randomUUID();
 
     const payload = {
-      iss: `${SUPABASE_URL}/auth/v1`,
+      iss: 'supabase',
+      ref: 'itfcnurjrnyalauwwdkj',
+      role: 'authenticated',
       sub: userId,
       aud: 'authenticated',
       exp: exp,
@@ -147,7 +149,6 @@ async function main() {
         avatar: avatar,
         full_name: name,
       },
-      role: 'authenticated',
       aal: 'aal1',
       amr: [
         {
