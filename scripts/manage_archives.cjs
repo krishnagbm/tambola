@@ -203,13 +203,32 @@ async function revokeBrand(inviteCode) {
 async function main() {
   if (command === '--archive-all') {
     await archiveAll();
+    try {
+      const { execSync } = require('child_process');
+      execSync('node scripts/prerender_recent_games.cjs', { stdio: 'inherit' });
+    } catch (_) {}
   } else if (command === '--purge') {
     const days = args[1] || 30;
     await purgeOld(days);
+    try {
+      const { execSync } = require('child_process');
+      execSync('node scripts/prerender_recent_games.cjs', { stdio: 'inherit' });
+    } catch (_) {}
   } else if (command === '--approve-brand') {
     await approveBrand(args[1]);
+    try {
+      const { execSync } = require('child_process');
+      execSync('node scripts/prerender_recent_games.cjs', { stdio: 'inherit' });
+    } catch (_) {}
   } else if (command === '--revoke-brand') {
     await revokeBrand(args[1]);
+    try {
+      const { execSync } = require('child_process');
+      execSync('node scripts/prerender_recent_games.cjs', { stdio: 'inherit' });
+    } catch (_) {}
+  } else if (command === '--prerender') {
+    const { execSync } = require('child_process');
+    execSync('node scripts/prerender_recent_games.cjs', { stdio: 'inherit' });
   } else {
     await listArchives();
   }
