@@ -104,12 +104,112 @@ async function purgeOld(days = 30) {
   await listArchives();
 }
 
+async function approveBrand(inviteCode) {
+  if (!inviteCode) {
+    console.error('Error: Please specify invite code. Example: node scripts/manage_archives.cjs --approve-brand ABC123');
+    process.exit(1);
+  }
+  const code = inviteCode.toUpperCase().trim();
+  console.log(`[Admin Override] Approving corporate branding for game ${code}...`);
+
+  const now = new Date().toISOString();
+
+  // 1. Update MPT_games
+  const gRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?invite_code=eq.${code}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      organization_logo_approved: true,
+      brand_approved_at: now,
+      brand_approver_ip: 'admin-cli-override'
+    })
+  });
+  const updatedGames = await gRes.json();
+
+  // 2. Update MPT_game_archives if exists
+  await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_archives?invite_code=eq.${code}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      organization_logo_approved: true
+    })
+  });
+
+  if (Array.isArray(updatedGames) && updatedGames.length > 0) {
+    const g = updatedGames[0];
+    console.log(`✅ Successfully APPROVED branding for "${g.name}" (${g.invite_code})`);
+    console.log(`   Organization: ${g.organization_name}`);
+    console.log(`   Logo URL: ${g.organization_logo_url}`);
+  } else {
+    console.log(`⚠️ No active game found with invite code ${code}. Checked archives.`);
+  }
+}
+
+async function revokeBrand(inviteCode) {
+  if (!inviteCode) {
+    console.error('Error: Please specify invite code. Example: node scripts/manage_archives.cjs --revoke-brand ABC123');
+    process.exit(1);
+  }
+  const code = inviteCode.toUpperCase().trim();
+  console.log(`[Admin Override] REVOKING corporate branding for game ${code}...`);
+
+  // 1. Update MPT_games
+  const gRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?invite_code=eq.${code}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      organization_logo_approved: false,
+      brand_approved_at: null,
+      brand_approver_ip: 'admin-cli-revocation'
+    })
+  });
+  const updatedGames = await gRes.json();
+
+  // 2. Update MPT_game_archives if exists
+  await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_archives?invite_code=eq.${code}`, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      organization_logo_approved: false
+    })
+  });
+
+  if (Array.isArray(updatedGames) && updatedGames.length > 0) {
+    const g = updatedGames[0];
+    console.log(`🚫 Successfully REVOKED branding for "${g.name}" (${g.invite_code})`);
+  } else {
+    console.log(`⚠️ No active game found with invite code ${code}. Checked archives.`);
+  }
+}
+
 async function main() {
   if (command === '--archive-all') {
     await archiveAll();
   } else if (command === '--purge') {
     const days = args[1] || 30;
     await purgeOld(days);
+  } else if (command === '--approve-brand') {
+    await approveBrand(args[1]);
+  } else if (command === '--revoke-brand') {
+    await revokeBrand(args[1]);
   } else {
     await listArchives();
   }

@@ -447,4 +447,27 @@ class GameRepository {
       };
     }
   }
+
+  /// Submits brand approval request (DVAA) for corporate events
+  Future<Map<String, dynamic>> submitBrandApproval({
+    required String gameId,
+    required String organizationName,
+    required String organizationLogoUrl,
+    required String approverEmail,
+  }) async {
+    try {
+      final res = await _supabase.rpc('MPT_submit_brand_approval', params: {
+        'p_game_id': gameId,
+        'p_organization_name': organizationName,
+        'p_organization_logo_url': organizationLogoUrl,
+        'p_approver_email': approverEmail,
+      });
+      if (res is Map<String, dynamic>) {
+        return res;
+      }
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 }

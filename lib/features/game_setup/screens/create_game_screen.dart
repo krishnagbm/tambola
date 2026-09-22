@@ -39,19 +39,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
+  late final TextEditingController _orgNameController;
+  late final TextEditingController _orgLogoUrlController;
+  late final TextEditingController _orgApproverEmailController;
+  bool _enableOrgBranding = false;
+  bool _orgVisualConfirmed = false;
+
   int _selectedCapacity = 5;
   String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
   bool _isPrivate = false;
   bool _isLoading = false;
-
-  int _getPrivateCredits(int maxPlayers) {
-    if (maxPlayers <= 5) return 5;
-    if (maxPlayers <= 15) return 20;
-    if (maxPlayers <= 25) return 35;
-    if (maxPlayers <= 50) return 70;
-    if (maxPlayers <= 100) return 135;
-    return 325;
-  }
 
   String _getPrivateCreditBreakdownText(int maxPlayers) {
     if (maxPlayers <= 5) return 'Free + 5 = 5 Credits';
@@ -79,6 +76,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     super.initState();
     final initialName = (List<String>.from(_suggestedNames)..shuffle()).first;
     _nameController = TextEditingController(text: initialName);
+    _orgNameController = TextEditingController()..addListener(() => setState(() {}));
+    _orgLogoUrlController = TextEditingController()..addListener(() => setState(() {}));
+    _orgApproverEmailController = TextEditingController()..addListener(() => setState(() {}));
   }
 
   void _randomizeName() {
@@ -89,7 +89,38 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _orgNameController.dispose();
+    _orgLogoUrlController.dispose();
+    _orgApproverEmailController.dispose();
     super.dispose();
+  }
+
+  bool _isDomainMatching(String logoUrl, String email) {
+    if (logoUrl.isEmpty || email.isEmpty) return false;
+    try {
+      final uri = Uri.parse(logoUrl.trim());
+      final logoHost = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      final emailParts = email.trim().split('@');
+      if (emailParts.length != 2) return false;
+      final emailDomain = emailParts[1].toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      if (logoHost.isEmpty || emailDomain.isEmpty) return false;
+      return logoHost == emailDomain || logoHost.endsWith('.$emailDomain') || emailDomain.endsWith('.$logoHost');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String _extractHost(String url) {
+    try {
+      return Uri.parse(url.trim()).host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _extractEmailDomain(String email) {
+    final parts = email.trim().split('@');
+    return parts.length == 2 ? parts[1].toLowerCase().replaceFirst(RegExp(r'^www\.'), '') : '';
   }
 
   Future<void> _handleCreate() async {
@@ -100,6 +131,49 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     }
 
     if (!_formKey.currentState!.validate()) return;
+
+    if (_enableOrgBranding) {
+      final orgName = _orgNameController.text.trim();
+      final logoUrl = _orgLogoUrlController.text.trim();
+      final approverEmail = _orgApproverEmailController.text.trim();
+
+      if (orgName.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter your Organization / Company Name'), backgroundColor: AppTheme.accentDanger),
+        );
+        return;
+      }
+      if (!logoUrl.startsWith('https://')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Official Logo URL must be a valid, secure HTTPS link'), backgroundColor: AppTheme.accentDanger),
+        );
+        return;
+      }
+      if (!approverEmail.contains('@') || !approverEmail.contains('.')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid Corporate Approver Email'), backgroundColor: AppTheme.accentDanger),
+        );
+        return;
+      }
+      if (!_isDomainMatching(logoUrl, approverEmail)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Domain Mismatch: Logo URL host must match corporate approver email domain for automated verification.'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
+      if (!_orgVisualConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please visually review and check the confirmation box for the live card preview before submitting.'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
+    }
 
     setState(() => _isLoading = true);
     try {
@@ -131,8 +205,21 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         isPrivate: _isPrivate,
       );
 
+      String? brandApprovalMsg;
+      if (_enableOrgBranding) {
+        final brandRes = await gameRepo.submitBrandApproval(
+          gameId: game.id,
+          organizationName: _orgNameController.text.trim(),
+          organizationLogoUrl: _orgLogoUrlController.text.trim(),
+          approverEmail: _orgApproverEmailController.text.trim(),
+        );
+        if (brandRes['success'] == true) {
+          brandApprovalMsg = 'Approval email dispatched to ${_orgApproverEmailController.text.trim()}. Official branding activates the moment they click approve.';
+        }
+      }
+
       if (!mounted) return;
-      _showSuccessDialog(game);
+      _showSuccessDialog(game, brandApprovalMessage: brandApprovalMsg);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +246,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
-  void _showSuccessDialog(MptGame game) {
+  void _showSuccessDialog(MptGame game, {String? brandApprovalMessage}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -227,6 +314,29 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               'Initial Funded Capacity: ${game.fundedCapacity} Seats (Overflow players will automatically join the Waiting List).',
               style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
             ),
+            if (brandApprovalMessage != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_user_rounded, color: AppTheme.accentSuccess, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '🏢 Corporate Approval: $brandApprovalMessage',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (game.isPrivate) ...[
               const SizedBox(height: 14),
               Container(
@@ -360,6 +470,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   const SizedBox(height: 16),
 
                   _buildSchedulePicker(),
+                  const SizedBox(height: 16),
+
+                  _buildCorporateBrandingSection(),
                   const SizedBox(height: 24),
 
                   LayoutBuilder(
@@ -397,6 +510,431 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCorporateBrandingSection() {
+    final logoUrl = _orgLogoUrlController.text.trim();
+    final approverEmail = _orgApproverEmailController.text.trim();
+    final isMatching = _isDomainMatching(logoUrl, approverEmail);
+    final logoHost = _extractHost(logoUrl);
+    final emailDomain = _extractEmailDomain(approverEmail);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _enableOrgBranding ? AppTheme.primaryColor.withValues(alpha: 0.1) : AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _enableOrgBranding ? AppTheme.primaryLight.withValues(alpha: 0.6) : const Color(0xFF2E334D),
+          width: _enableOrgBranding ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _enableOrgBranding ? AppTheme.primaryColor.withValues(alpha: 0.25) : AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.business_rounded,
+                  color: AppTheme.secondaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '🏢 Corporate / Organization Branding (Optional)',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Feature your official company logo, brand banner, and verified organization name.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: _enableOrgBranding,
+                activeThumbColor: AppTheme.secondaryColor,
+                onChanged: (val) => setState(() {
+                  _enableOrgBranding = val;
+                  if (!val) _orgVisualConfirmed = false;
+                }),
+              ),
+            ],
+          ),
+
+          if (_enableOrgBranding) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            const SizedBox(height: 14),
+
+            // Automated Approval Notice
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.bolt_rounded, color: AppTheme.secondaryColor, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '⚡ Automated Domain-Verified Approval (DVAA)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'No platform bottleneck! Your corporate approver will receive an automated one-click verification email. Branding activates instantly upon their confirmation.',
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Form Inputs
+            TextFormField(
+              controller: _orgNameController,
+              decoration: const InputDecoration(
+                labelText: 'Organization / Company Name',
+                hintText: 'e.g. Acme Corporation, Google, Tata Group',
+                prefixIcon: Icon(Icons.corporate_fare_rounded),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _orgLogoUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Official Logo URL (HTTPS)',
+                hintText: 'e.g. https://www.acme.com/assets/logo.png',
+                prefixIcon: Icon(Icons.link_rounded),
+                helperText: 'Must be hosted on your corporate website domain via HTTPS (Zero file uploads).',
+                helperMaxLines: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            TextFormField(
+              controller: _orgApproverEmailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Corporate Approver Email',
+                hintText: 'e.g. admin@acme.com or events@acme.com',
+                prefixIcon: Icon(Icons.mark_email_read_rounded),
+                helperText: 'Approval link will be emailed to this address. Email domain must match the logo URL host.',
+                helperMaxLines: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Domain Matching Status Indicator
+            if (logoUrl.isNotEmpty && approverEmail.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isMatching ? AppTheme.accentSuccess.withValues(alpha: 0.15) : AppTheme.accentDanger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isMatching ? AppTheme.accentSuccess.withValues(alpha: 0.5) : AppTheme.accentDanger.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isMatching ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
+                      color: isMatching ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isMatching
+                            ? '✅ Domain Match: Logo host ($logoHost) matches approver domain (@$emailDomain)'
+                            : '❌ Domain Mismatch: Logo host ($logoHost) does not match approver email domain (@$emailDomain)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isMatching ? AppTheme.accentSuccess : const Color(0xFFFCA5A5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFFA0AEC0), size: 16),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Enter both Logo URL and Corporate Email to verify domain match.',
+                        style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 18),
+
+            // Live Card Mock Screen Visual Preview
+            _buildLiveCardMock(),
+
+            const SizedBox(height: 14),
+
+            // Organizer Visual Confirmation Checkbox
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _orgVisualConfirmed ? AppTheme.primaryLight : const Color(0xFF2E334D),
+                  width: _orgVisualConfirmed ? 1.5 : 1,
+                ),
+              ),
+              child: CheckboxListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                value: _orgVisualConfirmed,
+                activeColor: AppTheme.primaryColor,
+                title: const Text(
+                  'I have visually inspected the Live Card Mock above and confirm that the organization name, logo, and domain representation are accurate.',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
+                subtitle: const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Verification email will only be dispatched to the corporate approver after your confirmation.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  ),
+                ),
+                onChanged: (val) => setState(() => _orgVisualConfirmed = val ?? false),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveCardMock() {
+    final orgName = _orgNameController.text.trim().isEmpty ? 'Your Organization Name' : _orgNameController.text.trim();
+    final logoUrl = _orgLogoUrlController.text.trim();
+    final eventName = _nameController.text.trim().isEmpty ? 'DabHousie Game Night' : _nameController.text.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.remove_red_eye_rounded, size: 16, color: AppTheme.secondaryColor),
+            SizedBox(width: 6),
+            Text(
+              'Live Event Card Mock Preview (Visual Inspection)',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'This is how players and public visitors will see your branded event card:',
+          style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
+        ),
+        const SizedBox(height: 8),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppTheme.darkCard,
+                AppTheme.primaryColor.withValues(alpha: 0.2),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Corporate Header Badge Row
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: logoUrl.isNotEmpty && logoUrl.startsWith('https://')
+                        ? Image.network(
+                            logoUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (ctx, err, stack) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+                          )
+                        : Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                orgName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentSuccess.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.5)),
+                              ),
+                              child: const Text(
+                                'OFFICIAL',
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 1),
+                        const Text(
+                          'Verified Corporate Event • Hosted on DabHousie',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF334155), height: 1),
+              const SizedBox(height: 12),
+
+              // Game Name & Metadata
+              Text(
+                eventName,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+              ),
+              const SizedBox(height: 8),
+
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  _buildMockChip(
+                    icon: Icons.calendar_today_rounded,
+                    label: _scheduledDateTime == null ? 'Instant Launch' : _formatDateTime(_scheduledDateTime!),
+                    color: AppTheme.secondaryColor,
+                  ),
+                  _buildMockChip(
+                    icon: Icons.people_outline_rounded,
+                    label: '$_selectedCapacity Seats',
+                    color: Colors.white,
+                  ),
+                  _buildMockChip(
+                    icon: _isPrivate ? Icons.lock_outline_rounded : Icons.public_rounded,
+                    label: _isPrivate ? 'Private OTP' : 'Open Room',
+                    color: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryLight,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Approval status disclaimer
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF334155)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.schedule_rounded, color: AppTheme.secondaryColor, size: 14),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Approval Status: Pending approver one-click verification via ${_orgApproverEmailController.text.trim().isEmpty ? 'corporate email' : _orgApproverEmailController.text.trim()}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMockChip({required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }
@@ -618,7 +1156,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               height: 36,
               width: 36,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(Icons.celebration, color: AppTheme.secondaryColor, size: 30),
+              errorBuilder: (ctx, err, stack) => const Icon(Icons.celebration, color: AppTheme.secondaryColor, size: 30),
             ),
           ),
           const SizedBox(width: 14),

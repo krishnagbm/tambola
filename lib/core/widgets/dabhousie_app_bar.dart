@@ -236,7 +236,111 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse('${AppConfig.appBaseUrl}/recent-games.html'),
+              webOnlyWindowName: '_self',
+            ),
+            child: const Text(
+              'Recent Games',
+              style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 8),
+        ] else if (showDesktopNav && screenWidth <= 768) ...[
+          PopupMenuButton<String>(
+            tooltip: 'Site Navigation',
+            icon: const Icon(Icons.more_vert, color: Color(0xFFCBD5E1), size: 20),
+            offset: const Offset(0, 40),
+            color: AppTheme.darkCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: const BorderSide(color: Color(0xFF2E334D)),
+            ),
+            onSelected: (url) {
+              launchUrl(Uri.parse(url), webOnlyWindowName: '_self');
+            },
+            itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/recent-games.html',
+                child: const Row(
+                  children: [
+                    Text('🏆', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Recent Games & Hall of Fame',
+                      style: TextStyle(color: AppTheme.secondaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/how-it-works.html',
+                child: const Row(
+                  children: [
+                    Text('📖', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'How It Works',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/pricing.html',
+                child: const Row(
+                  children: [
+                    Text('🏷️', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Pricing & Credit Packs',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/how-to-play-tambola.html',
+                child: const Row(
+                  children: [
+                    Text('🎯', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tambola Guide (Jaldi 5 & Rules)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/how-to-play-housie.html',
+                child: const Row(
+                  children: [
+                    Text('🎲', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Housie Guide (Party Rules & Caller)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/90-ball-bingo.html',
+                child: const Row(
+                  children: [
+                    Text('🎱', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      '90-Ball Bingo Guide (Standard Rules)',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
         if (onRefresh != null)
           IconButton(
