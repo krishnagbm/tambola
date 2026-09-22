@@ -335,39 +335,54 @@
 </head>
 <body>
 
-  <!-- Navigation Bar -->
+  <!-- Top Navigation Header -->
   <header class="site-header">
-    <div class="header-container">
-      <a href="/" class="brand-logo">
-        <span class="brand-name">DabHousie</span>
-      </a>
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="brand">
+          <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
+        </a>
+      </div>
 
-      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation menu">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="nav-right">
+        <ul class="nav-links">
+          <li><a href="/how-it-works.html">How It Works</a></li>
+          <li class="nav-dropdown">
+            <a href="/how-to-play-tambola.html" class="nav-dropdown-toggle">Game Guides <span class="arrow-icon">▾</span></a>
+            <ul class="dropdown-menu">
+              <li><a href="/how-to-play-tambola.html">🎯 Tambola Guide (Jaldi 5 &amp; Rules)</a></li>
+              <li><a href="/how-to-play-housie.html">🎲 Housie Guide (Party Rules &amp; Caller)</a></li>
+              <li><a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide (Standard Rules)</a></li>
+            </ul>
+          </li>
+          <li><a href="/pricing.html">Pricing</a></li>
+          <li><a href="/recent-games.html" class="active">Recent Games</a></li>
+        </ul>
 
-      <nav class="nav-menu" id="nav-menu">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/join.html" class="nav-link">Join Game</a>
-        <a href="/recent-games.html" class="nav-link active">Recent Games</a>
-        <a href="/how-it-works.html" class="nav-link">How It Works</a>
-        <div class="nav-dropdown">
-          <button class="nav-dropdown-btn">Game Guides ▾</button>
-          <div class="nav-dropdown-content">
-            <a href="/how-to-play-tambola.html">🎯 Tambola Guide (Jaldi 5 &amp; Rules)</a>
-            <a href="/how-to-play-housie.html">🎲 Housie Guide (Party Rules &amp; Caller)</a>
-            <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide (Standard Rules)</a>
+        <div class="nav-actions">
+          <div id="nav-auth-container">
+            <a href="/#/" class="nav-signin-btn">Sign In</a>
           </div>
+          <a href="/#/create-game" class="btn-nav-host">Host a Game</a>
+          <a href="/join.html" class="btn-nav-join">🔑 Join a Game</a>
+          <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
         </div>
-        <a href="/pricing.html" class="nav-link">Pricing</a>
-
-        <div class="nav-auth" id="nav-auth-container">
-          <a href="/#/login" class="nav-btn-login">Host Sign In</a>
-          <a href="/#/create-game" class="nav-btn-primary">Host a Game Free</a>
-        </div>
-      </nav>
+      </div>
     </div>
   </header>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/how-to-play-tambola.html">🎯 Tambola Guide</a>
+    <a href="/how-to-play-housie.html">🎲 Housie Guide</a>
+    <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide</a>
+    <a href="/pricing.html">Pricing &amp; Credit Packs</a>
+    <a href="/recent-games.html" class="active" style="color:var(--accent); font-weight: bold;">🏆 Recent Games</a>
+    <a href="/join.html" style="color:var(--accent);">🔑 Join a Game</a>
+    <a href="/#/create-game">👨‍👩‍👧‍👦 Host a Game</a>
+  </div>
 
   <main>
     <section class="hall-hero">
