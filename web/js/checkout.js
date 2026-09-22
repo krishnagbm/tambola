@@ -33,37 +33,74 @@
     return '🦁';
   }
 
-  // Extract query parameters from URL Search and URL Hash
-  function getQueryParams() {
+  // Extract session parameters from URL Search, Hash, or LocalStorage/Supabase
+  function getUserSession() {
+    if (window.DabHousieNav && typeof window.DabHousieNav.getUserSession === 'function') {
+      const navSession = window.DabHousieNav.getUserSession();
+      const params = new URLSearchParams(window.location.search);
+      const hashPart = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+      const hashParams = new URLSearchParams(hashPart);
+      const plan = params.get('plan') || hashParams.get('plan') || '';
+      const cancelled = params.get('cancelled') === 'true' || hashParams.get('cancelled') === 'true';
+      return { ...navSession, plan, cancelled };
+    }
+
     const params = new URLSearchParams(window.location.search);
     const hashPart = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
     const hashParams = new URLSearchParams(hashPart);
 
-    const userId = params.get('user_id') || hashParams.get('user_id') || localStorage.getItem('dabhousie_user_id') || '';
-    const email = params.get('email') || hashParams.get('email') || localStorage.getItem('dabhousie_user_email') || '';
-    const name = params.get('name') || hashParams.get('name') || localStorage.getItem('dabhousie_user_name') || '';
-    const avatar = params.get('avatar') || hashParams.get('avatar') || localStorage.getItem('dabhousie_user_avatar') || '';
-    const balance = params.get('balance') || hashParams.get('balance') || localStorage.getItem('dabhousie_balance') || '';
+    let userId = params.get('user_id') || hashParams.get('user_id') || localStorage.getItem('dabhousie_user_id') || localStorage.getItem('flutter.dabhousie_user_id') || '';
+    let email = params.get('email') || hashParams.get('email') || localStorage.getItem('dabhousie_user_email') || localStorage.getItem('flutter.dabhousie_user_email') || '';
+    let name = params.get('name') || hashParams.get('name') || localStorage.getItem('dabhousie_user_name') || localStorage.getItem('flutter.mpt_player_name') || '';
+    let avatar = params.get('avatar') || hashParams.get('avatar') || localStorage.getItem('dabhousie_user_avatar') || localStorage.getItem('flutter.mpt_player_avatar') || '';
+    let balance = params.get('balance') || hashParams.get('balance') || localStorage.getItem('dabhousie_balance') || localStorage.getItem('flutter.dabhousie_balance') || '';
     const plan = params.get('plan') || hashParams.get('plan') || '';
     const cancelled = params.get('cancelled') === 'true' || hashParams.get('cancelled') === 'true';
+
+    if (!userId || !email) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('-auth-token') || key.includes('supabase.auth.token') || key.startsWith('sb-') || key.includes('supabase'))) {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            try {
+              const parsed = JSON.parse(raw);
+              const user = parsed?.user || parsed?.currentSession?.user || parsed?.session?.user;
+              if (user && (user.id || user.email)) {
+                userId = userId || user.id || '';
+                email = email || user.email || '';
+                name = name || user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.user_name || (user.email ? user.email.split('@')[0] : '');
+                avatar = avatar || user.user_metadata?.avatar_url || user.user_metadata?.avatar || user.user_metadata?.picture || '';
+                break;
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (e) {
+        // Ignore localStorage parse errors
+      }
+    }
+
+    if (!userId) {
+      userId = localStorage.getItem('flutter.mpt_local_uuid') || '';
+    }
+
+    if (userId) localStorage.setItem('dabhousie_user_id', userId);
+    if (email) localStorage.setItem('dabhousie_user_email', email);
+    if (name) localStorage.setItem('dabhousie_user_name', name);
+    if (avatar) localStorage.setItem('dabhousie_user_avatar', avatar);
 
     return { userId, email, name, avatar, balance, plan, cancelled };
   }
 
-  const userContext = getQueryParams();
-
-  // Persist user context in localStorage for seamless return from Stripe
-  if (userContext.userId) localStorage.setItem('dabhousie_user_id', userContext.userId);
-  if (userContext.email) localStorage.setItem('dabhousie_user_email', userContext.email);
-  if (userContext.name) localStorage.setItem('dabhousie_user_name', userContext.name);
-  if (userContext.avatar) localStorage.setItem('dabhousie_user_avatar', userContext.avatar);
-  if (userContext.balance) localStorage.setItem('dabhousie_balance', userContext.balance);
+  const userContext = getUserSession();
 
   /**
    * Updates the frozen top header bar with user avatar, name, email, and live balance
    */
   function syncTopbarUI() {
-    const ctx = getQueryParams();
+    const ctx = getUserSession();
 
     // 1. Balance Pill
     const balancePill = document.getElementById('topbar-balance');
@@ -110,16 +147,16 @@
 
   /**
    * Initiates Stripe Hosted Checkout Session
-   * @param {string} plan - The bundle/plan key ('starter', 'family', 'pro', 'mega')
+   * @param {string} plan - The bundle/plan key ('small', 'standard', 'large', 'mega')
    * @param {string} [customUserId] - Optional user UUID
    * @param {string} [customEmail] - Optional email
    */
   async function initiateCheckout(plan, customUserId, customEmail) {
-    const ctx = getQueryParams();
+    const ctx = getUserSession();
     const userId = customUserId || ctx.userId || localStorage.getItem('dabhousie_user_id');
     const email = customEmail || ctx.email || localStorage.getItem('dabhousie_user_email');
 
-    // If no credentials, prompt user for email once
+    // If no credentials found at all, prompt user for email once
     if (!userId || !email) {
       promptUserCredentials(plan);
       return;
@@ -172,19 +209,23 @@
   function promptUserCredentials(plan) {
     const modal = document.getElementById('auth-prompt-modal');
     if (modal) {
+      const emailInput = document.getElementById('prompt-email');
+      const ctx = getUserSession();
+      if (emailInput && ctx.email) {
+        emailInput.value = ctx.email;
+      }
       modal.style.display = 'flex';
       const form = document.getElementById('auth-prompt-form');
       if (form) {
         form.onsubmit = function (e) {
           e.preventDefault();
-          const emailInput = document.getElementById('prompt-email');
           const email = emailInput ? emailInput.value.trim() : '';
-          const userId = generateGuestUid();
+          const userId = ctx.userId || generateGuestUid();
 
           if (email) {
             localStorage.setItem('dabhousie_user_id', userId);
             localStorage.setItem('dabhousie_user_email', email);
-            modal.style.display = 'none';
+            closeModal();
             syncTopbarUI();
             initiateCheckout(plan, userId, email);
           }
@@ -199,6 +240,13 @@
         syncTopbarUI();
         initiateCheckout(plan, userId, email);
       }
+    }
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('auth-prompt-modal');
+    if (modal) {
+      modal.style.display = 'none';
     }
   }
 
@@ -235,8 +283,14 @@
   // Export globally for HTML button onclick handlers
   window.DabHousieCheckout = {
     buy: initiateCheckout,
-    getQueryParams: getQueryParams,
+    closeModal: closeModal,
+    getQueryParams: getUserSession,
   };
+
+  // Close modal on Escape key press
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
 
   // Bind click handlers & sync topbar on DOM load
   document.addEventListener('DOMContentLoaded', () => {
@@ -251,7 +305,7 @@
     });
 
     // Auto-initiate if plan and credentials are in URL
-    const qp = getQueryParams();
+    const qp = getUserSession();
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('plan') && (qp.userId || qp.email) && !qp.cancelled) {
       initiateCheckout(urlParams.get('plan'));

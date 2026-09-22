@@ -423,11 +423,57 @@
       padding: 28px;
       max-width: 420px;
       width: 100%;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #94A3B8;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #FCA5A5;
+      transform: scale(1.05);
+    }
+
+    .btn-modal-cancel {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .btn-modal-cancel:hover {
+      color: #ffffff;
     }
 
     .modal-content h3 {
       font-size: 19px;
       margin-bottom: 8px;
+      padding-right: 24px;
     }
 
     .modal-content p {
@@ -648,8 +694,9 @@
   </main>
 
   <!-- Auth Prompt Modal for Direct Visitors -->
-  <div id="auth-prompt-modal" class="modal-overlay">
+  <div id="auth-prompt-modal" class="modal-overlay" onclick="if(event.target===this)DabHousieCheckout.closeModal()">
     <div class="modal-content">
+      <button type="button" class="modal-close" onclick="DabHousieCheckout.closeModal()" aria-label="Close dialog">×</button>
       <h3>Enter Your Email</h3>
       <p>Where should we send your receipt and link your game credits?</p>
       <form id="auth-prompt-form">
@@ -659,6 +706,7 @@
         </div>
         <input type="hidden" id="prompt-uid" value="">
         <button type="submit" class="buy-btn" style="margin-top:12px;">Continue to Stripe Checkout →</button>
+        <button type="button" class="btn-modal-cancel" onclick="DabHousieCheckout.closeModal()">Cancel</button>
       </form>
     </div>
   </div>
