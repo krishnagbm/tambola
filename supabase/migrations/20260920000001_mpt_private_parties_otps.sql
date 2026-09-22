@@ -33,6 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_mpt_game_seat_otps_user ON public."MPT_game_seat_
 ALTER TABLE public."MPT_game_seat_otps" ENABLE ROW LEVEL SECURITY;
 
 -- Host has full access to seat OTPs for their games
+DROP POLICY IF EXISTS "mpt_game_seat_otps_admin_all" ON public."MPT_game_seat_otps";
 CREATE POLICY "mpt_game_seat_otps_admin_all" ON public."MPT_game_seat_otps"
 FOR ALL USING (
     EXISTS (
@@ -43,13 +44,22 @@ FOR ALL USING (
 );
 
 -- Players can view the seat OTP they claimed
+DROP POLICY IF EXISTS "mpt_game_seat_otps_player_select" ON public."MPT_game_seat_otps";
 CREATE POLICY "mpt_game_seat_otps_player_select" ON public."MPT_game_seat_otps"
 FOR SELECT USING (
     claimed_by_user_id = auth.uid()
 );
 
 -- Enable Supabase Realtime for live updates in Admin Lobby
-ALTER PUBLICATION supabase_realtime ADD TABLE public."MPT_game_seat_otps";
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'MPT_game_seat_otps'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public."MPT_game_seat_otps";
+    END IF;
+END $$;
 
 -- 3. Helper function to generate single-use Seat OTPs
 CREATE OR REPLACE FUNCTION public."MPT_generate_game_seat_otps"(

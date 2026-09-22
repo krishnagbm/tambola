@@ -8,5 +8,8 @@
     "test:browser": "node tests/multiplayer/runner.js",
     "test:seed": "node tests/multiplayer/seed_auth.js",
     "test:mint": "node tests/multiplayer/mint_tokens.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
   }
 }

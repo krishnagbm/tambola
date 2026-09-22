@@ -56,7 +56,15 @@
   <url>
     <loc>https://www.dabhousie.com/join.html</loc>
     <lastmod>2026-09-22</lastmod>
-    <changefreq>weekly</changefreq>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Recent Games & Hall of Fame -->
+  <url>
+    <loc>https://www.dabhousie.com/recent-games.html</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
 

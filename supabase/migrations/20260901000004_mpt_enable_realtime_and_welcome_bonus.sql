@@ -1,4 +1,4 @@
-﻿-- =====================================================================
+-- =====================================================================
 -- Migration: 20260901000004_mpt_enable_realtime_and_welcome_bonus.sql
 -- Description: 
 --   1. Enable Supabase Realtime publication on MPT_ tables

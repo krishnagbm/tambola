@@ -9,14 +9,14 @@
 DROP FUNCTION IF EXISTS public."MPT_create_game"(TEXT, INT, TIMESTAMPTZ, JSONB);
 
 -- 1b. Ensure Starter (1–10 Players) tier exists and sync capacity tiers
-DELETE FROM public."MPT_capacity_tiers";
 INSERT INTO public."MPT_capacity_tiers" (name, min_players, max_players, credits_required, display_order, is_active)
 VALUES
     ('Starter / Free Tier (1–10 Players)', 1, 10, 10, 1, TRUE),
     ('Small Party (11–25 Players)', 11, 25, 25, 2, TRUE),
     ('Standard Event (26–50 Players)', 26, 50, 50, 3, TRUE),
     ('Large Gala (51–100 Players)', 51, 100, 100, 4, TRUE),
-    ('Mega Event (101–250 Players)', 101, 250, 250, 5, TRUE);
+    ('Mega Event (101–250 Players)', 101, 250, 250, 5, TRUE)
+ON CONFLICT DO NOTHING;
 
 -- 1c. Recreate MPT_create_game with 10-player capacity default and dynamic tier linking
 CREATE OR REPLACE FUNCTION public."MPT_create_game"(

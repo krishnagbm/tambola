@@ -1,0 +1,4757 @@
+{
+  "testInfo": {
+    "generatedAt": "2026-09-22T15:29:32.026Z",
+    "gameId": "19b67669-f5b4-4583-83d9-82b1174ea0b2",
+    "gameCode": "CA8E81",
+    "totalPlayersRegistered": 249,
+    "totalCalls": 0,
+    "gameStatus": "STOPPED",
+    "durationSeconds": 11
+  },
+  "ticketUniqueness": {
+    "totalTickets": 249,
+    "uniqueTicketsCount": 1,
+    "duplicateCount": 248,
+    "is100PercentUnique": false,
+    "duplicates": [
+      {
+        "playerA": 1,
+        "playerB": 2,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 3,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 4,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 5,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 6,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 7,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 8,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 9,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 10,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 11,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 12,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 13,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 14,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 15,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 16,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 17,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 18,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 19,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 20,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 21,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 22,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 23,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 24,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 25,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 26,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 27,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 28,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 29,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 30,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 31,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 32,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 33,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 34,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 35,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 36,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 37,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 38,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 39,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 40,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 41,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 42,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 43,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 44,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 45,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 46,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 47,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 48,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 49,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 50,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 51,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 52,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 53,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 54,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 55,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 56,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 57,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 58,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 59,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 60,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 61,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 62,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 63,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 64,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 65,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 66,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 67,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 68,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 69,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 70,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 71,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 72,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 73,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 74,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 75,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 76,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 77,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 78,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 79,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 80,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 81,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 82,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 83,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 84,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 85,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 86,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 87,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 88,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 89,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 90,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 91,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 92,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 93,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 94,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 95,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 96,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 97,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 98,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 99,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 100,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 101,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 102,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 103,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 104,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 105,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 106,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 107,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 108,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 109,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 110,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 111,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 112,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 113,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 114,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 115,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 116,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 117,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 118,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 119,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 120,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 121,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 122,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 123,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 124,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 125,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 126,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 127,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 128,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 129,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 130,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 131,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 132,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 133,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 134,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 135,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 136,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 137,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 138,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 139,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 140,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 141,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 142,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 143,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 144,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 145,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 146,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 147,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 148,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 149,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 150,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 151,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 152,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 153,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 154,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 155,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 156,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 157,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 158,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 159,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 160,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 161,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 162,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 163,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 164,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 165,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 166,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 167,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 168,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 169,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 170,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 171,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 172,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 173,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 174,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 175,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 176,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 177,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 178,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 179,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 180,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 181,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 182,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 183,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 184,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 185,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 186,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 187,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 188,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 189,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 190,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 191,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 192,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 193,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 194,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 195,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 196,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 197,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 198,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 199,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 200,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 201,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 202,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 203,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 204,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 205,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 206,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 207,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 208,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 209,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 210,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 211,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 212,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 213,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 214,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 215,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 216,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 217,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 218,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 219,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 220,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 221,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 222,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 223,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 224,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 225,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 226,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 227,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 228,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 229,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 230,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 231,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 232,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 233,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 234,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 235,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 236,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 237,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 238,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 239,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 240,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 241,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 242,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 243,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 244,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 245,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 246,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 247,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 248,
+        "ticketNumbers": []
+      },
+      {
+        "playerA": 1,
+        "playerB": 249,
+        "ticketNumbers": []
+      }
+    ],
+    "maxCommonNumbersBetweenAnyTwoTickets": 0,
+    "minDistinctNumbersBetweenAnyTwoTickets": 15
+  },
+  "claimsSummary": {
+    "totalClaimsAttempted": 0,
+    "approvedClaimsCount": 0,
+    "bogeyClaimsCount": 0,
+    "allApprovedClaimsMathematicallyValid": true
+  },
+  "drawnNumbersSequence": [],
+  "claims": [],
+  "players": [
+    {
+      "id": 1,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 2,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 3,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 4,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 5,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 6,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 7,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 8,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 9,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 10,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 11,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 12,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 13,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 14,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 15,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 16,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 17,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 18,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 19,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 20,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 21,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 22,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 23,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 24,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 25,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 26,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 27,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 28,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 29,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 30,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 31,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 32,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 33,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 34,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 35,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 36,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 37,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 38,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 39,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 40,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 41,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 42,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 43,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 44,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 45,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 46,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 47,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 48,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 49,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 50,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 51,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 52,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 53,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 54,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 55,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 56,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 57,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 58,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 59,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 60,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 61,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 62,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 63,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 64,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 65,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 66,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 67,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 68,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 69,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 70,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 71,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 72,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 73,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 74,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 75,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 76,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 77,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 78,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 79,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 80,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 81,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 82,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 83,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 84,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 85,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 86,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 87,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 88,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 89,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 90,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 91,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 92,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 93,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 94,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 95,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 96,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 97,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 98,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 99,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 100,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 101,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 102,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 103,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 104,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 105,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 106,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 107,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 108,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 109,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 110,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 111,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 112,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 113,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 114,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 115,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 116,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 117,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 118,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 119,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 120,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 121,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 122,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 123,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 124,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 125,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 126,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 127,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 128,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 129,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 130,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 131,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 132,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 133,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 134,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 135,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 136,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 137,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 138,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 139,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 140,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 141,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 142,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 143,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 144,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 145,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 146,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 147,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 148,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 149,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 150,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 151,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 152,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 153,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 154,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 155,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 156,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 157,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 158,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 159,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 160,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 161,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 162,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 163,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 164,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 165,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 166,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 167,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 168,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 169,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 170,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 171,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 172,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 173,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 174,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 175,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 176,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 177,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 178,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 179,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 180,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 181,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 182,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 183,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 184,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 185,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 186,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 187,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 188,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 189,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 190,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 191,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 192,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 193,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 194,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 195,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 196,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 197,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 198,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 199,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 200,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 201,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 202,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 203,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 204,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 205,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 206,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 207,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 208,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 209,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 210,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 211,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 212,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 213,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 214,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 215,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 216,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 217,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 218,
+      "name": "Leo",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 219,
+      "name": "Tara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 220,
+      "name": "Aditya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 221,
+      "name": "Meera",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 222,
+      "name": "Sam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 223,
+      "name": "Rhea",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 224,
+      "name": "Lucas",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 225,
+      "name": "Aarav",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 226,
+      "name": "Priya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 227,
+      "name": "Rohan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 228,
+      "name": "Maya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 229,
+      "name": "Liam",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 230,
+      "name": "Sophia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 231,
+      "name": "Noah",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 232,
+      "name": "Ananya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 233,
+      "name": "Kabir",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 234,
+      "name": "Emma",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 235,
+      "name": "Oliver",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 236,
+      "name": "Diya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 237,
+      "name": "Carlos",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 238,
+      "name": "Chloe",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 239,
+      "name": "Arjun",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 240,
+      "name": "Sneha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 241,
+      "name": "Vikram",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 242,
+      "name": "Aisha",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 243,
+      "name": "Ethan",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 244,
+      "name": "Mia",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 245,
+      "name": "Rahul",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 246,
+      "name": "Zara",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 247,
+      "name": "Siddharth",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 248,
+      "name": "Elena",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    },
+    {
+      "id": 249,
+      "name": "Kavya",
+      "ticketNumber": null,
+      "ticketMatrix": [
+        [],
+        [],
+        []
+      ],
+      "ticketNumbers": [],
+      "dabbedCount": 0,
+      "prizesClaimed": [],
+      "registrationTimeMs": null
+    }
+  ]
+}

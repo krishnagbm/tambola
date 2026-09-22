@@ -29,12 +29,14 @@ CREATE INDEX IF NOT EXISTS idx_mpt_payments_user_id ON public."MPT_payments"(use
 ALTER TABLE public."MPT_payments" ENABLE ROW LEVEL SECURITY;
 
 -- Allow users to view their own payment receipts
+DROP POLICY IF EXISTS "mpt_payments_select_own" ON public."MPT_payments";
 CREATE POLICY "mpt_payments_select_own"
     ON public."MPT_payments"
     FOR SELECT
     USING (auth.uid() = user_id);
 
 -- Allow service role full access
+DROP POLICY IF EXISTS "mpt_payments_service_role" ON public."MPT_payments";
 CREATE POLICY "mpt_payments_service_role"
     ON public."MPT_payments"
     FOR ALL

@@ -1,4 +1,4 @@
-﻿-- =====================================================================
+-- =====================================================================
 -- Migration: 20260901000005_mpt_welcome_credits_healing.sql
 -- Description: 
 --   1. Self-healing welcome bonus for any existing or new wallet with 0 credits
