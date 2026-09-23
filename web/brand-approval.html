@@ -541,7 +541,30 @@
         const data = await res.json();
         if (res.ok && data.success) {
           document.getElementById('approval-main-card').style.display = 'none';
-          showSuccess(`Brand "${escapeHtml(currentApprovalData.organization_name)}" has been successfully approved! The logo will be displayed publicly in the DabHousie Hall of Fame for this event.`);
+          showSuccess(`Brand "${escapeHtml(currentApprovalData.organization_name)}" has been successfully approved! An official confirmation and audit record has been dispatched to your email and contact@dabhousie.com.`);
+
+          // Dispatch immutable audit confirmation email to contact@dabhousie.com, approver, and organizer
+          try {
+            fetch('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'brand_approved_confirmation',
+                to_email: currentApprovalData.approver_email,
+                host_email: currentApprovalData.organizer_email || currentApprovalData.approver_email,
+                organization_name: currentApprovalData.organization_name,
+                game_name: currentApprovalData.game_name,
+                organization_logo_url: currentApprovalData.organization_logo_url,
+                invite_code: currentApprovalData.invite_code,
+                capacity: currentApprovalData.capacity,
+                approver_email: currentApprovalData.approver_email,
+                approved_at: new Date().toISOString(),
+                approved_ip: 'Web Approver'
+              })
+            }).catch(e => console.warn('Audit email dispatch warning:', e));
+          } catch (e) {
+            console.warn('Audit email invocation warning:', e);
+          }
         } else {
           showError(data?.message || 'Failed to complete authorization. Please try again.');
         }

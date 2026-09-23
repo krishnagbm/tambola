@@ -487,8 +487,18 @@ class GameRepository {
           final isSelfApproved = res['is_self_approved'] == true;
           final token = res['approval_token'] as String?;
 
-          // If not self-approved and token generated, dispatch private approval email to corporate lead
-          if (!isSelfApproved && token != null && token.isNotEmpty) {
+          if (isSelfApproved) {
+            // Instant Domain-Owner DVAA™ Auto-Approval: dispatch confirmation to approver & copy contact@dabhousie.com
+            await _dispatchBrandAcknowledgementEmail(
+              gameId: gameId,
+              toEmail: approverEmail,
+              organizationName: organizationName,
+              organizationLogoUrl: organizationLogoUrl,
+              fallbackGameName: gameName,
+              fallbackCapacity: capacity,
+            );
+          } else if (token != null && token.isNotEmpty) {
+            // External approver: dispatch authorization request email copying contact@dabhousie.com
             await _dispatchBrandApprovalEmail(
               gameId: gameId,
               toEmail: approverEmail,
@@ -508,6 +518,56 @@ class GameRepository {
     }
   }
 
+  /// Triggers automated DVAA™ acknowledgement email upon instant domain auto-approval, copying contact@dabhousie.com
+  Future<void> _dispatchBrandAcknowledgementEmail({
+    required String gameId,
+    required String toEmail,
+    required String organizationName,
+    required String organizationLogoUrl,
+    String? fallbackGameName,
+    int? fallbackCapacity,
+  }) async {
+    try {
+      String resolvedGameName = fallbackGameName ?? 'Tambola Event';
+      int? resolvedCapacity = fallbackCapacity;
+      String? resolvedInviteCode;
+      try {
+        final g = await getGame(gameId);
+        resolvedGameName = g.name;
+        resolvedCapacity = g.fundedCapacity;
+        resolvedInviteCode = g.inviteCode;
+      } catch (_) {}
+
+      final currentProfile = _supabase.auth.currentUser;
+      final hostEmail = currentProfile?.email ?? '';
+      final organizerName = currentProfile?.userMetadata?['name'] as String? ??
+          currentProfile?.userMetadata?['display_name'] as String? ??
+          'Event Organizer';
+
+      final payload = {
+        'action': 'brand_acknowledgement',
+        'type': 'brand_acknowledgement',
+        'to_email': toEmail,
+        'host_email': hostEmail,
+        'organization_name': organizationName,
+        'organization_logo_url': organizationLogoUrl,
+        'game_name': resolvedGameName,
+        'organizer_name': organizerName,
+        'capacity': resolvedCapacity,
+        'invite_code': resolvedInviteCode,
+      };
+
+      final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+      await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+    } catch (_) {
+      // Best-effort email dispatch; event is safely approved in DB
+    }
+  }
+
   /// Triggers automated SES email to corporate approver via AWS API Gateway
   Future<void> _dispatchBrandApprovalEmail({
     required String gameId,
@@ -521,10 +581,12 @@ class GameRepository {
     try {
       String resolvedGameName = fallbackGameName ?? 'Tambola Event';
       int? resolvedCapacity = fallbackCapacity;
+      String? resolvedInviteCode;
       try {
         final g = await getGame(gameId);
         resolvedGameName = g.name;
         resolvedCapacity = g.fundedCapacity;
+        resolvedInviteCode = g.inviteCode;
       } catch (_) {}
 
       final currentProfile = _supabase.auth.currentUser;
@@ -544,28 +606,15 @@ class GameRepository {
         'game_name': resolvedGameName,
         'organizer_name': organizerName,
         'capacity': resolvedCapacity,
+        'invite_code': resolvedInviteCode,
       };
 
-      // 1. Try dedicated brand-approval endpoint
-      try {
-        final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/brand-approval');
-        final response = await http.post(
-          uri,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        );
-        if (response.statusCode == 200) return;
-      } catch (_) {}
-
-      // 2. Fallback to existing active email endpoint with action: brand_approval
-      try {
-        final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
-        await http.post(
-          uri,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode(payload),
-        );
-      } catch (_) {}
+      final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+      await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
     } catch (_) {
       // Best-effort email dispatch; token is safely persisted in DB
     }

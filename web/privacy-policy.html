@@ -253,11 +253,12 @@
       <li>Browser type, device operating system, viewport resolution, and IP address (processed temporarily by our CDN for network security and DDoS mitigation).</li>
     </ul>
 
-    <h3>D. Corporate Brand Authorization Data (DVAA)</h3>
-    <p>When an organizer customizes an event with corporate identity (organization name and domain-hosted logo), we process:</p>
+    <h3>D. Corporate Brand Authorization Data &amp; DVAA™ Telemetry</h3>
+    <p>DabHousie features a proprietary <strong>Domain-Verified Automated Approval (DVAA™)</strong> architecture designed to provide zero-PII brand protection and prevent unauthorized trademark display. When an organizer customizes an event with corporate identity (organization name and domain-hosted logo), we process minimal verification telemetry:</p>
     <ul>
-      <li><strong>Approver Email Address</strong>: Used strictly to deliver a secure, time-limited authorization link to the designated corporate representative. We do not use this email for marketing or promotional communications.</li>
-      <li><strong>Authorization Audit Log</strong>: Timestamp, IP address, and browser user-agent recorded upon one-click brand approval to maintain an immutable compliance record of authorized trademark usage.</li>
+      <li><strong>Corporate Email &amp; Domain Verification</strong>: When an organizer authenticates using a corporate domain email, we evaluate the domain matching to enable Instant Domain-Owner DVAA™ approval. Corporate approver email addresses are used strictly to deliver verification requests and official audit acknowledgements. Approver emails are never enrolled in marketing lists, sold, or shared with third-party advertisers.</li>
+      <li><strong>Immutable Compliance Audit Records</strong>: To maintain brand integrity and prevent corporate impersonation, all DVAA™ operations—including auto-approvals, email dispatches, and web approvals—generate timestamped audit records containing event scale, organizer attribution, timestamp, verification IP, and approver email. Official audit records are automatically archived and delivered to DabHousie Compliance at <a href="mailto:contact@dabhousie.com">contact@dabhousie.com</a>.</li>
+      <li><strong>Domain-Hosted Logo Fetching</strong>: Logos are loaded dynamically from the organization's official domain via HTTPS or validated through authorized CDN integrations (Logo.dev) without copying or storing third-party trademark files on DabHousie servers.</li>
     </ul>
 
     <h2>3. How We Use Collected Information</h2>

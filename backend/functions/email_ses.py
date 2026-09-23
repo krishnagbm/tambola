@@ -7,7 +7,7 @@ import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from typing import Optional
+from typing import Optional, List, Dict, Any, Tuple
 
 try:
     import boto3
@@ -19,6 +19,7 @@ except ImportError:
 SES_REGION = os.getenv("AWS_SES_REGION", os.getenv("AWS_REGION", "us-east-2"))
 FROM_EMAIL = os.getenv("SES_FROM_EMAIL", os.getenv("SUPPORT_EMAIL", "receipts@dabhousie.com"))
 BASE_URL = os.getenv("BASE_URL", "https://www.dabhousie.com")
+AUDIT_EMAIL = os.getenv("AUDIT_EMAIL", "contact@dabhousie.com")
 
 
 def send_purchase_email(
@@ -438,35 +439,10 @@ Support: {FROM_EMAIL}
         return False
 
 
-def send_brand_approval_email(
-    to_email: str,
-    organization_name: str,
-    game_name: str,
-    approval_token: str,
-    organization_logo_url: Optional[str] = None,
-    organizer_name: Optional[str] = None,
-    capacity: Optional[int] = None,
-    host_email: Optional[str] = None,
-) -> bool:
+def _fetch_inline_logos(organization_logo_url: Optional[str] = None) -> Tuple[Optional[bytes], str, Optional[bytes], str]:
     """
-    Sends a rich HTML brand authorization request email to corporate approvers via AWS SES.
-    Embeds official logos as inline MIME CID attachments so Microsoft Outlook, Gmail, and
-    Apple Mail render images automatically without 'Download pictures' blocking.
+    Loads DabHousie and corporate logos for inline MIME CID embedding to prevent image blocking in Outlook/Gmail.
     """
-    if not to_email:
-        print("  [ SES ] No recipient email provided for brand approval. Skipping.")
-        return False
-
-    approval_url = f"{BASE_URL}/brand-approval.html?token={approval_token}"
-    subject = f"Action Required: Authorize Brand Logo for \"{game_name}\" 🏢"
-    organizer_display = organizer_name or "Event Organizer"
-    capacity_display = f"{capacity} Players" if capacity else "Team Event"
-    host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
-
-    # Track attached inline images
-    attached_cids = {}
-
-    # 1. Load DabHousie logo for inline CID embedding
     dabhousie_logo_bytes = None
     local_logo_path = os.path.join(os.path.dirname(__file__), "assets", "dabhousie_horizontal_logo.png")
     if os.path.exists(local_logo_path):
@@ -486,7 +462,6 @@ def send_brand_approval_email(
 
     header_logo_src = "cid:logo_dabhousie" if dabhousie_logo_bytes else f"{BASE_URL}/dabhousie_horizontal_logo.png"
 
-    # 2. Fetch Corporate Logo for inline CID embedding
     org_logo_bytes = None
     if organization_logo_url:
         try:
@@ -496,7 +471,129 @@ def send_brand_approval_email(
         except Exception as e:
             print(f"  [ SES ] Could not fetch org logo for inline CID: {e}")
 
-    org_logo_src = "cid:logo_org" if org_logo_bytes else organization_logo_url
+    org_logo_src = "cid:logo_org" if org_logo_bytes else (organization_logo_url or "")
+    return dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src
+
+
+def _dispatch_ses_mime_or_standard(
+    to_email: str,
+    subject: str,
+    html_content: str,
+    text_content: str,
+    dabhousie_logo_bytes: Optional[bytes] = None,
+    org_logo_bytes: Optional[bytes] = None,
+    audit_email: Optional[str] = AUDIT_EMAIL,
+    extra_to: Optional[str] = None,
+) -> bool:
+    """
+    Dispatches SES email with raw MIME CID inline images, falling back to standard send_email.
+    Guarantees that audit_email (contact@dabhousie.com) is copied for immutable compliance.
+    """
+    if boto3 is None:
+        print(f"  [ SES (Dev / Log Mode) ] Email simulated to {to_email} (Cc: {audit_email}): '{subject}'.")
+        return True
+
+    try:
+        ses_client = boto3.client("ses", region_name=SES_REGION)
+
+        # Collect recipient and CC destinations
+        to_recipients = [to_email]
+        if extra_to and extra_to.lower() != to_email.lower():
+            to_recipients.append(extra_to)
+
+        cc_recipients = []
+        if audit_email and audit_email.lower() not in [e.lower() for e in to_recipients]:
+            cc_recipients.append(audit_email)
+
+        all_destinations = list(set(to_recipients + cc_recipients))
+
+        # Prefer raw email with inline MIME attachments for Outlook/Gmail rendering
+        if dabhousie_logo_bytes or org_logo_bytes:
+            try:
+                msg_root = MIMEMultipart("related")
+                msg_root["Subject"] = subject
+                msg_root["From"] = f"DabHousie <{FROM_EMAIL}>"
+                msg_root["To"] = ", ".join(to_recipients)
+                if cc_recipients:
+                    msg_root["Cc"] = ", ".join(cc_recipients)
+
+                msg_alt = MIMEMultipart("alternative")
+                msg_root.attach(msg_alt)
+
+                msg_alt.attach(MIMEText(text_content, "plain", "utf-8"))
+                msg_alt.attach(MIMEText(html_content, "html", "utf-8"))
+
+                if dabhousie_logo_bytes:
+                    img_dab = MIMEImage(dabhousie_logo_bytes, "png")
+                    img_dab.add_header("Content-ID", "<logo_dabhousie>")
+                    img_dab.add_header("Content-Disposition", "inline", filename="dabhousie_logo.png")
+                    msg_root.attach(img_dab)
+
+                if org_logo_bytes:
+                    img_org = MIMEImage(org_logo_bytes)
+                    img_org.add_header("Content-ID", "<logo_org>")
+                    img_org.add_header("Content-Disposition", "inline", filename="org_logo.png")
+                    msg_root.attach(img_org)
+
+                ses_client.send_raw_email(
+                    Source=f"DabHousie <{FROM_EMAIL}>",
+                    Destinations=all_destinations,
+                    RawMessage={"Data": msg_root.as_string()},
+                )
+                print(f"  [ SES ] Raw MIME email sent to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+                return True
+            except Exception as e_raw:
+                print(f"  [ SES WARNING ] Raw MIME dispatch failed, falling back to standard send_email: {e_raw}")
+
+        # Fallback to standard SES send_email
+        destination_dict = {"ToAddresses": to_recipients}
+        if cc_recipients:
+            destination_dict["CcAddresses"] = cc_recipients
+
+        ses_client.send_email(
+            Source=f"DabHousie <{FROM_EMAIL}>",
+            Destination=destination_dict,
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Html": {"Data": html_content, "Charset": "UTF-8"},
+                    "Text": {"Data": text_content, "Charset": "UTF-8"},
+                },
+            },
+        )
+        print(f"  [ SES ] Standard email sent to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+        return True
+    except Exception as e:
+        print(f"  [ SES ERROR ] Failed to send SES email: {e}")
+        return False
+
+
+def send_brand_approval_email(
+    to_email: str,
+    organization_name: str,
+    game_name: str,
+    approval_token: str,
+    organization_logo_url: Optional[str] = None,
+    organizer_name: Optional[str] = None,
+    capacity: Optional[int] = None,
+    host_email: Optional[str] = None,
+    audit_email: str = AUDIT_EMAIL,
+) -> bool:
+    """
+    Sends a rich HTML brand authorization request email to corporate approvers via AWS SES.
+    Embeds official logos as inline MIME CID attachments with DVAA™ branding and copies audit_email.
+    """
+    if not to_email:
+        print("  [ SES ] No recipient email provided for brand approval. Skipping.")
+        return False
+
+    approval_url = f"{BASE_URL}/brand-approval.html?token={approval_token}"
+    subject = f"[Action Required] Authorize Brand Logo for \"{game_name}\" 🏢 (DVAA™)"
+    organizer_display = organizer_name or "Event Organizer"
+    capacity_display = f"{capacity} Players" if capacity else "Team Event"
+    host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
+
+    dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(organization_logo_url)
 
     logo_preview_html = ""
     if organization_logo_url or org_logo_bytes:
@@ -522,32 +619,29 @@ def send_brand_approval_email(
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
-          <!-- Header with Official DabHousie Logo -->
           <tr>
             <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
               <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
                 <img src="{header_logo_src}" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
               </a>
-              <p style="margin:0 0 12px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Multiplayer Tambola &bull; Housie &bull; Bingo</p>
+              <p style="margin:0 0 10px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Multiplayer Tambola &bull; Housie &bull; Bingo</p>
               <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">🏢 Corporate Brand Authorization Request</h1>
-              <p style="margin:6px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
+              <div style="display:inline-block; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:6px; padding:4px 10px; margin-top:8px; font-size:11.5px; font-weight:700; color:#38bdf8;">
+                🔒 DVAA™ (Domain-Verified Automated Approval)
+              </div>
+              <p style="margin:8px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
             </td>
           </tr>
 
-          <!-- Main Content Body -->
           <tr>
             <td style="padding:28px 24px;">
-              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#e2e8f0;">
-                Hello,
-              </p>
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#e2e8f0;">Hello,</p>
               <p style="margin:0 0 20px 0; font-size:14.5px; line-height:1.6; color:#cbd5e1;">
-                <strong>{host_attribution}</strong> has organized a DabHousie event and requested to display official corporate branding for <strong>{organization_name}</strong> on the event live card and public Hall of Fame.
+                <strong>{host_attribution}</strong> has organized a DabHousie event and requested permission to display official corporate branding for <strong>{organization_name}</strong> on the event live card and public Hall of Fame.
               </p>
 
-              <!-- Logo Preview Box -->
               {logo_preview_html}
 
-              <!-- Event Details Grid -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:24px;">
                 <tr>
                   <td style="padding:16px 18px;">
@@ -568,24 +662,26 @@ def send_brand_approval_email(
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Scale:</td>
                         <td style="padding:6px 0; color:#38bdf8; font-size:13.5px; font-weight:700;" align="right">{capacity_display}</td>
                       </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Verification Standard:</td>
+                        <td style="padding:6px 0; color:#22c55e; font-size:13px; font-weight:700;" align="right">DVAA™ Protected</td>
+                      </tr>
                     </table>
                   </td>
                 </tr>
               </table>
 
-              <!-- Trust Callout -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0c203a; border:1px solid #1e40af; border-left:4px solid #38bdf8; border-radius:0 10px 10px 0; margin-bottom:24px;">
                 <tr>
                   <td style="padding:14px 16px;">
-                    <div style="color:#38bdf8; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 Domain-Verified Automated Approval (DVAA):</div>
+                    <div style="color:#38bdf8; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 DVAA™ (Domain-Verified Automated Approval):</div>
                     <div style="color:#cbd5e1; font-size:12.5px; line-height:1.5;">
-                      DabHousie protects your brand identity against unauthorized use. The gameplay can proceed, but official badges and company logos appear publicly only upon your authorization.
+                      DabHousie protects your brand identity against impersonation. The game may proceed privately, but official corporate emblems and company name will appear publicly only upon your authorization.
                     </div>
                   </td>
                 </tr>
               </table>
 
-              <!-- Bulletproof CTA Button -->
               <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:20px auto 0 auto;">
                 <tr>
                   <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:10px; border:1px solid #d97706; padding:0;">
@@ -603,10 +699,10 @@ def send_brand_approval_email(
             </td>
           </tr>
 
-          <!-- Footer / Trust Badges & Abuse Report -->
           <tr>
             <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
               <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Architecture</strong> &bull; Link expires automatically in 7 days.</p>
+              <p style="margin:0 0 6px 0; color:#94a3b8; font-size:11px;">📋 Audit copy dispatched to DabHousie Compliance ({audit_email}) for brand safety.</p>
               <p style="margin:0 0 6px 0;">Don't recognize this event? <a href="{approval_url}" target="_blank" style="color:#f87171; text-decoration:underline;">Decline Request</a></p>
               <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
             </td>
@@ -619,12 +715,13 @@ def send_brand_approval_email(
 </html>
 """
 
-    text_content = f"""Corporate Brand Authorization Request for "{game_name}"
+    text_content = f"""Corporate Brand Authorization Request for "{game_name}" (DVAA™)
 
 Organization: {organization_name}
 Event Name: {game_name}
 Requested By: {host_attribution}
 Scale: {capacity_display}
+Standard: DVAA™ (Domain-Verified Automated Approval)
 
 {organizer_display} has scheduled this event and requested official corporate branding.
 To review and authorize display of your brand logo on the event card and public Hall of Fame, please open:
@@ -632,72 +729,375 @@ To review and authorize display of your brand logo on the event card and public 
 {approval_url}
 
 This secure authorization link expires in 7 days.
+An audit copy has been dispatched to {audit_email}.
 If you did not request this, you may safely decline or ignore this email.
 
 Support: {FROM_EMAIL}
 DabHousie - www.dabhousie.com
 """
 
-    if boto3 is None:
-        print(f"  [ SES (Dev / Log Mode) ] Brand approval email simulated to {to_email} for '{organization_name}'.")
-        return True
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=org_logo_bytes,
+        audit_email=audit_email,
+    )
 
-    try:
-        ses_client = boto3.client("ses", region_name=SES_REGION)
 
-        # Prefer raw email with inline MIME attachments for perfect Outlook rendering
-        if dabhousie_logo_bytes or org_logo_bytes:
-            try:
-                msg_root = MIMEMultipart("related")
-                msg_root["Subject"] = subject
-                msg_root["From"] = f"DabHousie <{FROM_EMAIL}>"
-                msg_root["To"] = to_email
-
-                msg_alt = MIMEMultipart("alternative")
-                msg_root.attach(msg_alt)
-
-                msg_alt.attach(MIMEText(text_content, "plain", "utf-8"))
-                msg_alt.attach(MIMEText(html_content, "html", "utf-8"))
-
-                if dabhousie_logo_bytes:
-                    img_dab = MIMEImage(dabhousie_logo_bytes, "png")
-                    img_dab.add_header("Content-ID", "<logo_dabhousie>")
-                    img_dab.add_header("Content-Disposition", "inline", filename="dabhousie_logo.png")
-                    msg_root.attach(img_dab)
-
-                if org_logo_bytes:
-                    img_org = MIMEImage(org_logo_bytes)
-                    img_org.add_header("Content-ID", "<logo_org>")
-                    img_org.add_header("Content-Disposition", "inline", filename="org_logo.png")
-                    msg_root.attach(img_org)
-
-                ses_client.send_raw_email(
-                    Source=f"DabHousie <{FROM_EMAIL}>",
-                    Destinations=[to_email],
-                    RawMessage={"Data": msg_root.as_string()},
-                )
-                print(f"  [ SES ] Brand approval email (raw MIME CID) successfully sent to {to_email}")
-                return True
-            except Exception as e_raw:
-                print(f"  [ SES WARNING ] Raw MIME dispatch failed, falling back to standard send_email: {e_raw}")
-
-        # Fallback to standard SES send_email
-        ses_client.send_email(
-            Source=f"DabHousie <{FROM_EMAIL}>",
-            Destination={"ToAddresses": [to_email]},
-            Message={
-                "Subject": {"Data": subject, "Charset": "UTF-8"},
-                "Body": {
-                    "Html": {"Data": html_content, "Charset": "UTF-8"},
-                    "Text": {"Data": text_content, "Charset": "UTF-8"},
-                },
-            },
-        )
-        print(f"  [ SES ] Brand approval email successfully sent to {to_email}")
-        return True
-    except Exception as e:
-        print(f"  [ SES ERROR ] Failed to send brand approval email: {e}")
+def send_brand_acknowledgement_email(
+    to_email: str,
+    organization_name: str,
+    game_name: str,
+    organization_logo_url: Optional[str] = None,
+    organizer_name: Optional[str] = None,
+    capacity: Optional[int] = None,
+    host_email: Optional[str] = None,
+    invite_code: Optional[str] = None,
+    audit_email: str = AUDIT_EMAIL,
+) -> bool:
+    """
+    Sends an automated acknowledgement email upon Instant Domain-Owner DVAA™ Auto-Approval.
+    Always copies audit_email (contact@dabhousie.com) for immutable compliance tracking.
+    """
+    if not to_email:
+        print("  [ SES ] No recipient email provided for brand acknowledgement. Skipping.")
         return False
+
+    join_url = f"{BASE_URL}/#/join/{invite_code}" if invite_code else BASE_URL
+    subject = f"Confirmed: Corporate Brand Verified & Activated for \"{game_name}\" 🏢 (DVAA™)"
+    organizer_display = organizer_name or "Event Organizer"
+    capacity_display = f"{capacity} Players" if capacity else "Team Event"
+    host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
+
+    dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(organization_logo_url)
+
+    logo_preview_html = ""
+    if organization_logo_url or org_logo_bytes:
+        logo_preview_html = f"""
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
+          <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Official Activated Logo</div>
+          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
+        </div>
+        """
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corporate Brand Activated - {game_name}</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <tr>
+            <td style="background:linear-gradient(135deg, #065f46 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #10b981;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{header_logo_src}" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 10px 0; color:#34d399; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Corporate Brand Verification Confirmed</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">✅ Brand Activated &amp; Verified</h1>
+              <div style="display:inline-block; background:rgba(16, 185, 129, 0.2); border:1px solid rgba(16, 185, 129, 0.5); border-radius:6px; padding:4px 10px; margin-top:8px; font-size:11.5px; font-weight:700; color:#6ee7b7;">
+                🔒 DVAA™ Domain-Verified Automated Approval
+              </div>
+              <p style="margin:8px 0 0 0; color:#a7f3d0; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#e2e8f0;">Hello {organizer_display},</p>
+              <p style="margin:0 0 20px 0; font-size:14.5px; line-height:1.6; color:#cbd5e1;">
+                This email serves as an official confirmation that corporate branding for <strong>{organization_name}</strong> has been verified and activated for your event under DabHousie's <strong>DVAA™ (Domain-Verified Automated Approval)</strong> protocol.
+              </p>
+
+              {logo_preview_html}
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Organization:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{organization_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
+                      </tr>
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Invite Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Authorized By:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Capacity:</td>
+                        <td style="padding:6px 0; color:#38bdf8; font-size:13.5px; font-weight:700;" align="right">{capacity_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Branding Status:</td>
+                        <td style="padding:6px 0; color:#10b981; font-size:13px; font-weight:800;" align="right">ACTIVE &amp; APPROVED ✅</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#064e3b; border:1px solid #059669; border-left:4px solid #10b981; border-radius:0 10px 10px 0; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <div style="color:#6ee7b7; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 DVAA™ Instant Verification Compliance:</div>
+                    <div style="color:#e2e8f0; font-size:12.5px; line-height:1.5;">
+                      Because your authenticated host account is verified under <strong>@{to_email.split('@')[-1] if '@' in to_email else 'corporate domain'}</strong>, your event qualifies for instant brand activation. Your official badge is now live on game cards, waiting rooms, and the public Hall of Fame.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:20px auto 0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#10b981" style="background-color:#10b981; border-radius:10px; border:1px solid #059669; padding:0;">
+                    <a href="{join_url}" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:15px 36px; border-radius:10px; line-height:1.2; letter-spacing:0.3px;">
+                      Launch Event &amp; View Live Card &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Architecture</strong> &bull; Verified via DVAA™ Protocol.</p>
+              <p style="margin:0 0 6px 0; color:#94a3b8; font-size:11px;">📋 Immutable compliance record delivered to DabHousie Compliance ({audit_email}).</p>
+              <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Confirmed: Corporate Brand Verified & Activated for "{game_name}" (DVAA™)
+
+Organization: {organization_name}
+Event Name: {game_name}
+Invite Code: {invite_code or 'N/A'}
+Authorized By: {host_attribution}
+Scale: {capacity_display}
+Status: ACTIVE & APPROVED ✅
+Verification: DVAA™ (Domain-Verified Automated Approval)
+
+Corporate branding for {organization_name} has been verified and activated for this event.
+Your official logo and company badge are now active on the event live card, player tickets, and Hall of Fame.
+
+Join / View Event: {join_url}
+
+Compliance Audit: An immutable verification record has been archived and delivered to {audit_email}.
+
+Support: {FROM_EMAIL}
+DabHousie - www.dabhousie.com
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=org_logo_bytes,
+        audit_email=audit_email,
+    )
+
+
+def send_brand_approved_confirmation_email(
+    to_email: str,
+    organization_name: str,
+    game_name: str,
+    organization_logo_url: Optional[str] = None,
+    organizer_name: Optional[str] = None,
+    capacity: Optional[int] = None,
+    host_email: Optional[str] = None,
+    approver_email: Optional[str] = None,
+    approved_at: Optional[str] = None,
+    approved_ip: Optional[str] = None,
+    invite_code: Optional[str] = None,
+    audit_email: str = AUDIT_EMAIL,
+) -> bool:
+    """
+    Sends an automated audit confirmation email once an external approver clicks 'Approve'.
+    Delivers full meeting details to contact@dabhousie.com, the approver, and the host.
+    """
+    join_url = f"{BASE_URL}/#/join/{invite_code}" if invite_code else BASE_URL
+    subject = f"[DVAA™ Audit] Corporate Brand Approved & Live: \"{game_name}\" ✅"
+    organizer_display = organizer_name or "Event Organizer"
+    capacity_display = f"{capacity} Players" if capacity else "Team Event"
+    host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
+    approver_display = approver_email or to_email
+    timestamp_display = approved_at or "Just now"
+    ip_display = approved_ip or "Web Verification"
+
+    dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(organization_logo_url)
+
+    logo_preview_html = ""
+    if organization_logo_url or org_logo_bytes:
+        logo_preview_html = f"""
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
+          <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Approved Corporate Emblem</div>
+          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
+        </div>
+        """
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brand Approved Audit Record - {game_name}</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <tr>
+            <td style="background:linear-gradient(135deg, #0B3D91 0%, #065f46 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #10b981;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{header_logo_src}" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 10px 0; color:#34d399; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">DVAA™ Audit &bull; Brand Approval Confirmed</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">✅ Brand Approved &amp; Published</h1>
+              <div style="display:inline-block; background:rgba(16, 185, 129, 0.2); border:1px solid rgba(16, 185, 129, 0.5); border-radius:6px; padding:4px 10px; margin-top:8px; font-size:11.5px; font-weight:700; color:#6ee7b7;">
+                🔒 DVAA™ Domain-Verified Automated Approval
+              </div>
+              <p style="margin:8px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#e2e8f0;">
+                Official Notice: Corporate brand authorization for <strong>{organization_name}</strong> was approved by <strong>{approver_display}</strong>.
+              </p>
+
+              {logo_preview_html}
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <div style="font-size:12px; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:12px;">Meeting &amp; Event Audit Details</div>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Organization:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{organization_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
+                      </tr>
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Invite Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Organizer:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Corporate Approver:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{approver_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Scale:</td>
+                        <td style="padding:6px 0; color:#38bdf8; font-size:13.5px; font-weight:700;" align="right">{capacity_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Approval Timestamp:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:12.5px;" align="right">{timestamp_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Audit Verification IP:</td>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:12px; font-family:monospace;" align="right">{ip_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Hall of Fame Display:</td>
+                        <td style="padding:6px 0; color:#10b981; font-size:13px; font-weight:800;" align="right">PUBLISHED &amp; LIVE ✅</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:20px auto 0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#0B3D91" style="background-color:#0B3D91; border-radius:10px; border:1px solid #3b82f6; padding:0;">
+                    <a href="{join_url}" target="_blank" style="background-color:#0B3D91; color:#ffffff !important; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:15px 36px; border-radius:10px; line-height:1.2; letter-spacing:0.3px;">
+                      View Live Event Room &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Compliance Trail</strong> &bull; Powered by DVAA™.</p>
+              <p style="margin:0 0 6px 0; color:#94a3b8; font-size:11px;">📋 Permanent audit record delivered to DabHousie Compliance ({audit_email}).</p>
+              <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Brand Approved Audit Record for "{game_name}" (DVAA™)
+
+Organization: {organization_name}
+Event Name: {game_name}
+Invite Code: {invite_code or 'N/A'}
+Organizer: {host_attribution}
+Approver: {approver_display}
+Approved At: {timestamp_display}
+Audit IP: {ip_display}
+Capacity: {capacity_display}
+Status: PUBLISHED & LIVE ✅
+
+Official corporate branding for {organization_name} is now live in the event room and DabHousie Hall of Fame.
+Join Link: {join_url}
+
+An immutable audit record has been archived and delivered to {audit_email}.
+
+Support: {FROM_EMAIL}
+DabHousie - www.dabhousie.com
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=org_logo_bytes,
+        audit_email=audit_email,
+        extra_to=host_email,
+    )
+
 
 
 

@@ -8,7 +8,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from email_ses import send_private_party_otps_email, send_brand_approval_email
+from email_ses import (
+    send_private_party_otps_email,
+    send_brand_approval_email,
+    send_brand_acknowledgement_email,
+    send_brand_approved_confirmation_email,
+)
 
 
 def handler(event, context):
@@ -58,7 +63,86 @@ def handler(event, context):
         if not to_email:
             return _r(400, {"error": "Missing to_email parameter"})
 
-        # Route 1: Brand Approval
+        # Route 1A: Brand Acknowledgement (DVAA Auto-Approval)
+        if action in ("brand_acknowledgement", "brand_acknowledgment"):
+            organization_name = payload.get("organization_name", "").strip()
+            organization_logo_url = payload.get("organization_logo_url", "").strip()
+            organizer_name = payload.get("organizer_name", "").strip()
+            capacity = payload.get("capacity")
+            host_email = payload.get("host_email", "").strip().lower()
+            invite_code = payload.get("invite_code", "").strip()
+
+            if not organization_name:
+                return _r(400, {"error": "Missing organization_name parameter"})
+
+            success = send_brand_acknowledgement_email(
+                to_email=to_email,
+                organization_name=organization_name,
+                game_name=game_name,
+                organization_logo_url=organization_logo_url,
+                organizer_name=organizer_name,
+                capacity=capacity,
+                host_email=host_email,
+                invite_code=invite_code,
+                audit_email="contact@dabhousie.com",
+            )
+
+            if success:
+                return _r(200, {
+                    "success": True,
+                    "message": f"DVAA™ Brand acknowledgement successfully sent to {to_email} and copied to contact@dabhousie.com",
+                    "to_email": to_email,
+                    "organization_name": organization_name,
+                })
+            else:
+                return _r(500, {
+                    "success": False,
+                    "error": f"Failed to send DVAA™ brand acknowledgement email to {to_email}."
+                })
+
+        # Route 1B: Brand Approved Confirmation (Sent after approver confirms on web or email)
+        if action in ("brand_approved_confirmation", "brand_approval_complete"):
+            organization_name = payload.get("organization_name", "").strip()
+            organization_logo_url = payload.get("organization_logo_url", "").strip()
+            organizer_name = payload.get("organizer_name", "").strip()
+            capacity = payload.get("capacity")
+            host_email = payload.get("host_email", "").strip().lower()
+            approver_email = payload.get("approver_email", to_email).strip().lower()
+            approved_at = payload.get("approved_at")
+            approved_ip = payload.get("approved_ip")
+            invite_code = payload.get("invite_code", "").strip()
+
+            if not organization_name:
+                return _r(400, {"error": "Missing organization_name parameter"})
+
+            success = send_brand_approved_confirmation_email(
+                to_email=to_email,
+                organization_name=organization_name,
+                game_name=game_name,
+                organization_logo_url=organization_logo_url,
+                organizer_name=organizer_name,
+                capacity=capacity,
+                host_email=host_email,
+                approver_email=approver_email,
+                approved_at=approved_at,
+                approved_ip=approved_ip,
+                invite_code=invite_code,
+                audit_email="contact@dabhousie.com",
+            )
+
+            if success:
+                return _r(200, {
+                    "success": True,
+                    "message": f"Brand confirmation audit email successfully delivered to contact@dabhousie.com and {to_email}",
+                    "to_email": to_email,
+                })
+            else:
+                return _r(500, {
+                    "success": False,
+                    "error": f"Failed to send brand approval confirmation audit email."
+                })
+
+        # Route 1C: Brand Approval Request
         if action == "brand_approval" or "approval_token" in payload or "brand-approval" in path:
             organization_name = payload.get("organization_name", "").strip()
             approval_token = payload.get("approval_token", "").strip()

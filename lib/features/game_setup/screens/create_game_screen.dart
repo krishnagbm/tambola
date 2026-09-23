@@ -48,6 +48,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   late final TextEditingController _orgApproverEmailController;
   bool _enableOrgBranding = false;
   bool _orgVisualConfirmed = false;
+  bool _orgAuthorityConfirmed = false;
 
   int _selectedCapacity = 5;
   String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
@@ -307,7 +308,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       if (!_orgVisualConfirmed) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please visually review and check the confirmation box for the live card preview before submitting.'),
+            content: Text('Please inspect the Live Card Mock and check the Visual Confirmation box before proceeding.'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
+      if (!_orgAuthorityConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please confirm organizational representation & DVAA™ authorization by checking the consent box.'),
             backgroundColor: AppTheme.accentDanger,
           ),
         );
@@ -359,9 +369,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         );
         isBrandSelfApproved = brandRes['is_self_approved'] == true;
         if (isBrandSelfApproved) {
-          brandApprovalMsg = 'Domain-Owner Verified! Official branding has been automatically approved and activated for your event.';
+          brandApprovalMsg = 'DVAA™ Verified! Official branding has been automatically approved and activated for your event. An official acknowledgement email and audit copy have been dispatched to $approverEmail and contact@dabhousie.com.';
         } else if (brandRes['success'] == true) {
-          brandApprovalMsg = 'Authorization request successfully sent to $approverEmail. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
+          brandApprovalMsg = 'DVAA™ authorization request successfully sent to $approverEmail with an audit copy to contact@dabhousie.com. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
         } else {
           brandApprovalMsg = 'Approval record saved. (Note: ${brandRes['message'] ?? 'Check your email inbox or spam folder'}).';
         }
@@ -803,8 +813,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     _enableOrgBranding = val;
                     if (!val) {
                       _orgVisualConfirmed = false;
-                    } else if (hostEmail.isNotEmpty && _orgApproverEmailController.text.trim().isEmpty) {
-                      _orgApproverEmailController.text = hostEmail;
+                      _orgAuthorityConfirmed = false;
                     }
                   }),
                 ),
@@ -818,7 +827,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             const SizedBox(height: 14),
 
             if (isSelfApproval) ...[
-              // Instant Domain-Owner Authorization
+              // Instant Domain-Owner DVAA™ Authorization
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -836,12 +845,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            '⚡ Instant Domain-Owner Authorization (Auto-Approved)',
+                            '🔒 DVAA™ (Domain-Verified Automated Approval)',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Because you are the verified host and owner of $hostEmail, corporate branding is automatically approved and activated immediately when you create the game!',
+                            'Because you are verified under @$hostDomain via corporate email authentication, your event qualifies for instant brand activation under DVAA™. Official branding will be automatically activated upon creation, with an audit confirmation emailed to you and contact@dabhousie.com.',
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
                           ),
                         ],
@@ -1193,6 +1202,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     required bool isWide,
     bool isSelfApproval = false,
   }) {
+    final user = ref.watch(currentUserProvider).value;
+    final hostEmail = (user?.email ?? '').trim();
     final approverEmail = _orgApproverEmailController.text.trim();
     final orgName = _orgNameController.text.trim().isEmpty ? 'Your Organization' : _orgNameController.text.trim();
 
@@ -1288,8 +1299,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     Expanded(
                       child: Text(
                         isSelfApproval
-                            ? 'Domain Match: Verified (Instant Auto-Approval)'
-                            : (isMatching ? 'Domain Match: Verified' : 'Domain Match: Required for dispatch'),
+                            ? 'Domain Match: Verified (Instant DVAA™ Approval)'
+                            : (isMatching ? 'Domain Match: Verified (DVAA™ Protocol)' : 'Domain Match: Required for DVAA™ dispatch'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -1303,6 +1314,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ),
           ),
           const SizedBox(height: 14),
+
+          // Checkbox 1: Visual Inspection & Mock Confirmation
           InkWell(
             onTap: () => setState(() => _orgVisualConfirmed = !_orgVisualConfirmed),
             borderRadius: BorderRadius.circular(10),
@@ -1340,8 +1353,61 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         const SizedBox(height: 4),
                         Text(
                           isSelfApproval
-                              ? 'Domain-owner instant approval: Official branding will be automatically activated upon game creation.'
-                              : 'Verification email will only be dispatched to the corporate approver after your confirmation.',
+                              ? 'DVAA™ Instant Verification: Official branding will be automatically activated upon game creation.'
+                              : 'DVAA™ Verification email will only be dispatched to the corporate approver after your confirmation.',
+                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Checkbox 2: Authority Representation & DVAA™ Audit Consent
+          InkWell(
+            onTap: () => setState(() => _orgAuthorityConfirmed = !_orgAuthorityConfirmed),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _orgAuthorityConfirmed
+                    ? AppTheme.secondaryColor.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.02),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: _orgAuthorityConfirmed ? AppTheme.secondaryColor : const Color(0xFF334155),
+                  width: _orgAuthorityConfirmed ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    value: _orgAuthorityConfirmed,
+                    activeColor: AppTheme.secondaryColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    onChanged: (val) => setState(() => _orgAuthorityConfirmed = val ?? false),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isSelfApproval
+                              ? 'I confirm that I am an authorized corporate representative of ${orgName.isEmpty ? "this organization" : orgName} and officially authorize displaying our corporate branding for this event.'
+                              : 'I confirm that I am requesting branding on behalf of ${orgName.isEmpty ? "this organization" : orgName}, and that ${approverEmail.isEmpty ? "the corporate approver" : approverEmail} is authorized to approve this request.',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isSelfApproval
+                              ? 'DVAA™ Compliance: An immutable confirmation & audit record will be emailed to $hostEmail and contact@dabhousie.com.'
+                              : 'DVAA™ Compliance: An authorization request email will be dispatched to ${approverEmail.isEmpty ? "the corporate approver" : approverEmail} with an audit copy to contact@dabhousie.com.',
                           style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                         ),
                       ],
