@@ -1520,7 +1520,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
+                      'Sign in with Google or Apple for personal parties. To host for your organization with official branding, sign in with your company work email via Email (OTP).',
                       style: TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1), height: 1.4),
                     ),
                     const SizedBox(height: 18),
@@ -1555,7 +1555,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _buildOAuthButton(
                       icon: const Icon(Icons.email_outlined, color: AppTheme.secondaryColor, size: 22),
                       title: 'Email (OTP Code)',
-                      subtitle: 'Sign in with your email & 6-digit passcode',
+                      badge: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                        ),
+                        child: const Text(
+                          '🏢 Work & Corporate',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ),
+                      subtitle: 'To host a corporate party,\nsign in with your work email & 6-digit OTP',
                       isLoading: false,
                       onTap: () => AuthDialog.show(context, startWithEmailOtp: true),
                     ),
@@ -1857,6 +1873,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     required String subtitle,
     required bool isLoading,
     required VoidCallback? onTap,
+    Widget? badge,
   }) {
     return Material(
       color: const Color(0xFF0F172A),
@@ -1892,24 +1909,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(width: 8),
+                          badge,
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF94A3B8),
                         fontWeight: FontWeight.w400,
+                        height: 1.25,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
