@@ -601,6 +601,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final isMatching = _isDomainMatching(logoUrl, approverEmail);
     final logoHost = _extractHost(logoUrl);
     final emailDomain = _extractEmailDomain(approverEmail);
+    final rawOrgName = _orgNameController.text.trim();
+    final suggestedDomain = emailDomain.isNotEmpty
+        ? emailDomain
+        : (rawOrgName.contains('.')
+            ? CompanyLogo.cleanDomain(rawOrgName)
+            : (rawOrgName.isNotEmpty
+                ? '${rawOrgName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}.com'
+                : ''));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -717,20 +725,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 helperMaxLines: 2,
               ),
             ),
-            if (emailDomain.isNotEmpty) ...[
+            if (suggestedDomain.isNotEmpty) ...[
               const SizedBox(height: 6),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () {
-                    final logoUrl = CompanyLogo.buildLogoUrl(domain: emailDomain, size: 128);
+                    final logoUrl = CompanyLogo.buildLogoUrl(domain: suggestedDomain, size: 128);
                     setState(() {
                       _orgLogoUrlController.text = logoUrl;
                     });
                   },
                   icon: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.secondaryColor),
                   label: Text(
-                    'Auto-fetch official logo for $emailDomain (via Logo.dev)',
+                    'Auto-fetch official logo for $suggestedDomain (via Logo.dev)',
                     style: const TextStyle(fontSize: 11.5, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
                   ),
                   style: TextButton.styleFrom(
@@ -1420,19 +1428,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildMockLogo(String logoUrl) {
-    if (logoUrl.isEmpty || !logoUrl.startsWith('https://')) {
-      final emailDomain = _extractEmailDomain(_orgApproverEmailController.text);
-      if (emailDomain.isNotEmpty) {
-        return CompanyLogo(
-          domain: emailDomain,
-          size: 20,
-          isCommercialUse: false,
-          fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
-        );
-      }
-      return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
-    }
+    final cleanLogoDomain = CompanyLogo.cleanDomain(logoUrl);
 
+    // 1. Direct Logo.dev URL (from auto-fetch or manual paste):
     if (logoUrl.contains('img.logo.dev') || logoUrl.contains('logo.dev')) {
       return Image.network(
         logoUrl,
@@ -1441,27 +1439,62 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       );
     }
 
-    // On Flutter Web, CanvasKit/Skia WebGL engine strictly enforces CORS (Access-Control-Allow-Origin).
-    // Many corporate websites do not send CORS headers for static images.
-    // For the in-browser mock preview, we route via a CORS proxy with automatic fallback.
-    final webProxyUrl = 'https://images.weserv.nl/?url=${Uri.encodeComponent(logoUrl)}';
-    final primaryUrl = kIsWeb ? webProxyUrl : logoUrl;
-    final fallbackUrl = kIsWeb ? logoUrl : null;
+    // 2. User typed a plain domain in the Logo URL field (e.g. 'stripe.com' or 'google.com'):
+    if (cleanLogoDomain.contains('.') && !logoUrl.startsWith('http')) {
+      return CompanyLogo(
+        domain: cleanLogoDomain,
+        size: 20,
+        isCommercialUse: false,
+        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+      );
+    }
 
-    return Image.network(
-      primaryUrl,
-      fit: BoxFit.contain,
-      errorBuilder: (ctx, err, stack) {
-        if (fallbackUrl != null) {
-          return Image.network(
-            fallbackUrl,
-            fit: BoxFit.contain,
-            errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
-          );
-        }
-        return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
-      },
-    );
+    // 3. User entered an HTTPS image URL (non-Logo.dev):
+    if (logoUrl.startsWith('https://')) {
+      final webProxyUrl = 'https://images.weserv.nl/?url=${Uri.encodeComponent(logoUrl)}';
+      final primaryUrl = kIsWeb ? webProxyUrl : logoUrl;
+      final fallbackUrl = kIsWeb ? logoUrl : null;
+
+      return Image.network(
+        primaryUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (ctx, err, stack) {
+          if (fallbackUrl != null) {
+            return Image.network(
+              fallbackUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+            );
+          }
+          return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
+        },
+      );
+    }
+
+    // 4. Logo URL is empty, check Corporate Approver Email domain:
+    final emailDomain = _extractEmailDomain(_orgApproverEmailController.text);
+    if (emailDomain.isNotEmpty) {
+      return CompanyLogo(
+        domain: emailDomain,
+        size: 20,
+        isCommercialUse: false,
+        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+      );
+    }
+
+    // 5. Logo URL is empty, check if Organization Name is or contains a domain:
+    final rawOrg = _orgNameController.text.trim();
+    final cleanOrgDomain = CompanyLogo.cleanDomain(rawOrg);
+    if (cleanOrgDomain.contains('.') && cleanOrgDomain.length > 3) {
+      return CompanyLogo(
+        domain: cleanOrgDomain,
+        size: 20,
+        isCommercialUse: false,
+        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+      );
+    }
+
+    return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
   }
 
   Widget _buildGroupSizeSection() {
