@@ -21,6 +21,13 @@ class WalletScreen extends ConsumerStatefulWidget {
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
+  final ScrollController _ledgerScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _ledgerScrollController.dispose();
+    super.dispose();
+  }
 
   void _openPricingPage() {
     AuthGuard.requireHostAuth(context, ref, () {
@@ -77,84 +84,104 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (wallet) {
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (ref.watch(currentUserProvider).value?.isRegistered != true) ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 24),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Organizer Account Required',
-                                    style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
-                                  SizedBox(height: 2),
-                                  Text(
-                                    'Guests cannot hold organizer credits or host games. Sign in with Google, Apple, or Email OTP to unlock organizer hosting & credit purchases.',
-                                    style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () => AuthDialog.show(context, isHostContext: true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.secondaryColor,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                minimumSize: Size.zero,
-                              ),
-                              child: const Text('Sign In'),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isTwoColumn = constraints.maxWidth >= 840;
 
-                    // Wallet Balance Card
-                    _buildBalanceCard(wallet),
-                    const SizedBox(height: 20),
+              final leftColumn = Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildBalanceCard(wallet),
+                  const SizedBox(height: 20),
+                  _buildPurchaseActions(),
+                  const SizedBox(height: 24),
+                  _buildPricingTiersSection(tiersState),
+                  const SizedBox(height: 24),
+                  _buildPolicyNotice(),
+                ],
+              );
 
-                    // Web Purchase & Mock Buttons
-                    _buildPurchaseActions(),
-                    const SizedBox(height: 24),
+              final rightColumn = _buildTransactionsList(isTwoColumn: isTwoColumn);
 
-                    // Pricing & Capacity Tiers
-                    _buildPricingTiersSection(tiersState),
-                    const SizedBox(height: 24),
-
-                    // Credit Validity & Policy Notice
-                    _buildPolicyNotice(),
-                    const SizedBox(height: 24),
-
-                    // Transaction Ledger
-                    _buildTransactionsList(),
-                  ],
+              return Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: isTwoColumn ? 1080 : 680),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (ref.watch(currentUserProvider).value?.isRegistered != true) ...[
+                          _buildGuestAccountWarning(),
+                          const SizedBox(height: 20),
+                        ],
+                        if (isTwoColumn)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(flex: 6, child: leftColumn),
+                              const SizedBox(width: 24),
+                              Expanded(flex: 5, child: rightColumn),
+                            ],
+                          )
+                        else ...[
+                          leftColumn,
+                          const SizedBox(height: 24),
+                          rightColumn,
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildGuestAccountWarning() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryLight.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.shield_outlined, color: AppTheme.secondaryColor, size: 24),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Organizer Account Required',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Guests cannot hold organizer credits or host games. Sign in with Google, Apple, or Email OTP to unlock organizer hosting & credit purchases.',
+                  style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => AuthDialog.show(context, isHostContext: true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              minimumSize: Size.zero,
+            ),
+            child: const Text('Sign In'),
+          ),
+        ],
       ),
     );
   }
@@ -464,60 +491,131 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     );
   }
 
-  Widget _buildTransactionsList() {
+  Widget _buildTransactionsList({required bool isTwoColumn}) {
     final txsAsync = ref.watch(creditTransactionsProvider);
 
     return txsAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
+      loading: () => Container(
+        height: isTwoColumn ? 400 : 200,
+        decoration: BoxDecoration(
+          color: AppTheme.darkCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF1E293B)),
+        ),
+        child: const Center(
           child: CircularProgressIndicator(),
         ),
       ),
       error: (err, stack) => const SizedBox(),
       data: (txs) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Credit History & Ledger', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            if (txs.isEmpty)
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: Text('No credit transactions recorded yet.')),
-                ),
-              )
-            else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: txs.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 8),
-                itemBuilder: (c, idx) {
-                  final tx = txs[idx];
-                  final isPositive = tx.amount > 0;
-                  return Card(
-                    color: AppTheme.darkSurface,
-                    child: ListTile(
-                      leading: Icon(
-                        isPositive ? Icons.add_circle : Icons.remove_circle,
-                        color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
-                      ),
-                      title: Text(tx.description ?? tx.type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text(Formatters.formatShortDate(tx.createdAt), style: const TextStyle(fontSize: 11)),
-                      trailing: Text(
-                        '${isPositive ? '+' : ''}${tx.amount} Credits',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
+        return Container(
+          decoration: BoxDecoration(
+            color: AppTheme.darkCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFF1E293B)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.receipt_long_rounded, color: AppTheme.secondaryColor, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Credit History & Ledger',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    if (txs.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
+                        ),
+                        child: Text(
+                          '${txs.length} ${txs.length == 1 ? 'entry' : 'entries'}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
                         ),
                       ),
-                    ),
-                  );
-                },
+                  ],
+                ),
               ),
-          ],
+              const Divider(height: 1, color: Color(0xFF1E293B)),
+              if (txs.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.history_toggle_off_rounded, size: 36, color: Color(0xFF64748B)),
+                        SizedBox(height: 10),
+                        Text(
+                          'No credit transactions recorded yet.',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SizedBox(
+                  height: isTwoColumn ? 680 : 380,
+                  child: Scrollbar(
+                    controller: _ledgerScrollController,
+                    thumbVisibility: true,
+                    child: ListView.separated(
+                      controller: _ledgerScrollController,
+                      padding: const EdgeInsets.all(12),
+                      itemCount: txs.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 8),
+                      itemBuilder: (c, idx) {
+                        final tx = txs[idx];
+                        final isPositive = tx.amount > 0;
+                        return Card(
+                          color: AppTheme.darkSurface,
+                          margin: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          child: ListTile(
+                            dense: true,
+                            leading: Icon(
+                              isPositive ? Icons.add_circle : Icons.remove_circle,
+                              color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                              size: 22,
+                            ),
+                            title: Text(
+                              tx.description ?? tx.type,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                            ),
+                            subtitle: Text(
+                              Formatters.formatShortDate(tx.createdAt),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            ),
+                            trailing: Text(
+                              '${isPositive ? '+' : ''}${tx.amount} Credits',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
