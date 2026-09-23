@@ -72,11 +72,70 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'SECOND_FULL_HOUSE': false,
   };
 
+  static const List<Map<String, String>> _mockWinners = [
+    {
+      'key': 'FULL_HOUSE',
+      'icon': '🏆',
+      'prize': 'Full House (Grand Prize)',
+      'avatar': '🐯',
+      'player': 'Aditya',
+      'isGrand': 'true',
+    },
+    {
+      'key': 'TOP_LINE',
+      'icon': '🥇',
+      'prize': 'Top Line',
+      'avatar': '🐻',
+      'player': 'Rohan',
+      'isGrand': 'false',
+    },
+    {
+      'key': 'MIDDLE_LINE',
+      'icon': '🥈',
+      'prize': 'Middle Line',
+      'avatar': '🦅',
+      'player': 'Maya',
+      'isGrand': 'false',
+    },
+    {
+      'key': 'BOTTOM_LINE',
+      'icon': '🥉',
+      'prize': 'Bottom Line',
+      'avatar': '🐯',
+      'player': 'Priya',
+      'isGrand': 'false',
+    },
+    {
+      'key': 'EARLY_FIVE',
+      'icon': '⚡',
+      'prize': 'Early 5 (Jaldi 5)',
+      'avatar': '🦁',
+      'player': 'Kabir',
+      'isGrand': 'false',
+    },
+    {
+      'key': 'FOUR_CORNERS',
+      'icon': '🎯',
+      'prize': 'Four Corners',
+      'avatar': '🦊',
+      'player': 'Elena',
+      'isGrand': 'false',
+    },
+    {
+      'key': 'SECOND_FULL_HOUSE',
+      'icon': '🏆',
+      'prize': '2nd Full House',
+      'avatar': '🦄',
+      'player': 'Zoya',
+      'isGrand': 'false',
+    },
+  ];
+
   @override
   void initState() {
     super.initState();
     final initialName = (List<String>.from(_suggestedNames)..shuffle()).first;
-    _nameController = TextEditingController(text: initialName);
+    _nameController = TextEditingController(text: initialName)..addListener(() => setState(() {}));
     _orgNameController = TextEditingController()..addListener(() => setState(() {}));
     _orgLogoUrlController = TextEditingController()..addListener(() => setState(() {}));
     _orgApproverEmailController = TextEditingController()..addListener(() => setState(() {}));
@@ -84,7 +143,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   void _randomizeName() {
     final nextName = (List<String>.from(_suggestedNames)..shuffle()).first;
-    _nameController.text = nextName;
+    setState(() {
+      _nameController.text = nextName;
+    });
   }
 
   @override
@@ -711,40 +772,197 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
             const SizedBox(height: 18),
 
-            // Live Card Mock Screen Visual Preview
-            _buildLiveCardMock(),
+            // Visual Verification & Live Card Mock Preview (Side-by-side on desktop/tablet to save vertical space)
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isWide = constraints.maxWidth >= 640;
+                final checkCard = _buildVisualConfirmationCard(isMatching: isMatching, isWide: isWide);
+                final mockCard = _buildLiveCardMock();
 
-            const SizedBox(height: 14),
+                if (isWide) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: checkCard,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 6,
+                        child: mockCard,
+                      ),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      mockCard,
+                      const SizedBox(height: 14),
+                      checkCard,
+                    ],
+                  );
+                }
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 
-            // Organizer Visual Confirmation Checkbox
-            Container(
+  Widget _buildVisualConfirmationCard({required bool isMatching, required bool isWide}) {
+    final approverEmail = _orgApproverEmailController.text.trim();
+    final orgName = _orgNameController.text.trim().isEmpty ? 'Your Organization' : _orgNameController.text.trim();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _orgVisualConfirmed ? AppTheme.primaryLight : const Color(0xFF2E334D),
+          width: _orgVisualConfirmed ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.fact_check_rounded, color: AppTheme.secondaryColor, size: 18),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Visual Verification & Consent',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Before dispatching the automated corporate verification email, inspect the Hall of Fame preview${isWide ? ' on the right' : ''} to confirm that the organization name, logo, and event presentation appear as intended.',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.corporate_fare_rounded, size: 14, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Organization: $orgName',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFCBD5E1)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.mark_email_read_rounded, size: 14, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        approverEmail.isEmpty ? 'Approver: Corporate email pending' : 'Approver: $approverEmail',
+                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFCBD5E1)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      isMatching ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                      size: 14,
+                      color: isMatching ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        isMatching ? 'Domain Match: Verified' : 'Domain Match: Required for dispatch',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isMatching ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: () => setState(() => _orgVisualConfirmed = !_orgVisualConfirmed),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppTheme.darkCard,
-                borderRadius: BorderRadius.circular(12),
+                color: _orgVisualConfirmed
+                    ? AppTheme.primaryLight.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.02),
+                borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: _orgVisualConfirmed ? AppTheme.primaryLight : const Color(0xFF2E334D),
+                  color: _orgVisualConfirmed ? AppTheme.primaryLight : const Color(0xFF334155),
                   width: _orgVisualConfirmed ? 1.5 : 1,
                 ),
               ),
-              child: CheckboxListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                value: _orgVisualConfirmed,
-                activeColor: AppTheme.primaryColor,
-                title: const Text(
-                  'I have visually inspected the Live Card Mock above and confirm that the organization name, logo, and domain representation are accurate.',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-                subtitle: const Padding(
-                  padding: EdgeInsets.only(top: 4),
-                  child: Text(
-                    'Verification email will only be dispatched to the corporate approver after your confirmation.',
-                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Checkbox(
+                    value: _orgVisualConfirmed,
+                    activeColor: AppTheme.primaryColor,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    onChanged: (val) => setState(() => _orgVisualConfirmed = val ?? false),
                   ),
-                ),
-                onChanged: (val) => setState(() => _orgVisualConfirmed = val ?? false),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'I have visually inspected the Live Card Mock and confirm that the organization name, logo, and domain representation are accurate.',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Verification email will only be dispatched to the corporate approver after your confirmation.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -753,158 +971,216 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget _buildLiveCardMock() {
     final orgName = _orgNameController.text.trim().isEmpty ? 'Your Organization Name' : _orgNameController.text.trim();
     final logoUrl = _orgLogoUrlController.text.trim();
-    final eventName = _nameController.text.trim().isEmpty ? 'DabHousie Game Night' : _nameController.text.trim();
+    final eventName = _nameController.text.trim().isEmpty ? 'DabHousie Fiesta 🎊' : _nameController.text.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
-            Icon(Icons.remove_red_eye_rounded, size: 16, color: AppTheme.secondaryColor),
-            SizedBox(width: 6),
-            Text(
-              'Live Event Card Mock Preview (Visual Inspection)',
+            const Icon(Icons.remove_red_eye_rounded, size: 16, color: AppTheme.secondaryColor),
+            const SizedBox(width: 6),
+            const Text(
+              'Live Event Card Mock Preview',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text('Hall of Fame Style', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
             ),
           ],
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'This is how players and public visitors will see your branded event card:',
-          style: TextStyle(fontSize: 11.5, color: Color(0xFFA0AEC0)),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
+        // The Hall of Fame Card
         Container(
-          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.darkCard,
-                AppTheme.primaryColor.withValues(alpha: 0.2),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.5)),
+            color: const Color(0xFF0F172A),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF1E293B)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Corporate Header Badge Row
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFF334155)),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _buildMockLogo(logoUrl),
+              // Rainbow top gradient bar
+              Container(
+                height: 4,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF3B82F6), Color(0xFFFFC107), Color(0xFF10B981)],
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Row: Game Title & Code Badge
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Expanded(
+                          child: Text(
+                            eventName,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Colors.white),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0x1FFFBE0B),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0x59FFBE0B)),
+                          ),
+                          child: const Text(
+                            'CA8E81',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Corporate Org Badge (if enabled)
+                    if (_enableOrgBranding) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: _buildMockLogo(logoUrl),
+                            ),
+                            const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                orgName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                'Hosted by $orgName',
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFCBD5E1)),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
                                 color: AppTheme.accentSuccess.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.5)),
+                                borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
                                 'OFFICIAL',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                                style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 1),
-                        const Text(
-                          'Verified Corporate Event • Hosted on DabHousie',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+
+                    const SizedBox(height: 12),
+
+                    // Meta Row
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
+                      children: [
+                        _buildHallOfFameMetaItem(
+                          icon: '👥',
+                          value: '$_selectedCapacity Players',
+                        ),
+                        _buildHallOfFameMetaItem(
+                          icon: '🎯',
+                          value: '68/90 Calls',
+                        ),
+                        _buildHallOfFameMetaItem(
+                          icon: '⏱️',
+                          value: '10m 55s',
                         ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              const Divider(color: Color(0xFF334155), height: 1),
-              const SizedBox(height: 12),
+                    const SizedBox(height: 6),
+                    _buildHallOfFameMetaItem(
+                      icon: '📅',
+                      value: _formatMockDate(_scheduledDateTime),
+                    ),
 
-              // Game Name & Metadata
-              Text(
-                eventName,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
-              ),
-              const SizedBox(height: 8),
+                    const SizedBox(height: 14),
+                    const Divider(color: Color(0xFF1E293B), height: 1),
+                    const SizedBox(height: 12),
 
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                children: [
-                  _buildMockChip(
-                    icon: Icons.calendar_today_rounded,
-                    label: _scheduledDateTime == null ? 'Instant Launch' : _formatDateTime(_scheduledDateTime!),
-                    color: AppTheme.secondaryColor,
-                  ),
-                  _buildMockChip(
-                    icon: Icons.people_outline_rounded,
-                    label: '$_selectedCapacity Seats',
-                    color: Colors.white,
-                  ),
-                  _buildMockChip(
-                    icon: _isPrivate ? Icons.lock_outline_rounded : Icons.public_rounded,
-                    label: _isPrivate ? 'Private OTP' : 'Open Room',
-                    color: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryLight,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Approval status disclaimer
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkSurface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF334155)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.schedule_rounded, color: AppTheme.secondaryColor, size: 14),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Approval Status: Pending approver one-click verification via ${_orgApproverEmailController.text.trim().isEmpty ? 'corporate email' : _orgApproverEmailController.text.trim()}',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-                        overflow: TextOverflow.ellipsis,
+                    // Verified Prize Winners Section Title
+                    const Text(
+                      'VERIFIED PRIZE WINNERS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.6,
+                        color: Color(0xFF60A5FA),
                       ),
                     ),
+                    const SizedBox(height: 8),
+
+                    // Winner rows mimicking Hall of Fame card
+                    ..._buildMockWinnersList(),
+
+                    if (_orgApproverEmailController.text.trim().isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkSurface,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFF334155)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.schedule_rounded, color: AppTheme.secondaryColor, size: 12),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                'Pending verification via ${_orgApproverEmailController.text.trim()}',
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFFCBD5E1)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -913,6 +1189,86 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
       ],
     );
+  }
+
+  List<Widget> _buildMockWinnersList() {
+    final activePrizes = _mockWinners.where((w) {
+      final key = w['key']!;
+      return _prizes[key] ?? false;
+    }).toList();
+
+    final listToDisplay = activePrizes.isEmpty ? _mockWinners.take(4).toList() : activePrizes;
+
+    return listToDisplay.map((winner) {
+      final isGrand = winner['isGrand'] == 'true';
+      return Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: isGrand ? const Color(0x1FFFBE0B) : const Color(0xFF131B2E),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isGrand ? const Color(0x4DFFBE0B) : const Color(0xFF1E293B),
+            width: isGrand ? 1.2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(winner['icon']!, style: const TextStyle(fontSize: 13)),
+                const SizedBox(width: 6),
+                Text(
+                  winner['prize']!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isGrand ? const Color(0xFFFCD34D) : const Color(0xFFF8FAFC),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(winner['avatar']!, style: const TextStyle(fontSize: 13)),
+                const SizedBox(width: 5),
+                Text(
+                  winner['player']!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFCBD5E1),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  Widget _buildHallOfFameMetaItem({required String icon, required String value}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(icon, style: const TextStyle(fontSize: 12)),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8), fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+  }
+
+  String _formatMockDate(DateTime? dt) {
+    final d = dt ?? DateTime.now();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
   Widget _buildMockLogo(String logoUrl) {
@@ -940,25 +1296,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         }
         return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
       },
-    );
-  }
-
-  Widget _buildMockChip({required IconData icon, required String label, required Color color}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: AppTheme.darkSurface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-        ],
-      ),
     );
   }
 
