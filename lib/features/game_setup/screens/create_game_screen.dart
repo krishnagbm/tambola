@@ -705,11 +705,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _enableOrgBranding ? AppTheme.primaryColor.withValues(alpha: 0.1) : AppTheme.darkSurface,
+        color: (!isHostPersonal && _enableOrgBranding)
+            ? AppTheme.primaryColor.withValues(alpha: 0.1)
+            : AppTheme.darkSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _enableOrgBranding ? AppTheme.primaryLight.withValues(alpha: 0.6) : const Color(0xFF2E334D),
-          width: _enableOrgBranding ? 1.5 : 1,
+          color: (!isHostPersonal && _enableOrgBranding)
+              ? AppTheme.primaryLight.withValues(alpha: 0.6)
+              : const Color(0xFF2E334D),
+          width: (!isHostPersonal && _enableOrgBranding) ? 1.5 : 1,
         ),
       ),
       child: Column(
@@ -720,94 +724,100 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _enableOrgBranding ? AppTheme.primaryColor.withValues(alpha: 0.25) : AppTheme.darkCard,
+                  color: (!isHostPersonal && _enableOrgBranding)
+                      ? AppTheme.primaryColor.withValues(alpha: 0.25)
+                      : AppTheme.darkCard,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.business_rounded,
-                  color: AppTheme.secondaryColor,
+                  color: isHostPersonal ? const Color(0xFF64748B) : AppTheme.secondaryColor,
                   size: 22,
                 ),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '🏢 Corporate / Organization Branding (Optional)',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Feature your official company logo, brand banner, and verified organization name.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-                    ),
-                  ],
-                ),
-              ),
-              Switch.adaptive(
-                value: _enableOrgBranding,
-                activeThumbColor: AppTheme.secondaryColor,
-                onChanged: (val) => setState(() {
-                  _enableOrgBranding = val;
-                  if (!val) {
-                    _orgVisualConfirmed = false;
-                  } else if (!isHostPersonal && hostEmail.isNotEmpty && _orgApproverEmailController.text.trim().isEmpty) {
-                    _orgApproverEmailController.text = hostEmail;
-                  }
-                }),
-              ),
-            ],
-          ),
-
-          if (_enableOrgBranding) ...[
-            const SizedBox(height: 16),
-            const Divider(color: Color(0xFF2E334D), height: 1),
-            const SizedBox(height: 14),
-
-            if (isHostPersonal) ...[
-              // Anti-Spam Security Gate Banner: Personal accounts cannot request corporate branding
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentDanger.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.shield_outlined, color: AppTheme.accentDanger, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Corporate Account Required for Branding',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            hostEmail.isNotEmpty
-                                ? 'You are currently signed in with a personal account ($hostEmail). To prevent spam relay and unauthorized corporate impersonation, corporate branding is strictly restricted to hosts signed in with their official corporate email address (e.g., yourname@yourcompany.com).'
-                                : 'Please sign in with your corporate email address to request official corporate branding.',
-                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'If you represent a company, please sign out and sign in using your company email before enabling branding.',
-                            style: TextStyle(fontSize: 11, color: Color(0xFFFCA5A5), fontWeight: FontWeight.w500),
+                    Row(
+                      children: [
+                        const Text(
+                          '🏢 Corporate / Org Branding',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        if (isHostPersonal) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFF334155)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_outline_rounded, size: 11, color: Color(0xFF94A3B8)),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Corporate Only',
+                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isHostPersonal
+                          ? (hostEmail.isNotEmpty
+                              ? 'Disabled for personal accounts ($hostEmail). Corporate domain login required.'
+                              : 'Feature official logo & branding. Corporate domain login required.')
+                          : 'Feature your official company logo, brand banner, and verified organization name.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isHostPersonal ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-            ] else if (isSelfApproval) ...[
+              if (isHostPersonal) ...[
+                TextButton(
+                  onPressed: () => AuthDialog.show(context, isHostContext: true),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Switch Account', style: TextStyle(fontSize: 11.5, color: AppTheme.secondaryColor)),
+                ),
+              ] else ...[
+                Switch.adaptive(
+                  value: _enableOrgBranding,
+                  activeThumbColor: AppTheme.secondaryColor,
+                  onChanged: (val) => setState(() {
+                    _enableOrgBranding = val;
+                    if (!val) {
+                      _orgVisualConfirmed = false;
+                    } else if (hostEmail.isNotEmpty && _orgApproverEmailController.text.trim().isEmpty) {
+                      _orgApproverEmailController.text = hostEmail;
+                    }
+                  }),
+                ),
+              ],
+            ],
+          ),
+
+          if (!isHostPersonal && _enableOrgBranding) ...[
+            const SizedBox(height: 16),
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            const SizedBox(height: 14),
+
+            if (isSelfApproval) ...[
               // Instant Domain-Owner Authorization
               Container(
                 padding: const EdgeInsets.all(12),

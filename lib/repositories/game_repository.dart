@@ -524,7 +524,7 @@ class GameRepository {
       try {
         final g = await getGame(gameId);
         resolvedGameName = g.name;
-        resolvedCapacity = g.plannedCapacity;
+        resolvedCapacity = g.fundedCapacity;
       } catch (_) {}
 
       final currentProfile = _supabase.auth.currentUser;
