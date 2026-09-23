@@ -150,6 +150,23 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
       actions: [
         if (showDesktopNav && screenWidth > 768) ...[
           TextButton(
+            onPressed: () {
+              if (GoRouterState.of(context).matchedLocation != '/') {
+                context.go('/');
+              }
+            },
+            child: Text(
+              'Home',
+              style: TextStyle(
+                color: GoRouterState.of(context).matchedLocation == '/'
+                    ? AppTheme.secondaryColor
+                    : const Color(0xFFCBD5E1),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
             onPressed: () => launchUrl(
               Uri.parse('${AppConfig.appBaseUrl}/how-it-works.html'),
               webOnlyWindowName: '_self',

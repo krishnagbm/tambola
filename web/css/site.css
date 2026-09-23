@@ -386,7 +386,7 @@ header.site-header {
   border-bottom: none;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 900px) {
   .nav-links {
     display: none;
   }
