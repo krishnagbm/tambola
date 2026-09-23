@@ -346,6 +346,24 @@
           >
         </div>
 
+        <div style="margin: 0 auto 20px; max-width: 320px; text-align: left;">
+          <label for="player-nickname-input" style="display: block; font-size: 13px; font-weight: 700; color: #CBD5E1; margin-bottom: 6px;">
+            🎮 Game Nickname <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(optional)</span>
+          </label>
+          <input 
+            type="text" 
+            id="player-nickname-input" 
+            placeholder="e.g. Tiger King, Lucky7, Party Animal" 
+            maxlength="25" 
+            autocomplete="nickname" 
+            spellcheck="false"
+            style="width: 100%; height: 46px; background: #0A0E17; border: 1.5px solid var(--card-border); border-radius: 12px; color: #FFFFFF; font-size: 14px; padding: 0 14px; outline: none; box-sizing: border-box; transition: border-color 0.2s;"
+          >
+          <div style="font-size: 11.5px; color: #94A3B8; margin-top: 5px; line-height: 1.4;">
+            This is shown to other players and on our public Recent Games page if you win.
+          </div>
+        </div>
+
         <button type="submit" id="join-btn" class="btn-submit-join">
           <span>Enter Game Lobby</span>
           <span>→</span>
@@ -429,6 +447,18 @@
     const input = document.getElementById('game-code-input');
     const errorEl = document.getElementById('join-error');
 
+    const nickInput = document.getElementById('player-nickname-input');
+
+    // Prefill existing saved nickname if available
+    if (nickInput) {
+      try {
+        const savedNick = localStorage.getItem('mpt_player_name');
+        if (savedNick && savedNick !== 'My Name') {
+          nickInput.value = savedNick;
+        }
+      } catch (_) {}
+    }
+
     // Auto-uppercase and strip invalid characters
     input.addEventListener('input', (e) => {
       errorEl.style.display = 'none';
@@ -451,6 +481,13 @@
         errorEl.style.display = 'block';
         input.focus();
         return;
+      }
+
+      // Save nickname to localStorage so Flutter immediately adopts it
+      if (nickInput && nickInput.value.trim()) {
+        try {
+          localStorage.setItem('mpt_player_name', nickInput.value.trim());
+        } catch (_) {}
       }
 
       // Smoothly forward into Flutter Canvas Game Room with code pre-filled

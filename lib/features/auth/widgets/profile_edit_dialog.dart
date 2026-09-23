@@ -53,22 +53,25 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
     return AlertDialog(
       backgroundColor: AppTheme.darkCard,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('Player Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Player Profile & Nickname', style: TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Choose your gameplay display name and avatar (no email or phone required).',
+              'Pick a fun game nickname and avatar character (no email or phone required).',
               style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Display Name',
-                prefixIcon: Icon(Icons.person_outline),
+                labelText: 'Game Nickname',
+                hintText: 'e.g. Tiger King, Lucky7, Party Animal',
+                helperText: 'This is shown to other players and on our public Recent Games page if you win.',
+                helperMaxLines: 2,
+                prefixIcon: Icon(Icons.sports_esports_outlined),
               ),
             ),
             const SizedBox(height: 16),

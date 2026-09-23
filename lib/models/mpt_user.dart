@@ -26,7 +26,7 @@ class MptUser {
   factory MptUser.fromJson(Map<String, dynamic> json) {
     return MptUser(
       id: json['id'] as String,
-      displayName: json['display_name'] as String? ?? 'My Name',
+      displayName: json['display_name'] as String? ?? 'Lucky Dabber',
       avatar: json['avatar'] as String? ?? 'avatar_1',
       avatarUrl: json['avatar_url'] as String?,
       email: json['email'] as String?,

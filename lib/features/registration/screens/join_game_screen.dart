@@ -124,9 +124,9 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
             children: [
-              Icon(Icons.badge_outlined, color: AppTheme.secondaryColor, size: 24),
+              Icon(Icons.sports_esports_outlined, color: AppTheme.secondaryColor, size: 24),
               SizedBox(width: 8),
-              Text('Enter Your Name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Choose Game Nickname', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -134,7 +134,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Please set your name or nickname before joining so the organizer and players can recognize you in the game room.',
+                'Pick a fun nickname for this game room! We recommend choosing a nickname rather than your real name.',
                 style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
               ),
               const SizedBox(height: 14),
@@ -143,9 +143,11 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                 controller: _nameInputController,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                  labelText: 'Your Name / Nickname',
-                  hintText: 'e.g. Bala Goparaju',
-                  prefixIcon: Icon(Icons.person),
+                  labelText: 'Game Nickname',
+                  hintText: 'e.g. Tiger King, Lucky7, Party Animal',
+                  helperText: 'This is shown to other players and on our public Recent Games page if you win.',
+                  helperMaxLines: 2,
+                  prefixIcon: Icon(Icons.sports_esports_outlined),
                 ),
               ),
             ],
@@ -465,40 +467,52 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   }
 
   Widget _buildPlayerProfileBar(MptUser user) {
-    return Card(
-      color: AppTheme.darkSurface,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              radius: 20,
-              backgroundColor: AppTheme.primaryColor,
-              child: Text('🤹', style: TextStyle(fontSize: 18)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Playing as:', style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0))),
-                  Text(
-                    user.displayName,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Card(
+          color: AppTheme.darkSurface,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppTheme.primaryColor,
+                  child: Text('🤹', style: TextStyle(fontSize: 18)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Playing as Game Nickname:', style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0))),
+                      Text(
+                        user.displayName,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                TextButton(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) => ProfileEditDialog(currentUser: user),
+                  ),
+                  child: const Text('Change'),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => ProfileEditDialog(currentUser: user),
-              ),
-              child: const Text('Change'),
-            ),
-          ],
+          ),
         ),
-      ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Text(
+            'This nickname is shown to other players and on our public Recent Games page if you win.',
+            style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+          ),
+        ),
+      ],
     );
   }
 }

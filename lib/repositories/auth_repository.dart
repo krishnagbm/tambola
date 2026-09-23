@@ -11,6 +11,20 @@ class AuthRepository {
   static const String _prefKeyAvatar = 'mpt_player_avatar';
   static const String _prefKeyLocalUuid = 'mpt_local_uuid';
 
+  static const List<String> defaultNicknames = [
+    'Lucky Dabber',
+    'Tiger King',
+    'Party Star',
+    'Speedy Housie',
+    'Golden Ticket',
+    'Housie Hero',
+    'Tambola Champ',
+  ];
+
+  static String getRandomDefaultNickname() {
+    return defaultNicknames[DateTime.now().microsecond % defaultNicknames.length];
+  }
+
   AuthRepository(this._supabase);
 
   String? get currentUserId => _supabase.auth.currentUser?.id;
@@ -110,8 +124,12 @@ class AuthRepository {
   /// Ensures an authentication session exists and syncs user profile
   Future<MptUser> initializeAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    var cachedName = prefs.getString(_prefKeyName) ?? 'My Name';
-    var cachedAvatar = prefs.getString(_prefKeyAvatar) ?? 'avatar_1';
+    var cachedName = prefs.getString(_prefKeyName);
+    if (cachedName == null || cachedName.trim().isEmpty || cachedName == 'My Name') {
+      cachedName = getRandomDefaultNickname();
+      await prefs.setString(_prefKeyName, cachedName);
+    }
+    var cachedAvatar = prefs.getString(_prefKeyAvatar) ?? 'avatar_lion';
 
     User? user = _supabase.auth.currentUser;
 
