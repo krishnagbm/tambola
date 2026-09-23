@@ -33,8 +33,8 @@
 
     let userId = params.get('user_id') || hashParams.get('user_id') || localStorage.getItem('dabhousie_user_id') || localStorage.getItem('flutter.dabhousie_user_id') || '';
     let email = params.get('email') || hashParams.get('email') || localStorage.getItem('dabhousie_user_email') || localStorage.getItem('flutter.dabhousie_user_email') || '';
-    let name = params.get('name') || hashParams.get('name') || localStorage.getItem('dabhousie_user_name') || localStorage.getItem('flutter.mpt_player_name') || '';
-    let avatar = params.get('avatar') || hashParams.get('avatar') || localStorage.getItem('dabhousie_user_avatar') || localStorage.getItem('flutter.mpt_player_avatar') || '';
+    let name = params.get('name') || hashParams.get('name') || localStorage.getItem('dabhousie_user_name') || localStorage.getItem('flutter.mpt_player_name') || localStorage.getItem('mpt_player_name') || '';
+    let avatar = params.get('avatar') || hashParams.get('avatar') || localStorage.getItem('dabhousie_user_avatar') || localStorage.getItem('flutter.mpt_player_avatar') || localStorage.getItem('mpt_player_avatar') || '';
     let balance = params.get('balance') || hashParams.get('balance') || localStorage.getItem('dabhousie_balance') || localStorage.getItem('flutter.dabhousie_balance') || '';
 
     // 2. Check Supabase token stored in localStorage if not found above
@@ -65,7 +65,7 @@
 
     // 3. Fallback: check mpt_local_uuid
     if (!userId) {
-      userId = localStorage.getItem('flutter.mpt_local_uuid') || '';
+      userId = localStorage.getItem('flutter.mpt_local_uuid') || localStorage.getItem('mpt_local_uuid') || '';
     }
 
     // 4. Cache discovered credentials so session stays consistent across pages
@@ -82,7 +82,7 @@
     const authContainer = document.getElementById('nav-auth-container');
     if (!authContainer) return;
 
-    if (session.userId || session.email) {
+    if (session.userId || session.email || session.name) {
       const avatarContent = session.avatar && (session.avatar.startsWith('http://') || session.avatar.startsWith('https://'))
         ? `<img src="${session.avatar}" alt="Avatar" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">`
         : `<span style="font-size:16px;">${getAvatarEmoji(session.avatar)}</span>`;
@@ -94,9 +94,9 @@
       authContainer.innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
           ${balanceBadge}
-          <a href="/#/wallet" class="nav-user-pill" title="View Profile & Wallet">
+          <a href="/#/profile" class="nav-user-pill" title="View Profile">
             <div class="nav-avatar-circle">${avatarContent}</div>
-            <span class="nav-user-name">${session.name || 'Organizer'}</span>
+            <span class="nav-user-name">${session.name || (session.email ? 'Organizer' : 'Player')}</span>
           </a>
         </div>
       `;
