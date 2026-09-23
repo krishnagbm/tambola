@@ -484,9 +484,11 @@ class GameRepository {
 
       if (res is Map<String, dynamic>) {
         if (res['success'] == true) {
+          final isSelfApproved = res['is_self_approved'] == true;
           final token = res['approval_token'] as String?;
-          if (token != null && token.isNotEmpty) {
-            // Trigger automated email delivery to corporate approver
+
+          // If not self-approved and token generated, dispatch private approval email to corporate lead
+          if (!isSelfApproved && token != null && token.isNotEmpty) {
             await _dispatchBrandApprovalEmail(
               gameId: gameId,
               toEmail: approverEmail,
@@ -526,6 +528,7 @@ class GameRepository {
       } catch (_) {}
 
       final currentProfile = _supabase.auth.currentUser;
+      final hostEmail = currentProfile?.email ?? '';
       final organizerName = currentProfile?.userMetadata?['name'] as String? ??
           currentProfile?.userMetadata?['display_name'] as String? ??
           'Event Organizer';
@@ -534,6 +537,7 @@ class GameRepository {
         'action': 'brand_approval',
         'type': 'brand_approval',
         'to_email': toEmail,
+        'host_email': hostEmail,
         'organization_name': organizationName,
         'organization_logo_url': organizationLogoUrl,
         'approval_token': approvalToken,

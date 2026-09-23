@@ -65,9 +65,32 @@ def handler(event, context):
             organization_logo_url = payload.get("organization_logo_url", "").strip()
             organizer_name = payload.get("organizer_name", "").strip()
             capacity = payload.get("capacity")
+            host_email = payload.get("host_email", "").strip().lower()
 
             if not organization_name or not approval_token:
                 return _r(400, {"error": "Missing organization_name or approval_token parameter"})
+
+            # Anti-Spam Gate: Validate Host Domain against Corporate Approver Domain
+            approver_domain = to_email.split("@")[-1].lower() if "@" in to_email else ""
+            host_domain = host_email.split("@")[-1].lower() if "@" in host_email else ""
+
+            BLOCKED_PERSONAL_DOMAINS = {
+                "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com", 
+                "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "mac.com", 
+                "aol.com", "zoho.com", "proton.me", "protonmail.com", "mail.com", "gmx.com"
+            }
+
+            if host_domain in BLOCKED_PERSONAL_DOMAINS:
+                return _r(403, {
+                    "success": False,
+                    "error": "Anti-Spam Protection: Corporate branding emails can only be dispatched by hosts with a verified corporate domain (e.g. you@company.com). Personal accounts (@gmail, @yahoo, etc.) cannot trigger emails to corporations."
+                })
+
+            if host_domain and approver_domain and host_domain != approver_domain:
+                return _r(403, {
+                    "success": False,
+                    "error": f"Anti-Spam Protection: Host domain (@{host_domain}) must match corporate approver domain (@{approver_domain})."
+                })
 
             success = send_brand_approval_email(
                 to_email=to_email,
@@ -77,6 +100,7 @@ def handler(event, context):
                 organization_logo_url=organization_logo_url,
                 organizer_name=organizer_name,
                 capacity=capacity,
+                host_email=host_email,
             )
 
             if success:

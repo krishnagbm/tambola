@@ -47,21 +47,35 @@ DECLARE
     v_token TEXT;
     v_approval public."MPT_brand_approvals";
     v_user_id UUID := auth.uid();
+    v_caller_email TEXT := lower(trim(COALESCE(auth.jwt() ->> 'email', '')));
+    v_is_self_approved BOOLEAN := FALSE;
 BEGIN
     -- Validate required params
     IF p_game_id IS NULL OR NULLIF(trim(p_organization_name), '') IS NULL OR NULLIF(trim(p_organization_logo_url), '') IS NULL OR NULLIF(trim(p_approver_email), '') IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', 'Organization name, logo URL, and approver email are required.');
     END IF;
 
+    -- If caller email wasn't in JWT, try admin profiles
+    IF v_caller_email = '' AND v_user_id IS NOT NULL THEN
+        SELECT lower(trim(email)) INTO v_caller_email
+        FROM public."MPT_admin_profiles"
+        WHERE user_id = v_user_id;
+    END IF;
+
+    -- Check if verified host email matches the approver email
+    IF v_caller_email IS NOT NULL AND v_caller_email <> '' AND v_caller_email = lower(trim(p_approver_email)) THEN
+        v_is_self_approved := TRUE;
+    END IF;
+
     -- Generate secure 64-char hex token using Postgres core gen_random_uuid()
     v_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
 
-    -- Update game with organization metadata (unapproved by default)
+    -- Update game with organization metadata
     UPDATE public."MPT_games"
     SET organization_name = trim(p_organization_name),
         organization_logo_url = trim(p_organization_logo_url),
         organization_logo_alt = trim(p_organization_name) || ' Logo',
-        organization_logo_approved = FALSE
+        organization_logo_approved = v_is_self_approved
     WHERE id = p_game_id;
 
     -- Invalidate any previous pending tokens for this game
@@ -69,7 +83,7 @@ BEGIN
     SET status = 'REVOKED'
     WHERE game_id = p_game_id AND status = 'PENDING';
 
-    -- Insert new approval request
+    -- Insert approval record (APPROVED if domain owner host, else PENDING)
     INSERT INTO public."MPT_brand_approvals" (
         game_id,
         organization_name,
@@ -77,6 +91,9 @@ BEGIN
         approver_email,
         approval_token,
         submitted_by,
+        status,
+        approved_at,
+        approved_ip,
         expires_at
     )
     VALUES (
@@ -86,6 +103,9 @@ BEGIN
         lower(trim(p_approver_email)),
         v_token,
         v_user_id,
+        CASE WHEN v_is_self_approved THEN 'APPROVED' ELSE 'PENDING' END,
+        CASE WHEN v_is_self_approved THEN NOW() ELSE NULL END,
+        CASE WHEN v_is_self_approved THEN 'Verified Domain Owner Host' ELSE NULL END,
         NOW() + INTERVAL '7 days'
     )
     RETURNING * INTO v_approval;
@@ -96,6 +116,8 @@ BEGIN
         'approval_token', v_approval.approval_token,
         'organization_name', v_approval.organization_name,
         'approver_email', v_approval.approver_email,
+        'is_self_approved', v_is_self_approved,
+        'status', v_approval.status,
         'expires_at', v_approval.expires_at
     );
 END;

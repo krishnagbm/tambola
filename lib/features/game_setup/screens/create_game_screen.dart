@@ -199,6 +199,31 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     }
   }
 
+  static const _personalEmailDomains = {
+    'gmail.com',
+    'yahoo.com',
+    'ymail.com',
+    'hotmail.com',
+    'outlook.com',
+    'live.com',
+    'msn.com',
+    'aol.com',
+    'icloud.com',
+    'me.com',
+    'mac.com',
+    'proton.me',
+    'protonmail.com',
+    'zoho.com',
+    'mail.com',
+    'gmx.com',
+    'yandex.com',
+    'rediffmail.com',
+  };
+
+  bool _isPersonalDomain(String domain) {
+    return _personalEmailDomains.contains(domain.toLowerCase().trim());
+  }
+
   String _extractEmailDomain(String email) {
     final parts = email.trim().split('@');
     return parts.length == 2 ? parts[1].toLowerCase().replaceFirst(RegExp(r'^www\.'), '') : '';
@@ -216,7 +241,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     if (_enableOrgBranding) {
       final orgName = _orgNameController.text.trim();
       final logoUrl = _orgLogoUrlController.text.trim();
-      final approverEmail = _orgApproverEmailController.text.trim();
+      final approverEmail = _orgApproverEmailController.text.trim().toLowerCase();
+      final hostEmail = (user.email ?? '').trim().toLowerCase();
+      final hostDomain = _extractEmailDomain(hostEmail);
+      final approverDomain = _extractEmailDomain(approverEmail);
+
+      if (hostEmail.isEmpty || _isPersonalDomain(hostDomain)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Security Gate: Corporate branding requires hosting from an official company email address, not a personal email provider.'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
 
       if (orgName.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -233,6 +271,27 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       if (!approverEmail.contains('@') || !approverEmail.contains('.')) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a valid Corporate Approver Email'), backgroundColor: AppTheme.accentDanger),
+        );
+        return;
+      }
+      if (_isPersonalDomain(approverDomain)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Security Gate: Corporate approver email cannot be a personal email address (e.g. Gmail, Yahoo).'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
+      final isHostApproverMatch = hostDomain == approverDomain ||
+          hostDomain.endsWith('.$approverDomain') ||
+          approverDomain.endsWith('.$hostDomain');
+      if (!isHostApproverMatch) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Domain Mismatch: Your host email domain (@$hostDomain) must match the approver email domain (@$approverDomain).'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
         );
         return;
       }
@@ -287,6 +346,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       );
 
       String? brandApprovalMsg;
+      bool isBrandSelfApproved = false;
       if (_enableOrgBranding) {
         final approverEmail = _orgApproverEmailController.text.trim();
         final brandRes = await gameRepo.submitBrandApproval(
@@ -295,9 +355,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           organizationLogoUrl: _orgLogoUrlController.text.trim(),
           approverEmail: approverEmail,
           gameName: game.name,
-          capacity: game.plannedCapacity,
+          capacity: game.fundedCapacity,
         );
-        if (brandRes['success'] == true) {
+        isBrandSelfApproved = brandRes['is_self_approved'] == true;
+        if (isBrandSelfApproved) {
+          brandApprovalMsg = 'Domain-Owner Verified! Official branding has been automatically approved and activated for your event.';
+        } else if (brandRes['success'] == true) {
           brandApprovalMsg = 'Authorization request successfully sent to $approverEmail. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
         } else {
           brandApprovalMsg = 'Approval record saved. (Note: ${brandRes['message'] ?? 'Check your email inbox or spam folder'}).';
@@ -305,7 +368,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       }
 
       if (!mounted) return;
-      _showSuccessDialog(game, brandApprovalMessage: brandApprovalMsg);
+      _showSuccessDialog(game, brandApprovalMessage: brandApprovalMsg, isSelfApproved: isBrandSelfApproved);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -332,7 +395,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
-  void _showSuccessDialog(MptGame game, {String? brandApprovalMessage}) {
+  void _showSuccessDialog(MptGame game, {String? brandApprovalMessage, bool isSelfApproved = false}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -405,17 +468,30 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                  color: isSelfApproved
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.15)
+                      : AppTheme.secondaryColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: isSelfApproved
+                        ? AppTheme.accentSuccess.withValues(alpha: 0.5)
+                        : AppTheme.secondaryColor.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.verified_user_rounded, color: AppTheme.accentSuccess, size: 20),
+                    Icon(
+                      isSelfApproved ? Icons.verified_user_rounded : Icons.mark_email_read_rounded,
+                      color: isSelfApproved ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '🏢 Corporate Approval: $brandApprovalMessage',
+                        isSelfApproved
+                            ? '🏢 Corporate Branding: $brandApprovalMessage'
+                            : '🏢 Corporate Approval: $brandApprovalMessage',
                         style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
                       ),
                     ),
@@ -601,19 +677,30 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildCorporateBrandingSection() {
+    final hostUser = ref.watch(currentUserProvider).value;
+    final hostEmail = (hostUser?.email ?? '').trim().toLowerCase();
+    final hostDomain = _extractEmailDomain(hostEmail);
+    final isHostPersonal = hostEmail.isEmpty || _isPersonalDomain(hostDomain);
+
     final logoUrl = _orgLogoUrlController.text.trim();
-    final approverEmail = _orgApproverEmailController.text.trim();
+    final approverEmail = _orgApproverEmailController.text.trim().toLowerCase();
     final isMatching = _isDomainMatching(logoUrl, approverEmail);
     final logoHost = _extractHost(logoUrl);
     final emailDomain = _extractEmailDomain(approverEmail);
+    final isHostApproverMatch = hostDomain.isNotEmpty &&
+        (hostDomain == emailDomain || hostDomain.endsWith('.$emailDomain') || emailDomain.endsWith('.$hostDomain'));
+    final isSelfApproval = !isHostPersonal && hostEmail.isNotEmpty && hostEmail == approverEmail;
+
     final rawOrgName = _orgNameController.text.trim();
     final suggestedDomain = emailDomain.isNotEmpty
         ? emailDomain
-        : (rawOrgName.contains('.')
-            ? CompanyLogo.cleanDomain(rawOrgName)
-            : (rawOrgName.isNotEmpty
-                ? '${rawOrgName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}.com'
-                : ''));
+        : (hostDomain.isNotEmpty && !isHostPersonal
+            ? hostDomain
+            : (rawOrgName.contains('.')
+                ? CompanyLogo.cleanDomain(rawOrgName)
+                : (rawOrgName.isNotEmpty
+                    ? '${rawOrgName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')}.com'
+                    : '')));
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -664,7 +751,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 activeThumbColor: AppTheme.secondaryColor,
                 onChanged: (val) => setState(() {
                   _enableOrgBranding = val;
-                  if (!val) _orgVisualConfirmed = false;
+                  if (!val) {
+                    _orgVisualConfirmed = false;
+                  } else if (!isHostPersonal && hostEmail.isNotEmpty && _orgApproverEmailController.text.trim().isEmpty) {
+                    _orgApproverEmailController.text = hostEmail;
+                  }
                 }),
               ),
             ],
@@ -675,39 +766,118 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             const Divider(color: Color(0xFF2E334D), height: 1),
             const SizedBox(height: 14),
 
-            // Automated Approval Notice
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.bolt_rounded, color: AppTheme.secondaryColor, size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '⚡ Automated Domain-Verified Approval (DVAA)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
-                        ),
-                        SizedBox(height: 3),
-                        Text(
-                          'No platform bottleneck! Your corporate approver will receive an automated one-click verification email. Branding activates instantly upon their confirmation.',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
-                        ),
-                      ],
+            if (isHostPersonal) ...[
+              // Anti-Spam Security Gate Banner: Personal accounts cannot request corporate branding
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentDanger.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.shield_outlined, color: AppTheme.accentDanger, size: 22),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Corporate Account Required for Branding',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            hostEmail.isNotEmpty
+                                ? 'You are currently signed in with a personal account ($hostEmail). To prevent spam relay and unauthorized corporate impersonation, corporate branding is strictly restricted to hosts signed in with their official corporate email address (e.g., yourname@yourcompany.com).'
+                                : 'Please sign in with your corporate email address to request official corporate branding.',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'If you represent a company, please sign out and sign in using your company email before enabling branding.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFFFCA5A5), fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 14),
+              const SizedBox(height: 14),
+            ] else if (isSelfApproval) ...[
+              // Instant Domain-Owner Authorization
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.verified_user_rounded, color: AppTheme.accentSuccess, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '⚡ Instant Domain-Owner Authorization (Auto-Approved)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Because you are the verified host and owner of $hostEmail, corporate branding is automatically approved and activated immediately when you create the game!',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ] else ...[
+              // Automated Approval Notice for 3rd-party approver in same domain
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.mark_email_read_rounded, color: AppTheme.secondaryColor, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '🔒 Private Corporate Approval Required',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.white),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            approverEmail.isNotEmpty
+                                ? 'A private verification link will be sent directly to $approverEmail. For security, authorization links are never displayed on the host screen.'
+                                : 'An automated verification link will be sent to the corporate approver. Approval links are private and never displayed on the host screen.',
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
 
             // Form Inputs
             TextFormField(
@@ -775,10 +945,71 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 helperMaxLines: 2,
               ),
             ),
+            if (!isHostPersonal && hostEmail.isNotEmpty && approverEmail != hostEmail) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => setState(() => _orgApproverEmailController.text = hostEmail),
+                  icon: const Icon(Icons.person_outline_rounded, size: 14, color: AppTheme.secondaryColor),
+                  label: Text(
+                    'I am the approver (use $hostEmail)',
+                    style: const TextStyle(fontSize: 11.5, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Domain Matching Status Indicator
-            if (logoUrl.isNotEmpty && approverEmail.isNotEmpty) ...[
+            if (approverEmail.isNotEmpty && _isPersonalDomain(emailDomain)) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentDanger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '❌ Invalid Domain: Corporate approver email cannot be a personal email (@$emailDomain). Must be your organization\'s official email domain.',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFFCA5A5)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (!isHostPersonal && approverEmail.isNotEmpty && !isHostApproverMatch) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentDanger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '❌ Host Domain Mismatch: Approver email domain (@$emailDomain) must match your host domain (@$hostDomain). You may only request branding for your own organization.',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFFCA5A5)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else if (logoUrl.isNotEmpty && approverEmail.isNotEmpty) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
@@ -799,7 +1030,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     Expanded(
                       child: Text(
                         isMatching
-                            ? '✅ Domain Match: Logo host ($logoHost) matches approver domain (@$emailDomain)'
+                            ? (isSelfApproval
+                                ? '✅ Domain Match: Verified for @$emailDomain (Instant Auto-Approval)'
+                                : '✅ Domain Match: Logo host ($logoHost) matches approver domain (@$emailDomain)')
                             : '❌ Domain Mismatch: Logo host ($logoHost) does not match approver email domain (@$emailDomain)',
                         style: TextStyle(
                           fontSize: 12,
@@ -840,7 +1073,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             LayoutBuilder(
               builder: (context, constraints) {
                 final isWide = constraints.maxWidth >= 640;
-                final checkCard = _buildVisualConfirmationCard(isMatching: isMatching, isWide: isWide);
+                final checkCard = _buildVisualConfirmationCard(
+                  isMatching: isMatching,
+                  isWide: isWide,
+                  isSelfApproval: isSelfApproval,
+                );
                 final mockCard = _buildLiveCardMock();
 
                 if (isWide) {
@@ -941,7 +1178,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
-  Widget _buildVisualConfirmationCard({required bool isMatching, required bool isWide}) {
+  Widget _buildVisualConfirmationCard({
+    required bool isMatching,
+    required bool isWide,
+    bool isSelfApproval = false,
+  }) {
     final approverEmail = _orgApproverEmailController.text.trim();
     final orgName = _orgNameController.text.trim().isEmpty ? 'Your Organization' : _orgNameController.text.trim();
 
@@ -980,7 +1221,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'Before dispatching the automated corporate verification email, inspect the Hall of Fame preview${isWide ? ' on the right' : ''} to confirm that the organization name, logo, and event presentation appear as intended.',
+            isSelfApproval
+                ? 'Review the Hall of Fame preview${isWide ? ' on the right' : ''} to confirm that your organization name, logo, and event presentation appear as intended. Branding activates immediately upon creation.'
+                : 'Before dispatching the automated corporate verification email, inspect the Hall of Fame preview${isWide ? ' on the right' : ''} to confirm that the organization name, logo, and event presentation appear as intended.',
             style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8), height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -1025,18 +1268,22 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 Row(
                   children: [
                     Icon(
-                      isMatching ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                      isSelfApproval
+                          ? Icons.verified_user_rounded
+                          : (isMatching ? Icons.check_circle_rounded : Icons.info_outline_rounded),
                       size: 14,
-                      color: isMatching ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                      color: (isSelfApproval || isMatching) ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        isMatching ? 'Domain Match: Verified' : 'Domain Match: Required for dispatch',
+                        isSelfApproval
+                            ? 'Domain Match: Verified (Instant Auto-Approval)'
+                            : (isMatching ? 'Domain Match: Verified' : 'Domain Match: Required for dispatch'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: isMatching ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
+                          color: (isSelfApproval || isMatching) ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
                         ),
                       ),
                     ),
@@ -1072,18 +1319,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     onChanged: (val) => setState(() => _orgVisualConfirmed = val ?? false),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'I have visually inspected the Live Card Mock and confirm that the organization name, logo, and domain representation are accurate.',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white, height: 1.3),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          'Verification email will only be dispatched to the corporate approver after your confirmation.',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                          isSelfApproval
+                              ? 'Domain-owner instant approval: Official branding will be automatically activated upon game creation.'
+                              : 'Verification email will only be dispatched to the corporate approver after your confirmation.',
+                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                         ),
                       ],
                     ),

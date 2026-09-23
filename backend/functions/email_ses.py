@@ -3,6 +3,10 @@
 # Sends automated, branded purchase receipts and notification emails
 
 import os
+import urllib.request
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
 from typing import Optional
 
 try:
@@ -442,9 +446,12 @@ def send_brand_approval_email(
     organization_logo_url: Optional[str] = None,
     organizer_name: Optional[str] = None,
     capacity: Optional[int] = None,
+    host_email: Optional[str] = None,
 ) -> bool:
     """
     Sends a rich HTML brand authorization request email to corporate approvers via AWS SES.
+    Embeds official logos as inline MIME CID attachments so Microsoft Outlook, Gmail, and
+    Apple Mail render images automatically without 'Download pictures' blocking.
     """
     if not to_email:
         print("  [ SES ] No recipient email provided for brand approval. Skipping.")
@@ -454,14 +461,50 @@ def send_brand_approval_email(
     subject = f"Action Required: Authorize Brand Logo for \"{game_name}\" 🏢"
     organizer_display = organizer_name or "Event Organizer"
     capacity_display = f"{capacity} Players" if capacity else "Team Event"
+    host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
+
+    # Track attached inline images
+    attached_cids = {}
+
+    # 1. Load DabHousie logo for inline CID embedding
+    dabhousie_logo_bytes = None
+    local_logo_path = os.path.join(os.path.dirname(__file__), "assets", "dabhousie_horizontal_logo.png")
+    if os.path.exists(local_logo_path):
+        try:
+            with open(local_logo_path, "rb") as f:
+                dabhousie_logo_bytes = f.read()
+        except Exception as e:
+            print(f"  [ SES ] Could not read local DabHousie logo: {e}")
+
+    if not dabhousie_logo_bytes:
+        try:
+            req = urllib.request.Request(f"{BASE_URL}/dabhousie_horizontal_logo.png", headers={"User-Agent": "DabHousie-SES"})
+            with urllib.request.urlopen(req, timeout=3) as resp:
+                dabhousie_logo_bytes = resp.read()
+        except Exception:
+            pass
+
+    header_logo_src = "cid:logo_dabhousie" if dabhousie_logo_bytes else f"{BASE_URL}/dabhousie_horizontal_logo.png"
+
+    # 2. Fetch Corporate Logo for inline CID embedding
+    org_logo_bytes = None
+    if organization_logo_url:
+        try:
+            req = urllib.request.Request(organization_logo_url, headers={"User-Agent": "Mozilla/5.0 (DabHousie-SES)"})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                org_logo_bytes = resp.read()
+        except Exception as e:
+            print(f"  [ SES ] Could not fetch org logo for inline CID: {e}")
+
+    org_logo_src = "cid:logo_org" if org_logo_bytes else organization_logo_url
 
     logo_preview_html = ""
-    if organization_logo_url:
+    if organization_logo_url or org_logo_bytes:
         logo_preview_html = f"""
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
           <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Submitted Corporate Logo Preview</div>
           <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-            <img src="{organization_logo_url}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
           </div>
           <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
         </div>
@@ -483,7 +526,7 @@ def send_brand_approval_email(
           <tr>
             <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
               <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
-                <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+                <img src="{header_logo_src}" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
               </a>
               <p style="margin:0 0 12px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Multiplayer Tambola &bull; Housie &bull; Bingo</p>
               <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">🏢 Corporate Brand Authorization Request</h1>
@@ -498,7 +541,7 @@ def send_brand_approval_email(
                 Hello,
               </p>
               <p style="margin:0 0 20px 0; font-size:14.5px; line-height:1.6; color:#cbd5e1;">
-                <strong>{organizer_display}</strong> has organized a DabHousie game and requested to display official corporate branding for <strong>{organization_name}</strong> on the event live card and public Hall of Fame.
+                <strong>{host_attribution}</strong> has organized a DabHousie event and requested to display official corporate branding for <strong>{organization_name}</strong> on the event live card and public Hall of Fame.
               </p>
 
               <!-- Logo Preview Box -->
@@ -518,8 +561,8 @@ def send_brand_approval_email(
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
                       </tr>
                       <tr>
-                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Organized By:</td>
-                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{organizer_display}</td>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Requested By:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
                       </tr>
                       <tr>
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Scale:</td>
@@ -534,9 +577,9 @@ def send_brand_approval_email(
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0c203a; border:1px solid #1e40af; border-left:4px solid #38bdf8; border-radius:0 10px 10px 0; margin-bottom:24px;">
                 <tr>
                   <td style="padding:14px 16px;">
-                    <div style="color:#38bdf8; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 Why You Received This:</div>
+                    <div style="color:#38bdf8; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 Domain-Verified Automated Approval (DVAA):</div>
                     <div style="color:#cbd5e1; font-size:12.5px; line-height:1.5;">
-                      DabHousie uses Domain-Verified Automated Approvals (DVAA). Your email domain matches the official corporate identity, protecting your brand from unauthorized use. The game is already playable, but official badges and logo appear publicly only upon your approval.
+                      DabHousie protects your brand identity against unauthorized use. The gameplay can proceed, but official badges and company logos appear publicly only upon your authorization.
                     </div>
                   </td>
                 </tr>
@@ -560,10 +603,11 @@ def send_brand_approval_email(
             </td>
           </tr>
 
-          <!-- Footer / Trust Badges -->
+          <!-- Footer / Trust Badges & Abuse Report -->
           <tr>
             <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
               <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Architecture</strong> &bull; Link expires automatically in 7 days.</p>
+              <p style="margin:0 0 6px 0;">Don't recognize this event? <a href="{approval_url}" target="_blank" style="color:#f87171; text-decoration:underline;">Decline Request</a></p>
               <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
             </td>
           </tr>
@@ -579,7 +623,7 @@ def send_brand_approval_email(
 
 Organization: {organization_name}
 Event Name: {game_name}
-Organized By: {organizer_display}
+Requested By: {host_attribution}
 Scale: {capacity_display}
 
 {organizer_display} has scheduled this event and requested official corporate branding.
@@ -600,6 +644,44 @@ DabHousie - www.dabhousie.com
 
     try:
         ses_client = boto3.client("ses", region_name=SES_REGION)
+
+        # Prefer raw email with inline MIME attachments for perfect Outlook rendering
+        if dabhousie_logo_bytes or org_logo_bytes:
+            try:
+                msg_root = MIMEMultipart("related")
+                msg_root["Subject"] = subject
+                msg_root["From"] = f"DabHousie <{FROM_EMAIL}>"
+                msg_root["To"] = to_email
+
+                msg_alt = MIMEMultipart("alternative")
+                msg_root.attach(msg_alt)
+
+                msg_alt.attach(MIMEText(text_content, "plain", "utf-8"))
+                msg_alt.attach(MIMEText(html_content, "html", "utf-8"))
+
+                if dabhousie_logo_bytes:
+                    img_dab = MIMEImage(dabhousie_logo_bytes, "png")
+                    img_dab.add_header("Content-ID", "<logo_dabhousie>")
+                    img_dab.add_header("Content-Disposition", "inline", filename="dabhousie_logo.png")
+                    msg_root.attach(img_dab)
+
+                if org_logo_bytes:
+                    img_org = MIMEImage(org_logo_bytes)
+                    img_org.add_header("Content-ID", "<logo_org>")
+                    img_org.add_header("Content-Disposition", "inline", filename="org_logo.png")
+                    msg_root.attach(img_org)
+
+                ses_client.send_raw_email(
+                    Source=f"DabHousie <{FROM_EMAIL}>",
+                    Destinations=[to_email],
+                    RawMessage={"Data": msg_root.as_string()},
+                )
+                print(f"  [ SES ] Brand approval email (raw MIME CID) successfully sent to {to_email}")
+                return True
+            except Exception as e_raw:
+                print(f"  [ SES WARNING ] Raw MIME dispatch failed, falling back to standard send_email: {e_raw}")
+
+        # Fallback to standard SES send_email
         ses_client.send_email(
             Source=f"DabHousie <{FROM_EMAIL}>",
             Destination={"ToAddresses": [to_email]},
@@ -616,5 +698,6 @@ DabHousie - www.dabhousie.com
     except Exception as e:
         print(f"  [ SES ERROR ] Failed to send brand approval email: {e}")
         return False
+
 
 

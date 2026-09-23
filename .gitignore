@@ -26,6 +26,7 @@ docs/secrets
 test/multiplayerTestOutputs
 tests/multiplayer/.auth_cache.json
 *.auth_cache.json
+supabase/.temp/
 
 
 # IntelliJ related
