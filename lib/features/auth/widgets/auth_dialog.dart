@@ -399,7 +399,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                       ),
                     ),
                   ),
-                  subtitle: 'To host a corporate party, sign in with your work email & 6-digit OTP',
+                  subtitle: 'To host a corporate party,\nsign in with your work email & 6-digit OTP',
                   isLoading: _isLoading && _loadingProvider == 'email',
                   onTap: () {
                     setState(() {
