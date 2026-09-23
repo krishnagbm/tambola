@@ -53,8 +53,8 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Organization name, logo URL, and approver email are required.');
     END IF;
 
-    -- Generate secure 48-char hex token
-    v_token := encode(gen_random_bytes(24), 'hex');
+    -- Generate secure 64-char hex token using Postgres core gen_random_uuid()
+    v_token := replace(gen_random_uuid()::text, '-', '') || replace(gen_random_uuid()::text, '-', '');
 
     -- Update game with organization metadata (unapproved by default)
     UPDATE public."MPT_games"
@@ -216,3 +216,7 @@ BEGIN
     );
 END;
 $$;
+
+GRANT EXECUTE ON FUNCTION public."MPT_submit_brand_approval"(UUID, TEXT, TEXT, TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public."MPT_get_brand_approval_preview"(TEXT) TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public."MPT_verify_and_approve_brand"(TEXT, TEXT, TEXT) TO authenticated, anon;

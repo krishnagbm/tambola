@@ -12,7 +12,7 @@ except ImportError:
     boto3 = None
     ClientError = Exception
 
-SES_REGION = os.getenv("AWS_SES_REGION", os.getenv("AWS_REGION", "us-east-1"))
+SES_REGION = os.getenv("AWS_SES_REGION", os.getenv("AWS_REGION", "us-east-2"))
 FROM_EMAIL = os.getenv("SES_FROM_EMAIL", os.getenv("SUPPORT_EMAIL", "receipts@dabhousie.com"))
 BASE_URL = os.getenv("BASE_URL", "https://www.dabhousie.com")
 
@@ -432,4 +432,189 @@ Support: {FROM_EMAIL}
     except Exception as e:
         print(f"  [ SES ERROR ] Failed to send private party OTPs email: {e}")
         return False
+
+
+def send_brand_approval_email(
+    to_email: str,
+    organization_name: str,
+    game_name: str,
+    approval_token: str,
+    organization_logo_url: Optional[str] = None,
+    organizer_name: Optional[str] = None,
+    capacity: Optional[int] = None,
+) -> bool:
+    """
+    Sends a rich HTML brand authorization request email to corporate approvers via AWS SES.
+    """
+    if not to_email:
+        print("  [ SES ] No recipient email provided for brand approval. Skipping.")
+        return False
+
+    approval_url = f"{BASE_URL}/brand-approval.html?token={approval_token}"
+    subject = f"Action Required: Authorize Brand Logo for \"{game_name}\" 🏢"
+    organizer_display = organizer_name or "Event Organizer"
+    capacity_display = f"{capacity} Players" if capacity else "Team Event"
+
+    logo_preview_html = ""
+    if organization_logo_url:
+        logo_preview_html = f"""
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
+          <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Submitted Corporate Logo Preview</div>
+          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+            <img src="{organization_logo_url}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+          </div>
+          <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
+        </div>
+        """
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Corporate Brand Authorization - {game_name}</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <!-- Header with Official DabHousie Logo -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 12px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Multiplayer Tambola &bull; Housie &bull; Bingo</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">🏢 Corporate Brand Authorization Request</h1>
+              <p style="margin:6px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
+
+          <!-- Main Content Body -->
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 16px 0; font-size:15px; line-height:1.6; color:#e2e8f0;">
+                Hello,
+              </p>
+              <p style="margin:0 0 20px 0; font-size:14.5px; line-height:1.6; color:#cbd5e1;">
+                <strong>{organizer_display}</strong> has organized a DabHousie game and requested to display official corporate branding for <strong>{organization_name}</strong> on the event live card and public Hall of Fame.
+              </p>
+
+              <!-- Logo Preview Box -->
+              {logo_preview_html}
+
+              <!-- Event Details Grid -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Organization:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{organization_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Organized By:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{organizer_display}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Scale:</td>
+                        <td style="padding:6px 0; color:#38bdf8; font-size:13.5px; font-weight:700;" align="right">{capacity_display}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Trust Callout -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0c203a; border:1px solid #1e40af; border-left:4px solid #38bdf8; border-radius:0 10px 10px 0; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <div style="color:#38bdf8; font-size:13.5px; font-weight:700; margin-bottom:4px;">🔒 Why You Received This:</div>
+                    <div style="color:#cbd5e1; font-size:12.5px; line-height:1.5;">
+                      DabHousie uses Domain-Verified Automated Approvals (DVAA). Your email domain matches the official corporate identity, protecting your brand from unauthorized use. The game is already playable, but official badges and logo appear publicly only upon your approval.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Bulletproof CTA Button -->
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:20px auto 0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:10px; border:1px solid #d97706; padding:0;">
+                    <a href="{approval_url}" target="_blank" style="background-color:#f59e0b; color:#0f172a !important; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:15px 36px; border-radius:10px; line-height:1.2; letter-spacing:0.3px;">
+                      Authorize Corporate Branding &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0 0; text-align:center; font-size:12px; color:#64748b;">
+                Or paste this secure link into your browser:<br>
+                <a href="{approval_url}" target="_blank" style="color:#38bdf8; font-size:11.5px; word-break:break-all;">{approval_url}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer / Trust Badges -->
+          <tr>
+            <td style="padding:22px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              <p style="margin:0 0 6px 0; color:#cbd5e1; font-weight:600;">🛡️ <strong>Zero-PII Architecture</strong> &bull; Link expires automatically in 7 days.</p>
+              <p style="margin:0;">DabHousie &bull; <a href="{BASE_URL}" target="_blank" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a> &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Corporate Brand Authorization Request for "{game_name}"
+
+Organization: {organization_name}
+Event Name: {game_name}
+Organized By: {organizer_display}
+Scale: {capacity_display}
+
+{organizer_display} has scheduled this event and requested official corporate branding.
+To review and authorize display of your brand logo on the event card and public Hall of Fame, please open:
+
+{approval_url}
+
+This secure authorization link expires in 7 days.
+If you did not request this, you may safely decline or ignore this email.
+
+Support: {FROM_EMAIL}
+DabHousie - www.dabhousie.com
+"""
+
+    if boto3 is None:
+        print(f"  [ SES (Dev / Log Mode) ] Brand approval email simulated to {to_email} for '{organization_name}'.")
+        return True
+
+    try:
+        ses_client = boto3.client("ses", region_name=SES_REGION)
+        ses_client.send_email(
+            Source=f"DabHousie <{FROM_EMAIL}>",
+            Destination={"ToAddresses": [to_email]},
+            Message={
+                "Subject": {"Data": subject, "Charset": "UTF-8"},
+                "Body": {
+                    "Html": {"Data": html_content, "Charset": "UTF-8"},
+                    "Text": {"Data": text_content, "Charset": "UTF-8"},
+                },
+            },
+        )
+        print(f"  [ SES ] Brand approval email successfully sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"  [ SES ERROR ] Failed to send brand approval email: {e}")
+        return False
+
 

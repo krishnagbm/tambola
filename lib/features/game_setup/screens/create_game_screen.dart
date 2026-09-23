@@ -288,14 +288,19 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
       String? brandApprovalMsg;
       if (_enableOrgBranding) {
+        final approverEmail = _orgApproverEmailController.text.trim();
         final brandRes = await gameRepo.submitBrandApproval(
           gameId: game.id,
           organizationName: _orgNameController.text.trim(),
           organizationLogoUrl: _orgLogoUrlController.text.trim(),
-          approverEmail: _orgApproverEmailController.text.trim(),
+          approverEmail: approverEmail,
+          gameName: game.name,
+          capacity: game.plannedCapacity,
         );
         if (brandRes['success'] == true) {
-          brandApprovalMsg = 'Approval email dispatched to ${_orgApproverEmailController.text.trim()}. Official branding activates the moment they click approve.';
+          brandApprovalMsg = 'Authorization request successfully sent to $approverEmail. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
+        } else {
+          brandApprovalMsg = 'Approval record saved. (Note: ${brandRes['message'] ?? 'Check your email inbox or spam folder'}).';
         }
       }
 

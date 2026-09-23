@@ -130,6 +130,16 @@ Resources:
           Properties:
             Path: /email/private-party
             Method: options
+        BrandApprovalPost:
+          Type: Api
+          Properties:
+            Path: /email/brand-approval
+            Method: post
+        BrandApprovalOptions:
+          Type: Api
+          Properties:
+            Path: /email/brand-approval
+            Method: options
 
 Outputs:
   CheckoutApiEndpoint:
@@ -141,3 +151,6 @@ Outputs:
   EmailApiEndpoint:
     Description: 'API Gateway endpoint URL for Private Party Email Dispatch'
     Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/private-party'
+  BrandApprovalApiEndpoint:
+    Description: 'API Gateway endpoint URL for Brand Approval Email Dispatch'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/brand-approval'
