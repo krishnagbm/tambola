@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -810,13 +811,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       border: Border.all(color: const Color(0xFF334155)),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: logoUrl.isNotEmpty && logoUrl.startsWith('https://')
-                        ? Image.network(
-                            logoUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (ctx, err, stack) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
-                          )
-                        : Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+                    child: _buildMockLogo(logoUrl),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -917,6 +912,34 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMockLogo(String logoUrl) {
+    if (logoUrl.isEmpty || !logoUrl.startsWith('https://')) {
+      return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
+    }
+
+    // On Flutter Web, CanvasKit/Skia WebGL engine strictly enforces CORS (Access-Control-Allow-Origin).
+    // Many corporate websites do not send CORS headers for static images.
+    // For the in-browser mock preview, we route via a CORS proxy with automatic fallback.
+    final webProxyUrl = 'https://images.weserv.nl/?url=${Uri.encodeComponent(logoUrl)}';
+    final primaryUrl = kIsWeb ? webProxyUrl : logoUrl;
+    final fallbackUrl = kIsWeb ? logoUrl : null;
+
+    return Image.network(
+      primaryUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (ctx, err, stack) {
+        if (fallbackUrl != null) {
+          return Image.network(
+            fallbackUrl,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+          );
+        }
+        return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
+      },
     );
   }
 
