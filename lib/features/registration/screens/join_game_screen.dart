@@ -167,7 +167,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             children: [
               Icon(Icons.sports_esports_outlined, color: AppTheme.secondaryColor, size: 24),
               SizedBox(width: 8),
-              Text('Choose Game Nickname', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Your Nickname in this Game', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             ],
           ),
           content: Column(
@@ -186,7 +186,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                 controller: _nameInputController,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                  labelText: 'Game Nickname',
+                  labelText: 'Your Nickname in this Game',
                   hintText: 'e.g. Tiger King, Lucky7, Party Animal',
                   helperText: 'This is shown to other players and on our public Recent Games page if you win.',
                   helperMaxLines: 2,
@@ -538,7 +538,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Playing as Game Nickname:', style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0))),
+                      const Text('Your Nickname in this Game:', style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0))),
                       Text(
                         user.displayName,
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
@@ -563,7 +563,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Text(
-            'This nickname is shown to other players and on our public Recent Games page if you win. Auto-generated nicknames may repeat—use your creativity if you don\'t want your own name shown.',
+            'This nickname is shown to other players and on our public Recent Games page if you win. You can use a different nickname in each new game!',
             style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
           ),
         ),

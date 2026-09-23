@@ -58,21 +58,21 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
     return AlertDialog(
       backgroundColor: AppTheme.darkCard,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text('Player Profile & Nickname', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Your Nickname & Profile', style: TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Pick a fun game nickname and avatar character (no email or phone required).',
+              'Pick a fun nickname for this game and an avatar character (no email or phone required).',
               style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Game Nickname',
+                labelText: 'Your Nickname in this Game',
                 hintText: 'e.g. Tiger King, Lucky7, Party Animal',
                 helperText: 'This is shown to other players and on our public Recent Games page if you win.',
                 helperMaxLines: 2,
@@ -94,7 +94,7 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Duplicate nicknames may occur with auto-generated names. If you don\'t want your own name shown, feel free to use your creativity to pick a unique nickname!',
+                      'Duplicate nicknames may occur with auto-generated names. If you don\'t want your own name shown, feel free to use your creativity to pick a unique nickname for this game!',
                       style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1), height: 1.3),
                     ),
                   ),
