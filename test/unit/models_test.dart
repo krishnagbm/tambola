@@ -4,9 +4,21 @@ import 'package:tambola/models/mpt_registration.dart';
 import 'package:tambola/models/mpt_reward.dart';
 import 'package:tambola/models/mpt_user.dart';
 import 'package:tambola/models/mpt_wallet.dart';
+import 'package:tambola/repositories/auth_repository.dart';
 
 void main() {
   group('Model Serialization & Logic', () {
+    test('AuthRepository 625 nickname generator and randomness', () {
+      expect(AuthRepository.nicknameAdjectives.length, 25);
+      expect(AuthRepository.nicknameNouns.length, 25);
+      expect(AuthRepository.defaultNicknames.length, 625);
+      expect(AuthRepository.defaultNicknames.toSet().length, 625);
+
+      final sample = AuthRepository.getRandomDefaultNickname();
+      expect(sample, isNotEmpty);
+      expect(sample.contains(' '), isTrue);
+      expect(AuthRepository.defaultNicknames.contains(sample), isTrue);
+    });
     test('MptUser serialization and registration status', () {
       final anonymousUser = MptUser(
         id: 'u-123',

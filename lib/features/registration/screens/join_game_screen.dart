@@ -134,7 +134,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Pick a fun nickname for this game room! We recommend choosing a nickname rather than your real name.',
+                'Pick a fun nickname for this game room! Duplicate nicknames may occur with auto-generated names—feel free to use your creativity if you don\'t want your own name shown.',
                 style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
               ),
               const SizedBox(height: 14),
@@ -508,7 +508,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Text(
-            'This nickname is shown to other players and on our public Recent Games page if you win.',
+            'This nickname is shown to other players and on our public Recent Games page if you win. Auto-generated nicknames may repeat—use your creativity if you don\'t want your own name shown.',
             style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
           ),
         ),

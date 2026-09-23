@@ -74,6 +74,28 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
                 prefixIcon: Icon(Icons.sports_esports_outlined),
               ),
             ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0x1A3B82F6),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0x333B82F6)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: Color(0xFF60A5FA)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Duplicate nicknames may occur with auto-generated names. If you don\'t want your own name shown, feel free to use your creativity to pick a unique nickname!',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1), height: 1.3),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             const Text('Choose Avatar Character', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),

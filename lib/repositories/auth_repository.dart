@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,18 +12,34 @@ class AuthRepository {
   static const String _prefKeyAvatar = 'mpt_player_avatar';
   static const String _prefKeyLocalUuid = 'mpt_local_uuid';
 
-  static const List<String> defaultNicknames = [
-    'Lucky Dabber',
-    'Tiger King',
-    'Party Star',
-    'Speedy Housie',
-    'Golden Ticket',
-    'Housie Hero',
-    'Tambola Champ',
+  static const List<String> nicknameAdjectives = [
+    'Lucky', 'Speedy', 'Cosmic', 'Super', 'Golden',
+    'Mighty', 'Bouncing', 'Jolly', 'Epic', 'Dapper',
+    'Turbo', 'Happy', 'Swift', 'Neon', 'Royal',
+    'Sparkly', 'Groovy', 'Cheery', 'Flashy', 'Magic',
+    'Clever', 'Brave', 'Sunny', 'Zippy', 'Merry',
+  ];
+
+  static const List<String> nicknameNouns = [
+    'Dabber', 'Tiger', 'Housie', 'Star', 'Caller',
+    'Champ', 'Ticket', 'Striker', 'Ranger', 'Panda',
+    'Wizard', 'Falcon', 'Hero', 'Knight', 'Ninja',
+    'Rocket', 'Dancer', 'Gamer', 'Whiz', 'Player',
+    'Cheetah', 'Captain', 'Phoenix', 'Master', 'Winner',
+  ];
+
+  /// List of all 625 default nickname combinations (25 adjectives x 25 nouns)
+  static final List<String> defaultNicknames = [
+    for (final adj in nicknameAdjectives)
+      for (final noun in nicknameNouns)
+        '$adj $noun',
   ];
 
   static String getRandomDefaultNickname() {
-    return defaultNicknames[DateTime.now().microsecond % defaultNicknames.length];
+    final rand = math.Random();
+    final adj = nicknameAdjectives[rand.nextInt(nicknameAdjectives.length)];
+    final noun = nicknameNouns[rand.nextInt(nicknameNouns.length)];
+    return '$adj $noun';
   }
 
   AuthRepository(this._supabase);
