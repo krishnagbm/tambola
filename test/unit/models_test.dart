@@ -19,6 +19,35 @@ void main() {
       expect(sample.contains(' '), isTrue);
       expect(AuthRepository.defaultNicknames.contains(sample), isTrue);
     });
+
+    test('AuthRepository getUniqueNicknameForSession excludes taken names', () {
+      final allNames = AuthRepository.defaultNicknames;
+
+      // 1. Exclude a specific name
+      final takenSingle = {'lucky dabber'};
+      for (int i = 0; i < 50; i++) {
+        final nick = AuthRepository.getUniqueNicknameForSession(takenSingle);
+        expect(nick.toLowerCase(), isNot('lucky dabber'));
+      }
+
+      // 2. Room with 250 taken names (max game room capacity)
+      final taken250 = allNames.take(250).map((n) => n.toLowerCase()).toSet();
+      final picked250 = AuthRepository.getUniqueNicknameForSession(taken250);
+      expect(taken250.contains(picked250.toLowerCase()), isFalse);
+      expect(allNames.contains(picked250), isTrue);
+
+      // 3. Room with all but 1 name taken
+      final onlyAvailable = allNames.last;
+      final takenAllExceptOne = allNames.take(allNames.length - 1).map((n) => n.toLowerCase()).toSet();
+      final pickedLast = AuthRepository.getUniqueNicknameForSession(takenAllExceptOne);
+      expect(pickedLast, onlyAvailable);
+
+      // 4. Room where all 625 names are taken (fallback to numeric suffix)
+      final takenAll = allNames.map((n) => n.toLowerCase()).toSet();
+      final fallbackNick = AuthRepository.getUniqueNicknameForSession(takenAll);
+      expect(fallbackNick, isNotEmpty);
+      expect(fallbackNick.split(' ').length, 3); // e.g. "Cosmic Dabber 412"
+    });
     test('MptUser serialization and registration status', () {
       final anonymousUser = MptUser(
         id: 'u-123',

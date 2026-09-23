@@ -274,6 +274,23 @@ class GameRepository {
     }
   }
 
+  /// Fetches the set of taken lowercased display names for a game session
+  Future<Set<String>> getSessionTakenNicknames(String gameId) async {
+    try {
+      final res = await _supabase
+          .from('MPT_game_registrations')
+          .select('display_name')
+          .eq('game_id', gameId);
+
+      return (res as List)
+          .map((e) => (e['display_name'] as String? ?? '').trim().toLowerCase())
+          .where((name) => name.isNotEmpty)
+          .toSet();
+    } catch (_) {
+      return {};
+    }
+  }
+
   /// Smart Polling stream for live game state changes (2s interval, 0 WebSocket connections)
   Stream<MptGame> watchGame(String gameId) async* {
     while (true) {

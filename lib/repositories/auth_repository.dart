@@ -42,6 +42,26 @@ class AuthRepository {
     return '$adj $noun';
   }
 
+  /// Picks a nickname from the 625 combinations that is NOT in [takenNames] for that session.
+  /// If all 625 combinations are taken in an extreme session, appends a random number.
+  static String getUniqueNicknameForSession(Iterable<String> takenNames) {
+    final lowerTaken = takenNames.map((s) => s.trim().toLowerCase()).toSet();
+    final available = defaultNicknames
+        .where((nick) => !lowerTaken.contains(nick.trim().toLowerCase()))
+        .toList();
+
+    if (available.isNotEmpty) {
+      final rand = math.Random();
+      return available[rand.nextInt(available.length)];
+    }
+
+    // Fallback if all 625 combinations are taken in a room:
+    final rand = math.Random();
+    final base = getRandomDefaultNickname();
+    final num = rand.nextInt(900) + 100;
+    return '$base $num';
+  }
+
   AuthRepository(this._supabase);
 
   String? get currentUserId => _supabase.auth.currentUser?.id;

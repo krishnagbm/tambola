@@ -6,8 +6,13 @@ import '../../../providers/app_providers.dart';
 
 class ProfileEditDialog extends ConsumerStatefulWidget {
   final MptUser currentUser;
+  final Set<String>? takenNames;
 
-  const ProfileEditDialog({super.key, required this.currentUser});
+  const ProfileEditDialog({
+    super.key,
+    required this.currentUser,
+    this.takenNames,
+  });
 
   @override
   ConsumerState<ProfileEditDialog> createState() => _ProfileEditDialogState();
@@ -169,6 +174,15 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
           onPressed: () async {
             final name = _nameController.text.trim();
             if (name.isNotEmpty) {
+              if (widget.takenNames != null && widget.takenNames!.contains(name.toLowerCase())) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('"$name" is already in use in this game room. Please choose another nickname.'),
+                    backgroundColor: AppTheme.accentDanger,
+                  ),
+                );
+                return;
+              }
               await ref.read(currentUserProvider.notifier).updateProfile(
                     displayName: name,
                     avatar: _selectedAvatar,

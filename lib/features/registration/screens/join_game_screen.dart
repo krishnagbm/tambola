@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
+import '../../../repositories/auth_repository.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 
@@ -24,6 +25,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
   final TextEditingController _otpController = TextEditingController();
   final TextEditingController _nameInputController = TextEditingController();
   MptGame? _previewGame;
+  Set<String> _sessionTakenNicknames = {};
   bool _isSearching = false;
   bool _isRegistering = false;
   String? _errorMessage;
@@ -70,7 +72,36 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
           _previewGame = null;
         });
       } else {
-        setState(() => _previewGame = game);
+        final gameRepo = ref.read(gameRepositoryProvider);
+        final takenNames = await gameRepo.getSessionTakenNicknames(game.id);
+
+        final user = ref.read(currentUserProvider).value;
+        if (user != null) {
+          final curName = user.displayName.trim();
+          final lowerCurName = curName.toLowerCase();
+          final isTaken = takenNames.contains(lowerCurName);
+          final isDefault = lowerCurName == 'my name' ||
+              lowerCurName == 'player' ||
+              lowerCurName == 'guest' ||
+              curName.isEmpty;
+
+          // If current nickname was already taken by a registered player in this session
+          // or is a blank/legacy default, automatically pick an unused nickname from the 625 base!
+          if (isTaken || isDefault) {
+            final uniqueNick = AuthRepository.getUniqueNicknameForSession(takenNames);
+            await ref.read(currentUserProvider.notifier).updateProfile(
+              displayName: uniqueNick,
+              avatar: user.avatar,
+            );
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _previewGame = game;
+            _sessionTakenNicknames = takenNames;
+          });
+        }
       }
     } catch (e) {
       setState(() => _errorMessage = 'Error finding game: $e');
@@ -111,11 +142,21 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
     String effectiveDisplayName = user.displayName;
     String effectiveAvatar = user.avatar;
 
-    // Check mandatory name before registering if still default 'My Name'
+    // Fresh check of session-taken nicknames right before registration to avoid race conditions
+    final gameRepo = ref.read(gameRepositoryProvider);
+    final freshTaken = await gameRepo.getSessionTakenNicknames(_previewGame!.id);
+
     final trimmedName = user.displayName.trim();
     final lowerName = trimmedName.toLowerCase();
-    if (trimmedName.isEmpty || lowerName == 'my name' || lowerName == 'player' || lowerName == 'guest') {
-      _nameInputController.text = '';
+    final isCollision = freshTaken.contains(lowerName);
+    final isInvalid = trimmedName.isEmpty || lowerName == 'my name' || lowerName == 'player' || lowerName == 'guest';
+
+    if (isCollision || isInvalid) {
+      // Pick a unique unused nickname from the 625 base
+      final suggestedUnique = AuthRepository.getUniqueNicknameForSession(freshTaken);
+      _nameInputController.text = suggestedUnique;
+
+      if (!mounted) return;
       final updatedName = await showDialog<String>(
         context: context,
         barrierDismissible: false,
@@ -133,9 +174,11 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Pick a fun nickname for this game room! Duplicate nicknames may occur with auto-generated names—feel free to use your creativity if you don\'t want your own name shown.',
-                style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+              Text(
+                isCollision
+                    ? 'The nickname "$trimmedName" is already in use by another player in this game room. We selected an unused one from the room pool, or you can enter your own unique alias!'
+                    : 'Pick a fun nickname for this game room! Duplicate nicknames may occur with auto-generated names—feel free to use your creativity if you don\'t want your own name shown.',
+                style: const TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -161,6 +204,15 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
               onPressed: () async {
                 final newName = _nameInputController.text.trim();
                 if (newName.isNotEmpty && newName.toLowerCase() != 'my name') {
+                  if (freshTaken.contains(newName.toLowerCase())) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('"$newName" is already in use in this session. Please pick another one.'),
+                        backgroundColor: AppTheme.accentDanger,
+                      ),
+                    );
+                    return;
+                  }
                   await ref.read(currentUserProvider.notifier).updateProfile(
                         displayName: newName,
                         avatar: user.avatar,
@@ -497,7 +549,10 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                 TextButton(
                   onPressed: () => showDialog(
                     context: context,
-                    builder: (_) => ProfileEditDialog(currentUser: user),
+                    builder: (_) => ProfileEditDialog(
+                      currentUser: user,
+                      takenNames: _sessionTakenNicknames,
+                    ),
                   ),
                   child: const Text('Change'),
                 ),
