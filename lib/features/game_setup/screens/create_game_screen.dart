@@ -4,13 +4,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
+import '../../../core/widgets/company_logo.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
+import '../../../repositories/auth_repository.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
@@ -72,64 +75,70 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'SECOND_FULL_HOUSE': false,
   };
 
-  static const List<Map<String, String>> _mockWinners = [
-    {
-      'key': 'FULL_HOUSE',
-      'icon': '🏆',
-      'prize': 'Full House (Grand Prize)',
-      'avatar': '🐯',
-      'player': 'Aditya',
-      'isGrand': 'true',
-    },
-    {
-      'key': 'TOP_LINE',
-      'icon': '🥇',
-      'prize': 'Top Line',
-      'avatar': '🐻',
-      'player': 'Rohan',
-      'isGrand': 'false',
-    },
-    {
-      'key': 'MIDDLE_LINE',
-      'icon': '🥈',
-      'prize': 'Middle Line',
-      'avatar': '🦅',
-      'player': 'Maya',
-      'isGrand': 'false',
-    },
-    {
-      'key': 'BOTTOM_LINE',
-      'icon': '🥉',
-      'prize': 'Bottom Line',
-      'avatar': '🐯',
-      'player': 'Priya',
-      'isGrand': 'false',
-    },
-    {
-      'key': 'EARLY_FIVE',
-      'icon': '⚡',
-      'prize': 'Early 5 (Jaldi 5)',
-      'avatar': '🦁',
-      'player': 'Kabir',
-      'isGrand': 'false',
-    },
-    {
-      'key': 'FOUR_CORNERS',
-      'icon': '🎯',
-      'prize': 'Four Corners',
-      'avatar': '🦊',
-      'player': 'Elena',
-      'isGrand': 'false',
-    },
-    {
-      'key': 'SECOND_FULL_HOUSE',
-      'icon': '🏆',
-      'prize': '2nd Full House',
-      'avatar': '🦄',
-      'player': 'Zoya',
-      'isGrand': 'false',
-    },
-  ];
+  late final List<Map<String, String>> _mockWinners;
+
+  void _shuffleMockWinners() {
+    final shuffledNicknames = List<String>.from(AuthRepository.defaultNicknames)..shuffle();
+    const sampleAvatars = ['🐯', '🐻', '🦅', '🦁', '🦊', '🦄', '🐼', '🧙'];
+    _mockWinners = [
+      {
+        'key': 'FULL_HOUSE',
+        'icon': '🏆',
+        'prize': 'Full House (Grand Prize)',
+        'avatar': sampleAvatars[0],
+        'player': shuffledNicknames[0],
+        'isGrand': 'true',
+      },
+      {
+        'key': 'TOP_LINE',
+        'icon': '🥇',
+        'prize': 'Top Line',
+        'avatar': sampleAvatars[1],
+        'player': shuffledNicknames[1],
+        'isGrand': 'false',
+      },
+      {
+        'key': 'MIDDLE_LINE',
+        'icon': '🥈',
+        'prize': 'Middle Line',
+        'avatar': sampleAvatars[2],
+        'player': shuffledNicknames[2],
+        'isGrand': 'false',
+      },
+      {
+        'key': 'BOTTOM_LINE',
+        'icon': '🥉',
+        'prize': 'Bottom Line',
+        'avatar': sampleAvatars[3],
+        'player': shuffledNicknames[3],
+        'isGrand': 'false',
+      },
+      {
+        'key': 'EARLY_FIVE',
+        'icon': '⚡',
+        'prize': 'Early 5 (Jaldi 5)',
+        'avatar': sampleAvatars[4],
+        'player': shuffledNicknames[4],
+        'isGrand': 'false',
+      },
+      {
+        'key': 'FOUR_CORNERS',
+        'icon': '🎯',
+        'prize': 'Four Corners',
+        'avatar': sampleAvatars[5],
+        'player': shuffledNicknames[5],
+        'isGrand': 'false',
+      },
+      {
+        'key': 'SECOND_FULL_HOUSE',
+        'icon': '🏆',
+        'prize': '2nd Full House',
+        'avatar': sampleAvatars[6],
+        'player': shuffledNicknames[6],
+        'isGrand': 'false',
+      },
+    ];
+  }
 
   @override
   void initState() {
@@ -139,12 +148,17 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     _orgNameController = TextEditingController()..addListener(() => setState(() {}));
     _orgLogoUrlController = TextEditingController()..addListener(() => setState(() {}));
     _orgApproverEmailController = TextEditingController()..addListener(() => setState(() {}));
+    _shuffleMockWinners();
   }
 
   void _randomizeName() {
     final nextName = (List<String>.from(_suggestedNames)..shuffle()).first;
+    final shuffledNicknames = List<String>.from(AuthRepository.defaultNicknames)..shuffle();
     setState(() {
       _nameController.text = nextName;
+      for (var i = 0; i < _mockWinners.length && i < shuffledNicknames.length; i++) {
+        _mockWinners[i]['player'] = shuffledNicknames[i];
+      }
     });
   }
 
@@ -160,11 +174,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   bool _isDomainMatching(String logoUrl, String email) {
     if (logoUrl.isEmpty || email.isEmpty) return false;
     try {
-      final uri = Uri.parse(logoUrl.trim());
-      final logoHost = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
-      final emailParts = email.trim().split('@');
-      if (emailParts.length != 2) return false;
-      final emailDomain = emailParts[1].toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      final logoHost = _extractHost(logoUrl);
+      final emailDomain = _extractEmailDomain(email);
       if (logoHost.isEmpty || emailDomain.isEmpty) return false;
       return logoHost == emailDomain || logoHost.endsWith('.$emailDomain') || emailDomain.endsWith('.$logoHost');
     } catch (_) {
@@ -174,7 +185,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   String _extractHost(String url) {
     try {
-      return Uri.parse(url.trim()).host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      final uri = Uri.parse(url.trim());
+      final host = uri.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+      if (host == 'img.logo.dev' || host == 'logo.dev') {
+        final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+        if (segments.isNotEmpty) {
+          return segments.first.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+        }
+      }
+      return host;
     } catch (_) {
       return '';
     }
@@ -694,10 +713,34 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 labelText: 'Official Logo URL (HTTPS)',
                 hintText: 'e.g. https://www.acme.com/assets/logo.png',
                 prefixIcon: Icon(Icons.link_rounded),
-                helperText: 'Must be hosted on your corporate website domain via HTTPS (Zero file uploads).',
+                helperText: 'Must be hosted on your corporate website domain via HTTPS (or auto-fetch via Logo.dev).',
                 helperMaxLines: 2,
               ),
             ),
+            if (emailDomain.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    final logoUrl = CompanyLogo.buildLogoUrl(domain: emailDomain, size: 128);
+                    setState(() {
+                      _orgLogoUrlController.text = logoUrl;
+                    });
+                  },
+                  icon: const Icon(Icons.auto_awesome, size: 14, color: AppTheme.secondaryColor),
+                  label: Text(
+                    'Auto-fetch official logo for $emailDomain (via Logo.dev)',
+                    style: const TextStyle(fontSize: 11.5, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             TextFormField(
@@ -1181,6 +1224,38 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         ),
                       ),
                     ],
+
+                    if (_enableOrgBranding && (logoUrl.contains('logo.dev') || (logoUrl.isEmpty && _extractEmailDomain(_orgApproverEmailController.text).isNotEmpty))) ...[
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: InkWell(
+                          onTap: () async {
+                            final uri = Uri.parse('https://logo.dev');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Logos provided by ',
+                                style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                              ),
+                              Text(
+                                'Logo.dev',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  color: Color(0xFF94A3B8),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1273,7 +1348,24 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildMockLogo(String logoUrl) {
     if (logoUrl.isEmpty || !logoUrl.startsWith('https://')) {
+      final emailDomain = _extractEmailDomain(_orgApproverEmailController.text);
+      if (emailDomain.isNotEmpty) {
+        return CompanyLogo(
+          domain: emailDomain,
+          size: 20,
+          isCommercialUse: false,
+          fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+        );
+      }
       return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
+    }
+
+    if (logoUrl.contains('img.logo.dev') || logoUrl.contains('logo.dev')) {
+      return Image.network(
+        logoUrl,
+        fit: BoxFit.contain,
+        errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+      );
     }
 
     // On Flutter Web, CanvasKit/Skia WebGL engine strictly enforces CORS (Access-Control-Allow-Origin).

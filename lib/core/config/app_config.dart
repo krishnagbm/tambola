@@ -10,6 +10,7 @@ class AppConfig {
   static late final bool purchaseEnabled;
   static late final String environment;
   static late final bool enableMockCredits;
+  static String logoDevPublishableKey = '';
 
   static Future<void> initialize() async {
     try {
@@ -41,6 +42,7 @@ class AppConfig {
     environment = _value('APP_ENVIRONMENT', 'development');
     enableMockCredits =
         _value('ENABLE_MOCK_CREDITS', 'false').toLowerCase() == 'true';
+    logoDevPublishableKey = _value('LOGO_DEV_PUBLISHABLE_KEY', '');
   }
 
   static String _value(String name, String fallback) {
@@ -55,6 +57,9 @@ class AppConfig {
       'APP_ENVIRONMENT' => const String.fromEnvironment('APP_ENVIRONMENT'),
       'ENABLE_MOCK_CREDITS' => const String.fromEnvironment(
         'ENABLE_MOCK_CREDITS',
+      ),
+      'LOGO_DEV_PUBLISHABLE_KEY' => const String.fromEnvironment(
+        'LOGO_DEV_PUBLISHABLE_KEY',
       ),
       _ => '',
     };
