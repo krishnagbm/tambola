@@ -296,7 +296,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                     : _authStep == _AuthStep.emailInput
                         ? 'Enter your work or personal email address. We will send a secure 6-digit passcode directly to your inbox.'
                         : widget.isHostContext
-                            ? 'Hosting live DabHousie parties, scheduling games, and managing room seats requires an authenticated account.'
+                            ? 'Sign in with Google or Apple for personal parties. To host for your organization with official branding, sign in with your company work email via Email (OTP).'
                             : 'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
                 style: const TextStyle(fontSize: 13, color: Color(0xFFCBD5E1), height: 1.4),
               ),
@@ -383,7 +383,23 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                 _buildOAuthButton(
                   icon: const Icon(Icons.email_outlined, color: AppTheme.secondaryColor, size: 22),
                   title: 'Email (OTP Code)',
-                  subtitle: 'Sign in with your email & 6-digit passcode',
+                  badge: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                    ),
+                    child: const Text(
+                      '🏢 Work & Corporate',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                  subtitle: 'To host a corporate party, sign in with your work email & 6-digit OTP',
                   isLoading: _isLoading && _loadingProvider == 'email',
                   onTap: () {
                     setState(() {
@@ -398,6 +414,28 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
               // STEP 2: EMAIL INPUT
               // ========================================================
               if (_authStep == _AuthStep.emailInput) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.business_rounded, color: AppTheme.secondaryColor, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '🏢 Hosting for your company? Enter your official company email (e.g. name@yourcompany.com) to automatically unlock company branding & verified Hall of Fame badges.',
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
                 TextField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -730,6 +768,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     required String subtitle,
     required bool isLoading,
     required VoidCallback? onTap,
+    Widget? badge,
   }) {
     return Material(
       color: const Color(0xFF0F172A),
@@ -765,24 +804,33 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        if (badge != null) ...[
+                          const SizedBox(width: 8),
+                          badge,
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF94A3B8),
                         fontWeight: FontWeight.w400,
+                        height: 1.25,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
