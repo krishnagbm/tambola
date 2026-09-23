@@ -740,6 +740,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 4),
+              const Padding(
+                padding: EdgeInsets.only(left: 4),
+                child: Text(
+                  '💡 Commercial projects on the free Community plan require a visible Logo.dev link. Personal projects do not require attribution.',
+                  style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), height: 1.3),
+                ),
+              ),
             ],
             const SizedBox(height: 12),
 
@@ -848,6 +856,71 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   );
                 }
               },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Footnote: Logo.dev Attribution Terms & Guidelines
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2E334D)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.info_outline_rounded, size: 16, color: AppTheme.secondaryColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Logo Attribution Policy',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        RichText(
+                          text: TextSpan(
+                            style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8), height: 1.45),
+                            children: [
+                              const TextSpan(
+                                text: 'Commercial projects utilizing logos on the free Logo.dev Community plan require a visible attribution link (automatically embedded in public Live Event Cards & Hall of Fame results). Personal projects and private parties do not require attribution. ',
+                              ),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: InkWell(
+                                  onTap: () async {
+                                    final uri = Uri.parse('https://logo.dev');
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  child: const Text(
+                                    'Learn more at Logo.dev',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppTheme.secondaryColor,
+                                      decoration: TextDecoration.underline,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -1225,7 +1298,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       ),
                     ],
 
-                    if (_enableOrgBranding && (logoUrl.contains('logo.dev') || (logoUrl.isEmpty && _extractEmailDomain(_orgApproverEmailController.text).isNotEmpty))) ...[
+                    if (_enableOrgBranding && !_isPrivate && (logoUrl.contains('logo.dev') || (logoUrl.isEmpty && _extractEmailDomain(_orgApproverEmailController.text).isNotEmpty))) ...[
                       const SizedBox(height: 8),
                       Align(
                         alignment: Alignment.centerRight,
