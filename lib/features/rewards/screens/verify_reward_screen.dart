@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../providers/app_providers.dart';
 
@@ -51,55 +52,66 @@ class _VerifyRewardScreenState extends ConsumerState<VerifyRewardScreen> {
         badgeText: 'Verify Prize',
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Enter the voucher code shown on the winner’s phone:',
-              style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
-            ),
-            const SizedBox(height: 14),
-            Row(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _codeController,
-                    textCapitalization: TextCapitalization.characters,
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. MPT-REW-7K9Q-X4M2',
-                      prefixIcon: Icon(Icons.qr_code),
-                    ),
-                  ),
+                const Text(
+                  'Enter the voucher code shown on the winner’s phone:',
+                  style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: _isVerifying ? null : _handleVerify,
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
-                  child: _isVerifying
-                      ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Verify'),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _codeController,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. MPT-REW-7K9Q-X4M2',
+                          prefixIcon: Icon(Icons.qr_code),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: _isVerifying ? null : _handleVerify,
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
+                      child: _isVerifying
+                          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Verify'),
+                    ),
+                  ],
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentDanger.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppTheme.accentDanger),
+                    ),
+                    child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.accentDanger)),
+                  ),
+                ],
+                if (_verificationResult != null) ...[
+                  const SizedBox(height: 24),
+                  _buildResultCard(_verificationResult!),
+                ],
+                const SizedBox(height: 28),
+                const AdBannerSlot(
+                  slotId: 'DAB-VERIFY-REWARD-01',
+                  title: 'Sponsored Partner',
+                  subtitle: 'Host live multiplayer Tambola & Housie with DabHousie',
                 ),
               ],
             ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentDanger.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.accentDanger),
-                ),
-                child: Text(_errorMessage!, style: const TextStyle(color: AppTheme.accentDanger)),
-              ),
-            ],
-            if (_verificationResult != null) ...[
-              const SizedBox(height: 24),
-              _buildResultCard(_verificationResult!),
-            ],
-          ],
+          ),
         ),
       ),
     );

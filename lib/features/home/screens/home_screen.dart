@@ -21,6 +21,7 @@ import '../widgets/how_it_works_section.dart';
 import '../widgets/opening_screen.dart';
 import '../widgets/perfect_for_chips_section.dart';
 import '../widgets/usp_grid_section.dart';
+import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -38,11 +39,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _organizerFilter = 'ACTIVE';
   bool _isSigningIn = false;
   String? _loadingProvider;
+  final ScrollController _playerGamesScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _currentTabIndex = widget.initialTabIndex;
+  }
+
+  @override
+  void dispose() {
+    _playerGamesScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -828,8 +836,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 if (filtered.isEmpty) {
                   return Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFF1E293B)),
+                    ),
                     child: Column(
                       children: [
                         const Icon(Icons.confirmation_number_outlined, size: 36, color: Color(0xFF4A5568)),
@@ -846,164 +859,187 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   );
                 }
 
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (ctx, idx) {
-                    final reg = filtered[idx];
-                    final gameData = reg['game'] as Map<String, dynamic>? ?? {};
-                    final gameId = (reg['game_id'] ?? '').toString();
-                    final gameName = (gameData['name'] ?? 'DabHousie Game').toString();
-                    final inviteCode = (gameData['invite_code'] ?? '').toString();
-                    final gameStatus = (gameData['status'] ?? 'OPEN').toString();
-                    final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
+                return Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCard,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 380),
+                    child: Scrollbar(
+                      controller: _playerGamesScrollController,
+                      thumbVisibility: true,
+                      child: ListView.separated(
+                        controller: _playerGamesScrollController,
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(10),
+                        itemCount: filtered.length,
+                        separatorBuilder: (ctx, i) => const SizedBox(height: 8),
+                        itemBuilder: (ctx, idx) {
+                          final reg = filtered[idx];
+                          final gameData = reg['game'] as Map<String, dynamic>? ?? {};
+                          final gameId = (reg['game_id'] ?? '').toString();
+                          final gameName = (gameData['name'] ?? 'DabHousie Game').toString();
+                          final inviteCode = (gameData['invite_code'] ?? '').toString();
+                          final gameStatus = (gameData['status'] ?? 'OPEN').toString();
+                          final seatStatus = (reg['seat_status'] ?? 'CONFIRMED').toString();
 
-                    final isLiveOrPending = _isLiveOrPendingGame(gameData);
-                    final isLive = gameStatus == 'IN_PROGRESS' && isLiveOrPending;
-                    final isCompleted = gameStatus == 'COMPLETED' || !isLiveOrPending;
-                    final isCancelled = gameStatus == 'CANCELLED';
-                    final isConfirmed = seatStatus == 'CONFIRMED' || seatStatus == 'ELIGIBLE';
+                          final isLiveOrPending = _isLiveOrPendingGame(gameData);
+                          final isLive = gameStatus == 'IN_PROGRESS' && isLiveOrPending;
+                          final isCompleted = gameStatus == 'COMPLETED' || !isLiveOrPending;
+                          final isCancelled = gameStatus == 'CANCELLED';
+                          final isConfirmed = seatStatus == 'CONFIRMED' || seatStatus == 'ELIGIBLE';
 
-                    return Card(
-                      color: AppTheme.darkSurface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(
-                          color: isLive
-                              ? AppTheme.accentSuccess
-                              : isCancelled
-                                  ? AppTheme.accentDanger.withOpacity(0.5)
-                                  : isCompleted
-                                      ? const Color(0xFF3B4163)
-                                      : const Color(0xFF2E334D),
-                          width: isLive ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          return Card(
+                            color: AppTheme.darkSurface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: isLive
+                                    ? AppTheme.accentSuccess
+                                    : isCancelled
+                                        ? AppTheme.accentDanger.withOpacity(0.5)
+                                        : isCompleted
+                                            ? const Color(0xFF3B4163)
+                                            : const Color(0xFF2E334D),
+                                width: isLive ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          gameName,
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      if (inviteCode.isNotEmpty) ...[
-                                        const SizedBox(width: 6),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
-                                          ),
-                                          child: Text(
-                                            'Code: $inviteCode',
-                                            style: const TextStyle(
-                                              fontSize: 10.5,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.secondaryColor,
-                                              letterSpacing: 0.5,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                gameName,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
-                                          ),
+                                            if (inviteCode.isNotEmpty) ...[
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                                                ),
+                                                child: Text(
+                                                  'Code: $inviteCode',
+                                                  style: const TextStyle(
+                                                    fontSize: 10.5,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: AppTheme.secondaryColor,
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: isLive
+                                                    ? AppTheme.accentSuccess.withOpacity(0.2)
+                                                    : isCancelled
+                                                        ? AppTheme.accentDanger.withOpacity(0.2)
+                                                        : isCompleted
+                                                            ? const Color(0xFF718096).withOpacity(0.2)
+                                                            : Colors.black26,
+                                                borderRadius: BorderRadius.circular(5),
+                                              ),
+                                              child: Text(
+                                                isLive
+                                                    ? '🟢 LIVE'
+                                                    : isCancelled
+                                                        ? '🚫 CANCELLED'
+                                                        : isCompleted
+                                                            ? '🏁 COMPLETED'
+                                                            : isConfirmed
+                                                                ? '⏳ LOBBY OPEN'
+                                                                : '⏳ WAITING',
+                                                style: TextStyle(
+                                                  fontSize: 9.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isLive
+                                                      ? AppTheme.accentSuccess
+                                                      : isCancelled
+                                                          ? AppTheme.accentDanger
+                                                          : isCompleted
+                                                              ? const Color(0xFFA0AEC0)
+                                                              : isConfirmed
+                                                                  ? AppTheme.primaryLight
+                                                                  : AppTheme.accentWarning,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text('Seq #${reg['registration_seq'] ?? 1}', style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
+                                          ],
                                         ),
                                       ],
-                                    ],
+                                    ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: isLive
-                                              ? AppTheme.accentSuccess.withOpacity(0.2)
-                                              : isCancelled
-                                                  ? AppTheme.accentDanger.withOpacity(0.2)
-                                                  : isCompleted
-                                                      ? const Color(0xFF718096).withOpacity(0.2)
-                                                      : Colors.black26,
-                                          borderRadius: BorderRadius.circular(5),
-                                        ),
-                                        child: Text(
-                                          isLive
-                                              ? '🟢 LIVE'
-                                              : isCancelled
-                                                  ? '🚫 CANCELLED'
-                                                  : isCompleted
-                                                      ? '🏁 COMPLETED'
-                                                      : isConfirmed
-                                                          ? '⏳ LOBBY OPEN'
-                                                          : '⏳ WAITING',
-                                          style: TextStyle(
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: isLive
-                                                ? AppTheme.accentSuccess
-                                                : isCancelled
-                                                    ? AppTheme.accentDanger
-                                                    : isCompleted
-                                                        ? const Color(0xFFA0AEC0)
-                                                        : isConfirmed
-                                                            ? AppTheme.primaryLight
-                                                            : AppTheme.accentWarning,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text('Seq #${reg['registration_seq'] ?? 1}', style: const TextStyle(fontSize: 10.5, color: Color(0xFFA0AEC0))),
-                                    ],
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (isLive || isCompleted) {
+                                        context.push('/play/$gameId');
+                                      } else {
+                                        context.push('/game-status/$gameId');
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: isLive
+                                          ? AppTheme.accentSuccess
+                                          : (isCompleted || isCancelled)
+                                              ? const Color(0xFF2E334D)
+                                              : AppTheme.primaryColor,
+                                      foregroundColor: (isCompleted || isCancelled) ? AppTheme.secondaryColor : Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                      textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                    ),
+                                    child: Text(
+                                      isLive
+                                          ? 'Play Ticket'
+                                          : isCancelled
+                                              ? 'Cancelled'
+                                              : isCompleted
+                                                  ? 'View Results'
+                                                  : 'Enter Lobby',
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            ElevatedButton(
-                              onPressed: () {
-                                if (isLive || isCompleted) {
-                                  context.push('/play/$gameId');
-                                } else {
-                                  context.push('/game-status/$gameId');
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isLive
-                                    ? AppTheme.accentSuccess
-                                    : (isCompleted || isCancelled)
-                                        ? const Color(0xFF2E334D)
-                                        : AppTheme.primaryColor,
-                                foregroundColor: (isCompleted || isCancelled) ? AppTheme.secondaryColor : Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                                textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                              ),
-                              child: Text(
-                                isLive
-                                    ? 'Play Ticket'
-                                    : isCancelled
-                                        ? 'Cancelled'
-                                        : isCompleted
-                                            ? 'View Results'
-                                            : 'Enter Lobby',
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
+            ),
+            const SizedBox(height: 14),
+
+            // AdSense Banner Slot right after history container
+            const AdBannerSlot(
+              slotId: 'DAB-PLAYER-TAB-01',
+              title: 'Sponsored Partner',
+              subtitle: 'Free live multiplayer with instant verification',
             ),
             const SizedBox(height: 16),
           ],
