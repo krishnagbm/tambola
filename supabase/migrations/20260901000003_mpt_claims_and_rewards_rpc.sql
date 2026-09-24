@@ -154,8 +154,8 @@ BEGIN
     )
     RETURNING * INTO v_claim;
 
-    -- Generate unique server verifiable reference code (e.g. MPT-REW-8F3K-2B9D)
-    v_claim_ref := 'MPT-REW-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT) FROM 1 FOR 4))
+    -- Generate unique server verifiable reference code (e.g. Dab-Housie-8F3K-2B9D)
+    v_claim_ref := 'Dab-Housie-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT || CLOCK_TIMESTAMP()::TEXT) FROM 1 FOR 4))
                   || '-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT || v_claim.id::TEXT) FROM 1 FOR 4));
 
     -- Insert into MPT_rewards

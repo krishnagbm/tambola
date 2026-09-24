@@ -272,7 +272,7 @@ BEGIN
         )
         VALUES (
             v_claim_id, v_uid, p_game_id, p_prize_type, p_prize_type || ' Winner',
-            'DAB-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8)),
+            'Dab-Housie-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8)),
             NOW() + INTERVAL '30 days'
         )
         ON CONFLICT (claim_id) DO NOTHING;
@@ -281,7 +281,7 @@ BEGIN
             'claim_id', v_claim_id,
             'status', 'APPROVED',
             'prize_type', p_prize_type,
-            'claim_reference', 'DAB-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8))
+            'claim_reference', 'Dab-Housie-' || UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8))
         );
     ELSE
         INSERT INTO public."MPT_claims" (

@@ -156,8 +156,37 @@ class GameplayRepository {
         'p_marked_numbers': markedNumbers,
         'p_idempotency_key': idempotencyKey,
       });
-      return res as Map<String, dynamic>;
+      final resultMap = Map<String, dynamic>.from(res as Map);
+
+      // Defensive guarantee: if claim was APPROVED, ensure reward row exists in MPT_rewards
+      if (resultMap['status'] == 'APPROVED') {
+        final uid = _supabase.auth.currentUser?.id;
+        final claimId = resultMap['claim_id'] as String?;
+        final claimRef = resultMap['claim_reference'] as String?;
+        if (uid != null && claimRef != null && claimRef.isNotEmpty) {
+          try {
+            final existingReward = await _supabase
+                .from('MPT_rewards')
+                .select('id')
+                .eq('claim_reference', claimRef)
+                .maybeSingle();
+            if (existingReward == null) {
+              await _supabase.from('MPT_rewards').insert({
+                'game_id': gameId,
+                'user_id': uid,
+                'prize_type': prizeType,
+                'claim_id': claimId,
+                'claim_reference': claimRef,
+                'status': 'AVAILABLE_TO_CLAIM',
+              });
+            }
+          } catch (_) {}
+        }
+      }
+
+      return resultMap;
     } catch (e) {
+      debugPrint('MPT_submit_claim RPC fallback triggered: $e');
       // Direct table claim fallback if RPC is offline
       final uid = _supabase.auth.currentUser?.id;
       final called = await getCalledNumbers(gameId);
@@ -188,15 +217,21 @@ class GameplayRepository {
         };
       }
 
-      // Record approved claim
-      final claimRef = 'Dab-Housie-${DateTime.now().millisecondsSinceEpoch % 100000}';
-      final claimRes = await _supabase.from('MPT_claims').insert({
-        'game_id': gameId,
-        'user_id': uid,
-        'prize_type': prizeType,
-        'status': 'APPROVED',
-        'marked_numbers': markedNumbers,
-      }).select().maybeSingle();
+      // Record approved claim with canonical Dab-Housie-XXXX-XXXX format
+      final rawHex = const Uuid().v4().replaceAll('-', '').toUpperCase();
+      final claimRef =
+          'Dab-Housie-${rawHex.substring(0, 4)}-${rawHex.substring(4, 8)}';
+      final claimRes = await _supabase
+          .from('MPT_claims')
+          .insert({
+            'game_id': gameId,
+            'user_id': uid,
+            'prize_type': prizeType,
+            'status': 'APPROVED',
+            'marked_numbers': markedNumbers,
+          })
+          .select()
+          .maybeSingle();
 
       try {
         await _supabase.from('MPT_rewards').insert({
@@ -207,7 +242,9 @@ class GameplayRepository {
           'claim_reference': claimRef,
           'status': 'AVAILABLE_TO_CLAIM',
         });
-      } catch (_) {}
+      } catch (rewardErr) {
+        debugPrint('Fallback MPT_rewards insert failed: $rewardErr');
+      }
 
       return {
         'status': 'APPROVED',
