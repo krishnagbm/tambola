@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
@@ -18,7 +19,7 @@ class RewardsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: DabHousieAppBar(
-        badgeText: 'Rewards',
+        badgeText: 'My Rewards',
         showBackButton: true,
         showRewards: false,
         onRefresh: () => ref.invalidate(myRewardsProvider),
@@ -41,12 +42,16 @@ class RewardsScreen extends ConsumerWidget {
                         const SizedBox(height: 16),
                         const Text('No rewards won yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
-                        const Text('Join games and claim winning patterns to win prizes!', style: TextStyle(color: Color(0xFFA0AEC0))),
+                        const Text(
+                          'Join games and claim winning patterns to win prizes!',
+                          style: TextStyle(color: Color(0xFFA0AEC0)),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 32),
                         const AdBannerSlot(
                           slotId: 'DAB-REWARDS-EMPTY-01',
                           title: 'Sponsored Partner',
-                          subtitle: 'Play live with family & friends â€¢ Instant prize claims',
+                          subtitle: 'Play live with family & friends • Instant prize claims',
                         ),
                       ],
                     ),
@@ -57,34 +62,10 @@ class RewardsScreen extends ConsumerWidget {
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppTheme.secondaryColor.withOpacity(0.4)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline, color: AppTheme.secondaryColor, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Rewards Claim Notice: Prizes must be claimed directly from your game organizer by presenting your voucher reference or QR code. DabHousie is a gameplay platform and is not responsible for physical or monetary prize distributions.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.amber.shade200,
-                              height: 1.4,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildDisclaimerBanner(),
+                  const SizedBox(height: 16),
                   ...rewards.map((reward) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: 14),
                         child: _buildRewardCard(context, reward),
                       )),
                   const SizedBox(height: 12),
@@ -102,9 +83,63 @@ class RewardsScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildDisclaimerBanner() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7C3AED).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF7C3AED).withOpacity(0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.gavel_rounded, color: Color(0xFFBB86FC), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Prize Claim Notice',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFBB86FC),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '• Prizes must be claimed directly from your game organizer — not from DabHousie.\n'
+            '• Show your QR code or voucher reference to the organizer to receive your prize.\n'
+            '• DabHousie is a gameplay platform only and is not responsible for prize distribution, monetary payouts, or physical rewards.',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.amber.shade200,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRewardCard(BuildContext context, MptReward reward) {
     final isAvailable = reward.isAvailable;
+    final dateStr = reward.gameDate != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(reward.gameDate!.toLocal())
+        : null;
+
     return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isAvailable
+              ? AppTheme.accentSuccess.withOpacity(0.5)
+              : const Color(0xFF2E334D),
+          width: 1.2,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -131,9 +166,9 @@ class RewardsScreen extends ConsumerWidget {
                     border: Border.all(color: isAvailable ? AppTheme.accentSuccess : const Color(0xFF2E334D)),
                   ),
                   child: Text(
-                    isAvailable ? 'AVAILABLE TO CLAIM' : 'CLAIMED',
+                    isAvailable ? 'CLAIM FROM ORGANIZER' : 'CLAIMED',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: isAvailable ? AppTheme.accentSuccess : const Color(0xFFA0AEC0),
                     ),
@@ -141,18 +176,50 @@ class RewardsScreen extends ConsumerWidget {
                 ),
               ],
             ),
+
             const Divider(color: Color(0xFF2E334D), height: 20),
-            const Text('Verification Reference Code:', style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0))),
+
+            if (reward.gameName != null || reward.inviteCode != null) ...[
+              _buildInfoRow(Icons.celebration_rounded, 'Game', reward.gameName ?? '—'),
+              if (reward.inviteCode != null) ...[
+                const SizedBox(height: 6),
+                _buildInfoRow(Icons.tag_rounded, 'Game Code', reward.inviteCode!),
+              ],
+              if (dateStr != null) ...[
+                const SizedBox(height: 6),
+                _buildInfoRow(Icons.calendar_today_rounded, 'Played on', dateStr),
+              ],
+              const SizedBox(height: 6),
+              _buildInfoRow(
+                Icons.person_pin_rounded,
+                'Organizer',
+                reward.organizerName ?? 'Your Game Host',
+              ),
+              const Divider(color: Color(0xFF2E334D), height: 20),
+            ],
+
+            const Text(
+              'Voucher Reference Code:',
+              style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+            ),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                SelectableText(
-                  reward.claimReference,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppTheme.secondaryColor),
+                Flexible(
+                  child: SelectableText(
+                    reward.claimReference,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.4,
+                      color: AppTheme.secondaryColor,
+                    ),
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy, size: 18, color: AppTheme.primaryLight),
+                  tooltip: 'Copy voucher code',
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: reward.claimReference));
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -163,6 +230,7 @@ class RewardsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 12),
+
             Center(
               child: Container(
                 padding: const EdgeInsets.all(8),
@@ -173,19 +241,55 @@ class RewardsScreen extends ConsumerWidget {
                 child: QrImageView(
                   data: reward.claimReference,
                   version: QrVersions.auto,
-                  size: 110.0,
+                  size: 120.0,
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              'Show this QR or verification code to your Game Admin to receive your prize.',
-              style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-              textAlign: TextAlign.center,
+
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF2E334D)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Color(0xFFA0AEC0)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Show this QR or code to ${reward.organizerName ?? 'your game organizer'} to collect your prize.',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF64748B)),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
     );
   }
 }

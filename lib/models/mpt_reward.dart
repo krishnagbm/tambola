@@ -1,4 +1,4 @@
-﻿class MptReward {
+class MptReward {
   final String id;
   final String gameId;
   final String userId;
@@ -9,6 +9,12 @@
   final String? verifiedByAdminId;
   final DateTime? claimedAt;
   final DateTime createdAt;
+
+  // Enriched game & organizer context (joined from MPT_games / MPT_users)
+  final String? gameName;
+  final String? inviteCode;
+  final DateTime? gameDate;
+  final String? organizerName;
 
   MptReward({
     required this.id,
@@ -21,12 +27,27 @@
     this.verifiedByAdminId,
     this.claimedAt,
     required this.createdAt,
+    this.gameName,
+    this.inviteCode,
+    this.gameDate,
+    this.organizerName,
   });
 
   bool get isAvailable => status == 'AVAILABLE_TO_CLAIM';
   bool get isClaimed => status == 'CLAIMED';
 
   factory MptReward.fromJson(Map<String, dynamic> json) {
+    // Game context may be nested under a 'MPT_games' key (Supabase join)
+    final gameMap = json['MPT_games'] as Map<String, dynamic>?;
+    // Organizer name may be nested under 'MPT_users' inside the game map
+    final organizerMap = gameMap?['MPT_users'] as Map<String, dynamic>?;
+
+    DateTime? gameDate;
+    if (gameMap != null) {
+      final raw = gameMap['completed_at'] ?? gameMap['started_at'] ?? gameMap['created_at'];
+      if (raw != null) gameDate = DateTime.tryParse(raw as String);
+    }
+
     return MptReward(
       id: json['id'] as String,
       gameId: json['game_id'] as String,
@@ -38,6 +59,10 @@
       verifiedByAdminId: json['verified_by_admin_id'] as String?,
       claimedAt: json['claimed_at'] != null ? DateTime.parse(json['claimed_at']) : null,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      gameName: gameMap?['name'] as String?,
+      inviteCode: gameMap?['invite_code'] as String?,
+      gameDate: gameDate,
+      organizerName: organizerMap?['display_name'] as String?,
     );
   }
 }

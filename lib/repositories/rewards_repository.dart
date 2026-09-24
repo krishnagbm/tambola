@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mpt_reward.dart';
 
 class RewardsRepository {
@@ -6,14 +6,17 @@ class RewardsRepository {
 
   RewardsRepository(this._supabase);
 
-  /// Gets all rewards won by the current player
+  /// Gets all rewards won by the current player, enriched with game & organizer context
   Future<List<MptReward>> getMyRewards() async {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) return [];
 
+    // Join MPT_games → MPT_users (organizer) in one query
     final res = await _supabase
         .from('MPT_rewards')
-        .select()
+        .select(
+          '*, MPT_games(name, invite_code, started_at, completed_at, created_at, MPT_users(display_name))',
+        )
         .eq('user_id', uid)
         .order('created_at', ascending: false);
 
