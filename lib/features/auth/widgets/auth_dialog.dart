@@ -804,7 +804,10 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         Text(
                           title,
@@ -815,10 +818,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                             letterSpacing: 0.2,
                           ),
                         ),
-                        if (badge != null) ...[
-                          const SizedBox(width: 8),
-                          badge,
-                        ],
+                        if (badge != null) badge,
                       ],
                     ),
                     const SizedBox(height: 2),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
+import 'auth_dialog.dart';
 
 class ProfileEditDialog extends ConsumerStatefulWidget {
   final MptUser currentUser;
@@ -134,33 +135,105 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
               }).toList(),
             ),
             const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.darkSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF2E334D)),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Builder(
+              builder: (context) {
+                final effectiveUser = ref.watch(currentUserProvider).value ?? widget.currentUser;
+                final isRegistered = effectiveUser.isRegistered;
+
+                if (isRegistered) {
+                  final providerLabel = effectiveUser.provider != null && effectiveUser.provider!.isNotEmpty
+                      ? effectiveUser.provider!
+                      : 'verified account';
+                  final emailOrProvider = effectiveUser.email != null && effectiveUser.email!.isNotEmpty
+                      ? effectiveUser.email!
+                      : 'Linked via $providerLabel';
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentSuccess.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.verified_user_outlined, size: 20, color: AppTheme.accentSuccess),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '✓ Account Protected',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Protected & linked to $emailOrProvider',
+                                style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.shield_outlined, size: 18, color: AppTheme.secondaryColor),
-                      SizedBox(width: 6),
-                      Text(
-                        'Account Protection (Optional)',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                      const Row(
+                        children: [
+                          Icon(Icons.shield_outlined, size: 18, color: AppTheme.secondaryColor),
+                          SizedBox(width: 6),
+                          Text(
+                            'Account Protection (Optional)',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Link Google, Apple, or Email OTP to safeguard tickets, game history, and rewards against browser cache wipes or device changes.',
+                        style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await AuthDialog.show(context);
+                            if (mounted) {
+                              final updated = ref.read(currentUserProvider).value;
+                              if (updated != null && _nameController.text.trim().isEmpty) {
+                                _nameController.text = updated.displayName;
+                              }
+                              setState(() {});
+                            }
+                          },
+                          icon: const Icon(Icons.login, size: 16),
+                          label: const Text('Sign In / Protect Account'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.secondaryColor,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Link Google or Apple in settings to recover rewards if you change devices.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),

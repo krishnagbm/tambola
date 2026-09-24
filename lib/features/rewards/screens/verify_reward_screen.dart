@@ -72,7 +72,7 @@ class _VerifyRewardScreenState extends ConsumerState<VerifyRewardScreen> {
                         controller: _codeController,
                         textCapitalization: TextCapitalization.characters,
                         decoration: const InputDecoration(
-                          hintText: 'e.g. MPT-REW-7K9Q-X4M2',
+                          hintText: 'e.g. Dab-Housie-7K9Q-X4M2',
                           prefixIcon: Icon(Icons.qr_code),
                         ),
                       ),

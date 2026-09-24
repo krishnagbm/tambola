@@ -165,13 +165,13 @@ void main() {
         gameId: 'g-100',
         userId: 'u-1',
         prizeType: 'FULL_HOUSE',
-        claimReference: 'MPT-REW-7K9Q-X4M2',
+        claimReference: 'Dab-Housie-7K9Q-X4M2',
         status: 'AVAILABLE_TO_CLAIM',
         createdAt: DateTime.now(),
       );
 
       expect(reward.isAvailable, isTrue);
-      expect(reward.claimReference, 'MPT-REW-7K9Q-X4M2');
+      expect(reward.claimReference, 'Dab-Housie-7K9Q-X4M2');
     });
   });
 }

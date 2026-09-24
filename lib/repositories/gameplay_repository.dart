@@ -189,14 +189,25 @@ class GameplayRepository {
       }
 
       // Record approved claim
-      final claimRef = 'MPT-REW-${DateTime.now().millisecondsSinceEpoch % 10000}';
-      await _supabase.from('MPT_claims').insert({
+      final claimRef = 'Dab-Housie-${DateTime.now().millisecondsSinceEpoch % 100000}';
+      final claimRes = await _supabase.from('MPT_claims').insert({
         'game_id': gameId,
         'user_id': uid,
         'prize_type': prizeType,
         'status': 'APPROVED',
         'marked_numbers': markedNumbers,
-      });
+      }).select().maybeSingle();
+
+      try {
+        await _supabase.from('MPT_rewards').insert({
+          'game_id': gameId,
+          'user_id': uid,
+          'prize_type': prizeType,
+          'claim_id': claimRes?['id'],
+          'claim_reference': claimRef,
+          'status': 'AVAILABLE_TO_CLAIM',
+        });
+      } catch (_) {}
 
       return {
         'status': 'APPROVED',
