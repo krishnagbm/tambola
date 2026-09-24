@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../constants/app_assets.dart';
@@ -73,6 +74,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ref.invalidate(creditTransactionsProvider);
       ref.invalidate(myHostedGamesProvider);
       ref.invalidate(myJoinedGamesProvider);
+      ref.invalidate(myRewardsProvider);
       if (context.mounted) {
         context.go('/');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -92,8 +94,20 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(currentUserProvider);
     final walletState = ref.watch(walletProvider);
+    final rewardsState = ref.watch(myRewardsProvider);
     final user = userState.value;
     final screenWidth = MediaQuery.of(context).size.width;
+    final unclaimedCount = (rewardsState.value ?? [])
+        .where((r) => r.isAvailable)
+        .length;
+
+    if (rewardsState.hasValue) {
+      SharedPreferences.getInstance()
+          .then((prefs) {
+            prefs.setString('dabhousie_unclaimed_rewards', '$unclaimedCount');
+          })
+          .catchError((_) {});
+    }
 
     return AppBar(
       toolbarHeight: 64,
@@ -366,15 +380,96 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
             onPressed: onRefresh,
           ),
         if (showRewards)
-          IconButton(
-            icon: const Icon(Icons.emoji_events_outlined, color: AppTheme.secondaryColor),
-            tooltip: 'My Rewards',
-            onPressed: () => context.push('/rewards'),
-          ),
+          if (screenWidth > 600)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+              child: Tooltip(
+                message: 'My Rewards ($unclaimedCount Unclaimed)',
+                child: InkWell(
+                  onTap: () => context.push('/rewards'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 11,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: unclaimedCount > 0
+                            ? AppTheme.accentSuccess.withValues(alpha: 0.7)
+                            : AppTheme.secondaryColor.withValues(alpha: 0.35),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🏆', style: TextStyle(fontSize: 13)),
+                        const SizedBox(width: 5),
+                        const Text(
+                          'My Rewards',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                        if (unclaimedCount > 0) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentSuccess,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$unclaimedCount',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              icon: Badge(
+                isLabelVisible: unclaimedCount > 0,
+                label: Text(
+                  '$unclaimedCount',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black,
+                  ),
+                ),
+                backgroundColor: AppTheme.accentSuccess,
+                child: const Icon(
+                  Icons.emoji_events_outlined,
+                  color: AppTheme.secondaryColor,
+                ),
+              ),
+              tooltip: 'My Rewards ($unclaimedCount Unclaimed)',
+              onPressed: () => context.push('/rewards'),
+            ),
         if (showWallet && user != null && user.isRegistered)
           walletState.when(
             data: (w) {
               final credits = w.availableCredits;
+              SharedPreferences.getInstance().then((prefs) {
+                prefs.setString('dabhousie_balance', '$credits');
+              }).catchError((_) {});
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
                 child: InkWell(
@@ -424,24 +519,53 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
         if (showAuth) ...[
           if (user != null && user.isRegistered)
             Padding(
-              padding: const EdgeInsets.only(right: 8, left: 4),
+              padding: const EdgeInsets.only(right: 8, left: 4, top: 12, bottom: 12),
               child: PopupMenuButton<String>(
                 tooltip: 'Account Menu',
-                offset: const Offset(0, 48),
+                offset: const Offset(0, 46),
                 color: AppTheme.darkCard,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                   side: const BorderSide(color: Color(0xFF2E334D)),
                 ),
-                icon: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppTheme.primaryLight.withValues(alpha: 0.3),
-                  backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-                      ? NetworkImage(user.avatarUrl!)
-                      : null,
-                  child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
-                      ? Text(Formatters.getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 16))
-                      : null,
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(6, 4, screenWidth > 600 ? 12 : 6, 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF121826),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        radius: 13,
+                        backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                        backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(user.avatarUrl!)
+                            : null,
+                        child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
+                            ? Text(Formatters.getAvatarEmoji(user.avatar), style: const TextStyle(fontSize: 14))
+                            : null,
+                      ),
+                      if (screenWidth > 600) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 110),
+                          child: Text(
+                            user.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 itemBuilder: (ctx) => [
                   PopupMenuItem(
@@ -465,6 +589,44 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'rewards',
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.emoji_events_outlined,
+                          size: 18,
+                          color: AppTheme.secondaryColor,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'My Rewards',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                        if (unclaimedCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentSuccess,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '$unclaimedCount',
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   const PopupMenuItem(
                     value: 'wallet',
                     child: Row(
@@ -489,6 +651,8 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 onSelected: (val) {
                   if (val == 'profile') {
                     context.go('/profile');
+                  } else if (val == 'rewards') {
+                    context.push('/rewards');
                   } else if (val == 'wallet') {
                     context.push('/wallet');
                   } else if (val == 'signout') {

@@ -366,6 +366,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           approverEmail: approverEmail,
           gameName: game.name,
           capacity: game.fundedCapacity,
+          inviteCode: game.inviteCode,
         );
         isBrandSelfApproved = brandRes['is_self_approved'] == true;
         if (isBrandSelfApproved) {

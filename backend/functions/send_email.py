@@ -5,6 +5,8 @@
 import json
 import os
 import sys
+import urllib.request
+import urllib.error
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -16,32 +18,43 @@ from email_ses import (
 )
 
 
+def _supabase_rest(endpoint_path: str, method: str = "GET", payload: dict = None):
+    """Executes a server-side request against Supabase REST API using Lambda env credentials."""
+    sb_url = (os.getenv("SUPABASE_URL") or "").rstrip("/")
+    sb_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or ""
+    if not sb_url or not sb_key:
+        raise RuntimeError("Server database configuration is missing.")
+
+    url = f"{sb_url}{endpoint_path}"
+    headers = {
+        "apikey": sb_key,
+        "Authorization": f"Bearer {sb_key}",
+        "Content-Type": "application/json",
+    }
+    data_bytes = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(url, data=data_bytes, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            raw = resp.read().decode("utf-8")
+            return resp.status, json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as he:
+        err_raw = he.read().decode("utf-8") if he.fp else ""
+        try:
+            return he.code, json.loads(err_raw) if err_raw else {"error": str(he)}
+        except Exception:
+            return he.code, {"error": err_raw or str(he)}
+
+
 def handler(event, context):
     """
     AWS Lambda handler triggered via API Gateway.
     Supports:
-      1. Brand Approval Request:
-         POST /email/brand-approval (or action: "brand_approval")
-         {
-             "action": "brand_approval",
-             "to_email": "approver@company.com",
-             "organization_name": "Acme Corp",
-             "game_name": "Friday Fiesta",
-             "approval_token": "...",
-             "organization_logo_url": "https://...",
-             "organizer_name": "Jane Host",
-             "capacity": 25
-         }
-
-      2. Private Party Passcodes:
-         POST /email/private-party
-         {
-             "to_email": "organizer@example.com",
-             "game_name": "Family Diwali Party",
-             "invite_code": "DAB888",
-             "otps": [{"seat_number": 1, "otp_code": "123456"}, ...],
-             "scheduled_at": "2026-09-20T18:00:00Z" (optional)
-         }
+      0. Public Web Proxy Actions (keeps Supabase URLs/keys/paths out of public HTML):
+         - action: "get_recent_games"
+         - action: "get_brand_approval_preview"
+         - action: "verify_and_approve_brand"
+      1. Brand Approval Request / Acknowledgement / Confirmation
+      2. Private Party Passcodes
     """
     # Handle preflight OPTIONS request
     http_method = event.get("httpMethod", "").upper()
@@ -51,14 +64,96 @@ def handler(event, context):
     try:
         body_raw = event.get("body") or "{}"
         if isinstance(body_raw, str):
-            payload = json.loads(body_raw)
+            payload = json.loads(body_raw) if body_raw.strip() else {}
         else:
-            payload = body_raw
+            payload = body_raw or {}
+
+        qs = event.get("queryStringParameters") or {}
+        path = event.get("path", "")
+        action = (
+            payload.get("action", "")
+            or payload.get("type", "")
+            or qs.get("action", "")
+        ).strip()
+
+        # Route 0A: Public Hall of Fame / Recent Games proxy
+        if action == "get_recent_games":
+            select_cols = (
+                "name,invite_code,player_count,numbers_called_count,duration_seconds,"
+                "completed_at,organization_name,organization_logo_url,organization_logo_alt,"
+                "organization_logo_approved,winners_roster"
+            )
+            status_code, data = _supabase_rest(
+                f"/rest/v1/MPT_game_archives?select={select_cols}&order=completed_at.desc.nullslast&limit=100",
+                method="GET",
+            )
+            if status_code == 200 and isinstance(data, list) and len(data) > 0:
+                return _r(200, {"success": True, "games": data})
+
+            # Fallback to completed games
+            fb_cols = (
+                "name,invite_code,funded_capacity,updated_at,created_at,"
+                "organization_name,organization_logo_url,organization_logo_alt,organization_logo_approved"
+            )
+            status_code, raw_games = _supabase_rest(
+                f"/rest/v1/MPT_games?status=eq.COMPLETED&select={fb_cols}&order=updated_at.desc&limit=50",
+                method="GET",
+            )
+            if status_code == 200 and isinstance(raw_games, list):
+                mapped = [
+                    {
+                        "name": g.get("name") or "Tambola Party Event",
+                        "invite_code": g.get("invite_code") or "------",
+                        "player_count": g.get("funded_capacity") or 5,
+                        "numbers_called_count": 68,
+                        "duration_seconds": 720,
+                        "completed_at": g.get("updated_at") or g.get("created_at"),
+                        "organization_name": g.get("organization_name"),
+                        "organization_logo_url": g.get("organization_logo_url"),
+                        "organization_logo_alt": g.get("organization_logo_alt"),
+                        "organization_logo_approved": bool(g.get("organization_logo_approved")),
+                        "winners_roster": [],
+                    }
+                    for g in raw_games
+                ]
+                return _r(200, {"success": True, "games": mapped})
+
+            return _r(200, {"success": True, "games": []})
+
+        # Route 0B: Public DVAA Brand Approval Preview proxy
+        if action == "get_brand_approval_preview":
+            token = (payload.get("token") or payload.get("p_token") or qs.get("token") or "").strip()
+            if not token:
+                return _r(400, {"success": False, "message": "Missing authorization token."})
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_get_brand_approval_preview",
+                method="POST",
+                payload={"p_token": token},
+            )
+            return _r(status_code if status_code in (200, 400, 404) else 200, data if isinstance(data, dict) else {"success": False})
+
+        # Route 0C: Public DVAA Brand Verify & Approve proxy
+        if action == "verify_and_approve_brand":
+            token = (payload.get("token") or payload.get("p_token") or "").strip()
+            if not token:
+                return _r(400, {"success": False, "message": "Missing authorization token."})
+            req_ctx = event.get("requestContext") or {}
+            identity = req_ctx.get("identity") or {}
+            client_ip = identity.get("sourceIp") or payload.get("p_ip") or "Web Approver"
+            user_agent = payload.get("user_agent") or payload.get("p_user_agent") or "Web Approver"
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_verify_and_approve_brand",
+                method="POST",
+                payload={
+                    "p_token": token,
+                    "p_ip": client_ip,
+                    "p_user_agent": user_agent,
+                },
+            )
+            return _r(status_code if status_code in (200, 400, 404) else 200, data if isinstance(data, dict) else {"success": False})
 
         to_email = payload.get("to_email", "").strip()
         game_name = payload.get("game_name", "DabHousie Game")
-        path = event.get("path", "")
-        action = payload.get("action", "") or payload.get("type", "")
 
         if not to_email:
             return _r(400, {"error": "Missing to_email parameter"})
@@ -150,6 +245,7 @@ def handler(event, context):
             organizer_name = payload.get("organizer_name", "").strip()
             capacity = payload.get("capacity")
             host_email = payload.get("host_email", "").strip().lower()
+            invite_code = payload.get("invite_code", "").strip()
 
             if not organization_name or not approval_token:
                 return _r(400, {"error": "Missing organization_name or approval_token parameter"})
@@ -185,6 +281,7 @@ def handler(event, context):
                 organizer_name=organizer_name,
                 capacity=capacity,
                 host_email=host_email,
+                invite_code=invite_code,
             )
 
             if success:

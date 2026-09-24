@@ -428,21 +428,21 @@
         <div class="metric-pill">
           <span class="metric-icon">🎲</span>
           <div>
-            <div class="metric-val" id="total-games-val">2</div>
+            <div class="metric-val" id="total-games-val">3</div>
             <div class="metric-lbl">Events Completed</div>
           </div>
         </div>
         <div class="metric-pill">
           <span class="metric-icon">👥</span>
           <div>
-            <div class="metric-val" id="total-players-val">300</div>
+            <div class="metric-val" id="total-players-val">305</div>
             <div class="metric-lbl">Players Entertained</div>
           </div>
         </div>
         <div class="metric-pill">
           <span class="metric-icon">🏅</span>
           <div>
-            <div class="metric-val" id="total-winners-val">12</div>
+            <div class="metric-val" id="total-winners-val">18</div>
             <div class="metric-lbl">Prizes Verified</div>
           </div>
         </div>
@@ -459,13 +459,104 @@
       </div>
 
       <div id="showing-count-container" style="display: block; font-size: 13px; color: #94A3B8;">
-        Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">2</span> completed events
+        Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">3</span> completed events
       </div>
     </div>
 
     <!-- Games Card Grid -->
     <div class="games-grid" id="games-grid">
 
+      <div class="game-card">
+        <div class="game-card-header">
+          <div class="game-title">Thursday DabHousie Dhamaka 🪔</div>
+          <div class="game-code-badge">4E196B</div>
+        </div>
+        
+          <div class="org-badge">
+            <img src="https://img.logo.dev/rapidcfl.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Rapid Consulting Firm Logo" class="org-logo-img" onerror="this.style.display='none';">
+            <span class="org-name-text">Hosted by Rapid Consulting Firm</span>
+          </div>
+        
+
+        <div class="game-meta-row">
+          <div class="game-meta-item">👥 <strong>5 Players</strong></div>
+          <div class="game-meta-item">🎱 <strong>73/90 Calls</strong></div>
+          <div class="game-meta-item">⏱️ <strong>13m 24s</strong></div>
+          <div class="game-meta-item">📅 Sep 24, 2026</div>
+        </div>
+
+        <div class="winners-section-title">Verified Prize Winners</div>
+        <div class="winners-list">
+          
+          <div class="winner-row grand-prize">
+            <div class="winner-prize-name">
+              <span>🏆</span>
+              <span>Full House (Grand Prize)</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Merry Whiz</strong>
+            </div>
+          </div>
+        
+          <div class="winner-row ">
+            <div class="winner-prize-name">
+              <span>🥇</span>
+              <span>Top Line</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Merry Whiz</strong>
+            </div>
+          </div>
+        
+          <div class="winner-row ">
+            <div class="winner-prize-name">
+              <span>🥈</span>
+              <span>Middle Line</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Merry Whiz</strong>
+            </div>
+          </div>
+        
+          <div class="winner-row ">
+            <div class="winner-prize-name">
+              <span>🥉</span>
+              <span>Bottom Line</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Merry Whiz</strong>
+            </div>
+          </div>
+        
+          <div class="winner-row ">
+            <div class="winner-prize-name">
+              <span>⚡</span>
+              <span>Early 5 (Jaldi 5)</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Swift Gamer</strong>
+            </div>
+          </div>
+        
+          <div class="winner-row ">
+            <div class="winner-prize-name">
+              <span>🎯</span>
+              <span>Four Corners</span>
+            </div>
+            <div class="winner-player-tag">
+              <span class="winner-avatar-icon">🦁</span>
+              <strong>Merry Whiz</strong>
+            </div>
+          </div>
+        
+        </div>
+      </div>
+    
       <div class="game-card">
         <div class="game-card-header">
           <div class="game-title">DabHousie Fiesta 🎊</div>
@@ -674,8 +765,7 @@
   <script src="/js/nav.js"></script>
 
   <script>
-    const SUPABASE_URL = 'https://itfcnurjrnyalauwwdkj.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI';
+    const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
 
     let allGames = [];
     let filteredGames = [];
@@ -693,14 +783,24 @@
       'avatar_owl': '🦉',
       'avatar_panda': '🐼',
       'avatar_deer': '🦌',
-      'avatar_koala': '🐨'
+      'avatar_koala': '🐨',
+      'avatar_crown': '👑',
+      'avatar_wizard': '🧙',
+      'avatar_rocket': '🚀',
+      'avatar_unicorn': '🦄',
+      'avatar_cowboy': '🤠',
+      'avatar_star': '🌟',
+      'avatar_bullseye': '🎯',
+      'avatar_rocker': '🎸'
     };
 
     const PRIZE_FORMAT_MAP = {
       'FULL_HOUSE': { label: 'Full House (Grand Prize)', icon: '🏆', isGrand: true },
+      'SECOND_FULL_HOUSE': { label: '2nd Full House', icon: '🏆', isGrand: false },
       'TOP_LINE': { label: 'Top Line', icon: '🥇', isGrand: false },
       'MIDDLE_LINE': { label: 'Middle Line', icon: '🥈', isGrand: false },
       'BOTTOM_LINE': { label: 'Bottom Line', icon: '🥉', isGrand: false },
+      'EARLY_FIVE': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
       'EARLY_5': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
       'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false }
     };
@@ -739,58 +839,34 @@
     }
 
     async function fetchRecentGames() {
-      // Keep count container hidden while loading
+      const hasPrerenderedCards = document.querySelectorAll('#games-grid .game-card').length > 0;
       const countContainer = document.getElementById('showing-count-container');
-      if (countContainer) countContainer.style.display = 'none';
+      if (countContainer && !hasPrerenderedCards) countContainer.style.display = 'none';
 
       try {
-        // 1. Try querying MPT_game_archives first
-        let res = await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_archives?select=*&order=completed_at.desc.nullslast&limit=100`, {
-          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_recent_games' })
         });
 
         if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            allGames = data;
+          const payload = await res.json();
+          if (payload && Array.isArray(payload.games)) {
+            allGames = payload.games;
             renderAll();
             return;
           }
         }
 
-        // 2. Fallback to MPT_games completed
-        res = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?status=eq.COMPLETED&select=*&order=updated_at.desc&limit=50`, {
-          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
-        });
-
-        if (res.ok) {
-          const rawGames = await res.json();
-          if (Array.isArray(rawGames)) {
-            allGames = rawGames.map(g => ({
-              id: g.id,
-              game_id: g.id,
-              name: g.name || 'Tambola Party Event',
-              invite_code: g.invite_code || '------',
-              player_count: g.funded_capacity || 5,
-              numbers_called_count: 68,
-              duration_seconds: 720,
-              completed_at: g.updated_at || g.created_at,
-              organization_name: g.organization_name || null,
-              organization_logo_url: g.organization_logo_url || null,
-              organization_logo_alt: g.organization_logo_alt || null,
-              organization_logo_approved: g.organization_logo_approved || false,
-              winners_roster: []
-            }));
-            renderAll();
-            return;
-          }
+        if (!hasPrerenderedCards) {
+          showErrorState('Unable to load completed games from the server at this time.');
         }
-        
-        // Response not ok
-        showErrorState('Unable to load completed games from the server at this time.');
       } catch (err) {
         console.error('Fetch games error:', err);
-        showErrorState('Unable to connect to live game history service. Please try again later.');
+        if (!hasPrerenderedCards) {
+          showErrorState('Unable to connect to live game history service. Please try again later.');
+        }
       }
     }
 

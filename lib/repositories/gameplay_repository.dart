@@ -254,12 +254,18 @@ class GameplayRepository {
     }
   }
 
-  /// Ends the game and finalizes results
+  /// Ends the game, marks it COMPLETED, and archives it to Hall of Fame
   Future<void> endGame(String gameId) async {
-    await _supabase.from('MPT_games').update({
-      'status': 'COMPLETED',
-      'completed_at': DateTime.now().toIso8601String(),
-    }).eq('id', gameId);
+    try {
+      await _supabase.rpc('MPT_archive_concluded_game', params: {
+        'p_game_id': gameId,
+      });
+    } catch (_) {
+      await _supabase.from('MPT_games').update({
+        'status': 'COMPLETED',
+        'completed_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', gameId);
+    }
   }
 
   /// Smart Polling stream for game claims (2s interval, 0 WebSocket connections)

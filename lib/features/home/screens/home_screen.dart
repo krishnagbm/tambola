@@ -23,6 +23,8 @@ import '../widgets/perfect_for_chips_section.dart';
 import '../widgets/usp_grid_section.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
+import '../../rewards/widgets/organizer_game_claims_dialog.dart';
+
 
 class HomeScreen extends ConsumerStatefulWidget {
   final int initialTabIndex;
@@ -766,11 +768,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text('My Joined Games', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white)),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.emoji_events_outlined, color: AppTheme.secondaryColor, size: 20),
-                  tooltip: 'My Rewards',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => context.push('/rewards'),
+                Builder(
+                  builder: (ctx) {
+                    final rewardsList =
+                        ref.watch(myRewardsProvider).value ?? [];
+                    final unclaimedCount = rewardsList
+                        .where((r) => r.isAvailable)
+                        .length;
+                    return IconButton(
+                      icon: Badge(
+                        isLabelVisible: unclaimedCount > 0,
+                        label: Text(
+                          '$unclaimedCount',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.black,
+                          ),
+                        ),
+                        backgroundColor: AppTheme.secondaryColor,
+                        child: const Icon(
+                          Icons.emoji_events_outlined,
+                          color: AppTheme.secondaryColor,
+                          size: 20,
+                        ),
+                      ),
+                      tooltip: 'My Rewards ($unclaimedCount Unclaimed)',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () => context.push('/rewards'),
+                    );
+                  },
                 ),
               ],
             ),
@@ -1320,17 +1347,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ],
                                 ),
                                 if (isLive) ...[
-                                  ElevatedButton.icon(
-                                    onPressed: () => context.push('/admin-control/${game.id}'),
-                                    icon: const Icon(Icons.play_circle_filled, size: 14),
-                                    label: const Text('Live Controls'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.accentSuccess,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                                      minimumSize: Size.zero,
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: () =>
+                                            OrganizerGameClaimsDialog.show(
+                                              context,
+                                              gameId: game.id,
+                                              gameName: game.name,
+                                              inviteCode: game.inviteCode,
+                                            ),
+                                        icon: const Icon(
+                                          Icons.emoji_events_outlined,
+                                          size: 13,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                        label: const Text('Claims'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor:
+                                              AppTheme.secondaryColor,
+                                          side: BorderSide(
+                                            color: AppTheme.secondaryColor
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 6,
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          minimumSize: Size.zero,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      ElevatedButton.icon(
+                                        onPressed: () => context.push(
+                                          '/admin-control/${game.id}',
+                                        ),
+                                        icon: const Icon(
+                                          Icons.play_circle_filled,
+                                          size: 14,
+                                        ),
+                                        label: const Text('Live Controls'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              AppTheme.accentSuccess,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          minimumSize: Size.zero,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ] else if (isLobby) ...[
                                   Row(
@@ -1408,15 +1485,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), fontStyle: FontStyle.italic),
                                   ),
                                 ] else ...[
-                                  OutlinedButton.icon(
-                                    onPressed: () => LiveDisplayHelper.openInNewWindow(context, game.id),
-                                    icon: const Icon(Icons.tv, size: 14),
-                                    label: const Text('Results ↗'),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                      textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                                      minimumSize: Size.zero,
-                                    ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: () =>
+                                            OrganizerGameClaimsDialog.show(
+                                              context,
+                                              gameId: game.id,
+                                              gameName: game.name,
+                                              inviteCode: game.inviteCode,
+                                            ),
+                                        icon: const Icon(
+                                          Icons.emoji_events_outlined,
+                                          size: 13,
+                                        ),
+                                        label: const Text('Manage Claims'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.darkCard,
+                                          foregroundColor:
+                                              AppTheme.secondaryColor,
+                                          side: BorderSide(
+                                            color: AppTheme.secondaryColor
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 9,
+                                            vertical: 6,
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          minimumSize: Size.zero,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      OutlinedButton.icon(
+                                        onPressed: () =>
+                                            LiveDisplayHelper.openInNewWindow(
+                                              context,
+                                              game.id,
+                                            ),
+                                        icon: const Icon(Icons.tv, size: 14),
+                                        label: const Text('Results ↗'),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 6,
+                                          ),
+                                          textStyle: const TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          minimumSize: Size.zero,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ],

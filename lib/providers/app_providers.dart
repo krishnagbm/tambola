@@ -178,6 +178,17 @@ final myRewardsProvider = FutureProvider.autoDispose<List<MptReward>>((ref) asyn
   return ref.watch(rewardsRepositoryProvider).getMyRewards();
 });
 
+// Host Game Rewards Provider (for Organizer Claims Management)
+final hostGameRewardsProvider =
+    FutureProvider.autoDispose.family<List<MptReward>, String>((
+      ref,
+      gameId,
+    ) async {
+      return ref
+          .watch(rewardsRepositoryProvider)
+          .getGameRewardsForHost(gameId);
+    });
+
 // My Hosted Games Provider (Organizer Dashboard)
 final myHostedGamesProvider = FutureProvider.autoDispose<List<MptGame>>((ref) async {
   return ref.watch(gameRepositoryProvider).getMyHostedGames();
@@ -192,4 +203,5 @@ final myJoinedGamesProvider = FutureProvider.autoDispose<List<Map<String, dynami
 final gameSeatOtpsStreamProvider = StreamProvider.autoDispose.family<List<MptSeatOtp>, String>((ref, gameId) {
   return ref.watch(gameRepositoryProvider).watchGameSeatOtps(gameId);
 });
+
 

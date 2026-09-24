@@ -229,19 +229,28 @@ class AuthRepository {
         'p_avatar': cachedAvatar,
       });
       if (res != null && res is Map<String, dynamic>) {
-        return MptUser.fromJson({
+        final mptUser = MptUser.fromJson({
           ...res,
           'email': email,
           'avatar_url': avatarUrl,
           'provider': provider,
           'is_anonymous': isAnon,
         });
+        await prefs.setString(_prefKeyName, mptUser.displayName);
+        await prefs.setString(_prefKeyAvatar, mptUser.avatar);
+        await prefs.setString('dabhousie_user_id', mptUser.id);
+        await prefs.setString('dabhousie_user_name', mptUser.displayName);
+        await prefs.setString('dabhousie_user_avatar', mptUser.avatar);
+        if (email != null && email.isNotEmpty) {
+          await prefs.setString('dabhousie_user_email', email);
+        }
+        return mptUser;
       }
     } catch (_) {
       // If RPC not available yet, create basic user object
     }
 
-    return MptUser(
+    final fallbackUser = MptUser(
       id: user?.id ?? const Uuid().v4(),
       displayName: cachedName,
       avatar: cachedAvatar,
@@ -252,6 +261,13 @@ class AuthRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
+    await prefs.setString('dabhousie_user_id', fallbackUser.id);
+    await prefs.setString('dabhousie_user_name', fallbackUser.displayName);
+    await prefs.setString('dabhousie_user_avatar', fallbackUser.avatar);
+    if (email != null && email.isNotEmpty) {
+      await prefs.setString('dabhousie_user_email', email);
+    }
+    return fallbackUser;
   }
 
   /// Updates player's display name and avatar (gameplay identity)
@@ -259,6 +275,8 @@ class AuthRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefKeyName, displayName);
     await prefs.setString(_prefKeyAvatar, avatar);
+    await prefs.setString('dabhousie_user_name', displayName);
+    await prefs.setString('dabhousie_user_avatar', avatar);
 
     final user = _supabase.auth.currentUser;
     final uid = user?.id;
@@ -269,6 +287,10 @@ class AuthRepository {
     final provider = user?.appMetadata['provider'] as String? ?? (isAnon ? 'anonymous' : 'email');
 
     if (uid != null) {
+      await prefs.setString('dabhousie_user_id', uid);
+      if (email != null && email.isNotEmpty) {
+        await prefs.setString('dabhousie_user_email', email);
+      }
       try {
         await _supabase.rpc('MPT_upsert_user', params: {
           'p_display_name': displayName,
@@ -292,6 +314,12 @@ class AuthRepository {
 
   /// Signs out of current account and starts a fresh guest session
   Future<void> signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('dabhousie_user_email');
+      await prefs.remove('dabhousie_balance');
+      await prefs.remove('dabhousie_unclaimed_rewards');
+    } catch (_) {}
     await _supabase.auth.signOut();
     try {
       await _supabase.auth.signInAnonymously();

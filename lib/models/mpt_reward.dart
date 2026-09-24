@@ -16,6 +16,10 @@ class MptReward {
   final DateTime? gameDate;
   final String? organizerName;
 
+  // Enriched winner context (for Organizer claims management)
+  final String? winnerName;
+  final String? winnerAvatar;
+
   MptReward({
     required this.id,
     required this.gameId,
@@ -31,6 +35,8 @@ class MptReward {
     this.inviteCode,
     this.gameDate,
     this.organizerName,
+    this.winnerName,
+    this.winnerAvatar,
   });
 
   bool get isAvailable => status == 'AVAILABLE_TO_CLAIM';
@@ -44,25 +50,41 @@ class MptReward {
 
     DateTime? gameDate;
     if (gameMap != null) {
-      final raw = gameMap['completed_at'] ?? gameMap['started_at'] ?? gameMap['created_at'];
-      if (raw != null) gameDate = DateTime.tryParse(raw as String);
+      final raw =
+          gameMap['completed_at'] ??
+          gameMap['started_at'] ??
+          gameMap['created_at'];
+      if (raw != null) gameDate = DateTime.tryParse(raw.toString());
+    } else if (json['game_date'] != null) {
+      gameDate = DateTime.tryParse(json['game_date'].toString());
     }
 
     return MptReward(
-      id: json['id'] as String,
-      gameId: json['game_id'] as String,
-      userId: json['user_id'] as String,
-      prizeType: json['prize_type'] as String,
-      claimId: json['claim_id'] as String?,
-      claimReference: json['claim_reference'] as String,
+      id: json['id'].toString(),
+      gameId: json['game_id'].toString(),
+      userId: json['user_id'].toString(),
+      prizeType: json['prize_type'].toString(),
+      claimId: json['claim_id']?.toString(),
+      claimReference: json['claim_reference'].toString(),
       status: json['status'] as String? ?? 'AVAILABLE_TO_CLAIM',
-      verifiedByAdminId: json['verified_by_admin_id'] as String?,
-      claimedAt: json['claimed_at'] != null ? DateTime.parse(json['claimed_at']) : null,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      gameName: gameMap?['name'] as String?,
-      inviteCode: gameMap?['invite_code'] as String?,
+      verifiedByAdminId: json['verified_by_admin_id']?.toString(),
+      claimedAt: json['claimed_at'] != null
+          ? DateTime.tryParse(json['claimed_at'].toString())
+          : null,
+      createdAt: json['created_at'] != null
+          ? (DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now())
+          : DateTime.now(),
+      gameName:
+          (gameMap?['name'] as String?) ?? (json['game_name'] as String?),
+      inviteCode:
+          (gameMap?['invite_code'] as String?) ??
+          (json['invite_code'] as String?),
       gameDate: gameDate,
-      organizerName: organizerMap?['display_name'] as String?,
+      organizerName:
+          (organizerMap?['display_name'] as String?) ??
+          (json['organizer_name'] as String?),
+      winnerName: json['winner_name'] as String?,
+      winnerAvatar: json['winner_avatar'] as String?,
     );
   }
 }

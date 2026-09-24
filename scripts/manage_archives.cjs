@@ -15,21 +15,22 @@ const fs = require('fs');
 const path = require('path');
 
 // Read environment
-let SUPABASE_URL = process.env.SUPABASE_URL || 'https://itfcnurjrnyalauwwdkj.supabase.co';
-let SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let SUPABASE_URL = process.env.SUPABASE_URL || '';
+let SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-if (!SERVICE_KEY && fs.existsSync(path.resolve('.env'))) {
+if ((!SUPABASE_URL || !SERVICE_KEY) && fs.existsSync(path.resolve('.env'))) {
   const env = fs.readFileSync(path.resolve('.env'), 'utf-8').split('\n').reduce((acc, line) => {
     const idx = line.indexOf('=');
     if (idx !== -1) acc[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
     return acc;
   }, {});
-  SUPABASE_URL = env.SUPABASE_URL || SUPABASE_URL;
-  SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+  SUPABASE_URL = SUPABASE_URL || env.SUPABASE_URL || '';
+  SERVICE_KEY = SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 }
 
-if (!SERVICE_KEY) {
-  SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNjA5MTE2MSwiZXhwIjoyMDUxNjY3MTYxfQ.E_i0aJ03tvmzuUq1_gi_Q1JsgG67VlrkwWVuYKsH8d8';
+if (!SUPABASE_URL || !SERVICE_KEY) {
+  console.error('Error: Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment or .env');
+  process.exit(1);
 }
 
 const args = process.argv.slice(2);

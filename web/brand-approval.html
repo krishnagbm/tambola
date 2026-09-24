@@ -324,6 +324,9 @@
         </ul>
 
         <div class="nav-actions">
+          <div id="nav-auth-container">
+            <a href="/#/" class="nav-signin-btn">Sign In</a>
+          </div>
           <a href="/" class="btn-nav-host">Back to App</a>
         </div>
       </div>
@@ -358,6 +361,10 @@
         <div class="info-item">
           <span class="label">Event Name</span>
           <span class="val" id="info-game-name">--</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Game Code</span>
+          <span class="val" id="info-invite-code" style="color: var(--accent); font-family: monospace;">--</span>
         </div>
         <div class="info-item">
           <span class="label">Organization</span>
@@ -429,9 +436,9 @@
     <p>&copy; 2026 Digital App Studio. All rights reserved. DabHousie™.</p>
   </footer>
 
+  <script src="/js/nav.js"></script>
   <script>
-    const SUPABASE_URL = 'https://itfcnurjrnyalauwwdkj.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI';
+    const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
 
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -455,14 +462,15 @@
       }
 
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_get_brand_approval_preview`, {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
           method: 'POST',
           headers: {
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${SUPABASE_ANON}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ p_token: token })
+          body: JSON.stringify({
+            action: 'get_brand_approval_preview',
+            token: token
+          })
         });
 
         const data = await res.json();
@@ -485,6 +493,8 @@
 
         // Render details
         document.getElementById('info-game-name').textContent = data.game_name;
+        const inviteEl = document.getElementById('info-invite-code');
+        if (inviteEl) inviteEl.textContent = data.invite_code || '--';
         document.getElementById('info-org-name').textContent = data.organization_name;
         document.getElementById('info-approver-email').textContent = data.approver_email;
         document.getElementById('info-capacity').textContent = `${data.capacity} Players`;
@@ -524,17 +534,15 @@
       btn.textContent = 'Authorizing...';
 
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_verify_and_approve_brand`, {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
           method: 'POST',
           headers: {
-            'apikey': SUPABASE_ANON,
-            'Authorization': `Bearer ${SUPABASE_ANON}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            p_token: token,
-            p_ip: 'Web Approver',
-            p_user_agent: navigator.userAgent
+            action: 'verify_and_approve_brand',
+            token: token,
+            user_agent: navigator.userAgent
           })
         });
 
@@ -545,7 +553,7 @@
 
           // Dispatch immutable audit confirmation email to contact@dabhousie.com, approver, and organizer
           try {
-            fetch('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party', {
+            fetch(PUBLIC_API_ENDPOINT, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

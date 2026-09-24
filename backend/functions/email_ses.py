@@ -577,6 +577,7 @@ def send_brand_approval_email(
     organizer_name: Optional[str] = None,
     capacity: Optional[int] = None,
     host_email: Optional[str] = None,
+    invite_code: Optional[str] = None,
     audit_email: str = AUDIT_EMAIL,
 ) -> bool:
     """
@@ -588,7 +589,8 @@ def send_brand_approval_email(
         return False
 
     approval_url = f"{BASE_URL}/brand-approval.html?token={approval_token}"
-    subject = f"[Action Required] Authorize Brand Logo for \"{game_name}\" 🏢 (DVAA™)"
+    code_suffix = f" (Code: {invite_code})" if invite_code else ""
+    subject = f"[Action Required] Authorize Brand Logo for \"{game_name}\"{code_suffix} 🏢 (DVAA™)"
     organizer_display = organizer_name or "Event Organizer"
     capacity_display = f"{capacity} Players" if capacity else "Team Event"
     host_attribution = f"{organizer_display} ({host_email})" if host_email else organizer_display
@@ -654,6 +656,7 @@ def send_brand_approval_email(
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
                       </tr>
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Game Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; font-family:Courier,\'Courier New\',monospace; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
                       <tr>
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Requested By:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
@@ -719,6 +722,7 @@ def send_brand_approval_email(
 
 Organization: {organization_name}
 Event Name: {game_name}
+Game Code: {invite_code or 'N/A'}
 Requested By: {host_attribution}
 Scale: {capacity_display}
 Standard: DVAA™ (Domain-Verified Automated Approval)
@@ -833,7 +837,7 @@ def send_brand_acknowledgement_email(
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
                       </tr>
-                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Invite Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Game Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
                       <tr>
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Authorized By:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
@@ -893,7 +897,7 @@ def send_brand_acknowledgement_email(
 
 Organization: {organization_name}
 Event Name: {game_name}
-Invite Code: {invite_code or 'N/A'}
+Game Code: {invite_code or 'N/A'}
 Authorized By: {host_attribution}
 Scale: {capacity_display}
 Status: ACTIVE & APPROVED ✅
@@ -1009,7 +1013,7 @@ def send_brand_approved_confirmation_email(
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{game_name}</td>
                       </tr>
-                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Invite Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Game Code:</td><td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800; letter-spacing:1px;" align="right">{invite_code}</td></tr>' if invite_code else ''}
                       <tr>
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Organizer:</td>
                         <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:600;" align="right">{host_attribution}</td>
@@ -1070,7 +1074,7 @@ def send_brand_approved_confirmation_email(
 
 Organization: {organization_name}
 Event Name: {game_name}
-Invite Code: {invite_code or 'N/A'}
+Game Code: {invite_code or 'N/A'}
 Organizer: {host_attribution}
 Approver: {approver_display}
 Approved At: {timestamp_display}

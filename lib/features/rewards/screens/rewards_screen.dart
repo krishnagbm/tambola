@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../core/theme/app_theme.dart';
@@ -10,6 +11,28 @@ import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../models/mpt_reward.dart';
 import '../../../providers/app_providers.dart';
+
+class _ParticipatedGameGroup {
+  final String gameId;
+  final String gameName;
+  final String inviteCode;
+  final DateTime? gameDate;
+  final String? organizerName;
+  final List<MptReward> rewards;
+
+  _ParticipatedGameGroup({
+    required this.gameId,
+    required this.gameName,
+    required this.inviteCode,
+    this.gameDate,
+    this.organizerName,
+    required this.rewards,
+  });
+
+  int get unclaimedCount => rewards.where((r) => r.isAvailable).length;
+  int get claimedCount => rewards.where((r) => r.isClaimed).length;
+  int get totalRewards => rewards.length;
+}
 
 class RewardsScreen extends ConsumerStatefulWidget {
   const RewardsScreen({super.key});
@@ -24,6 +47,10 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   String _searchQuery = '';
   List<MptReward> _remoteCodeMatches = [];
   bool _isSearchingRemote = false;
+
+  /// Tracks which game drawers the user has manually expanded.
+  /// By default, all drawers start closed (empty set).
+  final Set<String> _expandedGameIds = <String>{};
 
   @override
   void dispose() {
@@ -103,9 +130,113 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     return filtered;
   }
 
+  List<_ParticipatedGameGroup> _buildGameGroups(
+    List<MptReward> displayedRewards,
+    List<Map<String, dynamic>> joinedGames,
+    bool hasSearch,
+  ) {
+    final Map<String, _ParticipatedGameGroup> groupsById = {};
+    final rawQ = _searchQuery.trim().toLowerCase();
+
+    // 1. Group all displayed rewards by gameId
+    for (final r in displayedRewards) {
+      final existing = groupsById[r.gameId];
+      if (existing == null) {
+        groupsById[r.gameId] = _ParticipatedGameGroup(
+          gameId: r.gameId,
+          gameName: (r.gameName != null && r.gameName!.trim().isNotEmpty)
+              ? r.gameName!
+              : 'DabHousie Event',
+          inviteCode: (r.inviteCode != null && r.inviteCode!.trim().isNotEmpty)
+              ? r.inviteCode!
+              : r.gameId.substring(0, 6).toUpperCase(),
+          gameDate: r.gameDate ?? r.createdAt,
+          organizerName: r.organizerName,
+          rewards: [r],
+        );
+      } else {
+        existing.rewards.add(r);
+      }
+    }
+
+    // 2. Also merge games the player participated in from myJoinedGamesProvider
+    for (final reg in joinedGames) {
+      final gameId = (reg['game_id'] ?? '').toString();
+      if (gameId.isEmpty) continue;
+      final gameData = reg['game'] as Map<String, dynamic>? ?? {};
+      final gameName = (gameData['name'] ?? 'DabHousie Event').toString();
+      final inviteCode = (gameData['invite_code'] ?? '').toString();
+      final orgMap = gameData['MPT_users'] as Map<String, dynamic>?;
+      final orgName = orgMap?['display_name'] as String?;
+      final rawDate =
+          gameData['completed_at'] ??
+          gameData['started_at'] ??
+          gameData['created_at'] ??
+          reg['joined_at'];
+      final gameDate = rawDate != null
+          ? DateTime.tryParse(rawDate.toString())
+          : null;
+
+      if (groupsById.containsKey(gameId)) {
+        final existing = groupsById[gameId]!;
+        groupsById[gameId] = _ParticipatedGameGroup(
+          gameId: gameId,
+          gameName: existing.gameName != 'DabHousie Event'
+              ? existing.gameName
+              : gameName,
+          inviteCode: existing.inviteCode.isNotEmpty
+              ? existing.inviteCode
+              : (inviteCode.isNotEmpty
+                    ? inviteCode
+                    : gameId.substring(0, 6).toUpperCase()),
+          gameDate: existing.gameDate ?? gameDate,
+          organizerName: existing.organizerName ?? orgName,
+          rewards: existing.rewards,
+        );
+      } else {
+        // Only include 0-reward participated games if not filtering, OR if the game code/name matches the search query
+        if (!hasSearch ||
+            inviteCode.toLowerCase().contains(rawQ) ||
+            gameName.toLowerCase().contains(rawQ) ||
+            (orgName ?? '').toLowerCase().contains(rawQ)) {
+          groupsById[gameId] = _ParticipatedGameGroup(
+            gameId: gameId,
+            gameName: gameName,
+            inviteCode: inviteCode.isNotEmpty
+                ? inviteCode
+                : gameId.substring(0, 6).toUpperCase(),
+            gameDate: gameDate,
+            organizerName: orgName,
+            rewards: [],
+          );
+        }
+      }
+    }
+
+    final list = groupsById.values.toList();
+    // Sort: games with unclaimed rewards first, then games with claimed rewards, then by date descending
+    list.sort((a, b) {
+      if (a.unclaimedCount != b.unclaimedCount) {
+        if (a.unclaimedCount > 0 && b.unclaimedCount == 0) return -1;
+        if (b.unclaimedCount > 0 && a.unclaimedCount == 0) return 1;
+      }
+      if (a.totalRewards != b.totalRewards) {
+        if (a.totalRewards > 0 && b.totalRewards == 0) return -1;
+        if (b.totalRewards > 0 && a.totalRewards == 0) return 1;
+      }
+      final da = a.gameDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final db = b.gameDate ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return db.compareTo(da);
+    });
+
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     final rewardsState = ref.watch(myRewardsProvider);
+    final joinedGamesState = ref.watch(myJoinedGamesProvider);
+    final joinedGames = joinedGamesState.value ?? [];
 
     return Scaffold(
       appBar: DabHousieAppBar(
@@ -114,6 +245,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         showRewards: false,
         onRefresh: () {
           ref.invalidate(myRewardsProvider);
+          ref.invalidate(myJoinedGamesProvider);
           if (_searchQuery.trim().length >= 3) {
             _onSearchChanged(_searchQuery);
           }
@@ -121,7 +253,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
+          constraints: const BoxConstraints(maxWidth: 840),
           child: rewardsState.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) =>
@@ -129,8 +261,13 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             data: (rewards) {
               final displayedRewards = _filterAndMergeRewards(rewards);
               final hasSearch = _searchQuery.trim().isNotEmpty;
+              final gameGroups = _buildGameGroups(
+                displayedRewards,
+                joinedGames,
+                hasSearch,
+              );
 
-              if (rewards.isEmpty && !hasSearch) {
+              if (gameGroups.isEmpty && !hasSearch) {
                 return Center(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(
@@ -149,7 +286,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                         ),
                         const SizedBox(height: 16),
                         const Text(
-                          'No rewards won yet',
+                          'No games or rewards yet',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -174,6 +311,13 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                 );
               }
 
+              final totalUnclaimed = rewards
+                  .where((r) => r.isAvailable)
+                  .length;
+              final allExpanded =
+                  gameGroups.isNotEmpty &&
+                  gameGroups.every((g) => _expandedGameIds.contains(g.gameId));
+
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
@@ -181,7 +325,74 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                   const SizedBox(height: 12),
                   _buildSearchBar(),
                   const SizedBox(height: 14),
-                  if (displayedRewards.isEmpty)
+                  if (gameGroups.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.layers_outlined,
+                                size: 17,
+                                color: AppTheme.secondaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Participated Games (${gameGroups.length}) • $totalUnclaimed Unclaimed Prize${totalUnclaimed == 1 ? '' : 's'}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFCBD5E1),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (gameGroups.length > 1 && !hasSearch)
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                if (allExpanded) {
+                                  _expandedGameIds.clear();
+                                } else {
+                                  for (final g in gameGroups) {
+                                    _expandedGameIds.add(g.gameId);
+                                  }
+                                }
+                              });
+                            },
+                            icon: Icon(
+                              allExpanded
+                                  ? Icons.unfold_less_rounded
+                                  : Icons.unfold_more_rounded,
+                              size: 16,
+                              color: AppTheme.secondaryColor,
+                            ),
+                            label: Text(
+                              allExpanded ? 'Collapse All' : 'Expand All',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (gameGroups.isEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 32,
@@ -223,10 +434,14 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                       ),
                     )
                   else
-                    ...displayedRewards.map(
-                      (reward) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _buildRewardCard(context, reward),
+                    ...gameGroups.map(
+                      (group) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildGameDrawerCard(
+                          context,
+                          group,
+                          forceExpanded: hasSearch,
+                        ),
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -239,6 +454,302 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameDrawerCard(
+    BuildContext context,
+    _ParticipatedGameGroup group, {
+    required bool forceExpanded,
+  }) {
+    final isExpanded =
+        forceExpanded || _expandedGameIds.contains(group.gameId);
+    final unclaimed = group.unclaimedCount;
+    final total = group.totalRewards;
+    final dateStr = group.gameDate != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(group.gameDate!.toLocal())
+        : null;
+
+    Color borderColor;
+    if (unclaimed > 0) {
+      borderColor = AppTheme.accentSuccess.withValues(alpha: 0.65);
+    } else if (total > 0) {
+      borderColor = AppTheme.secondaryColor.withValues(alpha: 0.45);
+    } else {
+      borderColor = const Color(0xFF2E334D);
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: borderColor,
+          width: unclaimed > 0 ? 1.4 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Collapsible Drawer Header
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () {
+              setState(() {
+                if (_expandedGameIds.contains(group.gameId)) {
+                  _expandedGameIds.remove(group.gameId);
+                } else {
+                  _expandedGameIds.add(group.gameId);
+                }
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  // Game Code Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'CODE',
+                          style: TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFA0AEC0),
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                        Text(
+                          group.inviteCode,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'monospace',
+                            color: AppTheme.secondaryColor,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Game Name & Subheader (Date + Organizer)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          group.gameName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          [
+                            if (dateStr != null) dateStr,
+                            if (group.organizerName != null &&
+                                group.organizerName!.trim().isNotEmpty)
+                              'Host: ${group.organizerName}',
+                          ].join(' • '),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Unclaimed Prizes Count Badge on Drawer Heading
+                  _buildDrawerHeadingCountBadge(unclaimed, total),
+                  const SizedBox(width: 6),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: const Color(0xFFCBD5E1),
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded Drawer Content
+          if (isExpanded) ...[
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: group.rewards.isEmpty
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkSurface,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF2E334D)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.confirmation_number_outlined,
+                                  size: 18,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Participated in this game • No prize claims won.',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () =>
+                                context.push('/play/${group.gameId}'),
+                            icon: const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 14,
+                            ),
+                            label: const Text(
+                              'View Game',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppTheme.secondaryColor,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        for (int i = 0; i < group.rewards.length; i++) ...[
+                          if (i > 0) const SizedBox(height: 10),
+                          _buildRewardCard(context, group.rewards[i]),
+                        ],
+                      ],
+                    ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerHeadingCountBadge(int unclaimedCount, int totalRewards) {
+    if (unclaimedCount > 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: AppTheme.accentSuccess.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.accentSuccess),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.emoji_events_rounded,
+              size: 14,
+              color: AppTheme.accentSuccess,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$unclaimedCount Unclaimed',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.accentSuccess,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (totalRewards > 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.check_circle_rounded,
+              size: 13,
+              color: AppTheme.secondaryColor,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '0 Unclaimed ($totalRewards Claimed)',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF2E334D)),
+      ),
+      child: const Text(
+        '0 Unclaimed',
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF94A3B8),
         ),
       ),
     );
@@ -359,6 +870,9 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     final dateStr = reward.gameDate != null
         ? DateFormat('dd MMM yyyy, hh:mm a').format(reward.gameDate!.toLocal())
         : null;
+    final claimedDateStr = reward.claimedAt != null
+        ? DateFormat('dd MMM yyyy, hh:mm a').format(reward.claimedAt!.toLocal())
+        : null;
 
     Widget buildVoucherBlock() {
       return Row(
@@ -395,11 +909,16 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                 const SizedBox(height: 4),
                 SelectableText(
                   reward.claimReference,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.4,
-                    color: AppTheme.secondaryColor,
+                    color: isAvailable
+                        ? AppTheme.secondaryColor
+                        : const Color(0xFF94A3B8),
+                    decoration: isAvailable
+                        ? null
+                        : TextDecoration.lineThrough,
                   ),
                 ),
               ],
@@ -433,177 +952,194 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             'Organizer',
             reward.organizerName ?? 'Your Game Host',
           ),
+          if (!isAvailable && claimedDateStr != null) ...[
+            const SizedBox(height: 6),
+            _buildInfoRow(
+              Icons.verified_rounded,
+              'Claimed on',
+              claimedDateStr,
+            ),
+          ],
         ],
       );
     }
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
           color: isAvailable
               ? AppTheme.accentSuccess.withValues(alpha: 0.5)
               : const Color(0xFF2E334D),
           width: 1.2,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Row: Prize Name + Claim Status Badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.emoji_events,
-                        color: AppTheme.secondaryColor,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          Formatters.formatPrizeName(reward.prizeType),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header Row: Prize Name + Claim Status Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      isAvailable
+                          ? Icons.emoji_events
+                          : Icons.verified_rounded,
+                      color: isAvailable
+                          ? AppTheme.secondaryColor
+                          : const Color(0xFF10B981),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        Formatters.formatPrizeName(reward.prizeType),
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: isAvailable
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                      : const Color(0xFF10B981).withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isAvailable
+                        ? AppTheme.accentSuccess
+                        : const Color(0xFF10B981).withValues(alpha: 0.5),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
+                child: Text(
+                  isAvailable ? 'CLAIM FROM ORGANIZER' : '✓ CLAIMED',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
                     color: isAvailable
-                        ? AppTheme.accentSuccess.withValues(alpha: 0.2)
-                        : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isAvailable
-                          ? AppTheme.accentSuccess
-                          : const Color(0xFF2E334D),
+                        ? AppTheme.accentSuccess
+                        : const Color(0xFF10B981),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const Divider(color: Color(0xFF2E334D), height: 18),
+
+          // Main Body: 3-Column Layout on wide screens (Game Info | Copy + Voucher Code | QR Code),
+          // 2-Column Layout on narrow mobile screens
+          LayoutBuilder(
+            builder: (ctx, constraints) {
+              final isWide = constraints.maxWidth >= 480;
+
+              final qrWidget = Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: QrImageView(
+                  data: reward.claimReference,
+                  version: QrVersions.auto,
+                  size: isWide ? 110.0 : 96.0,
+                ),
+              );
+
+              if (isWide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Left Column: Game Details
+                    Expanded(
+                      flex: 5,
+                      child: buildGameDetailsColumn(),
+                    ),
+                    const SizedBox(width: 12),
+                    // Center Column: Copy Icon + Voucher Reference Code
+                    Expanded(
+                      flex: 4,
+                      child: Center(child: buildVoucherBlock()),
+                    ),
+                    const SizedBox(width: 16),
+                    // Right Column: QR Code
+                    qrWidget,
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildGameDetailsColumn(),
+                        const SizedBox(height: 10),
+                        buildVoucherBlock(),
+                      ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  qrWidget,
+                ],
+              );
+            },
+          ),
+
+          const SizedBox(height: 10),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppTheme.darkCard,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isAvailable
+                      ? Icons.info_outline
+                      : Icons.check_circle_outline_rounded,
+                  size: 14,
+                  color: isAvailable
+                      ? const Color(0xFFA0AEC0)
+                      : const Color(0xFF10B981),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    isAvailable ? 'CLAIM FROM ORGANIZER' : 'CLAIMED',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: isAvailable
-                          ? AppTheme.accentSuccess
-                          : const Color(0xFFA0AEC0),
+                    isAvailable
+                        ? 'Show this QR or code to ${reward.organizerName ?? 'your game organizer'} to collect your prize.'
+                        : 'This prize claim has been settled and closed by ${reward.organizerName ?? 'your game organizer'}.',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFFCBD5E1),
                     ),
                   ),
                 ),
               ],
             ),
-
-            const Divider(color: Color(0xFF2E334D), height: 20),
-
-            // Main Body: 3-Column Layout on wide screens (Game Info | Copy + Voucher Code | QR Code),
-            // 2-Column Layout on narrow mobile screens
-            LayoutBuilder(
-              builder: (ctx, constraints) {
-                final isWide = constraints.maxWidth >= 480;
-
-                final qrWidget = Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: QrImageView(
-                    data: reward.claimReference,
-                    version: QrVersions.auto,
-                    size: isWide ? 116.0 : 100.0,
-                  ),
-                );
-
-                if (isWide) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Left Column: Game Details
-                      Expanded(
-                        flex: 5,
-                        child: buildGameDetailsColumn(),
-                      ),
-                      const SizedBox(width: 12),
-                      // Center Column: Copy Icon + Voucher Reference Code
-                      Expanded(
-                        flex: 4,
-                        child: Center(child: buildVoucherBlock()),
-                      ),
-                      const SizedBox(width: 16),
-                      // Right Column: QR Code
-                      qrWidget,
-                    ],
-                  );
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          buildGameDetailsColumn(),
-                          const SizedBox(height: 10),
-                          buildVoucherBlock(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    qrWidget,
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 12),
-
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.darkSurface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF2E334D)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.info_outline,
-                    size: 14,
-                    color: Color(0xFFA0AEC0),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Show this QR or code to ${reward.organizerName ?? 'your game organizer'} to collect your prize.',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFFCBD5E1),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

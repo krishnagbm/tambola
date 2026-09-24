@@ -248,10 +248,10 @@ class GameRepository {
       // Fix 2026-09-05: MPT_game_registrations defines joined_at, not registered_at.
       final res = await _supabase
           .from('MPT_game_registrations')
-          .select('*, game:MPT_games(*)')
+          .select('*, game:MPT_games(*, MPT_users(display_name))')
           .eq('user_id', uid)
           .order('joined_at', ascending: false)
-          .limit(20);
+          .limit(30);
 
       return List<Map<String, dynamic>>.from(res as List);
     } catch (_) {
@@ -473,6 +473,7 @@ class GameRepository {
     required String approverEmail,
     String? gameName,
     int? capacity,
+    String? inviteCode,
   }) async {
     try {
       final res = await _supabase.rpc('MPT_submit_brand_approval', params: {
@@ -496,6 +497,7 @@ class GameRepository {
               organizationLogoUrl: organizationLogoUrl,
               fallbackGameName: gameName,
               fallbackCapacity: capacity,
+              fallbackInviteCode: inviteCode,
             );
           } else if (token != null && token.isNotEmpty) {
             // External approver: dispatch authorization request email copying contact@dabhousie.com
@@ -507,6 +509,7 @@ class GameRepository {
               approvalToken: token,
               fallbackGameName: gameName,
               fallbackCapacity: capacity,
+              fallbackInviteCode: inviteCode,
             );
           }
         }
@@ -526,11 +529,12 @@ class GameRepository {
     required String organizationLogoUrl,
     String? fallbackGameName,
     int? fallbackCapacity,
+    String? fallbackInviteCode,
   }) async {
     try {
       String resolvedGameName = fallbackGameName ?? 'Tambola Event';
       int? resolvedCapacity = fallbackCapacity;
-      String? resolvedInviteCode;
+      String? resolvedInviteCode = fallbackInviteCode;
       try {
         final g = await getGame(gameId);
         resolvedGameName = g.name;
@@ -577,11 +581,12 @@ class GameRepository {
     required String approvalToken,
     String? fallbackGameName,
     int? fallbackCapacity,
+    String? fallbackInviteCode,
   }) async {
     try {
       String resolvedGameName = fallbackGameName ?? 'Tambola Event';
       int? resolvedCapacity = fallbackCapacity;
-      String? resolvedInviteCode;
+      String? resolvedInviteCode = fallbackInviteCode;
       try {
         final g = await getGame(gameId);
         resolvedGameName = g.name;

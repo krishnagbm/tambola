@@ -12,21 +12,19 @@
 const fs = require('fs');
 const path = require('path');
 
-let SUPABASE_URL = process.env.SUPABASE_URL || 'https://itfcnurjrnyalauwwdkj.supabase.co';
-let SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
 
-if (!SERVICE_KEY && fs.existsSync(path.resolve('.env'))) {
+let SUPABASE_URL = process.env.SUPABASE_URL || '';
+let SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+if ((!SUPABASE_URL || !SERVICE_KEY) && fs.existsSync(path.resolve('.env'))) {
   const env = fs.readFileSync(path.resolve('.env'), 'utf-8').split('\n').reduce((acc, line) => {
     const idx = line.indexOf('=');
     if (idx !== -1) acc[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
     return acc;
   }, {});
-  SUPABASE_URL = env.SUPABASE_URL || SUPABASE_URL;
-  SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
-}
-
-if (!SERVICE_KEY) {
-  SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNjA5MTE2MSwiZXhwIjoyMDUxNjY3MTYxfQ.E_i0aJ03tvmzuUq1_gi_Q1JsgG67VlrkwWVuYKsH8d8';
+  SUPABASE_URL = SUPABASE_URL || env.SUPABASE_URL || '';
+  SERVICE_KEY = SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
 }
 
 const AVATAR_MAP = {
@@ -39,14 +37,24 @@ const AVATAR_MAP = {
   'avatar_owl': '🦉',
   'avatar_panda': '🐼',
   'avatar_deer': '🦌',
-  'avatar_koala': '🐨'
+  'avatar_koala': '🐨',
+  'avatar_crown': '👑',
+  'avatar_wizard': '🧙',
+  'avatar_rocket': '🚀',
+  'avatar_unicorn': '🦄',
+  'avatar_cowboy': '🤠',
+  'avatar_star': '🌟',
+  'avatar_bullseye': '🎯',
+  'avatar_rocker': '🎸'
 };
 
 const PRIZE_FORMAT_MAP = {
   'FULL_HOUSE': { label: 'Full House (Grand Prize)', icon: '🏆', isGrand: true },
+  'SECOND_FULL_HOUSE': { label: '2nd Full House', icon: '🏆', isGrand: false },
   'TOP_LINE': { label: 'Top Line', icon: '🥇', isGrand: false },
   'MIDDLE_LINE': { label: 'Middle Line', icon: '🥈', isGrand: false },
   'BOTTOM_LINE': { label: 'Bottom Line', icon: '🥉', isGrand: false },
+  'EARLY_FIVE': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
   'EARLY_5': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
   'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false }
 };
@@ -86,15 +94,19 @@ function formatDate(dateStr) {
 
 async function fetchArchives() {
   try {
-    const aRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_archives?select=*&order=completed_at.desc.nullslast&limit=100`, {
-      headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` }
+    const pRes = await fetch(PUBLIC_API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_recent_games' })
     });
-    if (aRes.ok) {
-      const data = await aRes.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+    if (pRes.ok) {
+      const payload = await pRes.json();
+      if (payload && Array.isArray(payload.games) && payload.games.length > 0) {
+        return payload.games;
+      }
     }
   } catch (e) {
-    console.warn('Could not fetch remote archives, using fallback:', e.message);
+    console.warn('Could not fetch via public proxy, trying env fallback:', e.message);
   }
   return [];
 }

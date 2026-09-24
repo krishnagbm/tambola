@@ -1053,6 +1053,7 @@ class _AdminGameControlScreenState
           : 'Player';
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
+          ref.invalidate(hostGameRewardsProvider(widget.gameId));
           _triggerCelebrationPause(
             'Player "$winnerName" won ${Formatters.formatPrizeName(latestClaim.prizeType)}!',
           );
@@ -1116,6 +1117,7 @@ class _AdminGameControlScreenState
               ref.invalidate(claimsStreamProvider(widget.gameId));
               ref.invalidate(gameStreamProvider(widget.gameId));
               ref.invalidate(registrationsStreamProvider(widget.gameId));
+              ref.invalidate(hostGameRewardsProvider(widget.gameId));
             },
           ),
         ],
@@ -3160,14 +3162,12 @@ class _AdminGameControlScreenState
     AsyncValue<List<MptClaim>> claimsStream,
     Map<String, MptRegistration> regMap,
   ) {
+    final hostRewardsAsync = ref.watch(hostGameRewardsProvider(widget.gameId));
+    final hostRewards = hostRewardsAsync.value ?? [];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Prize Claims & Winners',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
         claimsStream.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('Error: $e'),
@@ -3176,110 +3176,279 @@ class _AdminGameControlScreenState
                 .where((c) => c.status == 'APPROVED')
                 .toList();
 
-            if (approvedClaims.isEmpty) {
-              return const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(
-                    child: Text(
-                      'No approved winners yet. Announce prizes to your players!',
-                    ),
-                  ),
-                ),
-              );
-            }
+            final hasUnclaimed = approvedClaims.any((c) {
+              final r = hostRewards
+                  .where(
+                    (rw) =>
+                        rw.claimId == c.id ||
+                        (rw.prizeType == c.prizeType && rw.userId == c.userId),
+                  )
+                  .firstOrNull;
+              return r == null || r.isAvailable;
+            });
 
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: approvedClaims.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (ctx, idx) {
-                final claim = approvedClaims[idx];
-                final playerReg = regMap[claim.userId];
-                final displayName = (playerReg?.displayName.isNotEmpty == true)
-                    ? playerReg!.displayName
-                    : (claim.userName != null && claim.userName != 'Player')
-                    ? claim.userName!
-                    : 'Player';
-                final avatar =
-                    playerReg?.avatar ?? claim.userAvatar ?? 'avatar_1';
-
-                return Card(
-                  color: AppTheme.accentSuccess.withValues(alpha: 0.12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(
-                      color: AppTheme.accentSuccess,
-                      width: 1.2,
-                    ),
-                  ),
-                  child: ListTile(
-                    leading: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppTheme.secondaryColor),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        Formatters.getAvatarEmoji(avatar),
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                    ),
-                    title: Text(
-                      '🏆 ${Formatters.formatPrizeName(claim.prizeType)}',
-                      style: const TextStyle(
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Prize Claims & Winners',
+                      style: TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: Colors.white,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 2),
-                        Text(
-                          'Won by: $displayName',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.accentSuccess,
+                    if (approvedClaims.isNotEmpty && hasUnclaimed)
+                      TextButton.icon(
+                        onPressed: () async {
+                          try {
+                            await ref
+                                .read(rewardsRepositoryProvider)
+                                .closeGameClaim(
+                                  gameId: widget.gameId,
+                                  closeAll: true,
+                                );
+                            ref.invalidate(
+                              hostGameRewardsProvider(widget.gameId),
+                            );
+                            ref.invalidate(myRewardsProvider);
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'All prize claims marked as Claimed!',
+                                ),
+                                backgroundColor: AppTheme.accentSuccess,
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to close claims: $e'),
+                                backgroundColor: AppTheme.accentDanger,
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.done_all_rounded,
+                          size: 15,
+                          color: AppTheme.secondaryColor,
+                        ),
+                        label: const Text(
+                          'Close All Claims',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.secondaryColor,
                           ),
                         ),
-                        Text(
-                          'Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFFCBD5E1),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                         ),
-                      ],
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.accentSuccess.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'APPROVED',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                          color: AppTheme.accentSuccess,
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (approvedClaims.isEmpty)
+                  const Card(
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Center(
+                        child: Text(
+                          'No approved winners yet. Announce prizes to your players!',
                         ),
                       ),
                     ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: approvedClaims.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (ctx, idx) {
+                      final claim = approvedClaims[idx];
+                      final playerReg = regMap[claim.userId];
+                      final displayName =
+                          (playerReg?.displayName.isNotEmpty == true)
+                          ? playerReg!.displayName
+                          : (claim.userName != null &&
+                                claim.userName != 'Player')
+                          ? claim.userName!
+                          : 'Player';
+                      final avatar =
+                          playerReg?.avatar ?? claim.userAvatar ?? 'avatar_1';
+                      final matchedReward = hostRewards
+                          .where(
+                            (rw) =>
+                                rw.claimId == claim.id ||
+                                (rw.prizeType == claim.prizeType &&
+                                    rw.userId == claim.userId),
+                          )
+                          .firstOrNull;
+                      final isClaimed = matchedReward?.isClaimed ?? false;
+
+                      return Card(
+                        color: AppTheme.accentSuccess.withValues(alpha: 0.12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isClaimed
+                                ? const Color(0xFF2E334D)
+                                : AppTheme.accentSuccess,
+                            width: 1.2,
+                          ),
+                        ),
+                        child: ListTile(
+                          leading: Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor.withValues(
+                                alpha: 0.2,
+                              ),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              Formatters.getAvatarEmoji(avatar),
+                              style: const TextStyle(fontSize: 22),
+                            ),
+                          ),
+                          title: Text(
+                            '🏆 ${Formatters.formatPrizeName(claim.prizeType)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 2),
+                              Text(
+                                'Won by: $displayName',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.accentSuccess,
+                                ),
+                              ),
+                              Text(
+                                matchedReward != null
+                                    ? 'Ref: ${matchedReward.claimReference}'
+                                    : 'Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFFCBD5E1),
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: isClaimed
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 9,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(
+                                      0xFF10B981,
+                                    ).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF10B981,
+                                      ).withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '✓ CLAIMED',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10.5,
+                                      color: Color(0xFF10B981),
+                                    ),
+                                  ),
+                                )
+                              : ElevatedButton.icon(
+                                  onPressed: () async {
+                                    try {
+                                      await ref
+                                          .read(rewardsRepositoryProvider)
+                                          .closeGameClaim(
+                                            gameId: widget.gameId,
+                                            rewardId: matchedReward?.id,
+                                            claimId: claim.id,
+                                          );
+                                      ref.invalidate(
+                                        hostGameRewardsProvider(widget.gameId),
+                                      );
+                                      ref.invalidate(myRewardsProvider);
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Marked ${Formatters.formatPrizeName(claim.prizeType)} ($displayName) as Claimed!',
+                                          ),
+                                          backgroundColor:
+                                              AppTheme.accentSuccess,
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (!mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Failed to close claim: $e',
+                                          ),
+                                          backgroundColor:
+                                              AppTheme.accentDanger,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 14,
+                                  ),
+                                  label: const Text('Close Claim'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.accentSuccess,
+                                    foregroundColor: Colors.white,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 6,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+              ],
             );
           },
         ),
