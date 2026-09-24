@@ -170,12 +170,13 @@
     }
 
     .org-logo-img {
-      max-height: 22px;
-      max-width: 90px;
+      height: 28px;
+      max-height: 28px;
+      max-width: 100px;
       object-fit: contain;
-      border-radius: 4px;
+      border-radius: 5px;
       background: #FFFFFF;
-      padding: 2px 4px;
+      padding: 2px;
       display: inline-block;
       vertical-align: middle;
     }
@@ -508,7 +509,11 @@
 
         const logoImg = document.getElementById('mock-logo-img');
         if (data.organization_logo_url) {
-          logoImg.src = data.organization_logo_url;
+          logoImg.crossOrigin = 'anonymous';
+          logoImg.onload = function() {
+            if (window.autoTrimLogo) window.autoTrimLogo(logoImg);
+          };
+          logoImg.src = data.organization_logo_url.replace(/size=\d+/, 'size=256');
           logoImg.alt = `${data.organization_name} Logo`;
         } else {
           logoImg.style.display = 'none';

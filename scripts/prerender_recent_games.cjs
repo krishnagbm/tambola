@@ -163,11 +163,12 @@ function generateCardsHtml(games) {
       const hasLogoUrl = !!(g.organization_logo_url && typeof g.organization_logo_url === 'string' && g.organization_logo_url.trim().length > 0);
 
       if (isLogoApproved && hasLogoUrl) {
-        const logoUrlEscaped = escapeHtml(g.organization_logo_url.trim());
+        const rawLogoUrl = g.organization_logo_url.trim().replace(/size=\d+/, 'size=256');
+        const logoUrlEscaped = escapeHtml(rawLogoUrl);
         const logoAltEscaped = escapeHtml(g.organization_logo_alt || g.organization_name);
         orgHtml = `
           <div class="org-badge">
-            <img src="${logoUrlEscaped}" alt="${logoAltEscaped}" class="org-logo-img" onerror="this.style.display='none';">
+            <img src="${logoUrlEscaped}" alt="${logoAltEscaped}" class="org-logo-img" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none';">
             <span class="org-name-text">Hosted by ${orgNameEscaped}</span>
           </div>
         `;

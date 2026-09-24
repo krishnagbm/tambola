@@ -212,16 +212,75 @@
     }
   };
 
+  // Global automatic whitespace/transparent border trimmer for corporate logos
+  window.autoTrimLogo = function (img) {
+    if (!img || img.dataset.trimmed === '1') return;
+    img.dataset.trimmed = '1';
+    try {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+      if (!w || !h) return;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      let minX = w, minY = h, maxX = -1, maxY = -1;
+      for (let y = 0; y < h; y++) {
+        const rowOff = y * w * 4;
+        for (let x = 0; x < w; x++) {
+          const idx = rowOff + x * 4;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
+          if (a < 25) continue;
+          if (r > 242 && g > 242 && b > 242) continue;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < minX || maxY < minY) return;
+      const contentW = maxX - minX + 1;
+      const contentH = maxY - minY + 1;
+      if (contentW >= w * 0.9 && contentH >= h * 0.9) return;
+      const pad = Math.max(2, Math.round(Math.max(contentW, contentH) * 0.06));
+      minX = Math.max(0, minX - pad);
+      minY = Math.max(0, minY - pad);
+      maxX = Math.min(w - 1, maxX + pad);
+      maxY = Math.min(h - 1, maxY + pad);
+      const cw = maxX - minX + 1;
+      const ch = maxY - minY + 1;
+      const out = document.createElement('canvas');
+      out.width = cw;
+      out.height = ch;
+      out.getContext('2d').drawImage(canvas, minX, minY, cw, ch, 0, 0, cw, ch);
+      img.src = out.toDataURL('image/png');
+    } catch (_) {
+      // Cross-origin without CORS headers: keep original image gracefully
+    }
+  };
+
   // Export globally
   window.DabHousieNav = {
     getUserSession: getUserSession,
     syncNavAuth: syncNavAuth,
     getAvatarEmoji: getAvatarEmoji,
+    autoTrimLogo: window.autoTrimLogo,
   };
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', syncNavAuth);
-  } else {
+  function initNavAndLogos() {
     syncNavAuth();
+    document.querySelectorAll('img.org-logo-img').forEach((img) => {
+      if (img.complete && img.naturalWidth > 0) {
+        window.autoTrimLogo(img);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNavAndLogos);
+  } else {
+    initNavAndLogos();
   }
 })();

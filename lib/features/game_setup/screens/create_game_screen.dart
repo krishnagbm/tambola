@@ -926,7 +926,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () {
-                    final logoUrl = CompanyLogo.buildLogoUrl(domain: suggestedDomain, size: 128);
+                    final logoUrl = CompanyLogo.buildLogoUrl(domain: suggestedDomain, size: 256);
                     setState(() {
                       _orgLogoUrlController.text = logoUrl;
                     });
@@ -1532,11 +1532,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 20,
-                              height: 20,
+                              width: 28,
+                              height: 28,
+                              padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(5),
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: _buildMockLogo(logoUrl),
@@ -1760,13 +1761,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildMockLogo(String logoUrl) {
     final cleanLogoDomain = CompanyLogo.cleanDomain(logoUrl);
+    final fallbackMonogram = Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
 
     // 1. Direct Logo.dev URL (from auto-fetch or manual paste):
     if (logoUrl.contains('img.logo.dev') || logoUrl.contains('logo.dev')) {
-      return Image.network(
-        logoUrl,
+      return AutoTrimmedNetworkLogo(
+        imageUrl: logoUrl,
         fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+        fallback: fallbackMonogram,
       );
     }
 
@@ -1774,9 +1776,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     if (cleanLogoDomain.contains('.') && !logoUrl.startsWith('http')) {
       return CompanyLogo(
         domain: cleanLogoDomain,
-        size: 20,
+        size: 28,
         isCommercialUse: false,
-        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+        fallbackWidget: fallbackMonogram,
       );
     }
 
@@ -1786,19 +1788,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       final primaryUrl = kIsWeb ? webProxyUrl : logoUrl;
       final fallbackUrl = kIsWeb ? logoUrl : null;
 
-      return Image.network(
-        primaryUrl,
+      return AutoTrimmedNetworkLogo(
+        imageUrl: primaryUrl,
+        fallbackUrl: fallbackUrl,
         fit: BoxFit.contain,
-        errorBuilder: (ctx, err, stack) {
-          if (fallbackUrl != null) {
-            return Image.network(
-              fallbackUrl,
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
-            );
-          }
-          return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
-        },
+        fallback: fallbackMonogram,
       );
     }
 
@@ -1807,9 +1801,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     if (emailDomain.isNotEmpty) {
       return CompanyLogo(
         domain: emailDomain,
-        size: 20,
+        size: 28,
         isCommercialUse: false,
-        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+        fallbackWidget: fallbackMonogram,
       );
     }
 
@@ -1819,13 +1813,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     if (cleanOrgDomain.contains('.') && cleanOrgDomain.length > 3) {
       return CompanyLogo(
         domain: cleanOrgDomain,
-        size: 20,
+        size: 28,
         isCommercialUse: false,
-        fallbackWidget: Image.asset(AppAssets.monogramDH, fit: BoxFit.contain),
+        fallbackWidget: fallbackMonogram,
       );
     }
 
-    return Image.asset(AppAssets.monogramDH, fit: BoxFit.contain);
+    return fallbackMonogram;
   }
 
   Widget _buildGroupSizeSection() {

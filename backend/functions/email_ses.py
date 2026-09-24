@@ -439,10 +439,128 @@ Support: {FROM_EMAIL}
         return False
 
 
+def _autocrop_png_bytes(png_bytes: bytes) -> bytes:
+    """
+    Pure-Python (standard library struct + zlib) PNG auto-cropper that trims surrounding
+    transparent or near-white border padding from scraped corporate logos (e.g. Logo.dev).
+    """
+    import struct
+    import zlib
+
+    try:
+        if not png_bytes or not png_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+            return png_bytes
+        pos = 8
+        width = height = bit_depth = color_type = interlace = 0
+        idat_chunks = []
+        while pos + 8 <= len(png_bytes):
+            length = struct.unpack(">I", png_bytes[pos : pos + 4])[0]
+            ctype = png_bytes[pos + 4 : pos + 8]
+            cdata = png_bytes[pos + 8 : pos + 8 + length]
+            pos += 12 + length
+            if ctype == b"IHDR":
+                width, height, bit_depth, color_type, _, _, interlace = struct.unpack(">IIBBBBB", cdata)
+            elif ctype == b"IDAT":
+                idat_chunks.append(cdata)
+            elif ctype == b"IEND":
+                break
+
+        if bit_depth != 8 or color_type not in (2, 6) or interlace != 0 or not idat_chunks:
+            return png_bytes
+
+        bpp = 4 if color_type == 6 else 3
+        raw = zlib.decompress(b"".join(idat_chunks))
+        stride = width * bpp
+        rows = []
+        prev = bytearray(stride)
+        idx = 0
+        for _ in range(height):
+            f = raw[idx]
+            idx += 1
+            cur = bytearray(raw[idx : idx + stride])
+            idx += stride
+            if f == 1:
+                for i in range(bpp, stride):
+                    cur[i] = (cur[i] + cur[i - bpp]) & 0xFF
+            elif f == 2:
+                for i in range(stride):
+                    cur[i] = (cur[i] + prev[i]) & 0xFF
+            elif f == 3:
+                for i in range(stride):
+                    a = cur[i - bpp] if i >= bpp else 0
+                    cur[i] = (cur[i] + ((a + prev[i]) >> 1)) & 0xFF
+            elif f == 4:
+                for i in range(stride):
+                    a = cur[i - bpp] if i >= bpp else 0
+                    b = prev[i]
+                    c = prev[i - bpp] if i >= bpp else 0
+                    p = a + b - c
+                    pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                    pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                    cur[i] = (cur[i] + pr) & 0xFF
+            rows.append(cur)
+            prev = cur
+
+        min_x, min_y, max_x, max_y = width, height, -1, -1
+        for y in range(height):
+            row = rows[y]
+            for x in range(width):
+                off = x * bpp
+                r, g, b = row[off], row[off + 1], row[off + 2]
+                a = row[off + 3] if bpp == 4 else 255
+                if a < 25:
+                    continue
+                if r > 242 and g > 242 and b > 242:
+                    continue
+                if x < min_x:
+                    min_x = x
+                if x > max_x:
+                    max_x = x
+                if y < min_y:
+                    min_y = y
+                if y > max_y:
+                    max_y = y
+
+        if max_x < min_x or max_y < min_y:
+            return png_bytes
+
+        pad = max(2, int(max(max_x - min_x + 1, max_y - min_y + 1) * 0.06))
+        min_x = max(0, min_x - pad)
+        min_y = max(0, min_y - pad)
+        max_x = min(width - 1, max_x + pad)
+        max_y = min(height - 1, max_y + pad)
+        nw = max_x - min_x + 1
+        nh = max_y - min_y + 1
+        if nw >= width * 0.9 and nh >= height * 0.9:
+            return png_bytes
+
+        out_raw = bytearray()
+        for y in range(min_y, max_y + 1):
+            out_raw.append(0)
+            out_raw.extend(rows[y][min_x * bpp : (max_x + 1) * bpp])
+
+        def make_chunk(ct: bytes, cd: bytes) -> bytes:
+            return struct.pack(">I", len(cd)) + ct + cd + struct.pack(">I", zlib.crc32(ct + cd) & 0xFFFFFFFF)
+
+        ihdr = struct.pack(">IIBBBBB", nw, nh, 8, color_type, 0, 0, 0)
+        return (
+            b"\x89PNG\r\n\x1a\n"
+            + make_chunk(b"IHDR", ihdr)
+            + make_chunk(b"IDAT", zlib.compress(bytes(out_raw), 9))
+            + make_chunk(b"IEND", b"")
+        )
+    except Exception as e:
+        print(f"  [ SES ] PNG auto-crop skipped: {e}")
+        return png_bytes
+
+
 def _fetch_inline_logos(organization_logo_url: Optional[str] = None) -> Tuple[Optional[bytes], str, Optional[bytes], str]:
     """
-    Loads DabHousie and corporate logos for inline MIME CID embedding to prevent image blocking in Outlook/Gmail.
+    Loads DabHousie and corporate logos for inline MIME CID embedding to prevent image blocking in Outlook/Gmail,
+    automatically cropping excess transparent/white padding from corporate logos.
     """
+    import re
+
     dabhousie_logo_bytes = None
     local_logo_path = os.path.join(os.path.dirname(__file__), "assets", "dabhousie_horizontal_logo.png")
     if os.path.exists(local_logo_path):
@@ -464,10 +582,14 @@ def _fetch_inline_logos(organization_logo_url: Optional[str] = None) -> Tuple[Op
 
     org_logo_bytes = None
     if organization_logo_url:
+        fetch_url = organization_logo_url.strip()
+        if "img.logo.dev" in fetch_url:
+            fetch_url = re.sub(r"size=\d+", "size=256", fetch_url)
         try:
-            req = urllib.request.Request(organization_logo_url, headers={"User-Agent": "Mozilla/5.0 (DabHousie-SES)"})
+            req = urllib.request.Request(fetch_url, headers={"User-Agent": "Mozilla/5.0 (DabHousie-SES)"})
             with urllib.request.urlopen(req, timeout=4) as resp:
-                org_logo_bytes = resp.read()
+                raw_logo = resp.read()
+                org_logo_bytes = _autocrop_png_bytes(raw_logo)
         except Exception as e:
             print(f"  [ SES ] Could not fetch org logo for inline CID: {e}")
 
@@ -602,9 +724,13 @@ def send_brand_approval_email(
         logo_preview_html = f"""
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
           <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Submitted Corporate Logo Preview</div>
-          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
-          </div>
+          <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#ffffff" style="background:#ffffff; border-radius:10px; padding:10px 16px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <img src="{org_logo_src}" alt="{organization_name}" height="64" style="height:64px; max-height:64px; width:auto; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+              </td>
+            </tr>
+          </table>
           <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
         </div>
         """
@@ -783,9 +909,13 @@ def send_brand_acknowledgement_email(
         logo_preview_html = f"""
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
           <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Official Activated Logo</div>
-          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
-          </div>
+          <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#ffffff" style="background:#ffffff; border-radius:10px; padding:10px 16px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <img src="{org_logo_src}" alt="{organization_name}" height="64" style="height:64px; max-height:64px; width:auto; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+              </td>
+            </tr>
+          </table>
           <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
         </div>
         """
@@ -959,9 +1089,13 @@ def send_brand_approved_confirmation_email(
         logo_preview_html = f"""
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; text-align:center; margin-bottom:20px;">
           <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Approved Corporate Emblem</div>
-          <div style="display:inline-block; background:#ffffff; border-radius:10px; padding:12px 20px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-            <img src="{org_logo_src}" alt="{organization_name}" style="max-height:48px; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
-          </div>
+          <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#ffffff" style="background:#ffffff; border-radius:10px; padding:10px 16px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+                <img src="{org_logo_src}" alt="{organization_name}" height="64" style="height:64px; max-height:64px; width:auto; max-width:200px; object-fit:contain; display:block; margin:0 auto;" />
+              </td>
+            </tr>
+          </table>
           <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{organization_name}</div>
         </div>
         """
