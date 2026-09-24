@@ -8,6 +8,7 @@ import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../core/utils/tambola_ticket.dart';
 import '../../../core/utils/wake_lock_helper.dart';
+import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/celebration_overlay.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
@@ -644,6 +645,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final isGameEnded =
                   currentGame?.status == 'COMPLETED' ||
                   calledNumbers.length >= 90;
+              final isGameActive =
+                  (currentGame?.status == 'IN_PROGRESS' ||
+                          calledNumbers.isNotEmpty) &&
+                      !isGameEnded &&
+                      currentGame?.status != 'CANCELLED';
               final activePrizes =
                   currentGame?.prizesConfig ??
                   [
@@ -662,14 +668,16 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   builder: (ctx, constraints) {
                     final orientation = MediaQuery.of(ctx).orientation;
                     final isLandscape =
-                        orientation == Orientation.landscape &&
-                        constraints.maxWidth > 560;
+                        orientation == Orientation.landscape ||
+                        (constraints.maxWidth > 560 &&
+                            constraints.maxWidth > constraints.maxHeight * 1.15);
 
                     if (isLandscape) {
                       // ========================================================
                       // MOBILE LANDSCAPE 2-COLUMN LAYOUT
                       // Left: Player Banner, Latest Call/Ended, Expanded Ticket Matrix
                       // Right: Recent Calls, Prize Claims Panel, Quit Game
+                      // NOTE: Strict ad policy: NO ad banner in landscape mode.
                       // ========================================================
                       return Padding(
                         padding: const EdgeInsets.symmetric(
@@ -679,9 +687,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Left Column (Ticket & Current Ball)
+                            // Left Column (Ticket & Current Ball) - Maximize width for 9-column ticket
                             Expanded(
-                              flex: 5,
+                              flex: 7,
                               child: SingleChildScrollView(
                                 child: Column(
                                   crossAxisAlignment:
@@ -720,9 +728,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                             ),
                             const SizedBox(width: 14),
 
-                            // Right Column (Recent Numbers & Prize Claims)
+                            // Right Column (Recent Numbers & Prize Claims) - Tiny claim buttons
                             Expanded(
-                              flex: 4,
+                              flex: 3,
                               child: SingleChildScrollView(
                                 child: Column(
                                   crossAxisAlignment:
@@ -924,6 +932,15 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                   ),
                                 ),
                               ),
+                            ),
+                          ],
+                          if (!isLandscape && !isGameActive) ...[
+                            const SizedBox(height: 18),
+                            const AdBannerSlot(
+                              slotId: 'DAB-PLAYER-GAME-BOTTOM',
+                              title: 'Sponsored Partner',
+                              subtitle:
+                                  'Enjoying DabHousie? Host your next family or corporate event!',
                             ),
                           ],
                           const SizedBox(height: 24),
@@ -1435,23 +1452,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Text(
               'Claim Winning Prize',
               style: TextStyle(
-                fontSize: isCompact ? 14 : 16,
+                fontSize: isCompact ? 12 : 14,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
             if (isGameEnded)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black38,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: const Color(0xFF3B4163)),
                 ),
                 child: const Text(
                   'CONCLUDED',
                   style: TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 9,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFA0AEC0),
                   ),
@@ -1459,24 +1476,24 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           isGameEnded
               ? 'Game is over. Prize claiming is closed.'
               : 'Tap when completed. Server will validate your ticket.',
           style: TextStyle(
-            fontSize: isCompact ? 11 : 12,
+            fontSize: isCompact ? 9.5 : 11,
             color: const Color(0xFFA0AEC0),
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: isCompact ? 6 : 10),
         GridView.count(
-          crossAxisCount: isCompact ? 2 : 2,
+          crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: isCompact ? 2.2 : 2.3,
+          crossAxisSpacing: isCompact ? 4 : 8,
+          mainAxisSpacing: isCompact ? 4 : 8,
+          childAspectRatio: isCompact ? 3.5 : 3.2,
           children: activePrizes.map((prize) {
             final approvedClaim = approvedClaims[prize];
             final isApproved = approvedClaim != null;
@@ -1488,18 +1505,18 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final displayName = (playerReg?.displayName.isNotEmpty == true)
                   ? playerReg!.displayName
                   : (approvedClaim.userName != null &&
-                        approvedClaim.userName != 'Player')
-                  ? approvedClaim.userName!
-                  : 'Player';
+                          approvedClaim.userName != 'Player')
+                      ? approvedClaim.userName!
+                      : 'Player';
 
               return ElevatedButton(
                 onPressed: null, // Disabled
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isWonByMe
-                      ? AppTheme.accentSuccess.withOpacity(0.2)
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.2)
                       : Colors.black26,
                   disabledBackgroundColor: isWonByMe
-                      ? AppTheme.accentSuccess.withOpacity(0.25)
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.25)
                       : const Color(0xFF222639),
                   disabledForegroundColor: isWonByMe
                       ? AppTheme.accentSuccess
@@ -1509,9 +1526,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         ? AppTheme.accentSuccess
                         : const Color(0xFF2E334D),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 4 : 6,
+                    vertical: isCompact ? 2 : 4,
                   ),
                 ),
                 child: Column(
@@ -1520,19 +1537,21 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 11 : 12,
+                        fontSize: isCompact ? 10 : 11.5,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       isWonByMe
                           ? (registrations.length > 1
-                              ? '🏆 You Won (1 of ${registrations.length})'
+                              ? '🏆 Won (1 of ${registrations.length})'
                               : '🏆 Won by You!')
-                          : '✓ Won by $displayName',
+                          : '✓ $displayName',
                       style: TextStyle(
-                        fontSize: isCompact ? 9 : 10,
+                        fontSize: isCompact ? 8 : 9.5,
                         fontWeight: FontWeight.bold,
                         color: isWonByMe
                             ? AppTheme.accentSuccess
@@ -1553,9 +1572,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   disabledBackgroundColor: const Color(0xFF1E2235),
                   disabledForegroundColor: const Color(0xFF64748B),
                   side: const BorderSide(color: Color(0xFF2E334D)),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 6,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 4 : 6,
+                    vertical: isCompact ? 2 : 4,
                   ),
                 ),
                 child: Column(
@@ -1564,14 +1583,21 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 11 : 12,
+                        fontSize: isCompact ? 10 : 11.5,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const Text(
-                      'Unclaimed (Game Over)',
-                      style: TextStyle(fontSize: 8.5, color: Color(0xFF64748B)),
+                    Text(
+                      'Unclaimed',
+                      style: TextStyle(
+                        fontSize: isCompact ? 7.5 : 8.5,
+                        color: const Color(0xFF64748B),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -1582,23 +1608,28 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               onPressed: _isClaiming
                   ? null
                   : () => _handleClaimPrize(
-                      prizeType: prize,
-                      ticket: ticket,
-                      calledSet: calledSet,
-                    ),
+                        prizeType: prize,
+                        ticket: ticket,
+                        calledSet: calledSet,
+                      ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.darkSurface,
                 foregroundColor: Colors.white,
                 side: const BorderSide(color: AppTheme.primaryColor),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 4 : 6,
+                  vertical: isCompact ? 2 : 4,
+                ),
               ),
               child: Text(
                 Formatters.formatPrizeName(prize),
                 style: TextStyle(
-                  fontSize: isCompact ? 12 : 13,
+                  fontSize: isCompact ? 10.5 : 12,
                   fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             );
           }).toList(),
