@@ -2075,13 +2075,50 @@ class _BrandGiftFulfillmentDialogState
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        '1. Choose a Discounted Brand Publisher Product (or Customize Below)',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFCBD5E1),
-                        ),
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '1. Choose a Discounted Brand Publisher Product (or Enter Your Own Exclusive Offer Below)',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _selectedOfferId = null;
+                                _brandController.text =
+                                    widget.game.organizationName?.isNotEmpty ==
+                                        true
+                                    ? widget.game.organizationName!
+                                    : 'Host Exclusive';
+                                _giftTitleController.clear();
+                                _productUrlController.clear();
+                                _giftCodeController.clear();
+                              });
+                            },
+                            icon: const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 14,
+                              color: AppTheme.secondaryColor,
+                            ),
+                            label: const Text(
+                              'Use Custom Host Offer',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       SizedBox(

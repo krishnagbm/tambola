@@ -287,6 +287,14 @@ class RewardsRepository {
     double? prizeValue,
     String? fulfillmentNote,
   }) async {
+    final validUuidOfferId =
+        brandOfferId != null &&
+            RegExp(
+              r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+            ).hasMatch(brandOfferId)
+        ? brandOfferId
+        : null;
+
     try {
       final res = await _supabase.rpc(
         'MPT_close_game_claim',
@@ -295,13 +303,13 @@ class RewardsRepository {
           'p_reward_id': rewardId,
           'p_claim_id': claimId,
           'p_close_all': closeAll,
-          'p_fulfilled_brand': brandName != null && giftTitle != null
-              ? '$brandName — $giftTitle'
-              : (brandName ?? giftTitle),
-          'p_fulfilled_code': giftCode,
-          'p_fulfilled_product_url': productUrl,
-          'p_brand_offer_id': brandOfferId,
+          'p_gift_title': giftTitle,
+          'p_brand_name': brandName,
+          'p_gift_code': giftCode,
+          'p_fulfillment_note': fulfillmentNote,
+          'p_product_url': productUrl,
           'p_prize_value': prizeValue,
+          'p_brand_offer_id': validUuidOfferId,
         },
       );
       if (res is Map && res['rewards'] is List) {
@@ -323,7 +331,9 @@ class RewardsRepository {
       if (brandName != null) updateMap['fulfilled_brand_name'] = brandName;
       if (giftCode != null) updateMap['fulfilled_gift_code'] = giftCode;
       if (productUrl != null) updateMap['fulfilled_product_url'] = productUrl;
-      if (brandOfferId != null) updateMap['brand_offer_id'] = brandOfferId;
+      if (validUuidOfferId != null) {
+        updateMap['brand_offer_id'] = validUuidOfferId;
+      }
       if (prizeValue != null) updateMap['prize_value'] = prizeValue;
       if (fulfillmentNote != null) {
         updateMap['fulfillment_note'] = fulfillmentNote;

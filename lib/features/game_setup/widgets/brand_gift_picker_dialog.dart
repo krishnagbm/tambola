@@ -60,6 +60,29 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
   String _selectedCategory = 'All';
   String _selectedPriceFilter = 'All';
   bool _applyToAllLines = false;
+  bool _isCustomMode = false;
+
+  // Custom Game-Exclusive Offer Controllers
+  late final TextEditingController _customTitleController;
+  late final TextEditingController _customBrandController;
+  late final TextEditingController _customDomainController;
+  late final TextEditingController _customValueController;
+  late final TextEditingController _customUrlController;
+  late final TextEditingController _customCodeController;
+  String _customEmoji = '🎁';
+
+  static const List<String> _emojiChoices = [
+    '🎁',
+    '🏆',
+    '🛍️',
+    '☕',
+    '🍫',
+    '🎧',
+    '🍾',
+    '🎟️',
+    '💎',
+    '🍕',
+  ];
 
   bool get _isRowLine =>
       widget.prizeKey == 'TOP_LINE' ||
@@ -67,9 +90,106 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
       widget.prizeKey == 'BOTTOM_LINE';
 
   @override
+  void initState() {
+    super.initState();
+    final cur = widget.currentSelection;
+    final isExistingCustom = cur != null && cur.isCustomHostOffer;
+    _isCustomMode = isExistingCustom;
+    _customEmoji = isExistingCustom ? cur.emoji : '🎁';
+    _customTitleController = TextEditingController(
+      text: isExistingCustom ? cur.productTitle : '',
+    );
+    _customBrandController = TextEditingController(
+      text: isExistingCustom ? cur.brandName : '',
+    );
+    _customDomainController = TextEditingController(
+      text: isExistingCustom ? cur.brandDomain : '',
+    );
+    final initialValue = isExistingCustom
+        ? cur.retailPrice
+        : (widget.targetBudgetValue ?? 0);
+    _customValueController = TextEditingController(
+      text: initialValue > 0 ? initialValue.toStringAsFixed(0) : '',
+    );
+    _customUrlController = TextEditingController(
+      text: isExistingCustom ? cur.productUrl : '',
+    );
+    _customCodeController = TextEditingController(
+      text: isExistingCustom ? (cur.promoCode ?? '') : '',
+    );
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
+    _customTitleController.dispose();
+    _customBrandController.dispose();
+    _customDomainController.dispose();
+    _customValueController.dispose();
+    _customUrlController.dispose();
+    _customCodeController.dispose();
     super.dispose();
+  }
+
+  void _assignCustomGift() {
+    final title = _customTitleController.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a Gift / Product Title for this prize.'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+      return;
+    }
+
+    final brand = _customBrandController.text.trim().isEmpty
+        ? 'Host Exclusive'
+        : _customBrandController.text.trim();
+    final rawDomain = _customDomainController.text
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'^www\.'), '')
+        .split('/')
+        .first;
+    final val =
+        double.tryParse(_customValueController.text.trim()) ??
+        (widget.targetBudgetValue ?? 0.0);
+    final url = _customUrlController.text.trim();
+    final code = _customCodeController.text.trim();
+
+    // Auto-infer domain from product URL if domain wasn't explicitly typed
+    String resolvedDomain = rawDomain;
+    if (resolvedDomain.isEmpty && url.isNotEmpty) {
+      final parsed = Uri.tryParse(url);
+      if (parsed != null && parsed.host.isNotEmpty) {
+        resolvedDomain = parsed.host.replaceAll(RegExp(r'^www\.'), '');
+      }
+    }
+
+    final customOffer = BrandOffer(
+      id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+      brandName: brand,
+      brandDomain: resolvedDomain,
+      contactEmail: '',
+      productTitle: title,
+      category: 'Host Custom',
+      productUrl: url,
+      retailPrice: val,
+      organizerPrice: val,
+      discountPercent: 0,
+      promoCode: code.isEmpty ? null : code,
+      emoji: _customEmoji,
+      badgeText: 'HOST EXCLUSIVE',
+    );
+
+    Navigator.of(context).pop(
+      BrandGiftSelectionResult(
+        offer: customOffer,
+        applyToAllRowLines: _applyToAllLines,
+      ),
+    );
   }
 
   @override
@@ -85,7 +205,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
         side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 680, maxHeight: 720),
+        constraints: const BoxConstraints(maxWidth: 680, maxHeight: 740),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -112,7 +232,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Assign Brand Gift • ${widget.prizeLabel}',
+                          'Assign Prize Gift • ${widget.prizeLabel}',
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
@@ -123,8 +243,8 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         Text(
                           widget.targetBudgetValue != null &&
                                   widget.targetBudgetValue! > 0
-                              ? 'Target Prize Value: \$${widget.targetBudgetValue!.toStringAsFixed(0)} • Browse discounted Brand Partner offers'
-                              : 'Select a sponsored Brand Gift to award this prize winner & showcase on Hall of Fame',
+                              ? 'Target Prize Value: \$${widget.targetBudgetValue!.toStringAsFixed(0)} • Pick from Partner Catalog or Create Your Own Exclusive Gift'
+                              : 'Pick a discounted Partner Gift or create your own Custom Gift exclusively for this game',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF94A3B8),
@@ -158,119 +278,77 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
-              // Search & Price Filter Row
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (_) => setState(() {}),
-                      style: const TextStyle(fontSize: 13.5, color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText:
-                            'Search by brand, product, or keyword (e.g. Starbucks, Speaker, \$25)...',
-                        hintStyle: const TextStyle(
-                          fontSize: 12.5,
-                          color: Color(0xFF64748B),
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          size: 19,
-                          color: Color(0xFF94A3B8),
-                        ),
-                        suffixIcon: query.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear, size: 16),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  setState(() {});
-                                },
-                              )
-                            : null,
-                        isDense: true,
-                        filled: true,
-                        fillColor: AppTheme.darkSurface,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF2E334D)),
+              // Mode Selector Tabs: Partner Catalog vs. Create Custom Gift (Exclusive to This Game)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(9),
+                        onTap: () => setState(() => _isCustomMode = false),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          decoration: BoxDecoration(
+                            color: !_isCustomMode
+                                ? AppTheme.secondaryColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '🛍️ Partner Gift Catalog',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: !_isCustomMode
+                                  ? Colors.black
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Category + Price Filter Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    for (final priceOpt in [
-                      'All',
-                      'Under \$15',
-                      '\$15–\$25',
-                      '\$25+',
-                    ]) ...[
-                      ChoiceChip(
-                        label: Text(priceOpt),
-                        selected: _selectedPriceFilter == priceOpt,
-                        onSelected: (_) =>
-                            setState(() => _selectedPriceFilter = priceOpt),
-                        selectedColor:
-                            AppTheme.secondaryColor.withValues(alpha: 0.25),
-                        backgroundColor: AppTheme.darkSurface,
-                        labelStyle: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: _selectedPriceFilter == priceOpt
-                              ? AppTheme.secondaryColor
-                              : const Color(0xFFCBD5E1),
-                        ),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      const SizedBox(width: 6),
-                    ],
                     const SizedBox(width: 6),
-                    for (final cat in [
-                      'All',
-                      'Coffee & Dining',
-                      'Shopping Vouchers',
-                      'Gourmet Hampers',
-                      'Tech & Gadgets',
-                      'Beauty & Lifestyle',
-                    ]) ...[
-                      FilterChip(
-                        label: Text(cat == 'All' ? 'All Categories' : cat),
-                        selected: _selectedCategory == cat,
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = cat),
-                        selectedColor:
-                            AppTheme.primaryLight.withValues(alpha: 0.25),
-                        backgroundColor: AppTheme.darkSurface,
-                        labelStyle: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: _selectedCategory == cat
-                              ? AppTheme.primaryLight
-                              : const Color(0xFF94A3B8),
+                    Expanded(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(9),
+                        onTap: () => setState(() => _isCustomMode = true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          decoration: BoxDecoration(
+                            color: _isCustomMode
+                                ? AppTheme.secondaryColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '✨ Create Your Own Offer (This Game Only)',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
+                              color: _isCustomMode
+                                  ? Colors.black
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                          ),
                         ),
-                        visualDensity: VisualDensity.compact,
                       ),
-                      const SizedBox(width: 6),
-                    ],
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
 
               if (_isRowLine) ...[
-                const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -298,7 +376,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                       const SizedBox(width: 8),
                       const Expanded(
                         child: Text(
-                          'Apply this selected Brand Gift & Value to all 3 Row Lines (Top, Middle & Bottom Line)',
+                          'Apply this Gift & Value to all 3 Row Lines (Top, Middle & Bottom Line)',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
@@ -309,86 +387,482 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 10),
               ],
-              const SizedBox(height: 12),
 
-              // Offers List
-              Expanded(
-                child: offersAsync.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.secondaryColor,
-                    ),
-                  ),
-                  error: (err, _) => Center(
-                    child: Text(
-                      'Could not load Brand Gift catalog: $err',
-                      style: const TextStyle(color: AppTheme.accentDanger),
-                    ),
-                  ),
-                  data: (offers) {
-                    final filtered = offers.where((o) {
-                      if (_selectedCategory != 'All' &&
-                          o.category.toLowerCase() !=
-                              _selectedCategory.toLowerCase()) {
-                        return false;
-                      }
-                      if (_selectedPriceFilter == 'Under \$15' &&
-                          o.retailPrice >= 15) {
-                        return false;
-                      }
-                      if (_selectedPriceFilter == '\$15–\$25' &&
-                          (o.retailPrice < 15 || o.retailPrice > 25)) {
-                        return false;
-                      }
-                      if (_selectedPriceFilter == '\$25+' &&
-                          o.retailPrice <= 25) {
-                        return false;
-                      }
-                      if (query.isNotEmpty) {
-                        final hay =
-                            '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} \$${o.retailPrice.toStringAsFixed(0)}'
-                                .toLowerCase();
-                        if (!hay.contains(query)) return false;
-                      }
-                      return true;
-                    }).toList();
-
-                    if (filtered.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No matching Brand Gift offers found. Try clearing filters.',
-                          style: TextStyle(color: Color(0xFF94A3B8)),
+              if (_isCustomMode)
+                Expanded(child: _buildCustomOfferForm())
+              else ...[
+                // Search & Price Filter Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (_) => setState(() {}),
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: Colors.white,
                         ),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (context, idx) {
-                        final offer = filtered[idx];
-                        final isSelected =
-                            widget.currentSelection?.id == offer.id;
-                        final isBudgetMatch =
-                            widget.targetBudgetValue != null &&
-                            widget.targetBudgetValue! > 0 &&
-                            (offer.retailPrice - widget.targetBudgetValue!)
-                                    .abs() <=
-                                5;
-
-                        return _buildOfferCard(
-                          offer,
-                          isSelected: isSelected,
-                          isBudgetMatch: isBudgetMatch,
-                        );
-                      },
-                    );
-                  },
+                        decoration: InputDecoration(
+                          hintText:
+                              'Search by brand, product, or keyword (e.g. Starbucks, Speaker, \$25)...',
+                          hintStyle: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFF64748B),
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            size: 19,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 16),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {});
+                                  },
+                                )
+                              : null,
+                          isDense: true,
+                          filled: true,
+                          fillColor: AppTheme.darkSurface,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF2E334D),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
+                const SizedBox(height: 10),
+
+                // Category + Price Filter Chips
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (final priceOpt in [
+                        'All',
+                        'Under \$15',
+                        '\$15–\$25',
+                        '\$25+',
+                      ]) ...[
+                        ChoiceChip(
+                          label: Text(priceOpt),
+                          selected: _selectedPriceFilter == priceOpt,
+                          onSelected: (_) =>
+                              setState(() => _selectedPriceFilter = priceOpt),
+                          selectedColor: AppTheme.secondaryColor.withValues(
+                            alpha: 0.25,
+                          ),
+                          backgroundColor: AppTheme.darkSurface,
+                          labelStyle: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: _selectedPriceFilter == priceOpt
+                                ? AppTheme.secondaryColor
+                                : const Color(0xFFCBD5E1),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      const SizedBox(width: 6),
+                      for (final cat in [
+                        'All',
+                        'Coffee & Dining',
+                        'Shopping Vouchers',
+                        'Gourmet Hampers',
+                        'Tech & Gadgets',
+                        'Beauty & Lifestyle',
+                      ]) ...[
+                        FilterChip(
+                          label: Text(cat == 'All' ? 'All Categories' : cat),
+                          selected: _selectedCategory == cat,
+                          onSelected: (_) =>
+                              setState(() => _selectedCategory = cat),
+                          selectedColor: AppTheme.primaryLight.withValues(
+                            alpha: 0.25,
+                          ),
+                          backgroundColor: AppTheme.darkSurface,
+                          labelStyle: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: _selectedCategory == cat
+                                ? AppTheme.primaryLight
+                                : const Color(0xFF94A3B8),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Offers List
+                Expanded(
+                  child: offersAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                    error: (err, _) => Center(
+                      child: Text(
+                        'Could not load Brand Gift catalog: $err',
+                        style: const TextStyle(color: AppTheme.accentDanger),
+                      ),
+                    ),
+                    data: (offers) {
+                      final filtered = offers.where((o) {
+                        if (_selectedCategory != 'All' &&
+                            o.category.toLowerCase() !=
+                                _selectedCategory.toLowerCase()) {
+                          return false;
+                        }
+                        if (_selectedPriceFilter == 'Under \$15' &&
+                            o.retailPrice >= 15) {
+                          return false;
+                        }
+                        if (_selectedPriceFilter == '\$15–\$25' &&
+                            (o.retailPrice < 15 || o.retailPrice > 25)) {
+                          return false;
+                        }
+                        if (_selectedPriceFilter == '\$25+' &&
+                            o.retailPrice <= 25) {
+                          return false;
+                        }
+                        if (query.isNotEmpty) {
+                          final hay =
+                              '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} \$${o.retailPrice.toStringAsFixed(0)}'
+                                  .toLowerCase();
+                          if (!hay.contains(query)) return false;
+                        }
+                        return true;
+                      }).toList();
+
+                      if (filtered.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'No matching catalog offers found.',
+                                style: TextStyle(color: Color(0xFF94A3B8)),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  if (_searchController.text
+                                          .trim()
+                                          .isNotEmpty &&
+                                      _customTitleController.text.isEmpty) {
+                                    _customTitleController.text =
+                                        _searchController.text.trim();
+                                  }
+                                  setState(() => _isCustomMode = true);
+                                },
+                                icon: const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 16,
+                                ),
+                                label: const Text(
+                                  'Create Your Own Custom Gift for This Game',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.secondaryColor,
+                                  foregroundColor: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, idx) {
+                          final offer = filtered[idx];
+                          final isSelected =
+                              widget.currentSelection?.id == offer.id;
+                          final isBudgetMatch =
+                              widget.targetBudgetValue != null &&
+                              widget.targetBudgetValue! > 0 &&
+                              (offer.retailPrice - widget.targetBudgetValue!)
+                                      .abs() <=
+                                  5;
+
+                          return _buildOfferCard(
+                            offer,
+                            isSelected: isSelected,
+                            isBudgetMatch: isBudgetMatch,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomOfferForm() {
+    final previewDomain = _customDomainController.text
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'^https?://'), '')
+        .replaceAll(RegExp(r'^www\.'), '')
+        .split('/')
+        .first;
+
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    color: AppTheme.secondaryColor,
+                    size: 20,
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Exclusive to Your Game: Define any gift, voucher, hamper, or product not in the catalog. It is saved only for this game—never added to the public database—and will appear in Winner Rewards & your Hall of Fame card!',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFFE2E8F0),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Emoji Selector Row
+            const Text(
+              'Choose Gift Icon / Emoji:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFCBD5E1),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _emojiChoices.map((emoji) {
+                final selected = _customEmoji == emoji;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => setState(() => _customEmoji = emoji),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppTheme.secondaryColor.withValues(alpha: 0.25)
+                          : AppTheme.darkCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: selected
+                            ? AppTheme.secondaryColor
+                            : const Color(0xFF2E334D),
+                        width: selected ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(emoji, style: const TextStyle(fontSize: 19)),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+
+            // Gift Title & Value
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    controller: _customTitleController,
+                    style: const TextStyle(fontSize: 13.5, color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Gift / Product Title *',
+                      hintText:
+                          'e.g. \$25 Local Bakery Hamper, AirTag, Team Swag Pack',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: TextField(
+                    controller: _customValueController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      color: AppTheme.accentSuccess,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Prize Value (\$)',
+                      prefixText: '\$',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Brand / Sponsor Name & Optional Domain with Live Logo Preview
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _customBrandController,
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Brand / Store / Sponsor Name (Optional)',
+                      hintText: 'e.g. Costco, Rapid Consulting, Host Special',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _customDomainController,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Brand Website Domain (Optional Logo)',
+                      hintText: 'e.g. costco.com, apple.com',
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                if (previewDomain.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  CompanyLogo(
+                    domain: previewDomain,
+                    size: 38,
+                    isCommercialUse: true,
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Product / Gift Web Link
+            TextField(
+              controller: _customUrlController,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF38BDF8)),
+              decoration: const InputDecoration(
+                labelText:
+                    'Product / Gift Link (Optional — Clickable on Hall of Fame & Winner Rewards)',
+                hintText: 'https://...',
+                prefixIcon: Icon(Icons.link_rounded, size: 18),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Optional Voucher / Promo Code
+            TextField(
+              controller: _customCodeController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.white,
+                fontFamily: 'monospace',
+              ),
+              decoration: const InputDecoration(
+                labelText:
+                    'Voucher / Promo Code or Claim Note (Optional — Sent only to Winner)',
+                hintText: 'e.g. WINNER-2026 or Collect at reception desk',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => setState(() => _isCustomMode = false),
+                  child: const Text('Back to Partner Catalog'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton.icon(
+                  onPressed: _assignCustomGift,
+                  icon: const Icon(Icons.check_circle_rounded, size: 18),
+                  label: Text(
+                    _applyToAllLines && _isRowLine
+                        ? 'Assign Custom Gift to All 3 Row Lines'
+                        : 'Assign Custom Gift to ${widget.prizeLabel}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

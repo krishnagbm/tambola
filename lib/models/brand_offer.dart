@@ -93,8 +93,12 @@ class BrandOffer {
       'promo_code': promoCode,
       'emoji': emoji,
       'prize_value': customPrizeValue ?? retailPrice,
+      'is_custom_host_offer': isCustomHostOffer,
     };
   }
 
+  bool get isCustomHostOffer => id.startsWith('custom_');
+
   String get categoryEmoji => emoji;
 }
+

@@ -2370,7 +2370,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                     Text(
                                       assignedOffer != null
                                           ? assignedOffer.brandName
-                                          : 'Brand Gift',
+                                          : 'Gift / Offer',
                                       style: TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
@@ -2397,7 +2397,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: \$${assignedOffer.organizerPrice.toStringAsFixed(2)})',
+                                  assignedOffer.isCustomHostOffer
+                                      ? '✨ Custom Offer — ${assignedOffer.brandName}: ${assignedOffer.productTitle} (\$${assignedOffer.retailPrice.toStringAsFixed(0)} Value)'
+                                      : '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: \$${assignedOffer.organizerPrice.toStringAsFixed(2)})',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     color: AppTheme.secondaryColor,
