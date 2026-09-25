@@ -1605,7 +1605,11 @@
 
         // Client-side filter fallback if proxy returns active list
         if (currentCatalogStatus && currentCatalogStatus !== 'ALL') {
-          offers = offers.filter(o => String(o.status || 'ACTIVE').toUpperCase() === currentCatalogStatus);
+          offers = offers.filter(o => {
+            const st = String(o.status || 'ACTIVE').toUpperCase();
+            if (currentCatalogStatus === 'ACTIVE') return st === 'ACTIVE' || st === 'APPROVED';
+            return st === currentCatalogStatus;
+          });
         }
         if (currentCatalogCountry && currentCatalogCountry !== 'ALL') {
           const targetLower = currentCatalogCountry.toLowerCase();
