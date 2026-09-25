@@ -38,69 +38,69 @@ class BrandPartnerOffer {
 
   static const List<BrandPartnerOffer> catalog = [
     BrandPartnerOffer(
+      id: 'dabhousie_free_10',
+      brandName: 'DabHousie',
+      productTitle: '\$10 Free Host Credit Voucher',
+      category: 'DabHousie Credits',
+      emoji: '🎁',
+      retailPrice: 10.0,
+      organizerPrice: 0.0,
+      discountPercent: 100,
+      badgeText: '100% FREE FOR HOST',
+      description:
+          '100% Free Sponsored Voucher! Winner gets \$10 in DabHousie Event Credits at zero cost to the host.',
+    ),
+    BrandPartnerOffer(
       id: 'sbux_10',
       brandName: 'Starbucks',
-      productTitle: '\$10 Coffee & Bakery E-Gift Voucher',
+      productTitle: 'Starbucks Coffee & Treats eGift Voucher (Global)',
       category: 'Coffee & Dining',
       emoji: '☕',
       retailPrice: 10.0,
-      organizerPrice: 7.50,
-      discountPercent: 25,
-      badgeText: 'POPULAR FOR LINE WINNERS',
+      organizerPrice: 10.0,
+      discountPercent: 0,
+      badgeText: 'GLOBAL GIFT TEMPLATE',
       description:
-          'Instant digital café voucher redeemable at participating locations.',
+          'Instant digital coffee & bakery voucher. Host provides purchased eGift code at settlement.',
     ),
     BrandPartnerOffer(
-      id: 'uber_15',
-      brandName: 'Uber Eats',
-      productTitle: '\$15 Party Treat & Dining Pass',
-      category: 'Coffee & Dining',
-      emoji: '🍕',
-      retailPrice: 15.0,
-      organizerPrice: 11.00,
-      discountPercent: 27,
-      badgeText: 'INSTANT DELIVERY',
+      id: 'netflix_20',
+      brandName: 'Netflix',
+      productTitle: 'Netflix Entertainment & Movie Night Gift Pass',
+      category: 'Streaming & Entertainment',
+      emoji: '🎬',
+      retailPrice: 20.0,
+      organizerPrice: 20.0,
+      discountPercent: 0,
+      badgeText: 'GLOBAL GIFT TEMPLATE',
       description:
-          ' Let winners order their favorite celebratory meal or dessert.',
+          'Universally loved streaming gift pass across India, US, UK & worldwide. Host provides code at settlement.',
     ),
     BrandPartnerOffer(
       id: 'amz_25',
       brandName: 'Amazon',
-      productTitle: '\$25 Digital Shopping Gift Card',
+      productTitle: 'Amazon Digital Shopping Gift Card (Global / India / US)',
       category: 'Shopping Vouchers',
       emoji: '🛍️',
       retailPrice: 25.0,
-      organizerPrice: 21.50,
-      discountPercent: 14,
-      badgeText: 'BEST FOR FULL HOUSE',
+      organizerPrice: 25.0,
+      discountPercent: 0,
+      badgeText: 'GLOBAL GIFT TEMPLATE',
       description:
-          'Universal gift code delivered directly to the winner’s reward wallet.',
+          'Universal gift card for winners in India, US, UK & worldwide. Host provides claim code at settlement.',
     ),
     BrandPartnerOffer(
-      id: 'choco_20',
-      brandName: 'Ferrero & Artisan',
-      productTitle: 'Festive Gourmet Celebration Hamper',
-      category: 'Gourmet Hampers',
-      emoji: '🍫',
-      retailPrice: 20.0,
-      organizerPrice: 13.00,
-      discountPercent: 35,
-      badgeText: '35% PUBLISHER SPONSORSHIP',
-      description:
-          'Sponsored brand gift box shipped or redeemed via partner code.',
-    ),
-    BrandPartnerOffer(
-      id: 'anker_35',
-      brandName: 'Anker Soundcore',
-      productTitle: 'Mini Bluetooth Party Speaker',
-      category: 'Tech & Lifestyle',
+      id: 'jbl_35',
+      brandName: 'JBL Audio',
+      productTitle: 'JBL Portable Waterproof Bluetooth Party Speaker',
+      category: 'Tech & Gadgets',
       emoji: '🔊',
       retailPrice: 35.0,
-      organizerPrice: 22.00,
-      discountPercent: 37,
-      badgeText: 'GRAND PRIZE FAVORITE',
+      organizerPrice: 35.0,
+      discountPercent: 0,
+      badgeText: 'GLOBAL GIFT TEMPLATE',
       description:
-          'Direct-from-brand promotional hardware offer for event champions.',
+          'Iconic Bluetooth speaker loved worldwide — an unforgettable Full House Grand Prize.',
     ),
   ];
 }
@@ -1730,7 +1730,11 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                 icon: const Icon(Icons.card_giftcard_rounded, size: 15),
                 label: Text(
                   hasGift
-                      ? 'Update Gift'
+                      ? (isAvailable &&
+                                (reward.fulfilledGiftCode == null ||
+                                    reward.fulfilledGiftCode!.trim().isEmpty)
+                            ? 'Enter Voucher & Settle'
+                            : 'Update Gift / Voucher')
                       : (isAvailable
                             ? 'Offer Brand Gift'
                             : 'Attach Brand Gift'),
@@ -1856,9 +1860,7 @@ class _BrandGiftFulfillmentDialogState
       text: widget.reward.fulfilledGiftTitle ?? fallback.productTitle,
     );
     _giftCodeController = TextEditingController(
-      text:
-          widget.reward.fulfilledGiftCode ??
-          'GIFT-${widget.reward.claimReference.split('-').last}',
+      text: widget.reward.fulfilledGiftCode ?? '',
     );
     _productUrlController = TextEditingController(
       text: widget.reward.fulfilledProductUrl ?? 'https://www.starbucks.com/gift',
@@ -1899,6 +1901,8 @@ class _BrandGiftFulfillmentDialogState
       _prizeValueController.text = offer.retailPrice.toStringAsFixed(0);
       if (offer.promoCode != null && offer.promoCode!.trim().isNotEmpty) {
         _giftCodeController.text = offer.promoCode!.trim();
+      } else {
+        _giftCodeController.clear();
       }
     });
   }
@@ -2042,7 +2046,7 @@ class _BrandGiftFulfillmentDialogState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Offer Discounted Brand Gift & Settle Claim',
+                          'Enter Gift Voucher Code & Settle Prize Claim',
                           style: TextStyle(
                             fontSize: 16.5,
                             fontWeight: FontWeight.bold,
@@ -2079,7 +2083,7 @@ class _BrandGiftFulfillmentDialogState
                         children: [
                           const Expanded(
                             child: Text(
-                              '1. Choose a Discounted Brand Publisher Product (or Enter Your Own Exclusive Offer Below)',
+                              '1. Select a Free Sponsored Voucher, Global Gift Template, or Custom Offer',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
@@ -2137,11 +2141,14 @@ class _BrandGiftFulfillmentDialogState
                               itemBuilder: (ctx, idx) {
                                 final offer = offers[idx];
                                 final isSelected = _selectedOfferId == offer.id;
+                                final isFree = offer.organizerPrice == 0;
+                                final isTemplate =
+                                    offer.isHostSelfFulfilledTemplate;
                                 return InkWell(
                                   borderRadius: BorderRadius.circular(12),
                                   onTap: () => _selectLiveOffer(offer),
                                   child: Container(
-                                    width: 220,
+                                    width: 225,
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       color: isSelected
@@ -2191,17 +2198,30 @@ class _BrandGiftFulfillmentDialogState
                                                     vertical: 1.5,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: AppTheme.accentSuccess
-                                                    .withValues(alpha: 0.18),
+                                                color: isFree
+                                                    ? AppTheme.accentSuccess
+                                                          .withValues(
+                                                            alpha: 0.2,
+                                                          )
+                                                    : AppTheme.accentPartyPurple
+                                                          .withValues(
+                                                            alpha: 0.2,
+                                                          ),
                                                 borderRadius:
                                                     BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                '-${offer.discountPercent}%',
-                                                style: const TextStyle(
-                                                  fontSize: 9.5,
+                                                isFree
+                                                    ? '100% FREE'
+                                                    : (isTemplate
+                                                          ? 'TEMPLATE'
+                                                          : '-${offer.discountPercent}%'),
+                                                style: TextStyle(
+                                                  fontSize: 9,
                                                   fontWeight: FontWeight.bold,
-                                                  color: AppTheme.accentSuccess,
+                                                  color: isFree
+                                                      ? AppTheme.accentSuccess
+                                                      : const Color(0xFFC4B5FD),
                                                 ),
                                               ),
                                             ),
@@ -2220,21 +2240,15 @@ class _BrandGiftFulfillmentDialogState
                                         Row(
                                           children: [
                                             Text(
-                                              'Host: \$${offer.organizerPrice.toStringAsFixed(2)}',
+                                              isFree
+                                                  ? 'Host: FREE (\$0)'
+                                                  : (isTemplate
+                                                        ? 'Suggested: \$${offer.retailPrice.toStringAsFixed(0)} • Host buys code'
+                                                        : 'Host: \$${offer.organizerPrice.toStringAsFixed(0)}'),
                                               style: const TextStyle(
-                                                fontSize: 11,
+                                                fontSize: 10.5,
                                                 fontWeight: FontWeight.bold,
                                                 color: AppTheme.accentSuccess,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              '\$${offer.retailPrice.toStringAsFixed(0)}',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Color(0xFF64748B),
-                                                decoration:
-                                                    TextDecoration.lineThrough,
                                               ),
                                             ),
                                           ],
@@ -2251,7 +2265,7 @@ class _BrandGiftFulfillmentDialogState
                       const SizedBox(height: 16),
 
                       const Text(
-                        '2. Gift, Product Link & Prize Value (Shown in My Rewards & Public Hall of Fame)',
+                        '2. Enter Your Purchased Voucher / Promo Code & Confirm Gift Details',
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.bold,
@@ -2286,7 +2300,8 @@ class _BrandGiftFulfillmentDialogState
                                 fontFamily: 'monospace',
                               ),
                               decoration: const InputDecoration(
-                                labelText: 'Gift Voucher / Promo Code',
+                                labelText: 'Real Gift Voucher / Promo Code',
+                                hintText: 'Paste purchased voucher code here',
                                 isDense: true,
                               ),
                             ),
@@ -2306,8 +2321,7 @@ class _BrandGiftFulfillmentDialogState
                                 fontWeight: FontWeight.bold,
                               ),
                               decoration: const InputDecoration(
-                                labelText: 'Value (\$)',
-                                prefixText: '\$',
+                                labelText: 'Value',
                                 isDense: true,
                               ),
                             ),

@@ -1904,7 +1904,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final listToDisplay = activePrizes.isEmpty ? _mockWinners.take(4).toList() : activePrizes;
 
     return listToDisplay.map((winner) {
+      final key = winner['key']!;
       final isGrand = winner['isGrand'] == 'true';
+      final assignedOffer = _selectedPrizeGifts[key];
+      final valText = _prizeValueControllers[key]?.text.trim() ?? '';
+      final valNum = double.tryParse(valText) ?? 0;
+
       return Container(
         margin: const EdgeInsets.only(bottom: 6),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -1916,39 +1921,123 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             width: isGrand ? 1.2 : 1,
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(winner['icon']!, style: const TextStyle(fontSize: 13)),
-                const SizedBox(width: 6),
-                Text(
-                  winner['prize']!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isGrand ? const Color(0xFFFCD34D) : const Color(0xFFF8FAFC),
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(winner['icon']!, style: const TextStyle(fontSize: 13)),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          winner['prize']!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isGrand ? const Color(0xFFFCD34D) : const Color(0xFFF8FAFC),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (valNum > 0) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentSuccess.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '$_currencySymbol${valNum.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.accentSuccess,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(winner['avatar']!, style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 5),
+                    Text(
+                      winner['player']!,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFCBD5E1),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(winner['avatar']!, style: const TextStyle(fontSize: 13)),
-                const SizedBox(width: 5),
-                Text(
-                  winner['player']!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFCBD5E1),
-                  ),
+            if (assignedOffer != null) ...[
+              const SizedBox(height: 5),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    if (assignedOffer.brandDomain.isNotEmpty)
+                      Container(
+                        width: 18,
+                        height: 18,
+                        padding: const EdgeInsets.all(1.5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: CompanyLogo(
+                          domain: assignedOffer.brandDomain,
+                          size: 15,
+                          fallbackWidget: Text(
+                            assignedOffer.emoji,
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ),
+                      )
+                    else
+                      Text(assignedOffer.emoji, style: const TextStyle(fontSize: 12)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${assignedOffer.brandName} — ${assignedOffer.productTitle}',
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE2E8F0),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text(
+                      'Explore Product ↗',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -2558,13 +2647,33 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Text(
-                                      assignedOffer != null
-                                          ? assignedOffer.emoji
-                                          : '🎁',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                                    const SizedBox(width: 4),
+                                    if (assignedOffer != null &&
+                                        assignedOffer.brandDomain.isNotEmpty)
+                                      Container(
+                                        width: 18,
+                                        height: 18,
+                                        padding: const EdgeInsets.all(1.5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: CompanyLogo(
+                                          domain: assignedOffer.brandDomain,
+                                          size: 15,
+                                          fallbackWidget: Text(
+                                            assignedOffer.emoji,
+                                            style: const TextStyle(fontSize: 10),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        assignedOffer != null
+                                            ? assignedOffer.emoji
+                                            : '🎁',
+                                        style: const TextStyle(fontSize: 12),
+                                      ),
+                                    const SizedBox(width: 5),
                                     Text(
                                       assignedOffer != null
                                           ? assignedOffer.brandName
@@ -2588,11 +2697,31 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         Padding(
                           padding: const EdgeInsets.only(
                             left: 34,
-                            top: 4,
+                            top: 5,
                             right: 4,
                           ),
                           child: Row(
                             children: [
+                              if (assignedOffer.brandDomain.isNotEmpty) ...[
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  padding: const EdgeInsets.all(1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: CompanyLogo(
+                                    domain: assignedOffer.brandDomain,
+                                    size: 14,
+                                    fallbackWidget: Text(
+                                      assignedOffer.emoji,
+                                      style: const TextStyle(fontSize: 9),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                              ],
                               Expanded(
                                 child: Text(
                                   assignedOffer.isCustomHostOffer
