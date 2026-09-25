@@ -59,6 +59,8 @@ const PRIZE_FORMAT_MAP = {
   'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false }
 };
 
+const LOGO_DEV_PK = 'pk_ALfnmL3AQTqaatAQSzQxvQ';
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -67,6 +69,19 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function resolveBrandDomain(w) {
+  if (w && w.brand_domain && String(w.brand_domain).trim()) {
+    return String(w.brand_domain).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  }
+  if (w && w.product_url && String(w.product_url).trim()) {
+    try {
+      const u = new URL(String(w.product_url).trim());
+      return u.hostname.toLowerCase().replace(/^www\./, '');
+    } catch (_) {}
+  }
+  return '';
 }
 
 function formatPrize(type) {
@@ -123,7 +138,7 @@ function generateCardsHtml(games) {
   }
 
   let html = '';
-  games.slice(0, 9).forEach((g, idx) => {
+  games.slice(0, 9).forEach((g) => {
     const capacity = g.player_count || g.funded_capacity || 5;
     const balls = g.numbers_called_count || 68;
     const duration = formatDuration(g.duration_seconds || 720);
@@ -145,39 +160,47 @@ function generateCardsHtml(games) {
           const brandLabel = w.brand_name ? `${escapeHtml(w.brand_name)} — ` : '';
           const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
           const offerIdAttr = escapeHtml(w.offer_id || '');
+          const domain = resolveBrandDomain(w);
+          const brandLogoHtml = domain
+            ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+            : `<span>🎁</span>`;
+
           if (w.product_url && String(w.product_url).trim()) {
             giftSubHtml = `
-              <div class="winner-gift-bar">
-                <a href="${escapeHtml(w.product_url.trim())}" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('${offerIdAttr}')">
-                  <span>🎁 ${brandLabel}${giftLabel}</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
+                  <div class="winner-gift-bar">
+                    <a href="${escapeHtml(w.product_url.trim())}" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('${offerIdAttr}')">
+                      <span class="winner-gift-left">
+                        ${brandLogoHtml}
+                        <span>${brandLabel}${giftLabel}</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
             `;
           } else {
             giftSubHtml = `
-              <div class="winner-gift-bar">
-                <span class="winner-gift-static">🎁 ${brandLabel}${giftLabel}</span>
-              </div>
+                  <div class="winner-gift-bar">
+                    <span class="winner-gift-static">${brandLogoHtml} <span>${brandLabel}${giftLabel}</span></span>
+                  </div>
             `;
           }
         }
 
         winnersHtml += `
-          <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''} ${giftSubHtml ? 'has-gift' : ''}">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>${pInfo.icon}</span>
-                <span>${escapeHtml(pInfo.label)}</span>
-                ${prizeValBadge}
+              <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''} ${giftSubHtml ? 'has-gift' : ''}">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>${pInfo.icon}</span>
+                    <span>${escapeHtml(pInfo.label)}</span>
+                    ${prizeValBadge}
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">${avatarEmoji}</span>
+                    <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
+                  </div>
+                </div>
+                ${giftSubHtml}
               </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">${avatarEmoji}</span>
-                <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
-              </div>
-            </div>
-            ${giftSubHtml}
-          </div>
         `;
       });
     } else {
@@ -199,40 +222,40 @@ function generateCardsHtml(games) {
         const logoUrlEscaped = escapeHtml(rawLogoUrl);
         const logoAltEscaped = escapeHtml(g.organization_logo_alt || g.organization_name);
         orgHtml = `
-          <div class="org-badge">
-            <img src="${logoUrlEscaped}" alt="${logoAltEscaped}" class="org-logo-img" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none';">
-            <span class="org-name-text">Hosted by ${orgNameEscaped}</span>
-          </div>
+              <div class="org-badge">
+                <img src="${logoUrlEscaped}" alt="${logoAltEscaped}" class="org-logo-img" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none';">
+                <span class="org-name-text">Hosted by ${orgNameEscaped}</span>
+              </div>
         `;
       } else {
         orgHtml = `
-          <div class="org-badge">
-            <span class="org-name-text">🏢 Hosted by ${orgNameEscaped}</span>
-          </div>
+              <div class="org-badge">
+                <span class="org-name-text">🏢 Hosted by ${orgNameEscaped}</span>
+              </div>
         `;
       }
     }
 
     html += `
-      <div class="game-card">
-        <div class="game-card-header">
-          <div class="game-title">${escapeHtml(g.name || 'Tambola Event')}</div>
-          <div class="game-code-badge">${escapeHtml(g.invite_code || 'EVENT')}</div>
-        </div>
-        ${orgHtml}
+          <div class="game-card">
+            <div class="game-card-header">
+              <div class="game-title">${escapeHtml(g.name || 'Tambola Event')}</div>
+              <div class="game-code-badge">${escapeHtml(g.invite_code || 'EVENT')}</div>
+            </div>
+            ${orgHtml}
 
-        <div class="game-meta-row">
-          <div class="game-meta-item">👥 <strong>${capacity} Players</strong></div>
-          <div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>
-          <div class="game-meta-item">⏱️ <strong>${duration}</strong></div>
-          <div class="game-meta-item">📅 ${dateStr}</div>
-        </div>
+            <div class="game-meta-row">
+              <div class="game-meta-item">👥 <strong>${capacity} Players</strong></div>
+              <div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>
+              <div class="game-meta-item">⏱️ <strong>${duration}</strong></div>
+              <div class="game-meta-item">📅 ${dateStr}</div>
+            </div>
 
-        <div class="winners-section-title">Verified Prize Winners</div>
-        <div class="winners-list">
-          ${winnersHtml}
-        </div>
-      </div>
+            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-list">
+              ${winnersHtml}
+            </div>
+          </div>
     `;
   });
 
@@ -275,7 +298,7 @@ async function prerender() {
   
   // Replace games grid content
   const gridRegex = /<div class="games-grid" id="games-grid">[\s\S]*?<\/div>\s*<!-- Pagination -->/;
-  html = html.replace(gridRegex, `<div class="games-grid" id="games-grid">\n${cardsHtml}\n    </div>\n\n    <!-- Pagination -->`);
+  html = html.replace(gridRegex, `<div class="games-grid" id="games-grid">\n${cardsHtml}\n        </div>\n\n        <!-- Pagination -->`);
 
   fs.writeFileSync(filePath, html, 'utf-8');
   console.log('✅ Successfully prerendered web/recent-games.html with static DB snapshot!');

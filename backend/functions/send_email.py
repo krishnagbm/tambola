@@ -177,10 +177,12 @@ def handler(event, context):
             marketer_name = (payload.get("marketer_name") or payload.get("contact_name") or "").strip()
             marketer_email = (payload.get("marketer_email") or payload.get("contact_email") or "").strip().lower()
             gift_title = (payload.get("gift_title") or payload.get("product_title") or "").strip()
-            gift_description = (payload.get("gift_description") or payload.get("product_description") or "").strip()
+            gift_description = (payload.get("gift_description") or payload.get("product_description") or payload.get("description") or "").strip()
             category = (payload.get("category") or "Shopping Vouchers").strip()
             retail_value = float(payload.get("retail_value") or payload.get("retail_price") or 0)
-            organizer_price = float(payload.get("organizer_price") or retail_value)
+            raw_org_price = payload.get("organizer_price")
+            organizer_price = float(raw_org_price) if raw_org_price is not None and str(raw_org_price).strip() != "" else retail_value
+            vouchers_total_count = int(payload.get("vouchers_total_count") or 10)
             product_url = (payload.get("product_url") or "").strip()
             product_image_url = (payload.get("product_image_url") or "").strip()
             promo_code = (payload.get("promo_code") or "").strip()
@@ -209,7 +211,6 @@ def handler(event, context):
                 payload={
                     "p_brand_name": brand_name,
                     "p_brand_domain": brand_domain,
-                    "p_brand_logo_url": brand_logo_url,
                     "p_contact_name": marketer_name,
                     "p_contact_email": marketer_email,
                     "p_product_title": gift_title,
@@ -221,6 +222,7 @@ def handler(event, context):
                     "p_organizer_price": organizer_price,
                     "p_promo_code": promo_code or None,
                     "p_emoji": emoji,
+                    "p_vouchers_total_count": vouchers_total_count,
                 },
             )
             if status_code == 200 and isinstance(data, dict) and data.get("success"):

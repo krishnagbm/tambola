@@ -38,43 +38,59 @@
   <link rel="stylesheet" href="/css/site.css">
 
   <style>
+    .hall-top-band {
+      max-width: 1560px;
+      width: 96%;
+      margin: 28px auto 22px;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
     .hall-hero {
+      flex: 1.35;
+      min-width: 0;
       text-align: center;
-      padding: 56px 20px 32px;
-      max-width: 960px;
-      margin: 0 auto;
+      padding: 28px 24px;
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .hall-hero h1 {
-      font-size: clamp(28px, 4.5vw, 42px);
+      font-size: clamp(26px, 3.6vw, 40px);
       font-weight: 900;
       color: #FFFFFF;
       letter-spacing: -0.5px;
-      margin-bottom: 12px;
+      margin: 0 0 10px;
       line-height: 1.2;
     }
 
     .hall-hero p {
-      font-size: 16px;
+      font-size: 15px;
       color: var(--text-muted);
-      max-width: 680px;
-      margin: 0 auto 28px;
-      line-height: 1.6;
+      max-width: 720px;
+      margin: 0 auto 22px;
+      line-height: 1.55;
     }
 
     .metrics-bar {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 16px;
-      margin-bottom: 36px;
+      gap: 14px;
+      margin-bottom: 0;
     }
 
     .metric-pill {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
       border-radius: 12px;
-      padding: 12px 20px;
+      padding: 10px 18px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -92,16 +108,30 @@
     }
 
     .metric-pill .metric-lbl {
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
+    /* Main Workspace Row: Games Column + Right Partner Catalog Column */
+    .hall-workspace-row {
+      max-width: 1560px;
+      width: 96%;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+    }
+
+    .hall-games-column {
+      flex: 1;
+      min-width: 0;
+    }
+
     .filter-bar {
-      max-width: 1120px;
-      margin: 0 auto 28px;
-      padding: 0 20px;
+      margin: 0 0 22px;
+      padding: 0 4px;
       display: flex;
       flex-wrap: wrap;
       gap: 12px;
@@ -139,12 +169,9 @@
     }
 
     .games-grid {
-      max-width: 1120px;
-      margin: 0 auto;
-      padding: 0 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 22px;
     }
 
     .game-card {
@@ -339,7 +366,7 @@
       background: rgba(168, 85, 247, 0.12);
       border: 1px solid rgba(168, 85, 247, 0.32);
       border-radius: 6px;
-      padding: 4px 8px;
+      padding: 5px 8px;
       font-weight: 600;
       transition: all 0.18s ease;
     }
@@ -351,15 +378,35 @@
       transform: translateX(2px);
     }
 
+    .winner-gift-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .winner-brand-logo {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      background: #FFFFFF;
+      border-radius: 5px;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+
     .gift-cta-tag {
       color: #38BDF8;
       font-size: 10.5px;
       font-weight: 800;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .winner-gift-static {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       color: #D8B4FE;
       font-weight: 600;
     }
@@ -373,27 +420,25 @@
       color: #FCD34D;
     }
 
-    /* Brand Partner Banner & Self-Registration Modal */
+    /* Brand Partner Right-Side Top Card */
     .brand-partner-banner {
-      max-width: 1120px;
-      margin: 0 auto 26px;
-      padding: 0 20px;
+      flex: 1;
+      max-width: 560px;
+      min-width: 340px;
+      display: flex;
     }
 
     .brand-banner-inner {
+      width: 100%;
       background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(15, 23, 42, 0.96));
       border: 1px solid rgba(168, 85, 247, 0.42);
-      border-radius: 18px;
-      padding: 18px 22px;
+      border-radius: 20px;
+      padding: 20px 22px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    }
-
-    .brand-banner-top {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
-      gap: 16px;
+      gap: 14px;
     }
 
     .brand-banner-badge {
@@ -451,22 +496,31 @@
       color: #FFFFFF;
     }
 
+    /* Right-Side Partner Catalog Column (Beside Middle Games Column) */
     .brand-offers-showcase {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      width: 380px;
+      flex-shrink: 0;
+      background: linear-gradient(160deg, rgba(30, 27, 75, 0.94), rgba(15, 23, 42, 0.98));
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+      position: sticky;
+      top: 86px;
+      max-height: calc(100vh - 106px);
+      overflow-y: auto;
       display: none;
     }
 
     .brand-offers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 12px;
-      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
     }
 
     .brand-offer-mini-card {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
       padding: 12px;
@@ -474,6 +528,49 @@
       flex-direction: column;
       justify-content: space-between;
       gap: 8px;
+    }
+
+    /* Sticky Bottom-Right Register Brand Gift Offer Button */
+    .sticky-register-brand-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 950;
+      background: linear-gradient(135deg, #F59E0B, #FBBF24);
+      color: #0F172A;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(245, 158, 11, 0.45);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .sticky-register-brand-btn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 34px rgba(245, 158, 11, 0.6);
+    }
+
+    @media (max-width: 1080px) {
+      .hall-top-band {
+        flex-direction: column;
+      }
+      .brand-partner-banner {
+        max-width: 100%;
+      }
+      .hall-workspace-row {
+        flex-direction: column-reverse;
+      }
+      .brand-offers-showcase {
+        width: 100%;
+        position: static;
+        max-height: none;
+      }
     }
 
     /* Modal Backdrop */
@@ -548,7 +645,6 @@
     }
 
     .pagination-bar {
-      max-width: 1120px;
       margin: 40px auto 60px;
       padding: 0 20px;
       display: flex;
@@ -656,83 +752,70 @@
   </div>
 
   <main>
-    <section class="hall-hero">
-      <h1>🏆 Live Games &amp; Hall of Fame</h1>
-      <p>Explore recent multiplayer Tambola, Housie, and 90-Ball Bingo events hosted live across the globe. Transparent results, verified ticket integrity, and instant server claims.</p>
+    <!-- Top Full-Width Band: Left/Center Hero + Right Brand Partner Card -->
+    <div class="hall-top-band">
+      <section class="hall-hero">
+        <h1>🏆 Live Games &amp; Hall of Fame</h1>
+        <p>Explore recent multiplayer Tambola, Housie, and 90-Ball Bingo events hosted live across the globe. Transparent results, verified ticket integrity, and instant server claims.</p>
 
-      <div class="metrics-bar" id="metrics-bar">
-        <div class="metric-pill">
-          <span class="metric-icon">🎲</span>
-          <div>
-            <div class="metric-val" id="total-games-val">3</div>
-            <div class="metric-lbl">Events Completed</div>
+        <div class="metrics-bar" id="metrics-bar">
+          <div class="metric-pill">
+            <span class="metric-icon">🎲</span>
+            <div>
+              <div class="metric-val" id="total-games-val">3</div>
+              <div class="metric-lbl">Events Completed</div>
+            </div>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-icon">👥</span>
+            <div>
+              <div class="metric-val" id="total-players-val">305</div>
+              <div class="metric-lbl">Players Entertained</div>
+            </div>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-icon">🏅</span>
+            <div>
+              <div class="metric-val" id="total-winners-val">18</div>
+              <div class="metric-lbl">Prizes Verified</div>
+            </div>
           </div>
         </div>
-        <div class="metric-pill">
-          <span class="metric-icon">👥</span>
-          <div>
-            <div class="metric-val" id="total-players-val">305</div>
-            <div class="metric-lbl">Players Entertained</div>
-          </div>
-        </div>
-        <div class="metric-pill">
-          <span class="metric-icon">🏅</span>
-          <div>
-            <div class="metric-val" id="total-winners-val">18</div>
-            <div class="metric-lbl">Prizes Verified</div>
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- Brand Marketing Partner Self-Registration Banner -->
-    <section class="brand-partner-banner">
-      <div class="brand-banner-inner">
-        <div class="brand-banner-top">
-          <div style="max-width: 680px;">
+      <!-- Right-Side Brand Marketing Partner Card -->
+      <section class="brand-partner-banner">
+        <div class="brand-banner-inner">
+          <div>
             <span class="brand-banner-badge">🎁 Sponsored Prize Marketplace • For Brand Marketers &amp; D2C Sponsors</span>
-            <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 0 0 4px;">
+            <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">
               Want Your Brand Featured on Every Completed Game Card?
             </h2>
             <p style="font-size: 13px; color: #CBD5E1; margin: 0; line-height: 1.5;">
-              Register discounted products or digital gift vouchers for DabHousie organizers to award as prizes. Winners receive your product link by email &amp; in their Rewards Wallet, and every Hall of Fame card links directly to your product page!
+              Register free sponsored gift vouchers or discounted products for DabHousie organizers to award as prizes. Winners receive your product link by email &amp; in their Rewards Wallet, and every Hall of Fame card links directly to your product page!
             </p>
           </div>
           <div class="brand-banner-actions">
-            <button class="btn-view-brands" onclick="toggleBrandPartnersShowcase()" id="btn-toggle-brands">
-              🛍️ View Partner Catalog
-            </button>
             <button class="btn-register-brand" onclick="openBrandRegisterModal()">
               🚀 Register Brand Gift Offer
             </button>
+            <button class="btn-view-brands" onclick="toggleBrandPartnersShowcase()" id="btn-toggle-brands">
+              🛍️ View Partner Catalog
+            </button>
           </div>
         </div>
-
-        <div class="brand-offers-showcase" id="brand-offers-showcase">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <span style="font-size: 12px; font-weight: 700; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px;">
-              ✨ Active Brand Gift Catalog Available to Event Hosts
-            </span>
-            <a href="/#/create-game" style="font-size: 12px; color: #38BDF8; font-weight: 700; text-decoration: none;">
-              Host a Game &amp; Assign These Prizes →
-            </a>
-          </div>
-          <div class="brand-offers-grid" id="brand-offers-grid">
-            <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
-          </div>
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- Brand Marketer Self-Registration Modal -->
     <div class="brand-modal-backdrop" id="brand-register-modal" onclick="if(event.target === this) closeBrandRegisterModal()">
       <div class="brand-modal-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
           <div>
             <span class="brand-banner-badge">🎁 Brand Marketing Partner Portal</span>
             <h3 style="font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: #FFFFFF;">Register Your Brand Gift Offer</h3>
             <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">
-              List a discounted product or gift voucher for DabHousie hosts. Every time your gift is awarded, your clickable product link appears on the Hall of Fame &amp; winner emails.
+              Start with a batch of 10 gift vouchers for DabHousie hosts to award. Only $2 platform promotion fee per voucher actually consumed by a game host!
             </p>
           </div>
           <button onclick="closeBrandRegisterModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 20px; cursor: pointer;">✕</button>
@@ -767,7 +850,7 @@
           <div class="brand-form-grid">
             <div class="brand-form-group">
               <label for="bm-product-title">Product / Gift Voucher Title *</label>
-              <input type="text" id="bm-product-title" required placeholder="e.g. $20 Festive Gourmet Gift Box">
+              <input type="text" id="bm-product-title" required placeholder="e.g. $10 Sponsored Gift Voucher">
             </div>
             <div class="brand-form-group">
               <label for="bm-category">Gift Category *</label>
@@ -782,14 +865,18 @@
             </div>
           </div>
 
-          <div class="brand-form-grid">
+          <div class="brand-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="brand-form-group">
-              <label for="bm-retail-price">Retail Value ($ USD) *</label>
-              <input type="number" id="bm-retail-price" required min="1" step="0.5" value="20" oninput="updateDiscountBadge()">
+              <label for="bm-retail-price">Voucher Retail Value ($) *</label>
+              <input type="number" id="bm-retail-price" required min="1" step="0.5" value="10" oninput="updateDiscountBadge()">
             </div>
             <div class="brand-form-group">
-              <label for="bm-org-price">Discounted Organizer Price ($ USD) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 6px;">(25% OFF)</span></label>
-              <input type="number" id="bm-org-price" required min="0" step="0.5" value="15" oninput="updateDiscountBadge()">
+              <label for="bm-org-price">Host Cost ($) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 4px;">(100% FREE)</span></label>
+              <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-vouchers-count">Voucher Batch Qty *</label>
+              <input type="number" id="bm-vouchers-count" required min="1" max="500" step="1" value="10">
             </div>
           </div>
 
@@ -799,8 +886,8 @@
               <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/gift-offer">
             </div>
             <div class="brand-form-group">
-              <label for="bm-promo-code">Organizer Promo / Voucher Code (Optional)</label>
-              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE25">
+              <label for="bm-promo-code">Voucher / Promo Code (Shared with Winners)</label>
+              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE10">
             </div>
           </div>
 
@@ -819,408 +906,456 @@
       </div>
     </div>
 
-    <!-- Filter Buttons -->
-    <div class="filter-bar">
-      <div class="filter-group">
-        <button class="filter-btn active" onclick="setFilter('ALL')">All Events</button>
-        <button class="filter-btn" onclick="setFilter('GALA')">👑 Galas (100+ Players)</button>
-        <button class="filter-btn" onclick="setFilter('CLUB')">🎉 Clubs (20–99)</button>
-        <button class="filter-btn" onclick="setFilter('FAMILY')">🏡 Family (1–19)</button>
+    <!-- Main Full-Width Workspace: Middle Games Column + Right Partner Catalog Sidebar -->
+    <div class="hall-workspace-row" id="hall-workspace-row">
+      <div class="hall-games-column">
+        <!-- Filter Buttons -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <button class="filter-btn active" onclick="setFilter('ALL')">All Events</button>
+            <button class="filter-btn" onclick="setFilter('GALA')">👑 Galas (100+ Players)</button>
+            <button class="filter-btn" onclick="setFilter('CLUB')">🎉 Clubs (20–99)</button>
+            <button class="filter-btn" onclick="setFilter('FAMILY')">🏡 Family (1–19)</button>
+          </div>
+
+          <div id="showing-count-container" style="display: block; font-size: 13px; color: #94A3B8;">
+            Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">3</span> completed events
+          </div>
+        </div>
+
+        <!-- Games Card Grid -->
+        <div class="games-grid" id="games-grid">
+
+          <div class="game-card">
+            <div class="game-card-header">
+              <div class="game-title">Thursday DabHousie Dhamaka 🪔</div>
+              <div class="game-code-badge">4E196B</div>
+            </div>
+            
+              <div class="org-badge">
+                <img src="https://img.logo.dev/rapidcfl.com?format=png&amp;size=256&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Rapid Consulting Firm Logo" class="org-logo-img" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none';">
+                <span class="org-name-text">Hosted by Rapid Consulting Firm</span>
+              </div>
+        
+
+            <div class="game-meta-row">
+              <div class="game-meta-item">👥 <strong>5 Players</strong></div>
+              <div class="game-meta-item">🎱 <strong>73/90 Calls</strong></div>
+              <div class="game-meta-item">⏱️ <strong>13m 24s</strong></div>
+              <div class="game-meta-item">📅 Sep 24, 2026</div>
+            </div>
+
+            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-list">
+              
+              <div class="winner-row grand-prize has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🏆</span>
+                    <span>Full House (Grand Prize)</span>
+                    <span class="winner-val-pill">$25</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Merry Whiz</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.amazon.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('87fd4ca1-46c5-4acd-8f68-c646913f06af')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/amazon.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Amazon Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Amazon — $25 Everything Store Digital Gift Card</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+              <div class="winner-row  has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥇</span>
+                    <span>Top Line</span>
+                    <span class="winner-val-pill">$15</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Merry Whiz</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/ubereats.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Uber Eats Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+              <div class="winner-row  has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥈</span>
+                    <span>Middle Line</span>
+                    <span class="winner-val-pill">$15</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Merry Whiz</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/ubereats.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Uber Eats Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+              <div class="winner-row  has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥉</span>
+                    <span>Bottom Line</span>
+                    <span class="winner-val-pill">$15</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Merry Whiz</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/ubereats.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Uber Eats Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+              <div class="winner-row  has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>⚡</span>
+                    <span>Early 5 (Jaldi 5)</span>
+                    <span class="winner-val-pill">$10</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Swift Gamer</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.starbucks.com/gift" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('543c05fa-4956-4e76-a0ac-9b8888669b02')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/starbucks.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Starbucks Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Starbucks — $10 Coffee &amp; Bakery E-Gift Voucher</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+              <div class="winner-row  has-gift">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🎯</span>
+                    <span>Four Corners</span>
+                    <span class="winner-val-pill">$12</span>
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Merry Whiz</strong>
+                  </div>
+                </div>
+                
+                  <div class="winner-gift-bar">
+                    <a href="https://www.ferrerorocher.com/us/en/" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('65203ef7-d06e-426a-a15a-1d5045da1c72')">
+                      <span class="winner-gift-left">
+                        <img src="https://img.logo.dev/ferrerorocher.com?format=png&amp;size=128&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Ferrero Rocher Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">
+                        <span>Ferrero Rocher — Golden Hazelnut Celebration Box (16-pc)</span>
+                      </span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+            
+              </div>
+        
+            </div>
+          </div>
+    
+          <div class="game-card">
+            <div class="game-card-header">
+              <div class="game-title">DabHousie Fiesta 🎊</div>
+              <div class="game-code-badge">CA8E81</div>
+            </div>
+            
+
+            <div class="game-meta-row">
+              <div class="game-meta-item">👥 <strong>250 Players</strong></div>
+              <div class="game-meta-item">🎱 <strong>68/90 Calls</strong></div>
+              <div class="game-meta-item">⏱️ <strong>10m 55s</strong></div>
+              <div class="game-meta-item">📅 Sep 22, 2026</div>
+            </div>
+
+            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-list">
+              
+              <div class="winner-row grand-prize ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🏆</span>
+                    <span>Full House (Grand Prize)</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🐯</span>
+                    <strong>Aditya</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥇</span>
+                    <span>Top Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🐻</span>
+                    <strong>Rohan</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥈</span>
+                    <span>Middle Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦅</span>
+                    <strong>Maya</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥉</span>
+                    <span>Bottom Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🐯</span>
+                    <strong>Priya</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>⚡</span>
+                    <span>Early 5 (Jaldi 5)</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Kabir</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🎯</span>
+                    <span>Four Corners</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦊</span>
+                    <strong>Elena</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+            </div>
+          </div>
+    
+          <div class="game-card">
+            <div class="game-card-header">
+              <div class="game-title">Monday Club Gala 🎉</div>
+              <div class="game-code-badge">14A3F7</div>
+            </div>
+            
+
+            <div class="game-meta-row">
+              <div class="game-meta-item">👥 <strong>50 Players</strong></div>
+              <div class="game-meta-item">🎱 <strong>66/90 Calls</strong></div>
+              <div class="game-meta-item">⏱️ <strong>8m 40s</strong></div>
+              <div class="game-meta-item">📅 Sep 21, 2026</div>
+            </div>
+
+            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-list">
+              
+              <div class="winner-row grand-prize ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🏆</span>
+                    <span>Full House (Grand Prize)</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦉</span>
+                    <strong>Oliver</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥇</span>
+                    <span>Top Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🐺</span>
+                    <strong>Sophia</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥈</span>
+                    <span>Middle Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦊</span>
+                    <strong>Liam</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🥉</span>
+                    <span>Bottom Line</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦁</span>
+                    <strong>Noah</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>⚡</span>
+                    <span>Early 5 (Jaldi 5)</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🐯</span>
+                    <strong>Priya</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+              <div class="winner-row  ">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>🎯</span>
+                    <span>Four Corners</span>
+                    
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">🦅</span>
+                    <strong>Maya</strong>
+                  </div>
+                </div>
+                
+              </div>
+        
+            </div>
+          </div>
+    
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-bar" id="pagination-bar" style="display: none;">
+          <button class="page-btn" id="btn-prev" onclick="prevPage()">← Previous</button>
+          <span class="page-info" id="page-info">Page 1 of 1</span>
+          <button class="page-btn" id="btn-next" onclick="nextPage()">Next →</button>
+        </div>
       </div>
 
-      <div id="showing-count-container" style="display: block; font-size: 13px; color: #94A3B8;">
-        Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">3</span> completed events
-      </div>
+      <!-- Right Empty Space Sidebar: Active Brand Gift Catalog -->
+      <aside class="brand-offers-showcase" id="brand-offers-showcase">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+          <div>
+            <span style="font-size: 12px; font-weight: 800; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px; display: block;">
+              ✨ Partner Gift Catalog
+            </span>
+            <a href="/#/create-game" style="font-size: 11.5px; color: #38BDF8; font-weight: 700; text-decoration: none;">
+              Host a Game &amp; Assign Prizes →
+            </a>
+          </div>
+          <button onclick="toggleBrandPartnersShowcase()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: #CBD5E1; border-radius: 8px; padding: 4px 9px; font-size: 11.5px; cursor: pointer;">
+            ✕ Hide
+          </button>
+        </div>
+        <div class="brand-offers-grid" id="brand-offers-grid">
+          <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
+        </div>
+      </aside>
     </div>
 
-    <!-- Games Card Grid -->
-    <div class="games-grid" id="games-grid">
-
-      <div class="game-card">
-        <div class="game-card-header">
-          <div class="game-title">Thursday DabHousie Dhamaka 🪔</div>
-          <div class="game-code-badge">4E196B</div>
-        </div>
-        
-          <div class="org-badge">
-            <img src="https://img.logo.dev/rapidcfl.com?format=png&amp;size=256&amp;token=pk_ALfnmL3AQTqaatAQSzQxvQ" alt="Rapid Consulting Firm Logo" class="org-logo-img" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none';">
-            <span class="org-name-text">Hosted by Rapid Consulting Firm</span>
-          </div>
-        
-
-        <div class="game-meta-row">
-          <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-          <div class="game-meta-item">🎱 <strong>73/90 Calls</strong></div>
-          <div class="game-meta-item">⏱️ <strong>13m 24s</strong></div>
-          <div class="game-meta-item">📅 Sep 24, 2026</div>
-        </div>
-
-        <div class="winners-section-title">Verified Prize Winners</div>
-        <div class="winners-list">
-          
-          <div class="winner-row grand-prize has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🏆</span>
-                <span>Full House (Grand Prize)</span>
-                <span class="winner-val-pill">$25</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Merry Whiz</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.amazon.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('87fd4ca1-46c5-4acd-8f68-c646913f06af')">
-                  <span>🎁 Amazon — $25 Everything Store Digital Gift Card</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-          <div class="winner-row  has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥇</span>
-                <span>Top Line</span>
-                <span class="winner-val-pill">$15</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Merry Whiz</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
-                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-          <div class="winner-row  has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥈</span>
-                <span>Middle Line</span>
-                <span class="winner-val-pill">$15</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Merry Whiz</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
-                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-          <div class="winner-row  has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥉</span>
-                <span>Bottom Line</span>
-                <span class="winner-val-pill">$15</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Merry Whiz</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
-                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-          <div class="winner-row  has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>⚡</span>
-                <span>Early 5 (Jaldi 5)</span>
-                <span class="winner-val-pill">$10</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Swift Gamer</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.starbucks.com/gift" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('543c05fa-4956-4e76-a0ac-9b8888669b02')">
-                  <span>🎁 Starbucks — $10 Coffee &amp; Bakery E-Gift Voucher</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-          <div class="winner-row  has-gift">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🎯</span>
-                <span>Four Corners</span>
-                <span class="winner-val-pill">$12</span>
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Merry Whiz</strong>
-              </div>
-            </div>
-            
-              <div class="winner-gift-bar">
-                <a href="https://www.ferrerorocher.com/us/en/" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('65203ef7-d06e-426a-a15a-1d5045da1c72')">
-                  <span>🎁 Ferrero Rocher — Golden Hazelnut Celebration Box (16-pc)</span>
-                  <span class="gift-cta-tag">Explore Product ↗</span>
-                </a>
-              </div>
-            
-          </div>
-        
-        </div>
-      </div>
-    
-      <div class="game-card">
-        <div class="game-card-header">
-          <div class="game-title">DabHousie Fiesta 🎊</div>
-          <div class="game-code-badge">CA8E81</div>
-        </div>
-        
-
-        <div class="game-meta-row">
-          <div class="game-meta-item">👥 <strong>250 Players</strong></div>
-          <div class="game-meta-item">🎱 <strong>68/90 Calls</strong></div>
-          <div class="game-meta-item">⏱️ <strong>10m 55s</strong></div>
-          <div class="game-meta-item">📅 Sep 22, 2026</div>
-        </div>
-
-        <div class="winners-section-title">Verified Prize Winners</div>
-        <div class="winners-list">
-          
-          <div class="winner-row grand-prize ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🏆</span>
-                <span>Full House (Grand Prize)</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🐯</span>
-                <strong>Aditya</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥇</span>
-                <span>Top Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🐻</span>
-                <strong>Rohan</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥈</span>
-                <span>Middle Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦅</span>
-                <strong>Maya</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥉</span>
-                <span>Bottom Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🐯</span>
-                <strong>Priya</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>⚡</span>
-                <span>Early 5 (Jaldi 5)</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Kabir</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🎯</span>
-                <span>Four Corners</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦊</span>
-                <strong>Elena</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-        </div>
-      </div>
-    
-      <div class="game-card">
-        <div class="game-card-header">
-          <div class="game-title">Monday Club Gala 🎉</div>
-          <div class="game-code-badge">14A3F7</div>
-        </div>
-        
-
-        <div class="game-meta-row">
-          <div class="game-meta-item">👥 <strong>50 Players</strong></div>
-          <div class="game-meta-item">🎱 <strong>66/90 Calls</strong></div>
-          <div class="game-meta-item">⏱️ <strong>8m 40s</strong></div>
-          <div class="game-meta-item">📅 Sep 21, 2026</div>
-        </div>
-
-        <div class="winners-section-title">Verified Prize Winners</div>
-        <div class="winners-list">
-          
-          <div class="winner-row grand-prize ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🏆</span>
-                <span>Full House (Grand Prize)</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦉</span>
-                <strong>Oliver</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥇</span>
-                <span>Top Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🐺</span>
-                <strong>Sophia</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥈</span>
-                <span>Middle Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦊</span>
-                <strong>Liam</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🥉</span>
-                <span>Bottom Line</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦁</span>
-                <strong>Noah</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>⚡</span>
-                <span>Early 5 (Jaldi 5)</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🐯</span>
-                <strong>Priya</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-          <div class="winner-row  ">
-            <div class="winner-row-top">
-              <div class="winner-prize-name">
-                <span>🎯</span>
-                <span>Four Corners</span>
-                
-              </div>
-              <div class="winner-player-tag">
-                <span class="winner-avatar-icon">🦅</span>
-                <strong>Maya</strong>
-              </div>
-            </div>
-            
-          </div>
-        
-        </div>
-      </div>
-    
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination-bar" id="pagination-bar" style="display: none;">
-      <button class="page-btn" id="btn-prev" onclick="prevPage()">← Previous</button>
-      <span class="page-info" id="page-info">Page 1 of 1</span>
-      <button class="page-btn" id="btn-next" onclick="nextPage()">Next →</button>
-    </div>
+    <!-- Sticky Bottom-Right Register Brand Gift Offer Button (Appears on Scroll) -->
+    <button id="sticky-register-brand-btn" class="sticky-register-brand-btn" onclick="openBrandRegisterModal()">
+      🚀 Register Brand Gift Offer
+    </button>
   </main>
 
   <!-- Footer -->
@@ -1250,6 +1385,7 @@
 
   <script>
     const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
+    const LOGO_DEV_PK = 'pk_ALfnmL3AQTqaatAQSzQxvQ';
 
     let allGames = [];
     let filteredGames = [];
@@ -1297,6 +1433,19 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    function resolveBrandDomain(w) {
+      if (w && w.brand_domain && String(w.brand_domain).trim()) {
+        return String(w.brand_domain).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      }
+      if (w && w.product_url && String(w.product_url).trim()) {
+        try {
+          const u = new URL(String(w.product_url).trim());
+          return u.hostname.toLowerCase().replace(/^www\./, '');
+        } catch (_) {}
+      }
+      return '';
     }
 
     function formatPrize(type) {
@@ -1355,7 +1504,6 @@
     }
 
     function renderAll() {
-      // Calculate top aggregate metrics
       let totalPlayers = 0;
       let totalWinners = 0;
 
@@ -1399,7 +1547,6 @@
         filteredGames = allGames.filter(g => (g.player_count || g.funded_capacity || 0) < 20);
       }
 
-      // Display the actual count now that real data is loaded
       const countEl = document.getElementById('showing-count');
       const countContainer = document.getElementById('showing-count-container');
       if (countEl) countEl.textContent = filteredGames.length;
@@ -1448,11 +1595,19 @@
               const brandLabel = w.brand_name ? `${escapeHtml(w.brand_name)} — ` : '';
               const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
               const offerIdAttr = escapeHtml(w.offer_id || '');
+              const domain = resolveBrandDomain(w);
+              const brandLogoHtml = domain
+                ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+                : `<span>🎁</span>`;
+
               if (w.product_url && String(w.product_url).trim()) {
                 giftSubHtml = `
                   <div class="winner-gift-bar">
                     <a href="${escapeHtml(w.product_url.trim())}" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('${offerIdAttr}')">
-                      <span>🎁 ${brandLabel}${giftLabel}</span>
+                      <span class="winner-gift-left">
+                        ${brandLogoHtml}
+                        <span>${brandLabel}${giftLabel}</span>
+                      </span>
                       <span class="gift-cta-tag">Explore Product ↗</span>
                     </a>
                   </div>
@@ -1460,7 +1615,7 @@
               } else {
                 giftSubHtml = `
                   <div class="winner-gift-bar">
-                    <span class="winner-gift-static">🎁 ${brandLabel}${giftLabel}</span>
+                    <span class="winner-gift-static">${brandLogoHtml} <span>${brandLabel}${giftLabel}</span></span>
                   </div>
                 `;
               }
@@ -1539,7 +1694,6 @@
           </div>
         `;
 
-        // Insert native ad placeholder after 3rd card
         if (idx === 2) {
           html += `
             <div class="ad-card-slot">
@@ -1551,7 +1705,6 @@
 
       grid.innerHTML = html;
 
-      // Update Pagination Bar
       if (totalPages > 1) {
         pagBar.style.display = 'flex';
         document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
@@ -1614,7 +1767,7 @@
       } catch (_) {}
     };
 
-    // Brand Partner Catalog Showcase Drawer
+    // Right-Side Partner Catalog Sidebar Toggle
     let brandCatalogLoaded = false;
     async function toggleBrandPartnersShowcase() {
       const showcase = document.getElementById('brand-offers-showcase');
@@ -1648,22 +1801,30 @@
           }
           grid.innerHTML = offers.map(o => {
             const disc = Number(o.discount_percent || 0);
-            const orgPrice = Number(o.organizer_price || 0).toFixed(2);
+            const orgNum = Number(o.organizer_price || 0);
+            const orgPrice = orgNum === 0 ? 'FREE ($0)' : `$${orgNum.toFixed(2)}`;
             const retPrice = Number(o.retail_price || 0).toFixed(0);
             const url = escapeHtml(o.product_url || '#');
+            const domain = resolveBrandDomain(o);
+            const logoImg = domain
+              ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+              : '';
             return `
               <div class="brand-offer-mini-card">
                 <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px;">
-                    <span style="font-size: 11px; font-weight: 800; color: #FBBF24; text-transform: uppercase;">${escapeHtml(o.brand_name)}</span>
-                    ${disc > 0 ? `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>` : ''}
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #FBBF24; text-transform: uppercase;">
+                      ${logoImg}
+                      <span>${escapeHtml(o.brand_name)}</span>
+                    </span>
+                    ${orgNum === 0 ? `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">100% FREE FOR HOST</span>` : (disc > 0 ? `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>` : '')}
                   </div>
                   <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(o.product_title)}</div>
                   <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(o.description || '')}</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
                   <div>
-                    <span style="font-size: 13px; font-weight: 800; color: #34D399;">Host: $${orgPrice}</span>
+                    <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
                     <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
                   </div>
                   <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
@@ -1676,6 +1837,17 @@
         grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">Unable to load partner offers right now.</div>';
       }
     }
+
+    // Sticky Bottom-Right Register Button Visibility on Scroll
+    window.addEventListener('scroll', function() {
+      const stickyBtn = document.getElementById('sticky-register-brand-btn');
+      if (!stickyBtn) return;
+      if (window.scrollY > 240) {
+        stickyBtn.style.display = 'inline-flex';
+      } else {
+        stickyBtn.style.display = 'none';
+      }
+    }, { passive: true });
 
     // Brand Marketer Self-Registration Modal Handlers
     function openBrandRegisterModal() {
@@ -1693,7 +1865,7 @@
       if (!img) return;
       const clean = (val || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
       if (clean && clean.includes('.')) {
-        img.src = `https://img.logo.dev/${encodeURIComponent(clean)}?format=png&size=256&token=pk_ALfnmL3AQTqaatAQSzQxvQ`;
+        img.src = `https://img.logo.dev/${encodeURIComponent(clean)}?format=png&size=256&token=${LOGO_DEV_PK}`;
         img.style.display = 'inline-block';
       } else {
         img.style.display = 'none';
@@ -1705,7 +1877,10 @@
       const org = parseFloat(document.getElementById('bm-org-price')?.value || '0');
       const pill = document.getElementById('bm-discount-pill');
       if (!pill) return;
-      if (retail > 0 && org < retail) {
+      if (org === 0 && retail > 0) {
+        pill.textContent = '(100% FREE)';
+        pill.style.display = 'inline';
+      } else if (retail > 0 && org < retail) {
         const pct = Math.round(((retail - org) / retail) * 100);
         pill.textContent = `(${pct}% OFF)`;
         pill.style.display = 'inline';
@@ -1730,6 +1905,7 @@
         category: document.getElementById('bm-category').value,
         retail_price: parseFloat(document.getElementById('bm-retail-price').value || '0'),
         organizer_price: parseFloat(document.getElementById('bm-org-price').value || '0'),
+        vouchers_total_count: parseInt(document.getElementById('bm-vouchers-count')?.value || '10', 10),
         product_url: document.getElementById('bm-product-url').value.trim(),
         promo_code: document.getElementById('bm-promo-code').value.trim(),
         description: document.getElementById('bm-description').value.trim()
