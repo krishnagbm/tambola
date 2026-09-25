@@ -67,6 +67,8 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedCategory = 'All';
   String _selectedPriceFilter = 'All';
+  String _selectedCountryFilter = 'All';
+  String _selectedStatusFilter = 'ACTIVE';
   bool _applyToAllLines = false;
   bool _isCustomMode = false;
 
@@ -289,8 +291,8 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         Text(
                           widget.targetBudgetValue != null &&
                                   widget.targetBudgetValue! > 0
-                              ? 'Target Prize Value: $_sym${widget.targetBudgetValue!.toStringAsFixed(0)} (${widget.currencyCode}) • Pick a Global Gift or Create Your Own'
-                              : 'Pick a Global Gift Template (${widget.currencyCode}) or create your own Custom Gift exclusively for this game',
+                              ? 'Target Prize Value: $_sym${widget.targetBudgetValue!.toStringAsFixed(0)} (${widget.currencyCode}) • Pick a Brand Partner Reward or Create Your Own'
+                              : 'Pick a Brand Partner Reward (${widget.currencyCode}) or create your own Custom Gift exclusively for this game',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF94A3B8),
@@ -439,10 +441,11 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
               if (_isCustomMode)
                 Expanded(child: _buildCustomOfferForm())
               else ...[
-                // Search & Price Filter Row
+                // Search & Country / Status Filter Row
                 Row(
                   children: [
                     Expanded(
+                      flex: 3,
                       child: TextField(
                         controller: _searchController,
                         onChanged: (_) => setState(() {}),
@@ -452,7 +455,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         ),
                         decoration: InputDecoration(
                           hintText:
-                              'Search global brands or products (e.g. Amazon, Starbucks, JBL, Nike)...',
+                              'Search brands or offers (e.g. Amazon, Starbucks, JBL, Nike)...',
                           hintStyle: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -484,6 +487,112 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                               color: Color(0xFF2E334D),
                             ),
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF2E334D)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedCountryFilter,
+                          dropdownColor: AppTheme.darkCard,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'All',
+                              child: Text('🌍 All Regions'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Global',
+                              child: Text('🌐 Global'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'United States',
+                              child: Text('🇺🇸 United States'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'India',
+                              child: Text('🇮🇳 India'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'United Kingdom',
+                              child: Text('🇬🇧 United Kingdom'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Canada',
+                              child: Text('🇨🇦 Canada'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Australia',
+                              child: Text('🇦🇺 Australia'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'Europe',
+                              child: Text('🇪🇺 Europe'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _selectedCountryFilter = v);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkSurface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF2E334D)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedStatusFilter,
+                          dropdownColor: AppTheme.darkCard,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'ACTIVE',
+                              child: Text('🟢 Active'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'PENDING',
+                              child: Text('⏳ Pending'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'EXPIRED',
+                              child: Text('⌛ Expired'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'DRAFT',
+                              child: Text('📝 Draft'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'ALL',
+                              child: Text('📋 All'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _selectedStatusFilter = v);
+                            }
+                          },
                         ),
                       ),
                     ),
@@ -581,6 +690,24 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                     ),
                     data: (offers) {
                       final filtered = offers.where((o) {
+                        if (_selectedStatusFilter != 'ALL' &&
+                            o.status.toUpperCase() != _selectedStatusFilter) {
+                          return false;
+                        }
+                        if (_selectedCountryFilter != 'All') {
+                          final r = o.targetRegion.toLowerCase();
+                          final targetLower =
+                              _selectedCountryFilter.toLowerCase();
+                          final matchesRegion =
+                              r == targetLower ||
+                              r == 'global' ||
+                              o.targetCountries.any(
+                                (c) =>
+                                    c.toLowerCase() == targetLower ||
+                                    c.toLowerCase() == 'global',
+                              );
+                          if (!matchesRegion) return false;
+                        }
                         if (_selectedCategory != 'All' &&
                             o.category.toLowerCase() !=
                                 _selectedCategory.toLowerCase()) {
@@ -601,7 +728,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         if (query.isNotEmpty) {
                           final localVal = _localizeOfferPrice(o, o.retailPrice);
                           final hay =
-                              '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} $_sym${localVal.toStringAsFixed(0)}'
+                              '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} ${o.targetRegion} $_sym${localVal.toStringAsFixed(0)}'
                                   .toLowerCase();
                           if (!hay.contains(query)) return false;
                         }
@@ -941,7 +1068,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
     String priceSummaryText;
     if (isFreeSponsored) {
       priceSummaryText =
-          'Value: $_sym${localRetail.toStringAsFixed(0)} • 100% FREE FOR HOST';
+          'Value: $_sym${localRetail.toStringAsFixed(0)} • SPONSORED PILOT (\$0 Host Cost)';
     } else if (isTemplate) {
       priceSummaryText =
           'Suggested Value: $_sym${localRetail.toStringAsFixed(0)} • Host provides code at settlement';
@@ -1002,6 +1129,42 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
                         color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF38BDF8).withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        offer.offerTypeLabel,
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF7DD3FC),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        '🌍 ${offer.targetRegion}',
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFCBD5E1),
+                        ),
                       ),
                     ),
                     if (offer.badgeText != null &&
@@ -1118,7 +1281,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Preview Product Page',
+                            'Preview Landing Page',
                             style: TextStyle(
                               fontSize: 11.5,
                               color: AppTheme.primaryLight,
@@ -1143,28 +1306,10 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
           const SizedBox(width: 10),
           ElevatedButton.icon(
             onPressed: () {
-              final localizedOffer = BrandOffer(
-                id: offer.id,
-                brandName: offer.brandName,
-                brandDomain: offer.brandDomain,
-                brandLogoUrl: offer.brandLogoUrl,
-                contactName: offer.contactName,
-                contactEmail: offer.contactEmail,
-                productTitle: offer.productTitle,
-                productDescription: offer.productDescription,
-                category: offer.category,
-                productImageUrl: offer.productImageUrl,
-                productUrl: offer.productUrl,
+              final localizedOffer = offer.copyWith(
                 retailPrice: localRetail,
                 organizerPrice: localOrg,
-                discountPercent: offer.discountPercent,
                 currency: widget.currencyCode,
-                promoCode: offer.promoCode,
-                emoji: offer.emoji,
-                badgeText: offer.badgeText,
-                status: offer.status,
-                gamesAssignedCount: offer.gamesAssignedCount,
-                clicksCount: offer.clicksCount,
               );
               Navigator.of(context).pop(
                 BrandGiftSelectionResult(

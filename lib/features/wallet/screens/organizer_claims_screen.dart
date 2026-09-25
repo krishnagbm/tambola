@@ -631,7 +631,7 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                       Row(
                         children: [
                           const Text(
-                            'Brand Publisher Gift Store',
+                            'Brand Marketing Partner Channel',
                             style: TextStyle(
                               fontSize: 15.5,
                               fontWeight: FontWeight.w800,
@@ -656,7 +656,7 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                               ),
                             ),
                             child: const Text(
-                              'UP TO 37% ORGANIZER DISCOUNT',
+                              'SPONSORED PILOT & GLOBAL BRAND CATALOG',
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w900,
@@ -669,7 +669,7 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                       ),
                       const SizedBox(height: 2),
                       const Text(
-                        'Brand publishers offer exclusive discounted products & e-vouchers so you can delight your game winners effortlessly.',
+                        'Assign brand-sponsored pilot rewards, global brand templates, or your own custom host offers to winners.',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFFCBD5E1),
@@ -2212,7 +2212,7 @@ class _BrandGiftFulfillmentDialogState
                                               ),
                                               child: Text(
                                                 isFree
-                                                    ? '100% FREE'
+                                                    ? 'SPONSORED'
                                                     : (isTemplate
                                                           ? 'TEMPLATE'
                                                           : '-${offer.discountPercent}%'),
@@ -2241,7 +2241,7 @@ class _BrandGiftFulfillmentDialogState
                                           children: [
                                             Text(
                                               isFree
-                                                  ? 'Host: FREE (\$0)'
+                                                  ? 'Host: \$0 Sponsored'
                                                   : (isTemplate
                                                         ? 'Suggested: \$${offer.retailPrice.toStringAsFixed(0)} • Host buys code'
                                                         : 'Host: \$${offer.organizerPrice.toStringAsFixed(0)}'),

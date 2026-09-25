@@ -158,8 +158,22 @@ def handler(event, context):
             )
             return _r(status_code if status_code in (200, 400, 404) else 200, data if isinstance(data, dict) else {"success": False})
 
-        # Route 0D: Get Active Brand Gift Offers (Public & Host Catalog)
+        # Route 0D: Get Brand Gift Offers (Public & Host Catalog + Admin Status/Country Filters)
         if action == "get_brand_offers":
+            filter_status = (payload.get("status") or "").strip().upper()
+            filter_country = (payload.get("country") or payload.get("target_region") or "").strip()
+            if filter_status or filter_country:
+                status_code, data = _supabase_rest(
+                    "/rest/v1/rpc/MPT_get_brand_offers_filtered",
+                    method="POST",
+                    payload={
+                        "p_status": filter_status or "ACTIVE",
+                        "p_country": filter_country or None,
+                    },
+                )
+                if status_code == 200 and isinstance(data, list):
+                    return _r(200, {"success": True, "offers": data})
+
             status_code, data = _supabase_rest(
                 "/rest/v1/rpc/MPT_get_active_brand_offers",
                 method="POST",
@@ -169,24 +183,41 @@ def handler(event, context):
                 return _r(200, {"success": True, "offers": data})
             return _r(200, {"success": True, "offers": []})
 
-        # Route 0E: Register Brand Gift Offer (from Hall of Fame / Brand Marketer Portal)
+        # Route 0E: Register Brand Marketing Partner Offer (10-Reward Pilot Portal)
         if action == "register_brand_offer":
             brand_name = (payload.get("brand_name") or "").strip()
             brand_domain = (payload.get("brand_domain") or "").strip().lower()
             brand_logo_url = (payload.get("brand_logo_url") or "").strip()
             marketer_name = (payload.get("marketer_name") or payload.get("contact_name") or "").strip()
             marketer_email = (payload.get("marketer_email") or payload.get("contact_email") or "").strip().lower()
+            contact_role = (payload.get("contact_role") or "").strip()
             gift_title = (payload.get("gift_title") or payload.get("product_title") or "").strip()
             gift_description = (payload.get("gift_description") or payload.get("product_description") or payload.get("description") or "").strip()
             category = (payload.get("category") or "Shopping Vouchers").strip()
             retail_value = float(payload.get("retail_value") or payload.get("retail_price") or 0)
             raw_org_price = payload.get("organizer_price")
-            organizer_price = float(raw_org_price) if raw_org_price is not None and str(raw_org_price).strip() != "" else retail_value
+            organizer_price = float(raw_org_price) if raw_org_price is not None and str(raw_org_price).strip() != "" else 0.0
             vouchers_total_count = int(payload.get("vouchers_total_count") or 10)
             product_url = (payload.get("product_url") or "").strip()
             product_image_url = (payload.get("product_image_url") or "").strip()
             promo_code = (payload.get("promo_code") or "").strip()
             emoji = (payload.get("emoji") or "🎁").strip()
+            offer_type = (payload.get("offer_type") or "GIFT_VOUCHER").strip().upper()
+            target_region = (payload.get("target_region") or "Global").strip()
+            raw_countries = payload.get("target_countries")
+            if isinstance(raw_countries, list) and len(raw_countries) > 0:
+                target_countries = [str(c).strip() for c in raw_countries if str(c).strip()]
+            elif target_region:
+                target_countries = [c.strip() for c in target_region.split(",") if c.strip()]
+            else:
+                target_countries = ["Global"]
+            currency = (payload.get("currency") or "USD").strip().upper()
+            voucher_code_type = (payload.get("voucher_code_type") or "SHARED_PROMO_CODE").strip().upper()
+            expiration_date = (payload.get("expiration_date") or "").strip() or None
+            redemption_restrictions = (payload.get("redemption_restrictions") or "").strip() or None
+            minimum_purchase = (payload.get("minimum_purchase") or "").strip() or None
+            new_customers_only = bool(payload.get("new_customers_only", False))
+            redemption_channel = (payload.get("redemption_channel") or "ONLINE").strip().upper()
 
             BLOCKED_FREE_DOMAINS = {
                 "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
@@ -197,7 +228,7 @@ def handler(event, context):
             if not email_domain or email_domain in BLOCKED_FREE_DOMAINS:
                 return _r(400, {
                     "success": False,
-                    "message": "Please use your official corporate work email (e.g. name@brand.com) to register a Brand Gift offer.",
+                    "message": "Please use your official corporate work email (e.g. marketing@yourcompany.com) to register a Brand Marketing Partner offer.",
                 })
 
             if not brand_domain:
@@ -213,6 +244,7 @@ def handler(event, context):
                     "p_brand_domain": brand_domain,
                     "p_contact_name": marketer_name,
                     "p_contact_email": marketer_email,
+                    "p_contact_role": contact_role or None,
                     "p_product_title": gift_title,
                     "p_product_description": gift_description or None,
                     "p_category": category,
@@ -223,25 +255,21 @@ def handler(event, context):
                     "p_promo_code": promo_code or None,
                     "p_emoji": emoji,
                     "p_vouchers_total_count": vouchers_total_count,
+                    "p_offer_type": offer_type,
+                    "p_target_region": target_region,
+                    "p_target_countries": target_countries,
+                    "p_currency": currency,
+                    "p_voucher_code_type": voucher_code_type,
+                    "p_expiration_date": expiration_date,
+                    "p_redemption_restrictions": redemption_restrictions,
+                    "p_minimum_purchase": minimum_purchase,
+                    "p_new_customers_only": new_customers_only,
+                    "p_redemption_channel": redemption_channel,
                 },
             )
             if status_code == 200 and isinstance(data, dict) and data.get("success"):
-                try:
-                    send_brand_offer_registered_email(
-                        to_email=marketer_email,
-                        marketer_name=marketer_name or brand_name,
-                        brand_name=brand_name,
-                        gift_title=gift_title,
-                        retail_value=retail_value,
-                        organizer_price=organizer_price,
-                        product_url=product_url,
-                        promo_code=promo_code or None,
-                        brand_logo_url=brand_logo_url,
-                    )
-                except Exception as e_mail:
-                    print(f"  [ SES ] Non-fatal brand offer email error: {e_mail}")
                 return _r(200, data)
-            return _r(400, data if isinstance(data, dict) else {"success": False, "message": "Could not register brand offer."})
+            return _r(400, data if isinstance(data, dict) else {"success": False, "message": "Could not register partner offer."})
 
         # Route 0F: Track Brand Offer Product Link Click (from Hall of Fame / Rewards)
         if action == "track_brand_offer_click":
@@ -250,6 +278,18 @@ def handler(event, context):
                 return _r(200, {"success": False})
             status_code, data = _supabase_rest(
                 "/rest/v1/rpc/MPT_track_brand_offer_click",
+                method="POST",
+                payload={"p_offer_id": offer_id},
+            )
+            return _r(200, data if isinstance(data, dict) else {"success": True})
+
+        # Route 0F2: Track Brand Offer Impression / View
+        if action == "track_brand_offer_view":
+            offer_id = (payload.get("offer_id") or payload.get("p_offer_id") or "").strip()
+            if not offer_id:
+                return _r(200, {"success": False})
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_track_brand_offer_view",
                 method="POST",
                 payload={"p_offer_id": offer_id},
             )

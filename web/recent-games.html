@@ -642,6 +642,12 @@
       color: #CBD5E1;
     }
 
+    .brand-form-helper {
+      font-size: 11px;
+      color: #94A3B8;
+      line-height: 1.35;
+    }
+
     .brand-form-group input,
     .brand-form-group select,
     .brand-form-group textarea {
@@ -659,6 +665,13 @@
     .brand-form-group textarea:focus {
       outline: none;
       border-color: #F59E0B;
+    }
+
+    .brand-form-group input:user-invalid,
+    .brand-form-group select:user-invalid,
+    .brand-form-group textarea:user-invalid,
+    .brand-form-group [aria-invalid="true"] {
+      border-color: #EF4444;
     }
 
     .pagination-bar {
@@ -741,6 +754,7 @@
           </li>
           <li><a href="/pricing.html">Pricing</a></li>
           <li><a href="/recent-games.html" class="active">Recent Games</a></li>
+          <li><a href="/brand-partners.html">Brand Partners</a></li>
         </ul>
 
         <div class="nav-actions">
@@ -764,6 +778,7 @@
     <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide</a>
     <a href="/pricing.html">Pricing &amp; Credit Packs</a>
     <a href="/recent-games.html" class="active" style="color:var(--accent); font-weight: bold;">🏆 Recent Games</a>
+    <a href="/brand-partners.html">🤝 Brand Partners</a>
     <a href="/join.html" style="color:var(--accent);">🔑 Join a Game</a>
     <a href="/#/create-game">👨‍👩‍👧‍👦 Host a Game</a>
   </div>
@@ -804,18 +819,21 @@
       <section class="brand-partner-banner">
         <div class="brand-banner-inner">
           <div>
-            <span class="brand-banner-badge">🎁 Sponsored Prize Marketplace • For Brand Marketers &amp; D2C Sponsors</span>
-            <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">
-              Want Your Brand Featured on Every Completed Game Card?
+            <span class="brand-banner-badge">🤝 DabHousie Brand Marketing Partner Program</span>
+            <h2 style="font-size: 17.5px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">
+              Turn Your Brand Offer Into Interactive Game Rewards
             </h2>
-            <p style="font-size: 13px; color: #CBD5E1; margin: 0; line-height: 1.5;">
-              Register free sponsored gift vouchers or discounted products for DabHousie organizers to award as prizes. Winners receive your product link by email &amp; in their Rewards Wallet, and every Hall of Fame card links directly to your product page!
+            <p style="font-size: 12.5px; color: #CBD5E1; margin: 0; line-height: 1.5;">
+              Feature your brand across live community, family, and corporate games. Winners receive your offer link &amp; code in their Rewards Wallet, and every Hall of Fame card drives high-intent traffic directly to your landing page.
             </p>
           </div>
-          <div class="brand-banner-actions">
-            <button class="btn-register-brand" onclick="openBrandRegisterModal()" style="width: 100%; justify-content: center;">
-              🚀 Register Brand Gift Offer
+          <div class="brand-banner-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn-register-brand" onclick="openBrandRegisterModal()" style="flex: 1; justify-content: center;">
+              🚀 Start 10-Reward Pilot
             </button>
+            <a href="/brand-partners.html" style="display: inline-flex; align-items: center; justify-content: center; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.45); background: rgba(15, 23, 42, 0.65); color: #FDE68A; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;">
+              Program Details ↗
+            </a>
           </div>
         </div>
       </section>
@@ -826,10 +844,10 @@
       <div class="brand-modal-card">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
           <div>
-            <span class="brand-banner-badge">🎁 Brand Marketing Partner Portal</span>
-            <h3 style="font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: #FFFFFF;">Register Your Brand Gift Offer</h3>
-            <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">
-              Start with a batch of 10 gift vouchers for DabHousie hosts to award. Only $2 platform promotion fee per voucher actually consumed by a game host!
+            <span class="brand-banner-badge">🤝 Brand Marketing Partner Portal</span>
+            <h3 style="font-size: 20px; font-weight: 800; margin: 4px 0 4px; color: #FFFFFF;">Become a DabHousie Brand Marketing Partner</h3>
+            <p style="font-size: 12.5px; color: #94A3B8; margin: 0; line-height: 1.45;">
+              Turn your promotional offer into an interactive game reward. Start with a 10-reward pilot batch to test brand visibility, winner engagement, and customer redemptions.
             </p>
           </div>
           <button onclick="closeBrandRegisterModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 20px; cursor: pointer;">✕</button>
@@ -857,64 +875,129 @@
             </div>
             <div class="brand-form-group">
               <label for="bm-contact-email">Corporate Work Email *</label>
-              <input type="email" id="bm-contact-email" required placeholder="marketing@yourcompany.com">
+              <input type="email" id="bm-contact-email" required placeholder="partnerships@yourcompany.com">
             </div>
           </div>
 
           <div class="brand-form-grid">
             <div class="brand-form-group">
-              <label for="bm-product-title">Product / Gift Voucher Title *</label>
-              <input type="text" id="bm-product-title" required placeholder="e.g. $10 Sponsored Gift Voucher">
+              <label for="bm-product-title">Promotional Reward / Offer Title *</label>
+              <input type="text" id="bm-product-title" required placeholder="e.g. $10 Welcome Credit or 25% Off Starter Pack">
             </div>
+            <div class="brand-form-group">
+              <label for="bm-offer-type">Offer Type *</label>
+              <select id="bm-offer-type">
+                <option value="DIGITAL_GIFT_VOUCHER">🎟️ Digital Gift Voucher</option>
+                <option value="PERCENTAGE_DISCOUNT">🏷️ Percentage Discount Offer</option>
+                <option value="FIXED_VALUE_OFFER">💵 Fixed-Value Offer ($10 Off, £10 Off, ₹500 Off)</option>
+                <option value="FREE_ITEM_WITH_PURCHASE">🎁 Free Item With Purchase</option>
+                <option value="SUBSCRIPTION_TRIAL">⚡ Subscription / App Trial Offer</option>
+                <option value="PRODUCT_BUNDLE">📦 Product Sample / Bundle Offer</option>
+                <option value="EVENT_EXPERIENCE_REWARD">🎟️ Event / Experience Reward</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
             <div class="brand-form-group">
               <label for="bm-category">Gift Category *</label>
               <select id="bm-category">
                 <option value="COFFEE">☕ Coffee &amp; Dining</option>
-                <option value="SHOPPING">🛍️ Shopping Vouchers</option>
-                <option value="GOURMET">🍫 Gourmet &amp; Sweets</option>
-                <option value="TECH">🔊 Tech &amp; Audio</option>
+                <option value="SHOPPING">🛍️ Shopping &amp; Retail</option>
+                <option value="GOURMET">🍫 Gourmet &amp; Food</option>
+                <option value="TECH">🔊 Tech, Apps &amp; Audio</option>
                 <option value="BEAUTY">✨ Beauty &amp; Wellness</option>
                 <option value="FITNESS">👟 Sports &amp; Apparel</option>
+              </select>
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-target-region">Target Country / Region *</label>
+              <select id="bm-target-region">
+                <option value="Global">🌍 Global (All Regions)</option>
+                <option value="United States">🇺🇸 United States</option>
+                <option value="Canada">🇨🇦 Canada</option>
+                <option value="United Kingdom">🇬🇧 United Kingdom</option>
+                <option value="India">🇮🇳 India</option>
+                <option value="Australia">🇦🇺 Australia</option>
+                <option value="Europe">🇪🇺 Europe</option>
               </select>
             </div>
           </div>
 
           <div class="brand-form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
             <div class="brand-form-group">
-              <label for="bm-retail-price">Voucher Retail Value ($) *</label>
+              <label for="bm-retail-price">Customer Offer Value ($) *</label>
               <input type="number" id="bm-retail-price" required min="1" step="0.5" value="10" oninput="updateDiscountBadge()">
+              <span class="brand-form-helper">Retail value or customer savings</span>
             </div>
             <div class="brand-form-group">
-              <label for="bm-org-price">Host Cost ($) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 4px;">(100% FREE)</span></label>
+              <label for="bm-org-price">Reward Cost to Host ($) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 2px;">($0 Sponsored)</span></label>
               <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
+              <span class="brand-form-helper">Set $0 if fully brand-sponsored</span>
             </div>
             <div class="brand-form-group">
               <label for="bm-vouchers-count">Voucher Batch Qty *</label>
               <input type="number" id="bm-vouchers-count" required min="1" max="500" step="1" value="10">
+              <span class="brand-form-helper">Recommended pilot: 10 rewards</span>
             </div>
           </div>
 
           <div class="brand-form-grid">
             <div class="brand-form-group">
-              <label for="bm-product-url">Product Landing Page URL * (Shown on Hall of Fame)</label>
-              <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/gift-offer">
+              <label for="bm-product-url">Product Landing Page URL *</label>
+              <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/dabhousie-offer">
+              <span class="brand-form-helper">Winners and Hall of Fame visitors will click here to discover and redeem your offer.</span>
             </div>
             <div class="brand-form-group">
-              <label for="bm-promo-code">Voucher / Promo Code (Shared with Winners)</label>
-              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE10">
+              <label for="bm-voucher-code-type">Voucher Code Type *</label>
+              <select id="bm-voucher-code-type">
+                <option value="SHARED_PROMO_CODE">🔑 Single Shared Promo Code (e.g. DABHOUSIE10)</option>
+                <option value="UNIQUE_CODES_LATER">🎟️ Unique Single-Use Codes (Provided Later)</option>
+                <option value="HOST_FULFILLED">🤝 Host-Fulfilled / Landing Page Auto-Applied</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-promo-code">Promo / Voucher Code (Shared Only With Winners)</label>
+              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE10 (or leave blank)">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-redemption-channel">Redemption Channel &amp; Rules</label>
+              <select id="bm-redemption-channel">
+                <option value="ONLINE">🌐 Online Checkout</option>
+                <option value="BOTH">🌐🏬 Online &amp; In-Store</option>
+                <option value="APP">📱 Mobile App Redemption</option>
+                <option value="IN_STORE">🏬 In-Store Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-expiration-date">Offer Expiration Date (Optional)</label>
+              <input type="date" id="bm-expiration-date">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-restrictions">Redemption Restrictions (Optional)</label>
+              <input type="text" id="bm-restrictions" placeholder="e.g. New customers only, min. $25 order">
             </div>
           </div>
 
           <div class="brand-form-group">
-            <label for="bm-description">Short Offer Description &amp; Redemption Perks</label>
-            <textarea id="bm-description" rows="2" placeholder="Describe why players and hosts will love this prize..."></textarea>
+            <label for="bm-description">Offer Description &amp; Customer Benefit</label>
+            <textarea id="bm-description" rows="2" placeholder="Explain what the winner gets and how they can redeem the offer."></textarea>
           </div>
 
           <div id="bm-status-msg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;"></div>
 
-          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-            <button type="button" onclick="closeBrandRegisterModal()" style="background: transparent; border: 1px solid #334155; color: #CBD5E1; padding: 9px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
-            <button type="submit" id="bm-submit-btn" class="btn-register-brand">🚀 Publish Brand Gift Offer</button>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap;">
+            <span style="font-size: 11.5px; color: #94A3B8;">Questions? Email <a href="mailto:partnerships@dabhousie.com" style="color: #FBBF24;">partnerships@dabhousie.com</a></span>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" onclick="closeBrandRegisterModal()" style="background: transparent; border: 1px solid #334155; color: #CBD5E1; padding: 9px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
+              <button type="submit" id="bm-submit-btn" class="btn-register-brand">🚀 Start 10-Reward Pilot</button>
+            </div>
           </div>
         </form>
       </div>
@@ -1355,7 +1438,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
             <div>
               <span style="font-size: 12px; font-weight: 800; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px; display: block;">
-                ✨ Partner Gift Catalog
+                ✨ Partner Reward Catalog
               </span>
               <a href="/#/create-game" style="font-size: 11.5px; color: #38BDF8; font-weight: 700; text-decoration: none;">
                 Host a Game &amp; Assign Prizes →
@@ -1365,6 +1448,28 @@
               ✕ Hide
             </button>
           </div>
+
+          <!-- Country / Region & Status Filters -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 0 6px;">
+            <select id="catalog-country-filter" onchange="filterBrandPartnersCatalog()" aria-label="Filter by Country or Region" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
+              <option value="ALL">🌍 All Regions</option>
+              <option value="Global">🌐 Global</option>
+              <option value="United States">🇺🇸 United States</option>
+              <option value="Canada">🇨🇦 Canada</option>
+              <option value="United Kingdom">🇬🇧 United Kingdom</option>
+              <option value="India">🇮🇳 India</option>
+              <option value="Australia">🇦🇺 Australia</option>
+              <option value="Europe">🇪🇺 Europe</option>
+            </select>
+            <select id="catalog-status-filter" onchange="loadBrandPartnersCatalog()" aria-label="Filter by Offer Status" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
+              <option value="ACTIVE">🟢 Active Offers</option>
+              <option value="PENDING">⏳ Pending</option>
+              <option value="EXPIRED">⌛ Expired</option>
+              <option value="DRAFT">📝 Draft</option>
+              <option value="ALL">📋 All Statuses</option>
+            </select>
+          </div>
+
           <div class="brand-offers-grid" id="brand-offers-grid">
             <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
           </div>
@@ -1374,7 +1479,7 @@
 
     <!-- Sticky Bottom-Right Register Brand Gift Offer Button (Appears on Scroll) -->
     <button id="sticky-register-brand-btn" class="sticky-register-brand-btn" onclick="openBrandRegisterModal()">
-      🚀 Register Brand Gift Offer
+      🚀 Start 10-Reward Pilot
     </button>
   </main>
 
@@ -1384,6 +1489,7 @@
       <a href="/">Home</a> <span>•</span>
       <a href="/join.html">Join Game</a> <span>•</span>
       <a href="/recent-games.html">Recent Games</a> <span>•</span>
+      <a href="/brand-partners.html">Brand Partners</a> <span>•</span>
       <a href="/how-it-works.html">How It Works</a> <span>•</span>
       <a href="/how-to-play-tambola.html">Tambola Guide</a> <span>•</span>
       <a href="/how-to-play-housie.html">Housie Guide</a> <span>•</span>
@@ -1798,8 +1904,20 @@
       } catch (_) {}
     };
 
+    const OFFER_TYPE_LABELS = {
+      'DIGITAL_GIFT_VOUCHER': '🎟️ Gift Voucher',
+      'PERCENTAGE_DISCOUNT': '🏷️ % Discount',
+      'FIXED_VALUE_OFFER': '💵 Fixed Offer',
+      'FREE_ITEM_WITH_PURCHASE': '🎁 Free w/ Purchase',
+      'SUBSCRIPTION_TRIAL': '⚡ App / Trial',
+      'PRODUCT_BUNDLE': '📦 Bundle Offer',
+      'EVENT_EXPERIENCE_REWARD': '🎟️ Experience'
+    };
+
     // Right-Side Partner Catalog Sidebar Toggle
     let brandCatalogLoaded = false;
+    let allCatalogOffers = [];
+
     async function toggleBrandPartnersShowcase() {
       const showcase = document.getElementById('brand-offers-showcase');
       const btn = document.getElementById('btn-toggle-brands');
@@ -1816,94 +1934,126 @@
     async function loadBrandPartnersCatalog() {
       const grid = document.getElementById('brand-offers-grid');
       if (!grid) return;
+      const statusFilter = document.getElementById('catalog-status-filter')?.value || 'ACTIVE';
       try {
         const res = await fetch(PUBLIC_API_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_brand_offers' })
+          body: JSON.stringify({
+            action: 'get_brand_offers',
+            status: statusFilter,
+            country: 'ALL'
+          })
         });
         if (res.ok) {
           const data = await res.json();
-          const offers = Array.isArray(data.offers) ? data.offers : [];
+          allCatalogOffers = Array.isArray(data.offers) ? data.offers : [];
           brandCatalogLoaded = true;
-          if (offers.length === 0) {
-            grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">No brand offers registered yet. Be the first!</div>';
-            return;
-          }
-          grid.innerHTML = offers.map(o => {
-            const disc = Number(o.discount_percent || 0);
-            const orgNum = Number(o.organizer_price || 0);
-            const retNum = Number(o.retail_price || o.retail_value || 0);
-            const retPrice = retNum.toFixed(0);
-            const isFreeSponsored = orgNum === 0;
-            const isGlobalTemplate = orgNum > 0 && disc === 0 && !o.promo_code;
-            const orgPrice = isFreeSponsored ? 'FREE ($0)' : `$${orgNum.toFixed(0)}`;
-            const title = o.product_title || o.gift_title || 'Sponsored Brand Gift';
-            const desc = o.description || o.gift_description || o.product_description || '';
-            const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
-            const url = escapeHtml(o.product_url || '#');
-            const logoSrc = resolveBrandLogoUrl(o);
-            const logoImg = logoSrc
-              ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
-              : '';
-
-            let topBadgeHtml = '';
-            if (isFreeSponsored) {
-              topBadgeHtml = `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">100% FREE FOR HOST</span>`;
-            } else if (disc > 0) {
-              topBadgeHtml = `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>`;
-            } else if (isGlobalTemplate) {
-              topBadgeHtml = `<span style="background: rgba(139,92,246,0.22); color: #C4B5FD; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">🌍 GLOBAL TEMPLATE</span>`;
-            }
-
-            let footerLeftHtml = '';
-            if (isFreeSponsored) {
-              footerLeftHtml = `
-                <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
-                <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
-                <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
-              `;
-            } else if (isGlobalTemplate) {
-              footerLeftHtml = `
-                <span style="font-size: 11.5px; font-weight: 800; color: #34D399;">Suggested: $${retPrice}</span>
-                <span style="font-size: 10.5px; color: #CBD5E1; margin-left: 6px;">• Host provides code</span>
-              `;
-            } else {
-              footerLeftHtml = `
-                <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
-                <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
-                <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
-              `;
-            }
-
-            return `
-              <div class="brand-offer-mini-card">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px;">
-                    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #FBBF24; text-transform: uppercase;">
-                      ${logoImg}
-                      <span>${escapeHtml(o.brand_name)}</span>
-                    </span>
-                    ${topBadgeHtml}
-                  </div>
-                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(title)}</div>
-                  <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(desc)}</div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
-                  <div>
-                    ${footerLeftHtml}
-                  </div>
-                  <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
-                </div>
-              </div>
-            `;
-          }).join('');
+          filterBrandPartnersCatalog();
         } else {
           throw new Error('Server status ' + res.status);
         }
       } catch (e) {
         grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">Unable to load partner offers right now. <button onclick="loadBrandPartnersCatalog()" style="margin-left:8px; background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4); color:#FDE68A; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:11.5px; font-weight:700;">Retry</button></div>';
       }
+    }
+
+    function filterBrandPartnersCatalog() {
+      const grid = document.getElementById('brand-offers-grid');
+      if (!grid) return;
+      const countryFilter = document.getElementById('catalog-country-filter')?.value || 'ALL';
+      const statusFilter = document.getElementById('catalog-status-filter')?.value || 'ACTIVE';
+
+      const filtered = allCatalogOffers.filter(o => {
+        const oStatus = String(o.status || 'ACTIVE').toUpperCase();
+        if (statusFilter !== 'ALL' && oStatus !== statusFilter) return false;
+        if (countryFilter === 'ALL') return true;
+        const region = String(o.target_region || 'Global');
+        const countries = Array.isArray(o.target_countries) ? o.target_countries : [region];
+        return region.toLowerCase() === countryFilter.toLowerCase()
+          || region.toLowerCase() === 'global'
+          || countries.some(c => String(c).toLowerCase() === countryFilter.toLowerCase() || String(c).toLowerCase() === 'global');
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div style="font-size: 12.5px; color: #94A3B8; padding: 10px 0;">No partner offers match this filter.</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(o => {
+        const disc = Number(o.discount_percent || 0);
+        const orgNum = Number(o.organizer_price || 0);
+        const retNum = Number(o.retail_price || o.retail_value || 0);
+        const retPrice = retNum.toFixed(0);
+        const isFreeSponsored = orgNum === 0;
+        const isGlobalTemplate = orgNum > 0 && disc === 0 && !o.promo_code;
+        const orgPrice = isFreeSponsored ? '$0 Sponsored' : `$${orgNum.toFixed(0)}`;
+        const title = o.product_title || o.gift_title || 'Sponsored Brand Reward';
+        const desc = o.description || o.gift_description || o.product_description || '';
+        const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
+        const url = escapeHtml(o.product_url || '#');
+        const logoSrc = resolveBrandLogoUrl(o);
+        const logoImg = logoSrc
+          ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+          : '';
+        const regionBadge = escapeHtml(o.target_region || 'Global');
+        const offerTypeLabel = OFFER_TYPE_LABELS[o.offer_type] || '🎟️ Partner Offer';
+
+        let topBadgeHtml = '';
+        if (isFreeSponsored) {
+          topBadgeHtml = `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">SPONSORED PILOT</span>`;
+        } else if (disc > 0) {
+          topBadgeHtml = `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 9.5px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>`;
+        } else if (isGlobalTemplate) {
+          topBadgeHtml = `<span style="background: rgba(139,92,246,0.22); color: #C4B5FD; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">🌍 GLOBAL TEMPLATE</span>`;
+        }
+
+        let footerLeftHtml = '';
+        if (isFreeSponsored) {
+          footerLeftHtml = `
+            <span style="font-size: 12px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
+            <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+            <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
+          `;
+        } else if (isGlobalTemplate) {
+          footerLeftHtml = `
+            <span style="font-size: 11.5px; font-weight: 800; color: #34D399;">Suggested: $${retPrice}</span>
+            <span style="font-size: 10.5px; color: #CBD5E1; margin-left: 6px;">• Host provides code</span>
+          `;
+        } else {
+          footerLeftHtml = `
+            <span style="font-size: 12px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
+            <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+            <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
+          `;
+        }
+
+        return `
+          <div class="brand-offer-mini-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 5px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #FBBF24; text-transform: uppercase;">
+                  ${logoImg}
+                  <span>${escapeHtml(o.brand_name)}</span>
+                </span>
+                ${topBadgeHtml}
+              </div>
+              <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(title)}</div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px;">
+                <span style="font-size: 10px; background: rgba(56,189,248,0.12); color: #7DD3FC; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${offerTypeLabel}</span>
+                <span style="font-size: 10px; background: rgba(255,255,255,0.06); color: #CBD5E1; padding: 1px 6px; border-radius: 4px;">🌍 ${regionBadge}</span>
+              </div>
+              <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(desc)}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <div>
+                ${footerLeftHtml}
+              </div>
+              <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     // Sticky Bottom-Right Register Button Visibility on Scroll
@@ -1946,7 +2096,7 @@
       const pill = document.getElementById('bm-discount-pill');
       if (!pill) return;
       if (org === 0 && retail > 0) {
-        pill.textContent = '(100% FREE)';
+        pill.textContent = '($0 Sponsored)';
         pill.style.display = 'inline';
       } else if (retail > 0 && org < retail) {
         const pct = Math.round(((retail - org) / retail) * 100);
@@ -1963,6 +2113,7 @@
       const msgEl = document.getElementById('bm-status-msg');
       if (!btn || !msgEl) return;
 
+      const targetRegion = document.getElementById('bm-target-region')?.value || 'Global';
       const payload = {
         action: 'register_brand_offer',
         brand_name: document.getElementById('bm-brand-name').value.trim(),
@@ -1970,17 +2121,24 @@
         contact_name: document.getElementById('bm-contact-name').value.trim(),
         contact_email: document.getElementById('bm-contact-email').value.trim(),
         product_title: document.getElementById('bm-product-title').value.trim(),
+        offer_type: document.getElementById('bm-offer-type')?.value || 'DIGITAL_GIFT_VOUCHER',
         category: document.getElementById('bm-category').value,
+        target_region: targetRegion,
+        target_countries: [targetRegion],
         retail_price: parseFloat(document.getElementById('bm-retail-price').value || '0'),
         organizer_price: parseFloat(document.getElementById('bm-org-price').value || '0'),
         vouchers_total_count: parseInt(document.getElementById('bm-vouchers-count')?.value || '10', 10),
         product_url: document.getElementById('bm-product-url').value.trim(),
+        voucher_code_type: document.getElementById('bm-voucher-code-type')?.value || 'SHARED_PROMO_CODE',
         promo_code: document.getElementById('bm-promo-code').value.trim(),
+        redemption_channel: document.getElementById('bm-redemption-channel')?.value || 'ONLINE',
+        expiration_date: document.getElementById('bm-expiration-date')?.value || null,
+        redemption_restrictions: document.getElementById('bm-restrictions')?.value?.trim() || null,
         description: document.getElementById('bm-description').value.trim()
       };
 
       btn.disabled = true;
-      btn.textContent = 'Publishing Offer...';
+      btn.textContent = 'Starting Pilot...';
       msgEl.style.display = 'none';
 
       try {
@@ -1995,7 +2153,7 @@
           msgEl.style.background = 'rgba(16, 185, 129, 0.16)';
           msgEl.style.border = '1px solid rgba(16, 185, 129, 0.45)';
           msgEl.style.color = '#6EE7B7';
-          msgEl.textContent = '🎉 ' + (data.message || 'Your Brand Gift Offer is now live in the DabHousie Host Catalog!');
+          msgEl.textContent = '🎉 ' + (data.message || 'Your 10-Reward Brand Pilot Offer is now registered in the DabHousie Partner Catalog!');
           document.getElementById('brand-register-form').reset();
           brandCatalogLoaded = false;
           loadBrandPartnersCatalog();
@@ -2010,7 +2168,7 @@
         msgEl.textContent = '⚠️ ' + err.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = '🚀 Publish Brand Gift Offer';
+        btn.textContent = '🚀 Start 10-Reward Pilot';
       }
     }
 
