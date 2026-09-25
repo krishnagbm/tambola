@@ -913,13 +913,13 @@
             <div class="brand-form-group">
               <label for="bm-target-region">Target Country / Region *</label>
               <select id="bm-target-region">
-                <option value="Global">🌍 Global (All Regions)</option>
-                <option value="United States">🇺🇸 United States</option>
-                <option value="Canada">🇨🇦 Canada</option>
-                <option value="United Kingdom">🇬🇧 United Kingdom</option>
-                <option value="India">🇮🇳 India</option>
-                <option value="Australia">🇦🇺 Australia</option>
-                <option value="Europe">🇪🇺 Europe</option>
+                <option value="Global">🌎 Global (All Regions)</option>
+                <option value="United States">United States (USD)</option>
+                <option value="Canada">Canada (CAD)</option>
+                <option value="United Kingdom">United Kingdom (GBP)</option>
+                <option value="India">India (INR)</option>
+                <option value="Australia">Australia (AUD)</option>
+                <option value="Europe">Europe (EUR)</option>
               </select>
             </div>
           </div>
@@ -931,9 +931,9 @@
               <span class="brand-form-helper">Retail value or customer savings</span>
             </div>
             <div class="brand-form-group">
-              <label for="bm-org-price">Reward Cost to Host ($) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 2px;">($0 Sponsored)</span></label>
+              <label for="bm-org-price">Reward Sponsorship Value / Host Cost ($) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 2px;">($0 Sponsored)</span></label>
               <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
-              <span class="brand-form-helper">Set $0 if fully brand-sponsored</span>
+              <span class="brand-form-helper">Amount associated with each reward when selected by a game host. Enter $0 if the reward is fully sponsored by the brand.</span>
             </div>
             <div class="brand-form-group">
               <label for="bm-vouchers-count">Voucher Batch Qty *</label>
@@ -1452,21 +1452,18 @@
           <!-- Country / Region & Status Filters -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 0 6px;">
             <select id="catalog-country-filter" onchange="filterBrandPartnersCatalog()" aria-label="Filter by Country or Region" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
-              <option value="ALL">🌍 All Regions</option>
+              <option value="ALL">🌎 All Regions</option>
               <option value="Global">🌐 Global</option>
-              <option value="United States">🇺🇸 United States</option>
-              <option value="Canada">🇨🇦 Canada</option>
-              <option value="United Kingdom">🇬🇧 United Kingdom</option>
-              <option value="India">🇮🇳 India</option>
-              <option value="Australia">🇦🇺 Australia</option>
-              <option value="Europe">🇪🇺 Europe</option>
+              <option value="United States">United States (USD)</option>
+              <option value="Canada">Canada (CAD)</option>
+              <option value="United Kingdom">United Kingdom (GBP)</option>
+              <option value="India">India (INR)</option>
+              <option value="Australia">Australia (AUD)</option>
+              <option value="Europe">Europe (EUR)</option>
             </select>
             <select id="catalog-status-filter" onchange="loadBrandPartnersCatalog()" aria-label="Filter by Offer Status" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
               <option value="ACTIVE">🟢 Active Offers</option>
-              <option value="PENDING">⏳ Pending</option>
               <option value="EXPIRED">⌛ Expired</option>
-              <option value="DRAFT">📝 Draft</option>
-              <option value="ALL">📋 All Statuses</option>
             </select>
           </div>
 
@@ -2068,12 +2065,37 @@
     }, { passive: true });
 
     // Brand Marketer Self-Registration Modal Handlers
+    let brandModalCloseTimer = null;
+
     function openBrandRegisterModal() {
+      if (brandModalCloseTimer) {
+        clearTimeout(brandModalCloseTimer);
+        brandModalCloseTimer = null;
+      }
+      const msgEl = document.getElementById('bm-status-msg');
+      if (msgEl) {
+        msgEl.style.display = 'none';
+        msgEl.textContent = '';
+      }
+      const btn = document.getElementById('bm-submit-btn');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🚀 Start 10-Reward Pilot';
+      }
       const modal = document.getElementById('brand-register-modal');
       if (modal) modal.style.display = 'flex';
     }
 
     function closeBrandRegisterModal() {
+      if (brandModalCloseTimer) {
+        clearTimeout(brandModalCloseTimer);
+        brandModalCloseTimer = null;
+      }
+      const msgEl = document.getElementById('bm-status-msg');
+      if (msgEl) {
+        msgEl.style.display = 'none';
+        msgEl.textContent = '';
+      }
       const modal = document.getElementById('brand-register-modal');
       if (modal) modal.style.display = 'none';
     }
@@ -2138,7 +2160,7 @@
       };
 
       btn.disabled = true;
-      btn.textContent = 'Starting Pilot...';
+      btn.textContent = 'Submitting Pilot...';
       msgEl.style.display = 'none';
 
       try {
@@ -2153,12 +2175,18 @@
           msgEl.style.background = 'rgba(16, 185, 129, 0.16)';
           msgEl.style.border = '1px solid rgba(16, 185, 129, 0.45)';
           msgEl.style.color = '#6EE7B7';
-          msgEl.textContent = '🎉 ' + (data.message || 'Your 10-Reward Brand Pilot Offer is now registered in the DabHousie Partner Catalog!');
+          msgEl.textContent = '🎉 ' + (data.message || 'Thank you for sponsoring a DabHousie Brand Offer! Your 10-reward pilot has been submitted and is waiting for approval.');
           document.getElementById('brand-register-form').reset();
+          const logoPrev = document.getElementById('bm-logo-preview');
+          if (logoPrev) logoPrev.style.display = 'none';
+          updateDiscountBadge();
           brandCatalogLoaded = false;
           loadBrandPartnersCatalog();
+          brandModalCloseTimer = setTimeout(() => {
+            closeBrandRegisterModal();
+          }, 2600);
         } else {
-          throw new Error(data.error || 'Failed to register brand offer');
+          throw new Error(data.message || data.error || 'Failed to register brand offer');
         }
       } catch (err) {
         msgEl.style.display = 'block';

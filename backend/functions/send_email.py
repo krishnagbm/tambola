@@ -160,19 +160,39 @@ def handler(event, context):
 
         # Route 0D: Get Brand Gift Offers (Public & Host Catalog + Admin Status/Country Filters)
         if action == "get_brand_offers":
-            filter_status = (payload.get("status") or "").strip().upper()
+            def _sanitize_public_offers(raw_list):
+                sanitized = []
+                for item in (raw_list or []):
+                    if not isinstance(item, dict):
+                        continue
+                    clean = dict(item)
+                    clean["has_promo_code"] = bool(clean.get("promo_code") and str(clean.get("promo_code")).strip())
+                    # Do NOT expose actual voucher redemption codes or private contact/CRM fields publicly
+                    clean.pop("promo_code", None)
+                    clean.pop("contact_email", None)
+                    clean.pop("contact_name", None)
+                    clean.pop("contact_role", None)
+                    clean.pop("crm_notes", None)
+                    clean.pop("outreach_response", None)
+                    sanitized.append(clean)
+                return sanitized
+
+            filter_status = (payload.get("status") or "ACTIVE").strip().upper()
+            # Public catalog only displays approved (ACTIVE) or EXPIRED offers; PENDING/DRAFT offers wait for backend approval
+            if filter_status not in ("ACTIVE", "EXPIRED"):
+                filter_status = "ACTIVE"
             filter_country = (payload.get("country") or payload.get("target_region") or "").strip()
-            if filter_status or filter_country:
+            if filter_status != "ACTIVE" or filter_country:
                 status_code, data = _supabase_rest(
                     "/rest/v1/rpc/MPT_get_brand_offers_filtered",
                     method="POST",
                     payload={
-                        "p_status": filter_status or "ACTIVE",
+                        "p_status": filter_status,
                         "p_country": filter_country or None,
                     },
                 )
                 if status_code == 200 and isinstance(data, list):
-                    return _r(200, {"success": True, "offers": data})
+                    return _r(200, {"success": True, "offers": _sanitize_public_offers(data)})
 
             status_code, data = _supabase_rest(
                 "/rest/v1/rpc/MPT_get_active_brand_offers",
@@ -180,7 +200,7 @@ def handler(event, context):
                 payload={},
             )
             if status_code == 200 and isinstance(data, list):
-                return _r(200, {"success": True, "offers": data})
+                return _r(200, {"success": True, "offers": _sanitize_public_offers(data)})
             return _r(200, {"success": True, "offers": []})
 
         # Route 0E: Register Brand Marketing Partner Offer (10-Reward Pilot Portal)
@@ -268,6 +288,23 @@ def handler(event, context):
                 },
             )
             if status_code == 200 and isinstance(data, dict) and data.get("success"):
+                try:
+                    send_brand_offer_registered_email(
+                        to_email=marketer_email,
+                        marketer_name=marketer_name or brand_name,
+                        brand_name=brand_name,
+                        gift_title=gift_title,
+                        retail_value=retail_value,
+                        organizer_price=organizer_price,
+                        product_url=product_url,
+                        promo_code=promo_code or None,
+                        brand_logo_url=brand_logo_url,
+                        vouchers_total_count=vouchers_total_count,
+                        target_region=target_region,
+                        currency=currency,
+                    )
+                except Exception as e_mail:
+                    print(f"  [ SES ] Non-fatal brand offer email error: {e_mail}")
                 return _r(200, data)
             return _r(400, data if isinstance(data, dict) else {"success": False, "message": "Could not register partner offer."})
 

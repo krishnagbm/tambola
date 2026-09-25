@@ -377,9 +377,9 @@
 
     .bp-markets-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      margin-top: 20px;
+      margin-top: 22px;
     }
 
     .bp-market-item {
@@ -390,9 +390,37 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       font-size: 13.5px;
       font-weight: 700;
       color: #F8FAFC;
+    }
+
+    .bp-market-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .bp-flag-svg {
+      width: 26px;
+      height: 18px;
+      border-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.14);
+      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .bp-flag-svg-sm {
+      width: 18px;
+      height: 13px;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.14);
+      flex-shrink: 0;
+      display: inline-block;
+      vertical-align: middle;
     }
 
     .bp-market-currency {
@@ -403,12 +431,23 @@
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .bp-global-warning {
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      font-size: 12.5px;
+      color: #94A3B8;
     }
 
     /* FAQ Grid */
     .bp-faq-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 18px;
     }
 
@@ -459,13 +498,16 @@
     @media (max-width: 680px) {
       .brand-form-grid,
       .brand-form-grid-3 {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
       }
       .bp-hero {
         padding: 28px 18px;
       }
       .bp-portal-card {
         padding: 22px 16px;
+      }
+      .bp-global-card {
+        padding: 24px 16px;
       }
     }
 
@@ -543,6 +585,9 @@
       font-weight: 700;
       cursor: pointer;
       user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all 0.15s ease;
     }
 
@@ -581,6 +626,9 @@
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .bp-filter-pill.active {
@@ -591,7 +639,7 @@
 
     .bp-catalog-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 16px;
     }
   </style>
@@ -655,9 +703,9 @@
     <section class="bp-hero">
       <span class="bp-eyebrow">🤝 DabHousie Brand Marketing Partner Program</span>
       <h1>Turn Your Brand Offer Into a Game-Winning Experience</h1>
-      <p class="bp-hero-sub">Reach engaged consumers through DabHousie's global gaming platform.</p>
+      <p class="bp-hero-sub">Reach engaged players through DabHousie's global gaming platform.</p>
       <p class="bp-hero-lead">
-        DabHousie is a customer-acquisition and promotional channel that turns brand offers into engaging game rewards. Start with a small 10-reward pilot, measure engagement, and scale based on results.
+        DabHousie is a customer-acquisition and promotional channel that turns brand offers and promotional rewards into engaging game moments. Brands can start with a small 10-reward pilot (Start small → test → measure → scale), direct winners to their brand landing page, and scale based on engagement.
       </p>
 
       <div class="bp-cta-row">
@@ -686,7 +734,7 @@
         <div class="bp-flow-node">
           <span class="node-icon">🏆</span>
           <span class="node-title">Winner</span>
-          <span class="node-sub">Engaged player wins prize</span>
+          <span class="node-sub">Engaged players win prize</span>
         </div>
         <span class="bp-flow-arrow" aria-hidden="true">→</span>
         <div class="bp-flow-node">
@@ -698,7 +746,7 @@
         <div class="bp-flow-node">
           <span class="node-icon">🛍️</span>
           <span class="node-title">Redeem / Discover / Purchase</span>
-          <span class="node-sub">Customer acquisition &amp; ROI</span>
+          <span class="node-sub">Customer acquisition &amp; redemption</span>
         </div>
       </div>
     </section>
@@ -707,32 +755,32 @@
     <section class="bp-section">
       <div class="bp-section-header">
         <h2>Why Partner With DabHousie?</h2>
-        <p>A performance-oriented promotional channel built for brand marketers, D2C growth teams, and regional campaigns.</p>
+        <p>A performance-oriented promotional channel built for Brand Marketing Partners, D2C growth teams, and regional promotional campaigns.</p>
       </div>
 
       <div class="bp-benefits-grid">
         <article class="bp-benefit-card">
           <span class="bp-benefit-tag">REACH</span>
           <h3>High-Attention Brand Exposure</h3>
-          <p>Put your brand in front of players through engaging game rewards.</p>
+          <p>Put your brand offer in front of engaged players through interactive promotional rewards.</p>
         </article>
 
         <article class="bp-benefit-card">
           <span class="bp-benefit-tag">ACQUISITION</span>
           <h3>Qualified Landing Page Traffic</h3>
-          <p>Send winners directly to your website, app or promotional landing page.</p>
+          <p>Send winners directly to your website, app, or dedicated brand landing page for customer acquisition.</p>
         </article>
 
         <article class="bp-benefit-card">
           <span class="bp-benefit-tag">ENGAGEMENT</span>
           <h3>Memorable Winner Moments</h3>
-          <p>Turn a conventional promotion into an interactive game-winning experience.</p>
+          <p>Turn a conventional promotional campaign into an interactive game-winning experience.</p>
         </article>
 
         <article class="bp-benefit-card">
           <span class="bp-benefit-tag">LOW-RISK PILOT</span>
           <h3>Test Before You Scale</h3>
-          <p>Start with just 10 rewards and scale after seeing the results.</p>
+          <p>Brands can start with a small 10-reward pilot — Start small → test → measure → scale.</p>
         </article>
       </div>
     </section>
@@ -748,49 +796,56 @@
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">🎟️</span>
           <div>
-            <div class="bp-offer-type-title">Gift Vouchers</div>
+            <div class="bp-offer-type-title">Gift vouchers</div>
             <div class="bp-offer-type-sub">Digital store credit or e-vouchers</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">🏷️</span>
           <div>
-            <div class="bp-offer-type-title">Discount Codes</div>
+            <div class="bp-offer-type-title">Discount vouchers</div>
             <div class="bp-offer-type-sub">Percentage or fixed-value savings</div>
+          </div>
+        </div>
+        <div class="bp-offer-type-pill">
+          <span class="bp-offer-type-icon">🔑</span>
+          <div>
+            <div class="bp-offer-type-title">Promo codes</div>
+            <div class="bp-offer-type-sub">Shared or unique checkout promo codes</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">✨</span>
           <div>
-            <div class="bp-offer-type-title">New Customer Offers</div>
-            <div class="bp-offer-type-sub">First-order acquisition incentives</div>
+            <div class="bp-offer-type-title">New-customer offers</div>
+            <div class="bp-offer-type-sub">First-order customer acquisition incentives</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">📦</span>
           <div>
-            <div class="bp-offer-type-title">Free Products</div>
-            <div class="bp-offer-type-sub">Complimentary product or sample</div>
+            <div class="bp-offer-type-title">Free products</div>
+            <div class="bp-offer-type-sub">Complimentary product or sample reward</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">⚡</span>
           <div>
-            <div class="bp-offer-type-title">Free Trials</div>
+            <div class="bp-offer-type-title">Free services/trials</div>
             <div class="bp-offer-type-sub">SaaS, app, or subscription trials</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">📣</span>
           <div>
-            <div class="bp-offer-type-title">Promotional Campaigns</div>
-            <div class="bp-offer-type-sub">Seasonal or limited-time brand offers</div>
+            <div class="bp-offer-type-title">Limited-time promotions</div>
+            <div class="bp-offer-type-sub">Seasonal or limited-time promotional campaigns</div>
           </div>
         </div>
         <div class="bp-offer-type-pill">
           <span class="bp-offer-type-icon">🔗</span>
           <div>
-            <div class="bp-offer-type-title">Affiliate Offers</div>
+            <div class="bp-offer-type-title">Affiliate/referral offers</div>
             <div class="bp-offer-type-sub">Trackable referral &amp; partner links</div>
           </div>
         </div>
@@ -801,7 +856,7 @@
     <section class="bp-section">
       <div class="bp-section-header">
         <h2>How the Brand Partner Program Works</h2>
-        <p>From campaign setup to customer redemption in six transparent steps.</p>
+        <p>From promotional campaign setup to customer redemption in six transparent steps.</p>
       </div>
 
       <div class="bp-steps-grid">
@@ -809,7 +864,7 @@
           <span class="bp-step-badge">STEP 1</span>
           <div>
             <h4>Brand creates an offer</h4>
-            <p>Register your promotional reward, landing page URL, redemption rules, and target region (recommended 10-reward pilot).</p>
+            <p>Register your promotional reward, brand landing page URL, redemption rules, and target region (recommended 10-reward pilot).</p>
           </div>
         </div>
         <div class="bp-step-card">
@@ -837,14 +892,14 @@
           <span class="bp-step-badge">STEP 5</span>
           <div>
             <h4>Winner visits the brand's landing page</h4>
-            <p>Winners and Hall of Fame visitors click directly through to your designated website, app, or promotional landing page.</p>
+            <p>Winners and Hall of Fame visitors click directly through to your designated website, app, or brand landing page.</p>
           </div>
         </div>
         <div class="bp-step-card">
           <span class="bp-step-badge">STEP 6</span>
           <div>
             <h4>Brand gets exposure and potential customer activity</h4>
-            <p>Measure offer views, landing-page clicks, and redemptions before scaling your next campaign batch.</p>
+            <p>Measure offer views and landing-page engagement, and use redemption data where available, before scaling your next campaign batch.</p>
           </div>
         </div>
       </div>
@@ -854,41 +909,126 @@
     <section class="bp-section">
       <div class="bp-global-card">
         <div style="text-align: center; max-width: 760px; margin: 0 auto;">
-          <span class="bp-eyebrow" style="margin-bottom: 10px;">🌍 Regional &amp; Multi-Currency Targeting</span>
+          <span class="bp-eyebrow" style="margin-bottom: 10px;">🌎 BUILT FOR GLOBAL CAMPAIGNS</span>
           <h2 style="font-size: clamp(22px, 3vw, 30px); font-weight: 900; color: #FFFFFF; margin: 0 0 10px;">
             Built for global campaigns
           </h2>
           <p style="font-size: 14.5px; color: #CBD5E1; margin: 0; line-height: 1.55;">
-            Offers can be targeted by country or region so your promotional rewards reach players in the exact markets where your brand operates. We never assume a regional voucher works globally unless explicitly confirmed by your brand.
+            🌎 Target offers by country and region. Use locally relevant rewards and promotional offers.
           </p>
         </div>
 
         <div class="bp-markets-grid">
           <div class="bp-market-item">
-            <span>🇺🇸 United States</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="United States flag">
+                <rect width="28" height="20" rx="2" fill="#FFFFFF"/>
+                <path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/>
+                <rect width="12" height="10.78" fill="#3C3B6E"/>
+                <g fill="#FFFFFF">
+                  <circle cx="2" cy="2" r="0.65"/><circle cx="4.5" cy="2" r="0.65"/><circle cx="7" cy="2" r="0.65"/><circle cx="9.5" cy="2" r="0.65"/>
+                  <circle cx="3.25" cy="3.8" r="0.65"/><circle cx="5.75" cy="3.8" r="0.65"/><circle cx="8.25" cy="3.8" r="0.65"/>
+                  <circle cx="2" cy="5.6" r="0.65"/><circle cx="4.5" cy="5.6" r="0.65"/><circle cx="7" cy="5.6" r="0.65"/><circle cx="9.5" cy="5.6" r="0.65"/>
+                  <circle cx="3.25" cy="7.4" r="0.65"/><circle cx="5.75" cy="7.4" r="0.65"/><circle cx="8.25" cy="7.4" r="0.65"/>
+                  <circle cx="2" cy="9.1" r="0.65"/><circle cx="4.5" cy="9.1" r="0.65"/><circle cx="7" cy="9.1" r="0.65"/><circle cx="9.5" cy="9.1" r="0.65"/>
+                </g>
+              </svg>
+              <span>United States</span>
+            </span>
             <span class="bp-market-currency">USD rewards</span>
           </div>
+
           <div class="bp-market-item">
-            <span>🇬🇧 United Kingdom</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="United Kingdom flag">
+                <rect width="28" height="20" rx="2" fill="#012169"/>
+                <path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/>
+                <path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/>
+                <path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/>
+                <path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/>
+              </svg>
+              <span>United Kingdom</span>
+            </span>
             <span class="bp-market-currency">GBP rewards</span>
           </div>
+
           <div class="bp-market-item">
-            <span>🇮🇳 India</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="India flag">
+                <rect width="28" height="20" rx="2" fill="#FFFFFF"/>
+                <rect width="28" height="6.67" fill="#FF9933"/>
+                <rect y="13.33" width="28" height="6.67" fill="#138808"/>
+                <circle cx="14" cy="10" r="2.6" fill="none" stroke="#000080" stroke-width="0.9"/>
+                <circle cx="14" cy="10" r="0.8" fill="#000080"/>
+              </svg>
+              <span>India</span>
+            </span>
             <span class="bp-market-currency">INR rewards</span>
           </div>
+
           <div class="bp-market-item">
-            <span>🇦🇺 Australia</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="Australia flag">
+                <rect width="28" height="20" rx="2" fill="#00008B"/>
+                <path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/>
+                <path d="M0 0l14 10M14 0L0 10" stroke="#C8102E" stroke-width="1.1"/>
+                <path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/>
+                <path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/>
+                <g fill="#FFFFFF">
+                  <circle cx="7" cy="15" r="1.7"/>
+                  <circle cx="21" cy="4.2" r="1.0"/>
+                  <circle cx="18" cy="8.5" r="1.0"/>
+                  <circle cx="21" cy="15.5" r="1.1"/>
+                  <circle cx="24.2" cy="7.8" r="1.0"/>
+                  <circle cx="22.8" cy="11.2" r="0.65"/>
+                </g>
+              </svg>
+              <span>Australia</span>
+            </span>
             <span class="bp-market-currency">AUD rewards</span>
           </div>
+
           <div class="bp-market-item">
-            <span>🇨🇦 Canada</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="Canada flag">
+                <rect width="28" height="20" rx="2" fill="#FFFFFF"/>
+                <rect width="7" height="20" fill="#D80621"/>
+                <rect x="21" width="7" height="20" fill="#D80621"/>
+                <path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/>
+              </svg>
+              <span>Canada</span>
+            </span>
             <span class="bp-market-currency">CAD rewards</span>
           </div>
+
           <div class="bp-market-item">
-            <span>🇪🇺 Europe</span>
+            <span class="bp-market-name">
+              <svg class="bp-flag-svg" viewBox="0 0 28 20" role="img" aria-label="European Union flag">
+                <rect width="28" height="20" rx="2" fill="#003399"/>
+                <g fill="#FFCC00">
+                  <circle cx="14" cy="4.2" r="0.85"/>
+                  <circle cx="16.9" cy="5.0" r="0.85"/>
+                  <circle cx="19.0" cy="7.1" r="0.85"/>
+                  <circle cx="19.8" cy="10.0" r="0.85"/>
+                  <circle cx="19.0" cy="12.9" r="0.85"/>
+                  <circle cx="16.9" cy="15.0" r="0.85"/>
+                  <circle cx="14" cy="15.8" r="0.85"/>
+                  <circle cx="11.1" cy="15.0" r="0.85"/>
+                  <circle cx="9.0" cy="12.9" r="0.85"/>
+                  <circle cx="8.2" cy="10.0" r="0.85"/>
+                  <circle cx="9.0" cy="7.1" r="0.85"/>
+                  <circle cx="11.1" cy="5.0" r="0.85"/>
+                </g>
+              </svg>
+              <span>Europe</span>
+            </span>
             <span class="bp-market-currency">EUR rewards</span>
           </div>
         </div>
+
+        <p class="bp-global-warning">
+          Reward availability and redemption rules may vary by country, currency and brand.
+        </p>
       </div>
     </section>
 
@@ -951,13 +1091,14 @@
             <div class="brand-form-group">
               <label for="bm-offer-type">Offer Type *</label>
               <select id="bm-offer-type">
-                <option value="GIFT_VOUCHER">Gift Voucher</option>
-                <option value="DISCOUNT">Discount</option>
-                <option value="PROMO_CODE">Promo Code</option>
-                <option value="FREE_PRODUCT">Free Product</option>
-                <option value="FREE_SERVICE_TRIAL">Free Service / Trial</option>
-                <option value="NEW_CUSTOMER_OFFER">New Customer Offer</option>
-                <option value="AFFILIATE_REFERRAL">Affiliate / Referral</option>
+                <option value="GIFT_VOUCHER">Gift vouchers</option>
+                <option value="DISCOUNT">Discount vouchers</option>
+                <option value="PROMO_CODE">Promo codes</option>
+                <option value="NEW_CUSTOMER_OFFER">New-customer offers</option>
+                <option value="FREE_PRODUCT">Free products</option>
+                <option value="FREE_SERVICE_TRIAL">Free services/trials</option>
+                <option value="LIMITED_TIME_PROMO">Limited-time promotions</option>
+                <option value="AFFILIATE_REFERRAL">Affiliate/referral offers</option>
                 <option value="OTHER">Other</option>
               </select>
             </div>
@@ -980,13 +1121,31 @@
             <div class="brand-form-group">
               <label>Target Country / Region * (Select one or more)</label>
               <div class="country-chips-wrap" id="bm-country-chips">
-                <button type="button" class="country-chip active" data-country="Global" onclick="toggleTargetCountry(this)">🌍 Global</button>
-                <button type="button" class="country-chip" data-country="United States" onclick="toggleTargetCountry(this)">🇺🇸 United States</button>
-                <button type="button" class="country-chip" data-country="Canada" onclick="toggleTargetCountry(this)">🇨🇦 Canada</button>
-                <button type="button" class="country-chip" data-country="United Kingdom" onclick="toggleTargetCountry(this)">🇬🇧 United Kingdom</button>
-                <button type="button" class="country-chip" data-country="India" onclick="toggleTargetCountry(this)">🇮🇳 India</button>
-                <button type="button" class="country-chip" data-country="Australia" onclick="toggleTargetCountry(this)">🇦🇺 Australia</button>
-                <button type="button" class="country-chip" data-country="Europe" onclick="toggleTargetCountry(this)">🇪🇺 Europe</button>
+                <button type="button" class="country-chip active" data-country="Global" onclick="toggleTargetCountry(this)">🌎 Global</button>
+                <button type="button" class="country-chip" data-country="United States" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>
+                  United States
+                </button>
+                <button type="button" class="country-chip" data-country="Canada" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>
+                  Canada
+                </button>
+                <button type="button" class="country-chip" data-country="United Kingdom" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>
+                  United Kingdom
+                </button>
+                <button type="button" class="country-chip" data-country="India" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>
+                  India
+                </button>
+                <button type="button" class="country-chip" data-country="Australia" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>
+                  Australia
+                </button>
+                <button type="button" class="country-chip" data-country="Europe" onclick="toggleTargetCountry(this)">
+                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>
+                  Europe
+                </button>
                 <button type="button" class="country-chip" data-country="Other" onclick="toggleTargetCountry(this)">🌐 Other</button>
               </div>
               <span class="brand-form-helper">Country and currency restrictions are captured so offers are only matched to eligible markets.</span>
@@ -1004,7 +1163,7 @@
             </div>
           </div>
 
-          <!-- 2 & 3. Retail Value, Reward Cost to Host, Voucher Batch -->
+          <!-- 2 & 3. Retail Value, Reward Sponsorship Value / Host Cost, Voucher Batch -->
           <div class="brand-form-grid-3">
             <div class="brand-form-group">
               <label for="bm-retail-price">Offer Retail Value ($) *</label>
@@ -1013,11 +1172,11 @@
             </div>
             <div class="brand-form-group">
               <label for="bm-org-price">
-                Reward Cost to Host ($) *
+                Reward Sponsorship Value / Host Cost ($) *
                 <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 4px;">(Brand Sponsored)</span>
               </label>
               <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
-              <span class="brand-form-helper">Amount charged to the game host when this reward is consumed ($0 for brand-sponsored pilot).</span>
+              <span class="brand-form-helper">Amount associated with each reward when selected by a game host. Enter $0 if the reward is fully sponsored by the brand.</span>
             </div>
             <div class="brand-form-group">
               <label for="bm-vouchers-count">Voucher Batch Qty *</label>
@@ -1152,26 +1311,42 @@
     <section class="bp-section">
       <div class="bp-section-header">
         <h2>Active Partner Offers &amp; Global Reward Directory</h2>
-        <p>Filter registered partner promotions and global templates by status or target country/region.</p>
+        <p>Filter registered partner promotions and global templates by status or target country/region. Actual redemption codes are kept private for verified game winners.</p>
       </div>
 
       <div class="bp-directory-filters">
         <div class="bp-filter-pills" id="bp-country-filter-group">
           <button type="button" class="bp-filter-pill active" onclick="setCatalogCountryFilter('ALL', this)">All Markets</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Global', this)">🌍 Global</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('United States', this)">🇺🇸 US</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Canada', this)">🇨🇦 Canada</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('United Kingdom', this)">🇬🇧 UK</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('India', this)">🇮🇳 India</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Australia', this)">🇦🇺 Australia</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Europe', this)">🇪🇺 Europe</button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Global', this)">🌎 Global</button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('United States', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>
+            US
+          </button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Canada', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>
+            Canada
+          </button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('United Kingdom', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>
+            UK
+          </button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('India', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>
+            India
+          </button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Australia', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>
+            Australia
+          </button>
+          <button type="button" class="bp-filter-pill" onclick="setCatalogCountryFilter('Europe', this)">
+            <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>
+            Europe
+          </button>
         </div>
 
         <div class="bp-filter-pills" id="bp-status-filter-group">
           <button type="button" class="bp-filter-pill active" onclick="setCatalogStatusFilter('ACTIVE', this)">Active</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogStatusFilter('PENDING', this)">Pending</button>
           <button type="button" class="bp-filter-pill" onclick="setCatalogStatusFilter('EXPIRED', this)">Expired</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogStatusFilter('DRAFT', this)">Draft</button>
         </div>
       </div>
 
@@ -1213,15 +1388,39 @@
     let currentCatalogCountry = 'ALL';
 
     const OFFER_TYPE_LABELS = {
-      'GIFT_VOUCHER': 'Gift Voucher',
-      'DISCOUNT': 'Discount',
-      'PROMO_CODE': 'Promo Code',
-      'FREE_PRODUCT': 'Free Product',
-      'FREE_SERVICE_TRIAL': 'Free Service / Trial',
-      'NEW_CUSTOMER_OFFER': 'New Customer Offer',
-      'AFFILIATE_REFERRAL': 'Affiliate / Referral',
-      'OTHER': 'Promotional Reward'
+      'GIFT_VOUCHER': 'Gift vouchers',
+      'DISCOUNT': 'Discount vouchers',
+      'PROMO_CODE': 'Promo codes',
+      'NEW_CUSTOMER_OFFER': 'New-customer offers',
+      'FREE_PRODUCT': 'Free products',
+      'FREE_SERVICE_TRIAL': 'Free services/trials',
+      'LIMITED_TIME_PROMO': 'Limited-time promotions',
+      'AFFILIATE_REFERRAL': 'Affiliate/referral offers',
+      'OTHER': 'Promotional reward'
     };
+
+    function getRegionFlagSvg(regionStr) {
+      const r = String(regionStr || 'Global').toLowerCase();
+      if (r.includes('united states') || r === 'us' || r === 'usa') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>`;
+      }
+      if (r.includes('united kingdom') || r === 'uk' || r === 'gb') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>`;
+      }
+      if (r.includes('india') || r === 'in') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>`;
+      }
+      if (r.includes('australia') || r === 'au') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>`;
+      }
+      if (r.includes('canada') || r === 'ca') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>`;
+      }
+      if (r.includes('europe') || r === 'eu') {
+        return `<svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>`;
+      }
+      return '🌎';
+    }
 
     function escapeHtml(str) {
       if (!str) return '';
@@ -1351,8 +1550,11 @@
           msgEl.style.background = 'rgba(16, 185, 129, 0.16)';
           msgEl.style.border = '1px solid rgba(16, 185, 129, 0.45)';
           msgEl.style.color = '#6EE7B7';
-          msgEl.textContent = '🎉 ' + (data.message || 'Your 10-reward promotional pilot is now registered in the DabHousie Partner Catalog!');
+          msgEl.textContent = '🎉 ' + (data.message || 'Thank you for sponsoring a DabHousie Brand Offer! Your 10-reward pilot has been submitted and is waiting for approval.');
           document.getElementById('brand-register-form').reset();
+          const logoPrev = document.getElementById('bm-logo-preview');
+          if (logoPrev) logoPrev.style.display = 'none';
+          updateDiscountBadge();
           loadPartnerDirectory();
         } else {
           throw new Error(data.message || data.error || 'Failed to register partner offer');
@@ -1424,14 +1626,19 @@
           const logoImg = logoSrc
             ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" style="width:24px;height:24px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
             : '';
-          const offerTypeLabel = OFFER_TYPE_LABELS[String(o.offer_type || 'GIFT_VOUCHER').toUpperCase()] || 'Promotional Reward';
-          const regionLabel = escapeHtml(o.target_region || 'Global');
+          const offerTypeLabel = OFFER_TYPE_LABELS[String(o.offer_type || 'GIFT_VOUCHER').toUpperCase()] || 'Promotional reward';
+          const regionRaw = o.target_region || 'Global';
+          const regionLabel = escapeHtml(regionRaw);
+          const regionFlag = getRegionFlagSvg(regionRaw);
           const cur = escapeHtml(o.currency || 'USD');
           const retNum = Number(o.retail_price || o.retail_value || 0).toFixed(0);
           const orgNum = Number(o.organizer_price || 0);
           const isSponsored = orgNum === 0;
-          const isTemplate = orgNum > 0 && Number(o.discount_percent || 0) === 0 && !o.promo_code;
+          const hasPromo = Boolean(o.has_promo_code || o.promo_code);
+          const isTemplate = orgNum > 0 && Number(o.discount_percent || 0) === 0 && !hasPromo;
           const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
+          const statusUpper = escapeHtml(String(o.status || 'ACTIVE').toUpperCase());
+          const expiryStr = o.expiration_date ? `Expires: ${escapeHtml(String(o.expiration_date).slice(0, 10))}` : `Status: ${statusUpper}`;
 
           let badgeHtml = '';
           if (isSponsored) {
@@ -1455,13 +1662,14 @@
                 <div style="font-size:14.5px;font-weight:800;color:#FFFFFF;margin-bottom:5px;">${escapeHtml(o.product_title || o.gift_title)}</div>
                 <div style="font-size:12px;color:#94A3B8;line-height:1.45;margin-bottom:8px;">${escapeHtml(o.product_description || o.description || '')}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:#CBD5E1;">
-                  <span style="background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🏷️ ${escapeHtml(offerTypeLabel)}</span>
-                  <span style="background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🌐 ${regionLabel}</span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🏷️ ${escapeHtml(offerTypeLabel)}</span>
+                  <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">${regionFlag} ${regionLabel}</span>
+                  <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🗓️ ${expiryStr}</span>
                 </div>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
                 <div style="font-size:12px;font-weight:800;color:#34D399;">
-                  Value: ${cur} $${retNum} ${isSponsored ? '• Host Cost: $0' : (isTemplate ? '• Host Fulfilled' : `• Host Cost: $${orgNum.toFixed(0)} (${vouchersLeft} left)`)}
+                  Reward Value: ${cur} $${retNum} ${isSponsored ? '• Brand Sponsored ($0 Host Cost)' : (isTemplate ? '• Host Fulfilled' : `• Host Cost: $${orgNum.toFixed(0)} (${vouchersLeft} left)`)}
                 </div>
                 <a href="${escapeHtml(o.product_url || '#')}" target="_blank" rel="noopener sponsored" style="font-size:12px;font-weight:700;color:#38BDF8;text-decoration:none;">
                   Brand Landing Page ↗

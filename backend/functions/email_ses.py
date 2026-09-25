@@ -18,6 +18,7 @@ except ImportError:
 
 SES_REGION = os.getenv("AWS_SES_REGION", os.getenv("AWS_REGION", "us-east-2"))
 FROM_EMAIL = os.getenv("SES_FROM_EMAIL", os.getenv("SUPPORT_EMAIL", "receipts@dabhousie.com"))
+PARTNERSHIPS_EMAIL = os.getenv("PARTNERSHIPS_EMAIL", "partnerships@dabhousie.com")
 BASE_URL = os.getenv("BASE_URL", "https://www.dabhousie.com")
 AUDIT_EMAIL = os.getenv("AUDIT_EMAIL", "contact@dabhousie.com")
 
@@ -606,13 +607,18 @@ def _dispatch_ses_mime_or_standard(
     org_logo_bytes: Optional[bytes] = None,
     audit_email: Optional[str] = AUDIT_EMAIL,
     extra_to: Optional[str] = None,
+    from_email: Optional[str] = None,
+    from_display_name: str = "DabHousie",
 ) -> bool:
     """
     Dispatches SES email with raw MIME CID inline images, falling back to standard send_email.
-    Guarantees that audit_email (contact@dabhousie.com) is copied for immutable compliance.
+    Guarantees that audit_email is copied for immutable compliance.
     """
+    sender_address = (from_email or FROM_EMAIL).strip()
+    sender_header = f"{from_display_name} <{sender_address}>"
+
     if boto3 is None:
-        print(f"  [ SES (Dev / Log Mode) ] Email simulated to {to_email} (Cc: {audit_email}): '{subject}'.")
+        print(f"  [ SES (Dev / Log Mode) ] Email simulated from {sender_header} to {to_email} (Cc: {audit_email}): '{subject}'.")
         return True
 
     try:
@@ -634,7 +640,8 @@ def _dispatch_ses_mime_or_standard(
             try:
                 msg_root = MIMEMultipart("related")
                 msg_root["Subject"] = subject
-                msg_root["From"] = f"DabHousie <{FROM_EMAIL}>"
+                msg_root["From"] = sender_header
+                msg_root["Reply-To"] = sender_address
                 msg_root["To"] = ", ".join(to_recipients)
                 if cc_recipients:
                     msg_root["Cc"] = ", ".join(cc_recipients)
@@ -658,11 +665,11 @@ def _dispatch_ses_mime_or_standard(
                     msg_root.attach(img_org)
 
                 ses_client.send_raw_email(
-                    Source=f"DabHousie <{FROM_EMAIL}>",
+                    Source=sender_header,
                     Destinations=all_destinations,
                     RawMessage={"Data": msg_root.as_string()},
                 )
-                print(f"  [ SES ] Raw MIME email sent to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+                print(f"  [ SES ] Raw MIME email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
                 return True
             except Exception as e_raw:
                 print(f"  [ SES WARNING ] Raw MIME dispatch failed, falling back to standard send_email: {e_raw}")
@@ -673,8 +680,9 @@ def _dispatch_ses_mime_or_standard(
             destination_dict["CcAddresses"] = cc_recipients
 
         ses_client.send_email(
-            Source=f"DabHousie <{FROM_EMAIL}>",
+            Source=sender_header,
             Destination=destination_dict,
+            ReplyToAddresses=[sender_address],
             Message={
                 "Subject": {"Data": subject, "Charset": "UTF-8"},
                 "Body": {
@@ -683,7 +691,7 @@ def _dispatch_ses_mime_or_standard(
                 },
             },
         )
-        print(f"  [ SES ] Standard email sent to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+        print(f"  [ SES ] Standard email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
         return True
     except Exception as e:
         print(f"  [ SES ERROR ] Failed to send SES email: {e}")
@@ -1410,54 +1418,95 @@ def send_brand_offer_registered_email(
     product_url: str,
     promo_code: Optional[str] = None,
     brand_logo_url: Optional[str] = None,
-    audit_email: str = AUDIT_EMAIL,
+    vouchers_total_count: int = 10,
+    target_region: str = "Global",
+    currency: str = "USD",
+    audit_email: str = PARTNERSHIPS_EMAIL,
 ) -> bool:
     """
-    Sends confirmation to a Brand Marketing representative when their sponsored gift offer is published to the DabHousie Catalog.
+    Sends a thank-you & pending-approval confirmation email from partnerships@dabhousie.com
+    to a Brand Marketing representative when they submit a partner offer.
     """
     if not to_email:
         return False
 
-    subject = f"🎁 Brand Gift Offer Live in DabHousie Catalog: {brand_name} — {gift_title}"
+    subject = f"🤝 Thank You for Sponsoring a DabHousie Brand Offer: {brand_name} — {gift_title} (Pending Approval)"
     dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(brand_logo_url)
+    host_cost_label = "$0.00 (100% Brand Sponsored)" if float(organizer_price or 0) == 0 else f"${float(organizer_price):.2f}"
+
+    logo_preview_html = ""
+    if brand_logo_url or org_logo_bytes:
+        logo_preview_html = f"""
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:14px; text-align:center; margin-bottom:18px;">
+          <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#ffffff" style="background:#ffffff; border-radius:10px; padding:8px 14px;">
+                <img src="{org_logo_src}" alt="{brand_name}" height="48" style="height:48px; max-height:48px; width:auto; max-width:180px; object-fit:contain; display:block; margin:0 auto;" />
+              </td>
+            </tr>
+          </table>
+          <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{brand_name}</div>
+        </div>
+        """
 
     html_content = f"""<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Brand Gift Offer Published</title></head>
+<head><meta charset="utf-8"><title>Thank You for Partnering With DabHousie</title></head>
 <body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; margin:0 auto; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden;">
     <tr>
-      <td style="background:linear-gradient(135deg, #065f46 0%, #0f172a 100%); padding:26px 20px; text-align:center; border-bottom:3px solid #10b981;">
+      <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:26px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
         <img src="{header_logo_src}" alt="DabHousie" width="200" style="max-width:200px; height:auto; display:block; margin:0 auto 10px auto;" />
-        <h1 style="margin:0; color:#ffffff; font-size:20px; font-weight:800;">🎁 Your Brand Gift Offer is Live!</h1>
-        <p style="margin:6px 0 0 0; color:#6ee7b7; font-size:14px; font-weight:600;">{brand_name} &bull; {gift_title}</p>
+        <p style="margin:0 0 8px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.3px;">DabHousie Brand Marketing Partner Program</p>
+        <h1 style="margin:0; color:#ffffff; font-size:21px; font-weight:800;">🤝 Thank You for Sponsoring a Brand Offer!</h1>
+        <p style="margin:6px 0 0 0; color:#93c5fd; font-size:14px; font-weight:600;">{brand_name} &bull; {gift_title}</p>
+        <div style="display:inline-block; background:rgba(245, 158, 11, 0.18); border:1px solid rgba(245, 158, 11, 0.45); border-radius:6px; padding:4px 10px; margin-top:10px; font-size:11.5px; font-weight:700; color:#fcd34d;">
+          ⏳ Status: Submitted &amp; Waiting for Approval
+        </div>
       </td>
     </tr>
     <tr>
       <td style="padding:24px;">
-        <p style="margin:0 0 16px 0; font-size:14.5px; color:#cbd5e1; line-height:1.6;">
-          Hello <strong>{marketer_name}</strong>,<br><br>
-          Your sponsored product offer for <strong>{brand_name}</strong> is now live in the <strong>DabHousie Host Gift Catalog</strong>! Event Organizers can now assign your product to winning tiers (Early 5, Row Lines, and Full House), and every completed game card in the public <strong>Hall of Fame</strong> will display a direct clickable link to your product page.
+        <p style="margin:0 0 14px 0; font-size:14.5px; color:#e2e8f0; line-height:1.6;">
+          Hello <strong>{marketer_name}</strong>,
         </p>
+        <p style="margin:0 0 16px 0; font-size:14.5px; color:#cbd5e1; line-height:1.6;">
+          <strong>Thank you for partnering with DabHousie and sponsoring a promotional reward for {brand_name}!</strong> We truly appreciate your support in making live multiplayer Housie &amp; Bingo events even more exciting for players around the world.
+        </p>
+        <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
+          Your <strong>{vouchers_total_count}-reward pilot offer</strong> has been received and is currently <strong>waiting for approval</strong> by our Brand Partnerships team. Once verified and approved, your offer will appear in the <strong>DabHousie Partner Catalog</strong> and <strong>Host Gift Catalog</strong> so event organizers can assign your reward to winning game tiers.
+        </p>
+        {logo_preview_html}
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:20px;">
           <tr>
             <td style="padding:16px;">
+              <div style="font-size:12px; font-weight:700; color:#f59e0b; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;">Submitted Pilot Offer Summary</div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Brand Partner: <strong style="color:#ffffff;">{brand_name}</strong></div>
               <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Offer Title: <strong style="color:#ffffff;">{gift_title}</strong></div>
-              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Retail Value: <strong style="color:#94a3b8; text-decoration:line-through;">${retail_value:.2f}</strong> &rarr; Organizer Deal: <strong style="color:#10b981;">${organizer_price:.2f}</strong></div>
-              {f'<div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Organizer Promo Code: <strong style="color:#f59e0b; font-family:monospace;">{promo_code}</strong></div>' if promo_code else ''}
-              <div style="font-size:13px; color:#94a3b8;">Product Link: <a href="{product_url}" style="color:#38bdf8;">{product_url}</a></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Offer Retail Value: <strong style="color:#34d399;">{currency} ${retail_value:.2f}</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Reward Sponsorship / Host Cost: <strong style="color:#38bdf8;">{host_cost_label}</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Pilot Batch Quantity: <strong style="color:#ffffff;">{vouchers_total_count} rewards</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Target Region: <strong style="color:#ffffff;">{target_region}</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Approval Status: <strong style="color:#fcd34d;">⏳ Waiting for Approval</strong></div>
+              <div style="font-size:13px; color:#94a3b8;">Brand Landing Page: <a href="{product_url}" style="color:#38bdf8;">{product_url}</a></div>
             </td>
           </tr>
         </table>
         <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0 auto;">
           <tr>
-            <td align="center" bgcolor="#10b981" style="background-color:#10b981; border-radius:10px; padding:0;">
-              <a href="{BASE_URL}/recent-games.html" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:inline-block; font-size:14px; font-weight:800; text-decoration:none; padding:13px 28px; border-radius:10px;">
-                View Hall of Fame &amp; Brand Showcase &rarr;
+            <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:10px; padding:0;">
+              <a href="{BASE_URL}/brand-partners.html" target="_blank" style="background-color:#f59e0b; color:#0f172a !important; display:inline-block; font-size:14px; font-weight:800; text-decoration:none; padding:13px 28px; border-radius:10px;">
+                View Brand Marketing Partner Program &rarr;
               </a>
             </td>
           </tr>
         </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:18px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+        Questions or updates to your campaign? Reply directly to <a href="mailto:{PARTNERSHIPS_EMAIL}" style="color:#38bdf8; text-decoration:none;">{PARTNERSHIPS_EMAIL}</a><br>
+        DabHousie Partnerships &bull; <a href="{BASE_URL}" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a>
       </td>
     </tr>
   </table>
@@ -1465,10 +1514,23 @@ def send_brand_offer_registered_email(
 </html>
 """
     text_content = f"""Hello {marketer_name},
-Your Brand Gift Offer for {brand_name} ({gift_title}) is now live in the DabHousie Host Gift Catalog!
-Retail Value: ${retail_value:.2f} | Organizer Price: ${organizer_price:.2f}
-Product Link: {product_url}
-Hall of Fame: {BASE_URL}/recent-games.html
+
+Thank you for partnering with DabHousie and sponsoring a promotional reward for {brand_name}!
+
+Your {vouchers_total_count}-reward pilot offer ({gift_title}) has been submitted and is currently waiting for approval by our Brand Partnerships team. Once approved, it will appear in the DabHousie Partner Catalog and Host Gift Catalog.
+
+Offer Summary:
+- Brand Partner: {brand_name}
+- Offer Title: {gift_title}
+- Retail Value: {currency} ${retail_value:.2f}
+- Reward Sponsorship / Host Cost: {host_cost_label}
+- Pilot Batch Quantity: {vouchers_total_count} rewards
+- Target Region: {target_region}
+- Status: Waiting for Approval
+- Brand Landing Page: {product_url}
+
+Questions? Contact us at {PARTNERSHIPS_EMAIL}
+DabHousie Brand Marketing Partner Program: {BASE_URL}/brand-partners.html
 """
     return _dispatch_ses_mime_or_standard(
         to_email=to_email,
@@ -1478,4 +1540,6 @@ Hall of Fame: {BASE_URL}/recent-games.html
         dabhousie_logo_bytes=dabhousie_logo_bytes,
         org_logo_bytes=org_logo_bytes,
         audit_email=audit_email,
+        from_email=PARTNERSHIPS_EMAIL,
+        from_display_name="DabHousie Partnerships",
     )
