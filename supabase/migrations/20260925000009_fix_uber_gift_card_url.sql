@@ -32,12 +32,12 @@ SET prize_gifts_config = REPLACE(
 WHERE prize_gifts_config::TEXT ILIKE '%ubereats.com/gift-cards%'
    OR prize_gifts_config::TEXT ILIKE '%uber.com/gift-cards%';
 
--- 4. Update MPT_game_archives winners_json JSONB
+-- 4. Update MPT_game_archives winners_roster JSONB
 UPDATE public."MPT_game_archives"
-SET winners_json = REPLACE(
-        REPLACE(winners_json::TEXT, 'https://www.ubereats.com/gift-cards', 'https://gifts.uber.com/'),
+SET winners_roster = REPLACE(
+        REPLACE(winners_roster::TEXT, 'https://www.ubereats.com/gift-cards', 'https://gifts.uber.com/'),
         'https://www.uber.com/gift-cards/',
         'https://gifts.uber.com/'
     )::JSONB
-WHERE winners_json::TEXT ILIKE '%ubereats.com/gift-cards%'
-   OR winners_json::TEXT ILIKE '%uber.com/gift-cards%';
+WHERE winners_roster::TEXT ILIKE '%ubereats.com/gift-cards%'
+   OR winners_roster::TEXT ILIKE '%uber.com/gift-cards%';
