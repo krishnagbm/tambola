@@ -422,7 +422,7 @@
 
     /* Brand Partner Right-Side Top Card */
     .brand-partner-banner {
-      width: 380px;
+      width: 425px;
       flex-shrink: 0;
       display: flex;
     }
@@ -432,12 +432,12 @@
       background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(15, 23, 42, 0.96));
       border: 1px solid rgba(168, 85, 247, 0.42);
       border-radius: 20px;
-      padding: 20px 22px;
+      padding: 16px 14px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 14px;
+      gap: 12px;
     }
 
     .brand-banner-badge {
@@ -445,19 +445,20 @@
       background: rgba(255, 193, 7, 0.16);
       border: 1px solid rgba(255, 193, 7, 0.45);
       color: #FCD34D;
-      font-size: 10.5px;
+      font-size: 9.8px;
       font-weight: 800;
-      letter-spacing: 0.6px;
-      padding: 2px 8px;
+      letter-spacing: 0.35px;
+      padding: 3px 8px;
       border-radius: 6px;
       text-transform: uppercase;
       margin-bottom: 6px;
+      white-space: nowrap;
     }
 
     .brand-banner-actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      flex-wrap: nowrap;
+      gap: 8px;
       align-items: center;
     }
 
@@ -465,11 +466,12 @@
       background: linear-gradient(135deg, #F59E0B, #FBBF24);
       color: #0F172A;
       border: none;
-      padding: 10px 18px;
+      padding: 10px 14px;
       border-radius: 10px;
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
+      white-space: nowrap;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
       box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
     }
@@ -502,9 +504,9 @@
       color: #FFFFFF;
     }
 
-    /* Dedicated Right Column (Reserves 380px so Middle Games Column Never Jerks/Shifts) */
+    /* Dedicated Right Column (Reserves 425px so Middle Games Column Never Jerks/Shifts) */
     .hall-right-column {
-      width: 380px;
+      width: 425px;
       flex-shrink: 0;
       display: flex;
       flex-direction: column;
@@ -820,18 +822,18 @@
         <div class="brand-banner-inner">
           <div>
             <span class="brand-banner-badge">🤝 DabHousie Brand Marketing Partner Program</span>
-            <h2 style="font-size: 17.5px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">
+            <h2 style="font-size: 14.5px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px; letter-spacing: -0.25px; white-space: nowrap;">
               Turn Your Brand Offer Into Interactive Game Rewards
             </h2>
             <p style="font-size: 12.5px; color: #CBD5E1; margin: 0; line-height: 1.5;">
               Feature your brand across live community, family, and corporate games. Winners receive your offer link &amp; code in their Rewards Wallet, and every Hall of Fame card drives high-intent traffic directly to your landing page.
             </p>
           </div>
-          <div class="brand-banner-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="btn-register-brand" onclick="openBrandRegisterModal()" style="flex: 1; justify-content: center;">
+          <div class="brand-banner-actions" style="display: flex; gap: 8px; flex-wrap: nowrap;">
+            <button class="btn-register-brand" onclick="openBrandRegisterModal()" style="flex: 1; justify-content: center; white-space: nowrap;">
               🚀 Start 10-Reward Pilot
             </button>
-            <a href="/brand-partners.html" style="display: inline-flex; align-items: center; justify-content: center; padding: 9px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.45); background: rgba(15, 23, 42, 0.65); color: #FDE68A; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;">
+            <a href="/brand-partners.html" style="display: inline-flex; align-items: center; justify-content: center; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.45); background: rgba(15, 23, 42, 0.65); color: #FDE68A; font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap;">
               Program Details ↗
             </a>
           </div>
