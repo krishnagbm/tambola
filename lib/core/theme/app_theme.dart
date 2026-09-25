@@ -4,7 +4,7 @@ class AppTheme {
   // DabHousie Brand Identity ("Party Mode" Palette)
   static const Color primaryColor = Color(0xFF0B3D91);     // Navy Blue (Structural chrome)
   static const Color primaryDark = Color(0xFF072A66);      // Deep Navy
-  static const Color primaryLight = Color(0xFF1B54B8);     // Lighter Navy
+  static const Color primaryLight = Color(0xFF60A5FA);     // High-Contrast Sky Blue (Legible on Dark Cards)
 
   static const Color secondaryColor = Color(0xFFFFC107);   // Golden Yellow (Primary Action CTA fill)
   static const Color secondaryDark = Color(0xFFE0A800);    // Darker Gold
@@ -82,6 +82,15 @@ class AppTheme {
           ),
           textStyle: const TextStyle(
             fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryLight,
+          textStyle: const TextStyle(
+            fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
         ),

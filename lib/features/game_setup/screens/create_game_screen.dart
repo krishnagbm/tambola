@@ -51,10 +51,109 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   late final TextEditingController _totalBudgetController;
   final Map<String, TextEditingController> _prizeValueControllers = {};
   final Map<String, BrandOffer> _selectedPrizeGifts = {};
+  String _selectedCurrencyCode = 'USD';
   String _minorPrizePolicy = 'ONE_MINOR_PER_PLAYER';
   bool _enableOrgBranding = false;
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
+
+  static const Map<String, Map<String, dynamic>> _currencyOptions = {
+    'USD': {
+      'label': '🇺🇸 USD (\$)',
+      'symbol': '\$',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 1.0,
+    },
+    'INR': {
+      'label': '🇮🇳 INR (₹)',
+      'symbol': '₹',
+      'defaultBudget': 5000.0,
+      'step': 250.0,
+      'multiplier': 50.0,
+    },
+    'GBP': {
+      'label': '🇬🇧 GBP (£)',
+      'symbol': '£',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 0.8,
+    },
+    'EUR': {
+      'label': '🇪🇺 EUR (€)',
+      'symbol': '€',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 1.0,
+    },
+    'CAD': {
+      'label': '🇨🇦 CAD (C\$)',
+      'symbol': 'C\$',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 1.35,
+    },
+    'AUD': {
+      'label': '🇦🇺 AUD (A\$)',
+      'symbol': 'A\$',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 1.5,
+    },
+    'AED': {
+      'label': '🇦🇪 AED',
+      'symbol': 'AED ',
+      'defaultBudget': 500.0,
+      'step': 25.0,
+      'multiplier': 4.0,
+    },
+    'SGD': {
+      'label': '🇸🇬 SGD (S\$)',
+      'symbol': 'S\$',
+      'defaultBudget': 100.0,
+      'step': 5.0,
+      'multiplier': 1.35,
+    },
+  };
+
+  String get _currencySymbol =>
+      (_currencyOptions[_selectedCurrencyCode]?['symbol'] as String?) ?? '\$';
+
+  double get _currencyMultiplier =>
+      (_currencyOptions[_selectedCurrencyCode]?['multiplier'] as num?)?.toDouble() ?? 1.0;
+
+  double _localizeOfferPrice(BrandOffer offer, double usdPrice) {
+    if (offer.isCustomHostOffer) return usdPrice;
+    final raw = usdPrice * _currencyMultiplier;
+    if (raw >= 100) {
+      return (raw / 50).round() * 50.0;
+    }
+    if (raw >= 20) {
+      return (raw / 5).round() * 5.0;
+    }
+    return raw.roundToDouble();
+  }
+
+  void _onCurrencyChanged(String? newCode) {
+    if (newCode == null || newCode == _selectedCurrencyCode) return;
+    final oldDefault =
+        (_currencyOptions[_selectedCurrencyCode]?['defaultBudget'] as num?)?.toDouble() ?? 100.0;
+    final newDefault =
+        (_currencyOptions[newCode]?['defaultBudget'] as num?)?.toDouble() ?? 100.0;
+    final currentTotal = double.tryParse(_totalBudgetController.text.trim()) ?? oldDefault;
+
+    setState(() {
+      _selectedCurrencyCode = newCode;
+      // Scale total budget automatically if host was using default or switching region scale
+      if ((currentTotal - oldDefault).abs() < 1.0 || currentTotal <= 0) {
+        _totalBudgetController.text = newDefault.toStringAsFixed(0);
+      } else {
+        final scaled = (currentTotal / oldDefault) * newDefault;
+        _totalBudgetController.text = scaled.round().toString();
+      }
+    });
+    _autoSplitBudget();
+  }
 
   int _selectedCapacity = 5;
   String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
@@ -191,11 +290,21 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final enabledKeys = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
     if (enabledKeys.isEmpty) return;
 
+    // Always place FULL_HOUSE last so the Grand Prize receives the remainder and stays largest
+    if (enabledKeys.contains('FULL_HOUSE')) {
+      enabledKeys.remove('FULL_HOUSE');
+      enabledKeys.add('FULL_HOUSE');
+    }
+
     double weightSum = 0;
     for (final k in enabledKeys) {
       weightSum += _defaultPrizeWeights[k] ?? 15.0;
     }
     if (weightSum <= 0) weightSum = enabledKeys.length.toDouble();
+
+    final baseStep =
+        (_currencyOptions[_selectedCurrencyCode]?['step'] as num?)?.toDouble() ?? 5.0;
+    final effectiveStep = (total >= baseStep * enabledKeys.length * 2) ? baseStep : 1.0;
 
     double running = 0;
     for (int i = 0; i < enabledKeys.length; i++) {
@@ -205,7 +314,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _prizeValueControllers[k]?.text = remainder.round().toString();
       } else {
         final w = _defaultPrizeWeights[k] ?? 15.0;
-        final share = ((total * (w / weightSum)) / 5).round() * 5.0;
+        final rawShare = total * (w / weightSum);
+        final share = ((rawShare / effectiveStep) - 0.01).round() * effectiveStep;
         final clamped = share > 0 ? share : (total / enabledKeys.length).roundToDouble();
         running += clamped;
         _prizeValueControllers[k]?.text = clamped.toStringAsFixed(0);
@@ -221,17 +331,27 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Map<String, dynamic> _buildPrizeGiftsConfigPayload() {
-    final map = <String, dynamic>{};
+    final map = <String, dynamic>{
+      '_currency_code': _selectedCurrencyCode,
+      '_currency_symbol': _currencySymbol.trim(),
+    };
     for (final entry in _prizes.entries) {
       if (!entry.value) continue;
       final key = entry.key;
       final val = double.tryParse(_prizeValueControllers[key]?.text.trim() ?? '') ?? 0;
       final offer = _selectedPrizeGifts[key];
       if (offer != null) {
-        map[key] = offer.toPrizeConfigJson(customPrizeValue: val > 0 ? val : offer.retailPrice);
+        final localizedDefault = _localizeOfferPrice(offer, offer.retailPrice);
+        map[key] = offer.toPrizeConfigJson(
+          customPrizeValue: val > 0 ? val : localizedDefault,
+          currencyCode: _selectedCurrencyCode,
+          currencySymbol: _currencySymbol,
+        );
       } else if (val > 0) {
         map[key] = {
           'prize_value': val,
+          'currency_code': _selectedCurrencyCode,
+          'currency_symbol': _currencySymbol,
         };
       }
     }
@@ -1976,6 +2096,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       prizeLabel: label,
       targetBudgetValue: targetVal,
       currentSelection: _selectedPrizeGifts[key],
+      currencyCode: _selectedCurrencyCode,
+      currencySymbol: _currencySymbol,
     );
     if (result == null || !mounted) return;
 
@@ -1984,15 +2106,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _selectedPrizeGifts.remove(key);
       } else if (result.offer != null) {
         final offer = result.offer!;
+        final localizedVal = _localizeOfferPrice(offer, offer.retailPrice);
         _selectedPrizeGifts[key] = offer;
-        _prizeValueControllers[key]?.text =
-            offer.retailPrice.toStringAsFixed(0);
+        _prizeValueControllers[key]?.text = localizedVal.toStringAsFixed(0);
 
         if (result.applyToAllRowLines) {
           for (final lineKey in ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE']) {
             _selectedPrizeGifts[lineKey] = offer;
             _prizeValueControllers[lineKey]?.text =
-                offer.retailPrice.toStringAsFixed(0);
+                localizedVal.toStringAsFixed(0);
           }
         }
         _syncTotalBudgetFromIndividualValues();
@@ -2043,12 +2165,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
         const SizedBox(height: 6),
         const Text(
-          'Set your total game budget, customize individual prize values, and link discounted Brand Partner gifts.',
+          'Select your country currency, set your total game budget, and link global gift templates or custom offers.',
           style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
         ),
         const SizedBox(height: 12),
 
-        // 1. Total Game Budget + Smart Auto-Split Bar
+        // 1. Country Currency + Total Game Budget + Smart Auto-Split Bar
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -2061,6 +2183,67 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Country / Currency Selector Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.public_rounded,
+                        size: 16,
+                        color: AppTheme.primaryLight,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Country / Prize Currency:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE2E8F0),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkCard,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedCurrencyCode,
+                        isDense: true,
+                        dropdownColor: AppTheme.darkCard,
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 18,
+                          color: AppTheme.secondaryColor,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                        items: _currencyOptions.entries.map((entry) {
+                          return DropdownMenuItem<String>(
+                            value: entry.key,
+                            child: Text(entry.value['label'] as String),
+                          );
+                        }).toList(),
+                        onChanged: _onCurrencyChanged,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Divider(color: Color(0xFF2E334D), height: 1),
+              ),
               Row(
                 children: [
                   const Icon(
@@ -2080,7 +2263,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     ),
                   ),
                   SizedBox(
-                    width: 92,
+                    width: 104,
                     child: TextField(
                       controller: _totalBudgetController,
                       keyboardType: const TextInputType.numberWithOptions(
@@ -2094,9 +2277,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         color: AppTheme.secondaryColor,
                       ),
                       decoration: InputDecoration(
-                        prefixText: '\$ ',
+                        prefixText: '$_currencySymbol ',
                         prefixStyle: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.secondaryColor,
                         ),
@@ -2143,30 +2326,45 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Allocated across active prizes: \$${allocatedSum.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: (allocatedSum - totalBudgetVal).abs() < 0.5
-                          ? AppTheme.accentSuccess
-                          : const Color(0xFFCBD5E1),
+                  Flexible(
+                    child: Text(
+                      'Allocated across active prizes: $_currencySymbol${allocatedSum.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: (allocatedSum - totalBudgetVal).abs() < 0.5
+                            ? AppTheme.accentSuccess
+                            : const Color(0xFFE2E8F0),
+                      ),
                     ),
                   ),
                   if ((allocatedSum - totalBudgetVal).abs() >= 0.5)
                     InkWell(
                       onTap: _syncTotalBudgetFromIndividualValues,
-                      child: const Text(
-                        'Sync Total to Sum ↻',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryLight,
-                          decoration: TextDecoration.underline,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: const Text(
+                          'Sync Total to Sum ↻',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.secondaryColor,
+                          ),
                         ),
                       ),
                     ),
@@ -2293,7 +2491,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           ),
                           if (isEnabled) ...[
                             SizedBox(
-                              width: 68,
+                              width: 80,
                               child: TextField(
                                 controller: _prizeValueControllers[key],
                                 keyboardType:
@@ -2309,7 +2507,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                   color: Colors.white,
                                 ),
                                 decoration: InputDecoration(
-                                  prefixText: '\$',
+                                  prefixText: _currencySymbol,
                                   prefixStyle: const TextStyle(
                                     fontSize: 11.5,
                                     color: AppTheme.secondaryColor,
@@ -2345,15 +2543,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                       ? AppTheme.secondaryColor.withValues(
                                           alpha: 0.18,
                                         )
-                                      : AppTheme.primaryColor.withValues(
-                                          alpha: 0.2,
+                                      : AppTheme.primaryLight.withValues(
+                                          alpha: 0.16,
                                         ),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: assignedOffer != null
                                         ? AppTheme.secondaryColor
                                         : AppTheme.primaryLight.withValues(
-                                            alpha: 0.5,
+                                            alpha: 0.65,
                                           ),
                                   ),
                                 ),
@@ -2376,7 +2574,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                         fontWeight: FontWeight.w800,
                                         color: assignedOffer != null
                                             ? AppTheme.secondaryColor
-                                            : AppTheme.primaryLight,
+                                            : const Color(0xFF93C5FD),
                                       ),
                                     ),
                                   ],
@@ -2398,8 +2596,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               Expanded(
                                 child: Text(
                                   assignedOffer.isCustomHostOffer
-                                      ? '✨ Custom Offer — ${assignedOffer.brandName}: ${assignedOffer.productTitle} (\$${assignedOffer.retailPrice.toStringAsFixed(0)} Value)'
-                                      : '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: \$${assignedOffer.organizerPrice.toStringAsFixed(2)})',
+                                      ? '✨ Custom Offer — ${assignedOffer.brandName}: ${assignedOffer.productTitle} ($_currencySymbol${assignedOffer.retailPrice.toStringAsFixed(0)} Value)'
+                                      : (assignedOffer.organizerPrice <= 0
+                                          ? '🎁 100% Free Sponsored — ${assignedOffer.brandName}: ${assignedOffer.productTitle}'
+                                          : (assignedOffer.isHostSelfFulfilledTemplate
+                                              ? '🌍 Global Gift Template — ${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host provides code)'
+                                              : '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: $_currencySymbol${_localizeOfferPrice(assignedOffer, assignedOffer.organizerPrice).toStringAsFixed(0)})')),
                                   style: const TextStyle(
                                     fontSize: 11,
                                     color: AppTheme.secondaryColor,

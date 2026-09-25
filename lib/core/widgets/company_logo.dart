@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../constants/app_assets.dart';
 
@@ -21,7 +20,7 @@ class CompanyLogo extends StatelessWidget {
     required this.domain,
     this.size = 128.0,
     this.format = 'png',
-    this.isCommercialUse = true, // Free tier commercial usage requires attribution
+    this.isCommercialUse = false,
     this.fallbackWidget,
     this.borderRadius,
     this.fit = BoxFit.contain,
@@ -66,13 +65,6 @@ class CompanyLogo extends StatelessWidget {
     return 'https://img.logo.dev/$clean?format=$format&size=$clampedSize$tokenParam';
   }
 
-  Future<void> _openAttribution() async {
-    final uri = Uri.parse('https://logo.dev');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final sanitizedDomain = cleanDomain(domain);
@@ -104,7 +96,7 @@ class CompanyLogo extends StatelessWidget {
       format: format,
     );
 
-    final imageWidget = ClipRRect(
+    return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.circular(size * 0.15),
       child: SizedBox(
         width: size,
@@ -115,30 +107,6 @@ class CompanyLogo extends StatelessWidget {
           fallback: fallback,
         ),
       ),
-    );
-
-    if (!isCommercialUse) {
-      return imageWidget;
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        imageWidget,
-        const SizedBox(height: 3),
-        InkWell(
-          onTap: _openAttribution,
-          child: const Text(
-            'Powered by Logo.dev',
-            style: TextStyle(
-              fontSize: 9.5,
-              color: Color(0xFF94A3B8),
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

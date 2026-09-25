@@ -23,6 +23,8 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
   final String prizeLabel;
   final double? targetBudgetValue;
   final BrandOffer? currentSelection;
+  final String currencyCode;
+  final String currencySymbol;
 
   const BrandGiftPickerDialog({
     super.key,
@@ -30,6 +32,8 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     required this.prizeLabel,
     this.targetBudgetValue,
     this.currentSelection,
+    this.currencyCode = 'USD',
+    this.currencySymbol = '\$',
   });
 
   static Future<BrandGiftSelectionResult?> show(
@@ -38,6 +42,8 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     required String prizeLabel,
     double? targetBudgetValue,
     BrandOffer? currentSelection,
+    String currencyCode = 'USD',
+    String currencySymbol = '\$',
   }) {
     return showDialog<BrandGiftSelectionResult>(
       context: context,
@@ -46,6 +52,8 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
         prizeLabel: prizeLabel,
         targetBudgetValue: targetBudgetValue,
         currentSelection: currentSelection,
+        currencyCode: currencyCode,
+        currencySymbol: currencySymbol,
       ),
     );
   }
@@ -88,6 +96,43 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
       widget.prizeKey == 'TOP_LINE' ||
       widget.prizeKey == 'MIDDLE_LINE' ||
       widget.prizeKey == 'BOTTOM_LINE';
+
+  String get _sym => widget.currencySymbol;
+
+  double get _currencyMultiplier {
+    switch (widget.currencyCode.toUpperCase()) {
+      case 'INR':
+        return 50.0; // Clean local gift card tiers ($10 -> ₹500, $25 -> ₹1250)
+      case 'GBP':
+        return 0.8;
+      case 'EUR':
+        return 1.0;
+      case 'CAD':
+        return 1.4;
+      case 'AUD':
+        return 1.5;
+      case 'AED':
+        return 4.0;
+      case 'SGD':
+        return 1.4;
+      default:
+        return 1.0;
+    }
+  }
+
+  double _localizeOfferPrice(BrandOffer offer, double basePrice) {
+    if (offer.isCustomHostOffer ||
+        offer.currency.toUpperCase() == widget.currencyCode.toUpperCase()) {
+      return basePrice;
+    }
+    final raw = basePrice * _currencyMultiplier;
+    if (raw >= 100) {
+      return (raw / 50).round() * 50.0;
+    } else if (raw >= 20) {
+      return (raw / 5).round() * 5.0;
+    }
+    return raw.roundToDouble();
+  }
 
   @override
   void initState() {
@@ -179,6 +224,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
       retailPrice: val,
       organizerPrice: val,
       discountPercent: 0,
+      currency: widget.currencyCode,
       promoCode: code.isEmpty ? null : code,
       emoji: _customEmoji,
       badgeText: 'HOST EXCLUSIVE',
@@ -243,8 +289,8 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         Text(
                           widget.targetBudgetValue != null &&
                                   widget.targetBudgetValue! > 0
-                              ? 'Target Prize Value: \$${widget.targetBudgetValue!.toStringAsFixed(0)} • Pick from Partner Catalog or Create Your Own Exclusive Gift'
-                              : 'Pick a discounted Partner Gift or create your own Custom Gift exclusively for this game',
+                              ? 'Target Prize Value: $_sym${widget.targetBudgetValue!.toStringAsFixed(0)} (${widget.currencyCode}) • Pick a Global Gift or Create Your Own'
+                              : 'Pick a Global Gift Template (${widget.currencyCode}) or create your own Custom Gift exclusively for this game',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF94A3B8),
@@ -304,7 +350,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            '🛍️ Partner Gift Catalog',
+                            '🛍️ Global Partner Catalog',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
@@ -406,7 +452,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         ),
                         decoration: InputDecoration(
                           hintText:
-                              'Search by brand, product, or keyword (e.g. Starbucks, Speaker, \$25)...',
+                              'Search global brands or products (e.g. Amazon, Starbucks, JBL, Nike)...',
                           hintStyle: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF64748B),
@@ -448,64 +494,73 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                 // Category + Price Filter Chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      for (final priceOpt in [
-                        'All',
-                        'Under \$15',
-                        '\$15–\$25',
-                        '\$25+',
-                      ]) ...[
-                        ChoiceChip(
-                          label: Text(priceOpt),
-                          selected: _selectedPriceFilter == priceOpt,
-                          onSelected: (_) =>
-                              setState(() => _selectedPriceFilter = priceOpt),
-                          selectedColor: AppTheme.secondaryColor.withValues(
-                            alpha: 0.25,
-                          ),
-                          backgroundColor: AppTheme.darkSurface,
-                          labelStyle: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                            color: _selectedPriceFilter == priceOpt
-                                ? AppTheme.secondaryColor
-                                : const Color(0xFFCBD5E1),
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      const SizedBox(width: 6),
-                      for (final cat in [
-                        'All',
-                        'Coffee & Dining',
-                        'Shopping Vouchers',
-                        'Gourmet Hampers',
-                        'Tech & Gadgets',
-                        'Beauty & Lifestyle',
-                      ]) ...[
-                        FilterChip(
-                          label: Text(cat == 'All' ? 'All Categories' : cat),
-                          selected: _selectedCategory == cat,
-                          onSelected: (_) =>
-                              setState(() => _selectedCategory = cat),
-                          selectedColor: AppTheme.primaryLight.withValues(
-                            alpha: 0.25,
-                          ),
-                          backgroundColor: AppTheme.darkSurface,
-                          labelStyle: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: _selectedCategory == cat
-                                ? AppTheme.primaryLight
-                                : const Color(0xFF94A3B8),
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                    ],
+                  child: Builder(
+                    builder: (context) {
+                      final lowBound = (15 * _currencyMultiplier).round();
+                      final highBound = (25 * _currencyMultiplier).round();
+                      final priceOptions = <Map<String, String>>[
+                        {'key': 'All', 'label': 'All Prices'},
+                        {'key': 'LOW', 'label': 'Under $_sym$lowBound'},
+                        {'key': 'MID', 'label': '$_sym$lowBound–$_sym$highBound'},
+                        {'key': 'HIGH', 'label': '$_sym$highBound+'},
+                      ];
+                      return Row(
+                        children: [
+                          for (final priceOpt in priceOptions) ...[
+                            ChoiceChip(
+                              label: Text(priceOpt['label']!),
+                              selected: _selectedPriceFilter == priceOpt['key'],
+                              onSelected: (_) => setState(
+                                () => _selectedPriceFilter = priceOpt['key']!,
+                              ),
+                              selectedColor: AppTheme.secondaryColor.withValues(
+                                alpha: 0.25,
+                              ),
+                              backgroundColor: AppTheme.darkSurface,
+                              labelStyle: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: _selectedPriceFilter == priceOpt['key']
+                                    ? AppTheme.secondaryColor
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          const SizedBox(width: 6),
+                          for (final cat in [
+                            'All',
+                            'Coffee & Dining',
+                            'Shopping Vouchers',
+                            'Streaming & Entertainment',
+                            'Gourmet Hampers',
+                            'Tech & Gadgets',
+                          ]) ...[
+                            FilterChip(
+                              label: Text(cat == 'All' ? 'All Categories' : cat),
+                              selected: _selectedCategory == cat,
+                              onSelected: (_) =>
+                                  setState(() => _selectedCategory = cat),
+                              selectedColor: AppTheme.primaryLight.withValues(
+                                alpha: 0.25,
+                              ),
+                              checkmarkColor: const Color(0xFF93C5FD),
+                              backgroundColor: AppTheme.darkSurface,
+                              labelStyle: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: _selectedCategory == cat
+                                    ? const Color(0xFF93C5FD)
+                                    : const Color(0xFFCBD5E1),
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -531,21 +586,22 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                                 _selectedCategory.toLowerCase()) {
                           return false;
                         }
-                        if (_selectedPriceFilter == 'Under \$15' &&
+                        if (_selectedPriceFilter == 'LOW' &&
                             o.retailPrice >= 15) {
                           return false;
                         }
-                        if (_selectedPriceFilter == '\$15–\$25' &&
+                        if (_selectedPriceFilter == 'MID' &&
                             (o.retailPrice < 15 || o.retailPrice > 25)) {
                           return false;
                         }
-                        if (_selectedPriceFilter == '\$25+' &&
+                        if (_selectedPriceFilter == 'HIGH' &&
                             o.retailPrice <= 25) {
                           return false;
                         }
                         if (query.isNotEmpty) {
+                          final localVal = _localizeOfferPrice(o, o.retailPrice);
                           final hay =
-                              '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} \$${o.retailPrice.toStringAsFixed(0)}'
+                              '${o.brandName} ${o.productTitle} ${o.productDescription ?? ''} ${o.category} $_sym${localVal.toStringAsFixed(0)}'
                                   .toLowerCase();
                           if (!hay.contains(query)) return false;
                         }
@@ -597,12 +653,16 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                           final offer = filtered[idx];
                           final isSelected =
                               widget.currentSelection?.id == offer.id;
+                          final localRetail = _localizeOfferPrice(
+                            offer,
+                            offer.retailPrice,
+                          );
+                          final tolerance = 5 * _currencyMultiplier;
                           final isBudgetMatch =
                               widget.targetBudgetValue != null &&
                               widget.targetBudgetValue! > 0 &&
-                              (offer.retailPrice - widget.targetBudgetValue!)
-                                      .abs() <=
-                                  5;
+                              (localRetail - widget.targetBudgetValue!).abs() <=
+                                  tolerance;
 
                           return _buildOfferCard(
                             offer,
@@ -726,10 +786,10 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                   child: TextField(
                     controller: _customTitleController,
                     style: const TextStyle(fontSize: 13.5, color: Colors.white),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Gift / Product Title *',
                       hintText:
-                          'e.g. \$25 Local Bakery Hamper, AirTag, Team Swag Pack',
+                          'e.g. $_sym${(25 * _currencyMultiplier).round()} Local Bakery Hamper, AirTag, Team Swag Pack',
                       isDense: true,
                     ),
                   ),
@@ -747,9 +807,9 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                       color: AppTheme.accentSuccess,
                       fontWeight: FontWeight.bold,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'Prize Value (\$)',
-                      prefixText: '\$',
+                    decoration: InputDecoration(
+                      labelText: 'Prize Value ($_sym)',
+                      prefixText: _sym,
                       isDense: true,
                     ),
                   ),
@@ -767,7 +827,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                     style: const TextStyle(fontSize: 13, color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Brand / Store / Sponsor Name (Optional)',
-                      hintText: 'e.g. Costco, Rapid Consulting, Host Special',
+                      hintText: 'e.g. Amazon, Tanishq, Rapid Consulting',
                       isDense: true,
                     ),
                   ),
@@ -780,7 +840,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                     style: const TextStyle(fontSize: 13, color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Brand Website Domain (Optional Logo)',
-                      hintText: 'e.g. costco.com, apple.com',
+                      hintText: 'e.g. amazon.in, apple.com',
                       isDense: true,
                     ),
                   ),
@@ -821,8 +881,8 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
               ),
               decoration: const InputDecoration(
                 labelText:
-                    'Voucher / Promo Code or Claim Note (Optional — Sent only to Winner)',
-                hintText: 'e.g. WINNER-2026 or Collect at reception desk',
+                    'Voucher / Promo Code or Claim Note (Optional — Can also be added at Prize Settlement)',
+                hintText: 'e.g. WINNER-2026 or Leave blank to enter at settlement',
                 isDense: true,
               ),
             ),
@@ -873,6 +933,25 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
     required bool isSelected,
     required bool isBudgetMatch,
   }) {
+    final localRetail = _localizeOfferPrice(offer, offer.retailPrice);
+    final localOrg = _localizeOfferPrice(offer, offer.organizerPrice);
+    final isFreeSponsored = offer.organizerPrice == 0;
+    final isTemplate = offer.isHostSelfFulfilledTemplate;
+
+    String priceSummaryText;
+    if (isFreeSponsored) {
+      priceSummaryText =
+          'Value: $_sym${localRetail.toStringAsFixed(0)} • 100% FREE FOR HOST';
+    } else if (isTemplate) {
+      priceSummaryText =
+          'Suggested Value: $_sym${localRetail.toStringAsFixed(0)} • Host provides code at settlement';
+    } else if (localOrg < localRetail) {
+      priceSummaryText =
+          'Value: $_sym${localRetail.toStringAsFixed(0)} • Host Deal: $_sym${localOrg.toStringAsFixed(0)}';
+    } else {
+      priceSummaryText = 'Prize Value: $_sym${localRetail.toStringAsFixed(0)}';
+    }
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1007,9 +1086,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                         ),
                       ),
                       child: Text(
-                        offer.organizerPrice < offer.retailPrice
-                            ? 'Value: \$${offer.retailPrice.toStringAsFixed(0)} • Host Deal: \$${offer.organizerPrice.toStringAsFixed(2)}'
-                            : 'Prize Value: \$${offer.retailPrice.toStringAsFixed(0)}',
+                        priceSummaryText,
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
@@ -1066,9 +1143,32 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
           const SizedBox(width: 10),
           ElevatedButton.icon(
             onPressed: () {
+              final localizedOffer = BrandOffer(
+                id: offer.id,
+                brandName: offer.brandName,
+                brandDomain: offer.brandDomain,
+                brandLogoUrl: offer.brandLogoUrl,
+                contactName: offer.contactName,
+                contactEmail: offer.contactEmail,
+                productTitle: offer.productTitle,
+                productDescription: offer.productDescription,
+                category: offer.category,
+                productImageUrl: offer.productImageUrl,
+                productUrl: offer.productUrl,
+                retailPrice: localRetail,
+                organizerPrice: localOrg,
+                discountPercent: offer.discountPercent,
+                currency: widget.currencyCode,
+                promoCode: offer.promoCode,
+                emoji: offer.emoji,
+                badgeText: offer.badgeText,
+                status: offer.status,
+                gamesAssignedCount: offer.gamesAssignedCount,
+                clicksCount: offer.clicksCount,
+              );
               Navigator.of(context).pop(
                 BrandGiftSelectionResult(
-                  offer: offer,
+                  offer: localizedOffer,
                   applyToAllRowLines: _applyToAllLines,
                 ),
               );

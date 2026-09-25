@@ -1615,8 +1615,9 @@
             const pInfo = formatPrize(w.prize_type);
             const avatarEmoji = AVATAR_MAP[w.winner_avatar] || '👤';
             const prizeValNum = Number(w.prize_value || 0);
+            const curSym = escapeHtml(w.currency_symbol || '$');
             const prizeValBadge = prizeValNum > 0
-              ? `<span class="winner-val-pill">$${prizeValNum % 1 === 0 ? prizeValNum : prizeValNum.toFixed(2)}</span>`
+              ? `<span class="winner-val-pill">${curSym}${prizeValNum % 1 === 0 ? prizeValNum : prizeValNum.toFixed(2)}</span>`
               : '';
 
             let giftSubHtml = '';
@@ -1832,8 +1833,11 @@
           grid.innerHTML = offers.map(o => {
             const disc = Number(o.discount_percent || 0);
             const orgNum = Number(o.organizer_price || 0);
-            const orgPrice = orgNum === 0 ? 'FREE ($0)' : `$${orgNum.toFixed(2)}`;
-            const retPrice = Number(o.retail_price || o.retail_value || 0).toFixed(0);
+            const retNum = Number(o.retail_price || o.retail_value || 0);
+            const retPrice = retNum.toFixed(0);
+            const isFreeSponsored = orgNum === 0;
+            const isGlobalTemplate = orgNum > 0 && disc === 0 && !o.promo_code;
+            const orgPrice = isFreeSponsored ? 'FREE ($0)' : `$${orgNum.toFixed(0)}`;
             const title = o.product_title || o.gift_title || 'Sponsored Brand Gift';
             const desc = o.description || o.gift_description || o.product_description || '';
             const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
@@ -1842,6 +1846,36 @@
             const logoImg = logoSrc
               ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
               : '';
+
+            let topBadgeHtml = '';
+            if (isFreeSponsored) {
+              topBadgeHtml = `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">100% FREE FOR HOST</span>`;
+            } else if (disc > 0) {
+              topBadgeHtml = `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>`;
+            } else if (isGlobalTemplate) {
+              topBadgeHtml = `<span style="background: rgba(139,92,246,0.22); color: #C4B5FD; font-size: 9.5px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">🌍 GLOBAL TEMPLATE</span>`;
+            }
+
+            let footerLeftHtml = '';
+            if (isFreeSponsored) {
+              footerLeftHtml = `
+                <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
+                <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+                <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
+              `;
+            } else if (isGlobalTemplate) {
+              footerLeftHtml = `
+                <span style="font-size: 11.5px; font-weight: 800; color: #34D399;">Suggested: $${retPrice}</span>
+                <span style="font-size: 10.5px; color: #CBD5E1; margin-left: 6px;">• Host provides code</span>
+              `;
+            } else {
+              footerLeftHtml = `
+                <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
+                <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+                <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
+              `;
+            }
+
             return `
               <div class="brand-offer-mini-card">
                 <div>
@@ -1850,16 +1884,14 @@
                       ${logoImg}
                       <span>${escapeHtml(o.brand_name)}</span>
                     </span>
-                    ${orgNum === 0 ? `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">100% FREE FOR HOST</span>` : (disc > 0 ? `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>` : '')}
+                    ${topBadgeHtml}
                   </div>
                   <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(title)}</div>
                   <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(desc)}</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
                   <div>
-                    <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
-                    <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
-                    <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
+                    ${footerLeftHtml}
                   </div>
                   <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
                 </div>

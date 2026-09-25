@@ -78,7 +78,11 @@ class BrandOffer {
     );
   }
 
-  Map<String, dynamic> toPrizeConfigJson({double? customPrizeValue}) {
+  Map<String, dynamic> toPrizeConfigJson({
+    double? customPrizeValue,
+    String? currencyCode,
+    String? currencySymbol,
+  }) {
     return {
       'offer_id': id,
       'brand_name': brandName,
@@ -93,11 +97,18 @@ class BrandOffer {
       'promo_code': promoCode,
       'emoji': emoji,
       'prize_value': customPrizeValue ?? retailPrice,
+      'currency': currencyCode ?? currency,
+      if (currencySymbol != null) 'currency_symbol': currencySymbol,
       'is_custom_host_offer': isCustomHostOffer,
     };
   }
 
   bool get isCustomHostOffer => id.startsWith('custom_');
+
+  bool get isHostSelfFulfilledTemplate =>
+      !isCustomHostOffer &&
+      organizerPrice > 0 &&
+      (promoCode == null || promoCode!.trim().isEmpty);
 
   String get categoryEmoji => emoji;
 }
