@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/mpt_reward.dart';
 
@@ -7,7 +9,7 @@ class RewardsRepository {
   RewardsRepository(this._supabase);
 
   static const String _rewardSelectQuery =
-      '*, MPT_games(name, invite_code, started_at, completed_at, created_at, MPT_users(display_name))';
+      '*, MPT_games(name, invite_code, started_at, completed_at, created_at, prize_gifts_config, MPT_users(display_name))';
 
   /// Gets all rewards won by the current player, enriched with game & organizer context.
   /// Also self-heals any APPROVED claims for this user that may be missing a row in MPT_rewards.
@@ -80,7 +82,7 @@ class RewardsRepository {
         final archives = await _supabase
             .from('MPT_game_archives')
             .select(
-              'game_id, game_name, invite_code, host_name, org_name, concluded_at',
+              'game_id, name, invite_code, organization_name, completed_at',
             )
             .inFilter('game_id', missingGameIds);
         final archiveMap = <String, Map<String, dynamic>>{};
@@ -104,19 +106,28 @@ class RewardsRepository {
             verifiedByAdminId: r.verifiedByAdminId,
             claimedAt: r.claimedAt,
             createdAt: r.createdAt,
-            gameName: r.gameName ?? (arch['game_name'] as String?),
+            gameName: r.gameName ?? (arch['name'] as String?),
             inviteCode: r.inviteCode ?? (arch['invite_code'] as String?),
             gameDate:
                 r.gameDate ??
-                (arch['concluded_at'] != null
-                    ? DateTime.tryParse(arch['concluded_at'].toString())
+                (arch['completed_at'] != null
+                    ? DateTime.tryParse(arch['completed_at'].toString())
                     : null),
             organizerName:
-                r.organizerName ??
-                (arch['org_name'] as String?) ??
-                (arch['host_name'] as String?),
+                r.organizerName ?? (arch['organization_name'] as String?),
             winnerName: r.winnerName,
             winnerAvatar: r.winnerAvatar,
+            winnerEmail: r.winnerEmail,
+            isGuest: r.isGuest,
+            ticketNumber: r.ticketNumber,
+            prizeValue: r.prizeValue,
+            brandOfferId: r.brandOfferId,
+            fulfilledGiftTitle: r.fulfilledGiftTitle,
+            fulfilledBrandName: r.fulfilledBrandName,
+            fulfilledGiftCode: r.fulfilledGiftCode,
+            fulfilledProductUrl: r.fulfilledProductUrl,
+            fulfilledProductImageUrl: r.fulfilledProductImageUrl,
+            fulfillmentNote: r.fulfillmentNote,
           );
         }).toList();
       } catch (_) {}
@@ -165,25 +176,116 @@ class RewardsRepository {
       }
     } catch (_) {}
 
-    // Fallback direct query
+    // Fallback direct query with manual registration & archive enrichment
     try {
       final rows = await _supabase
           .from('MPT_rewards')
           .select(_rewardSelectQuery)
           .eq('game_id', gameId)
           .order('created_at', ascending: true);
-      return (rows as List).map((e) => MptReward.fromJson(e)).toList();
+
+      final regRows = await _supabase
+          .from('MPT_game_registrations')
+          .select('user_id, display_name, avatar, registration_seq')
+          .eq('game_id', gameId);
+      final regByUser = <String, Map<String, dynamic>>{};
+      for (final reg in (regRows as List)) {
+        final uid = reg['user_id']?.toString();
+        if (uid != null) {
+          regByUser[uid] = Map<String, dynamic>.from(reg as Map);
+        }
+      }
+
+      return (rows as List).map((e) {
+        final map = Map<String, dynamic>.from(e as Map);
+        final uid = map['user_id']?.toString();
+        final reg = uid != null ? regByUser[uid] : null;
+        if (reg != null) {
+          map['winner_name'] ??= reg['display_name'];
+          map['winner_avatar'] ??= reg['avatar'];
+          map['ticket_number'] ??= reg['registration_seq'];
+        }
+        return MptReward.fromJson(map);
+      }).toList();
     } catch (_) {
       return [];
     }
   }
 
-  /// Allows the Game Organizer to close/mark a single claim or all claims in a game as CLAIMED.
+  /// Fetches all games conducted by the current Organizer along with unsettled/settled
+  /// claim counts and full player-enriched claims for each game.
+  Future<List<OrganizerGameClaimsSummary>> getOrganizerAllGamesClaims() async {
+    try {
+      final res = await _supabase.rpc('MPT_get_organizer_all_games_claims');
+      if (res is List) {
+        return res
+            .map(
+              (e) => OrganizerGameClaimsSummary.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList();
+      }
+    } catch (_) {}
+
+    // Fallback if RPC unavailable
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) return [];
+    try {
+      final games = await _supabase
+          .from('MPT_games')
+          .select()
+          .eq('admin_user_id', uid)
+          .order('created_at', ascending: false);
+
+      final summaries = <OrganizerGameClaimsSummary>[];
+      for (final rawGame in (games as List)) {
+        final g = Map<String, dynamic>.from(rawGame as Map);
+        final gid = g['id'].toString();
+        final rewards = await getGameRewardsForHost(gid);
+        final unsettled = rewards.where((r) => r.isAvailable).length;
+        final settled = rewards.where((r) => r.isClaimed).length;
+        summaries.add(
+          OrganizerGameClaimsSummary(
+            gameId: gid,
+            name: g['name'] as String? ?? 'Hosted Game',
+            inviteCode: g['invite_code'] as String? ?? '------',
+            status: g['status'] as String? ?? 'COMPLETED',
+            playerCount: (g['final_capacity'] as num?)?.toInt() ?? 0,
+            fundedCapacity: (g['funded_capacity'] as num?)?.toInt() ?? 25,
+            organizationName: g['organization_name'] as String?,
+            organizationLogoUrl: g['organization_logo_url'] as String?,
+            gameDate: DateTime.tryParse(
+              (g['completed_at'] ?? g['started_at'] ?? g['created_at'] ?? '')
+                  .toString(),
+            ),
+            unsettledCount: unsettled,
+            settledCount: settled,
+            totalClaimsCount: rewards.length,
+            rewards: rewards,
+          ),
+        );
+      }
+      return summaries;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Allows the Game Organizer to close/mark a single claim or all claims in a game as CLAIMED,
+  /// optionally attaching Brand Partner Gift / Voucher fulfillment details.
   Future<List<MptReward>> closeGameClaim({
     required String gameId,
     String? rewardId,
     String? claimId,
     bool closeAll = false,
+    String? giftTitle,
+    String? brandName,
+    String? giftCode,
+    String? productUrl,
+    String? brandOfferId,
+    double? prizeValue,
+    String? fulfillmentNote,
   }) async {
     try {
       final res = await _supabase.rpc(
@@ -193,6 +295,13 @@ class RewardsRepository {
           'p_reward_id': rewardId,
           'p_claim_id': claimId,
           'p_close_all': closeAll,
+          'p_fulfilled_brand': brandName != null && giftTitle != null
+              ? '$brandName — $giftTitle'
+              : (brandName ?? giftTitle),
+          'p_fulfilled_code': giftCode,
+          'p_fulfilled_product_url': productUrl,
+          'p_brand_offer_id': brandOfferId,
+          'p_prize_value': prizeValue,
         },
       );
       if (res is Map && res['rewards'] is List) {
@@ -205,13 +314,24 @@ class RewardsRepository {
     } catch (_) {
       // Fallback direct update
       final uid = _supabase.auth.currentUser?.id;
+      final updateMap = <String, dynamic>{
+        'status': 'CLAIMED',
+        'verified_by_admin_id': uid,
+        'claimed_at': DateTime.now().toIso8601String(),
+      };
+      if (giftTitle != null) updateMap['fulfilled_gift_title'] = giftTitle;
+      if (brandName != null) updateMap['fulfilled_brand_name'] = brandName;
+      if (giftCode != null) updateMap['fulfilled_gift_code'] = giftCode;
+      if (productUrl != null) updateMap['fulfilled_product_url'] = productUrl;
+      if (brandOfferId != null) updateMap['brand_offer_id'] = brandOfferId;
+      if (prizeValue != null) updateMap['prize_value'] = prizeValue;
+      if (fulfillmentNote != null) {
+        updateMap['fulfillment_note'] = fulfillmentNote;
+      }
+
       var query = _supabase
           .from('MPT_rewards')
-          .update({
-            'status': 'CLAIMED',
-            'verified_by_admin_id': uid,
-            'claimed_at': DateTime.now().toIso8601String(),
-          })
+          .update(updateMap)
           .eq('game_id', gameId);
 
       if (!closeAll) {
@@ -224,6 +344,43 @@ class RewardsRepository {
       await query;
     }
     return getGameRewardsForHost(gameId);
+  }
+
+  /// Dispatches a rich HTML Prize & Brand Gift Voucher email via AWS SES
+  Future<bool> sendWinnerGiftEmail({
+    required String toEmail,
+    required MptReward reward,
+  }) async {
+    try {
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+      );
+      final resp = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'send_winner_gift_email',
+          'to_email': toEmail.trim(),
+          'player_name': reward.winnerName ?? 'DabHousie Winner',
+          'game_name': reward.gameName ?? 'DabHousie Event',
+          'invite_code': reward.inviteCode ?? '------',
+          'prize_type': reward.prizeType,
+          'verification_code': reward.claimReference,
+          'prize_value': reward.prizeValue,
+          'brand_name': reward.fulfilledBrandName,
+          'gift_title': reward.fulfilledGiftTitle,
+          'product_url': reward.fulfilledProductUrl,
+          'fulfilled_code': reward.fulfilledGiftCode,
+        }),
+      );
+      if (resp.statusCode == 200) {
+        final decoded = jsonDecode(resp.body);
+        return decoded is Map && decoded['success'] == true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Admin verifies a claim reference code presented by a player
@@ -245,3 +402,4 @@ class RewardsRepository {
     }
   }
 }
+

@@ -13,6 +13,9 @@ class MptGame {
   final DateTime? completedAt;
   final bool isPrivate;
   final List<String> prizesConfig;
+  final double totalPrizeBudget;
+  final Map<String, dynamic> prizeGiftsConfig;
+  final String minorPrizePolicy;
   final int stateVersion;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -32,6 +35,9 @@ class MptGame {
     this.completedAt,
     this.isPrivate = false,
     required this.prizesConfig,
+    this.totalPrizeBudget = 0.0,
+    this.prizeGiftsConfig = const {},
+    this.minorPrizePolicy = 'ONE_MINOR_PER_PLAYER',
     this.stateVersion = 1,
     required this.createdAt,
     required this.updatedAt,
@@ -51,6 +57,13 @@ class MptGame {
       return ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'];
     }
 
+    Map<String, dynamic> parsePrizeGifts(dynamic val) {
+      if (val is Map) {
+        return Map<String, dynamic>.from(val);
+      }
+      return const {};
+    }
+
     return MptGame(
       id: json['id'] as String,
       adminUserId: json['admin_user_id'] as String,
@@ -66,6 +79,9 @@ class MptGame {
       completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
       isPrivate: json['is_private'] as bool? ?? false,
       prizesConfig: parsePrizes(json['prizes_config']),
+      totalPrizeBudget: (json['total_prize_budget'] as num?)?.toDouble() ?? 0.0,
+      prizeGiftsConfig: parsePrizeGifts(json['prize_gifts_config']),
+      minorPrizePolicy: json['minor_prize_policy'] as String? ?? 'ONE_MINOR_PER_PLAYER',
       stateVersion: json['state_version'] as int? ?? 1,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
@@ -88,6 +104,9 @@ class MptGame {
       'completed_at': completedAt?.toIso8601String(),
       'is_private': isPrivate,
       'prizes_config': prizesConfig,
+      'total_prize_budget': totalPrizeBudget,
+      'prize_gifts_config': prizeGiftsConfig,
+      'minor_prize_policy': minorPrizePolicy,
       'state_version': stateVersion,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

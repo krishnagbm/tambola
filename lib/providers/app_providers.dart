@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/brand_offer.dart';
 import '../models/mpt_called_number.dart';
 import '../models/mpt_capacity_tier.dart';
 import '../models/mpt_claim.dart';
@@ -189,6 +190,14 @@ final hostGameRewardsProvider =
           .getGameRewardsForHost(gameId);
     });
 
+// All Hosted Games + Claims Provider (Organizer Wallet Claims & Brand Gift Hub)
+final organizerAllGamesClaimsProvider =
+    FutureProvider.autoDispose<List<OrganizerGameClaimsSummary>>((ref) async {
+      return ref
+          .watch(rewardsRepositoryProvider)
+          .getOrganizerAllGamesClaims();
+    });
+
 // My Hosted Games Provider (Organizer Dashboard)
 final myHostedGamesProvider = FutureProvider.autoDispose<List<MptGame>>((ref) async {
   return ref.watch(gameRepositoryProvider).getMyHostedGames();
@@ -204,4 +213,8 @@ final gameSeatOtpsStreamProvider = StreamProvider.autoDispose.family<List<MptSea
   return ref.watch(gameRepositoryProvider).watchGameSeatOtps(gameId);
 });
 
+// Active Brand Gift Offers Provider (Host Gift Catalog & Organizer Fulfillment Hub)
+final activeBrandOffersProvider = FutureProvider.autoDispose<List<BrandOffer>>((ref) async {
+  return ref.watch(gameRepositoryProvider).getActiveBrandOffers();
+});
 

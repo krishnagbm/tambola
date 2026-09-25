@@ -275,13 +275,21 @@
 
     .winner-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 6px;
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 13px;
+    }
+
+    .winner-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
     }
 
     .winner-prize-name {
@@ -290,6 +298,17 @@
       gap: 6px;
       font-weight: 600;
       color: #F8FAFC;
+      flex-wrap: wrap;
+    }
+
+    .winner-val-pill {
+      background: rgba(16, 185, 129, 0.16);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34D399;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 5px;
     }
 
     .winner-player-tag {
@@ -297,10 +316,52 @@
       align-items: center;
       gap: 6px;
       color: #CBD5E1;
+      white-space: nowrap;
     }
 
     .winner-avatar-icon {
       font-size: 14px;
+    }
+
+    .winner-gift-bar {
+      padding-top: 5px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      font-size: 11.5px;
+    }
+
+    .winner-gift-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: #E9D5FF;
+      text-decoration: none;
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.32);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-weight: 600;
+      transition: all 0.18s ease;
+    }
+
+    .winner-gift-link:hover {
+      background: rgba(168, 85, 247, 0.22);
+      border-color: #C084FC;
+      color: #FFFFFF;
+      transform: translateX(2px);
+    }
+
+    .gift-cta-tag {
+      color: #38BDF8;
+      font-size: 10.5px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .winner-gift-static {
+      display: inline-block;
+      color: #D8B4FE;
+      font-weight: 600;
     }
 
     .grand-prize {
@@ -310,6 +371,180 @@
 
     .grand-prize .winner-prize-name {
       color: #FCD34D;
+    }
+
+    /* Brand Partner Banner & Self-Registration Modal */
+    .brand-partner-banner {
+      max-width: 1120px;
+      margin: 0 auto 26px;
+      padding: 0 20px;
+    }
+
+    .brand-banner-inner {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.92), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(168, 85, 247, 0.42);
+      border-radius: 18px;
+      padding: 18px 22px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-banner-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-banner-badge {
+      display: inline-block;
+      background: rgba(255, 193, 7, 0.16);
+      border: 1px solid rgba(255, 193, 7, 0.45);
+      color: #FCD34D;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .brand-banner-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn-register-brand {
+      background: linear-gradient(135deg, #F59E0B, #FBBF24);
+      color: #0F172A;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-register-brand:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45);
+    }
+
+    .btn-view-brands {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #E2E8F0;
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-view-brands:hover {
+      border-color: #A855F7;
+      color: #FFFFFF;
+    }
+
+    .brand-offers-showcase {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: none;
+    }
+
+    .brand-offers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .brand-offer-mini-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* Modal Backdrop */
+    .brand-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.82);
+      backdrop-filter: blur(6px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .brand-modal-card {
+      background: #0F172A;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 20px;
+      max-width: 640px;
+      width: 100%;
+      padding: 24px;
+      color: #F8FAFC;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    .brand-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .brand-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .brand-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .brand-form-group label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #CBD5E1;
+    }
+
+    .brand-form-group input,
+    .brand-form-group select,
+    .brand-form-group textarea {
+      background: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #FFFFFF;
+      font-size: 13.5px;
+      font-family: inherit;
+    }
+
+    .brand-form-group input:focus,
+    .brand-form-group select:focus,
+    .brand-form-group textarea:focus {
+      outline: none;
+      border-color: #F59E0B;
     }
 
     .pagination-bar {
@@ -450,6 +685,140 @@
       </div>
     </section>
 
+    <!-- Brand Marketing Partner Self-Registration Banner -->
+    <section class="brand-partner-banner">
+      <div class="brand-banner-inner">
+        <div class="brand-banner-top">
+          <div style="max-width: 680px;">
+            <span class="brand-banner-badge">🎁 Sponsored Prize Marketplace • For Brand Marketers &amp; D2C Sponsors</span>
+            <h2 style="font-size: 18px; font-weight: 800; color: #FFFFFF; margin: 0 0 4px;">
+              Want Your Brand Featured on Every Completed Game Card?
+            </h2>
+            <p style="font-size: 13px; color: #CBD5E1; margin: 0; line-height: 1.5;">
+              Register discounted products or digital gift vouchers for DabHousie organizers to award as prizes. Winners receive your product link by email &amp; in their Rewards Wallet, and every Hall of Fame card links directly to your product page!
+            </p>
+          </div>
+          <div class="brand-banner-actions">
+            <button class="btn-view-brands" onclick="toggleBrandPartnersShowcase()" id="btn-toggle-brands">
+              🛍️ View Partner Catalog
+            </button>
+            <button class="btn-register-brand" onclick="openBrandRegisterModal()">
+              🚀 Register Brand Gift Offer
+            </button>
+          </div>
+        </div>
+
+        <div class="brand-offers-showcase" id="brand-offers-showcase">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 12px; font-weight: 700; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px;">
+              ✨ Active Brand Gift Catalog Available to Event Hosts
+            </span>
+            <a href="/#/create-game" style="font-size: 12px; color: #38BDF8; font-weight: 700; text-decoration: none;">
+              Host a Game &amp; Assign These Prizes →
+            </a>
+          </div>
+          <div class="brand-offers-grid" id="brand-offers-grid">
+            <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Brand Marketer Self-Registration Modal -->
+    <div class="brand-modal-backdrop" id="brand-register-modal" onclick="if(event.target === this) closeBrandRegisterModal()">
+      <div class="brand-modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <span class="brand-banner-badge">🎁 Brand Marketing Partner Portal</span>
+            <h3 style="font-size: 20px; font-weight: 800; margin: 4px 0 2px; color: #FFFFFF;">Register Your Brand Gift Offer</h3>
+            <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">
+              List a discounted product or gift voucher for DabHousie hosts. Every time your gift is awarded, your clickable product link appears on the Hall of Fame &amp; winner emails.
+            </p>
+          </div>
+          <button onclick="closeBrandRegisterModal()" style="background: transparent; border: none; color: #94A3B8; font-size: 20px; cursor: pointer;">✕</button>
+        </div>
+
+        <form id="brand-register-form" onsubmit="submitBrandOfferRegistration(event)">
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-brand-name">Brand / Company Name *</label>
+              <input type="text" id="bm-brand-name" required placeholder="e.g. Starbucks, Bose, Artisan Co.">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-domain">Company Website Domain * (Auto-loads Logo)</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="text" id="bm-domain" required placeholder="e.g. starbucks.com" oninput="updateDomainPreview(this.value)" style="flex: 1;">
+                <img id="bm-logo-preview" src="" alt="Brand Logo" style="height: 32px; width: 32px; object-fit: contain; background: #FFFFFF; border-radius: 6px; padding: 2px; display: none;" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)">
+              </div>
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-contact-name">Marketer / Representative Name *</label>
+              <input type="text" id="bm-contact-name" required placeholder="Your full name">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-contact-email">Corporate Work Email *</label>
+              <input type="email" id="bm-contact-email" required placeholder="marketing@yourcompany.com">
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-product-title">Product / Gift Voucher Title *</label>
+              <input type="text" id="bm-product-title" required placeholder="e.g. $20 Festive Gourmet Gift Box">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-category">Gift Category *</label>
+              <select id="bm-category">
+                <option value="COFFEE">☕ Coffee &amp; Dining</option>
+                <option value="SHOPPING">🛍️ Shopping Vouchers</option>
+                <option value="GOURMET">🍫 Gourmet &amp; Sweets</option>
+                <option value="TECH">🔊 Tech &amp; Audio</option>
+                <option value="BEAUTY">✨ Beauty &amp; Wellness</option>
+                <option value="FITNESS">👟 Sports &amp; Apparel</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-retail-price">Retail Value ($ USD) *</label>
+              <input type="number" id="bm-retail-price" required min="1" step="0.5" value="20" oninput="updateDiscountBadge()">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-org-price">Discounted Organizer Price ($ USD) * <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 6px;">(25% OFF)</span></label>
+              <input type="number" id="bm-org-price" required min="0" step="0.5" value="15" oninput="updateDiscountBadge()">
+            </div>
+          </div>
+
+          <div class="brand-form-grid">
+            <div class="brand-form-group">
+              <label for="bm-product-url">Product Landing Page URL * (Shown on Hall of Fame)</label>
+              <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/gift-offer">
+            </div>
+            <div class="brand-form-group">
+              <label for="bm-promo-code">Organizer Promo / Voucher Code (Optional)</label>
+              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE25">
+            </div>
+          </div>
+
+          <div class="brand-form-group">
+            <label for="bm-description">Short Offer Description &amp; Redemption Perks</label>
+            <textarea id="bm-description" rows="2" placeholder="Describe why players and hosts will love this prize..."></textarea>
+          </div>
+
+          <div id="bm-status-msg" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px;"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+            <button type="button" onclick="closeBrandRegisterModal()" style="background: transparent; border: 1px solid #334155; color: #CBD5E1; padding: 9px 16px; border-radius: 8px; cursor: pointer;">Cancel</button>
+            <button type="submit" id="bm-submit-btn" class="btn-register-brand">🚀 Publish Brand Gift Offer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Filter Buttons -->
     <div class="filter-bar">
       <div class="filter-group">
@@ -489,70 +858,136 @@
         <div class="winners-section-title">Verified Prize Winners</div>
         <div class="winners-list">
           
-          <div class="winner-row grand-prize">
-            <div class="winner-prize-name">
-              <span>🏆</span>
-              <span>Full House (Grand Prize)</span>
+          <div class="winner-row grand-prize has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🏆</span>
+                <span>Full House (Grand Prize)</span>
+                <span class="winner-val-pill">$25</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Merry Whiz</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Merry Whiz</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.amazon.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('87fd4ca1-46c5-4acd-8f68-c646913f06af')">
+                  <span>🎁 Amazon — $25 Everything Store Digital Gift Card</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥇</span>
-              <span>Top Line</span>
+          <div class="winner-row  has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥇</span>
+                <span>Top Line</span>
+                <span class="winner-val-pill">$15</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Merry Whiz</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Merry Whiz</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥈</span>
-              <span>Middle Line</span>
+          <div class="winner-row  has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥈</span>
+                <span>Middle Line</span>
+                <span class="winner-val-pill">$15</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Merry Whiz</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Merry Whiz</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥉</span>
-              <span>Bottom Line</span>
+          <div class="winner-row  has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥉</span>
+                <span>Bottom Line</span>
+                <span class="winner-val-pill">$15</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Merry Whiz</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Merry Whiz</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.ubereats.com/gift-cards" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('786d113f-bbbc-4158-b072-719485d95179')">
+                  <span>🎁 Uber Eats — $15 Party Treat &amp; Dining Delivery Pass</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>⚡</span>
-              <span>Early 5 (Jaldi 5)</span>
+          <div class="winner-row  has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>⚡</span>
+                <span>Early 5 (Jaldi 5)</span>
+                <span class="winner-val-pill">$10</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Swift Gamer</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Swift Gamer</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.starbucks.com/gift" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('543c05fa-4956-4e76-a0ac-9b8888669b02')">
+                  <span>🎁 Starbucks — $10 Coffee &amp; Bakery E-Gift Voucher</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🎯</span>
-              <span>Four Corners</span>
+          <div class="winner-row  has-gift">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🎯</span>
+                <span>Four Corners</span>
+                <span class="winner-val-pill">$12</span>
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Merry Whiz</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Merry Whiz</strong>
-            </div>
+            
+              <div class="winner-gift-bar">
+                <a href="https://www.ferrerorocher.com/us/en/" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('65203ef7-d06e-426a-a15a-1d5045da1c72')">
+                  <span>🎁 Ferrero Rocher — Golden Hazelnut Celebration Box (16-pc)</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            
           </div>
         
         </div>
@@ -575,70 +1010,94 @@
         <div class="winners-section-title">Verified Prize Winners</div>
         <div class="winners-list">
           
-          <div class="winner-row grand-prize">
-            <div class="winner-prize-name">
-              <span>🏆</span>
-              <span>Full House (Grand Prize)</span>
+          <div class="winner-row grand-prize ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🏆</span>
+                <span>Full House (Grand Prize)</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🐯</span>
+                <strong>Aditya</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🐯</span>
-              <strong>Aditya</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥇</span>
-              <span>Top Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥇</span>
+                <span>Top Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🐻</span>
+                <strong>Rohan</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🐻</span>
-              <strong>Rohan</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥈</span>
-              <span>Middle Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥈</span>
+                <span>Middle Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦅</span>
+                <strong>Maya</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦅</span>
-              <strong>Maya</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥉</span>
-              <span>Bottom Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥉</span>
+                <span>Bottom Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🐯</span>
+                <strong>Priya</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🐯</span>
-              <strong>Priya</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>⚡</span>
-              <span>Early 5 (Jaldi 5)</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>⚡</span>
+                <span>Early 5 (Jaldi 5)</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Kabir</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Kabir</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🎯</span>
-              <span>Four Corners</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🎯</span>
+                <span>Four Corners</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦊</span>
+                <strong>Elena</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦊</span>
-              <strong>Elena</strong>
-            </div>
+            
           </div>
         
         </div>
@@ -661,70 +1120,94 @@
         <div class="winners-section-title">Verified Prize Winners</div>
         <div class="winners-list">
           
-          <div class="winner-row grand-prize">
-            <div class="winner-prize-name">
-              <span>🏆</span>
-              <span>Full House (Grand Prize)</span>
+          <div class="winner-row grand-prize ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🏆</span>
+                <span>Full House (Grand Prize)</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦉</span>
+                <strong>Oliver</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦉</span>
-              <strong>Oliver</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥇</span>
-              <span>Top Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥇</span>
+                <span>Top Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🐺</span>
+                <strong>Sophia</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🐺</span>
-              <strong>Sophia</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥈</span>
-              <span>Middle Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥈</span>
+                <span>Middle Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦊</span>
+                <strong>Liam</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦊</span>
-              <strong>Liam</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🥉</span>
-              <span>Bottom Line</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🥉</span>
+                <span>Bottom Line</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦁</span>
+                <strong>Noah</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦁</span>
-              <strong>Noah</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>⚡</span>
-              <span>Early 5 (Jaldi 5)</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>⚡</span>
+                <span>Early 5 (Jaldi 5)</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🐯</span>
+                <strong>Priya</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🐯</span>
-              <strong>Priya</strong>
-            </div>
+            
           </div>
         
-          <div class="winner-row ">
-            <div class="winner-prize-name">
-              <span>🎯</span>
-              <span>Four Corners</span>
+          <div class="winner-row  ">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>🎯</span>
+                <span>Four Corners</span>
+                
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">🦅</span>
+                <strong>Maya</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">🦅</span>
-              <strong>Maya</strong>
-            </div>
+            
           </div>
         
         </div>
@@ -955,16 +1438,48 @@
           winners.forEach(w => {
             const pInfo = formatPrize(w.prize_type);
             const avatarEmoji = AVATAR_MAP[w.winner_avatar] || '👤';
+            const prizeValNum = Number(w.prize_value || 0);
+            const prizeValBadge = prizeValNum > 0
+              ? `<span class="winner-val-pill">$${prizeValNum % 1 === 0 ? prizeValNum : prizeValNum.toFixed(2)}</span>`
+              : '';
+
+            let giftSubHtml = '';
+            if ((w.gift_title && String(w.gift_title).trim()) || (w.brand_name && String(w.brand_name).trim())) {
+              const brandLabel = w.brand_name ? `${escapeHtml(w.brand_name)} — ` : '';
+              const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
+              const offerIdAttr = escapeHtml(w.offer_id || '');
+              if (w.product_url && String(w.product_url).trim()) {
+                giftSubHtml = `
+                  <div class="winner-gift-bar">
+                    <a href="${escapeHtml(w.product_url.trim())}" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('${offerIdAttr}')">
+                      <span>🎁 ${brandLabel}${giftLabel}</span>
+                      <span class="gift-cta-tag">Explore Product ↗</span>
+                    </a>
+                  </div>
+                `;
+              } else {
+                giftSubHtml = `
+                  <div class="winner-gift-bar">
+                    <span class="winner-gift-static">🎁 ${brandLabel}${giftLabel}</span>
+                  </div>
+                `;
+              }
+            }
+
             winnersHtml += `
-              <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''}">
-                <div class="winner-prize-name">
-                  <span>${pInfo.icon}</span>
-                  <span>${escapeHtml(pInfo.label)}</span>
+              <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''} ${giftSubHtml ? 'has-gift' : ''}">
+                <div class="winner-row-top">
+                  <div class="winner-prize-name">
+                    <span>${pInfo.icon}</span>
+                    <span>${escapeHtml(pInfo.label)}</span>
+                    ${prizeValBadge}
+                  </div>
+                  <div class="winner-player-tag">
+                    <span class="winner-avatar-icon">${avatarEmoji}</span>
+                    <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
+                  </div>
                 </div>
-                <div class="winner-player-tag">
-                  <span class="winner-avatar-icon">${avatarEmoji}</span>
-                  <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
-                </div>
+                ${giftSubHtml}
               </div>
             `;
           });
@@ -1075,7 +1590,6 @@
     }
 
     function showErrorState(msg) {
-      // Ensure count is NOT displayed when an error occurs
       const countContainer = document.getElementById('showing-count-container');
       if (countContainer) countContainer.style.display = 'none';
 
@@ -1086,6 +1600,174 @@
           <div style="font-size: 14px;">${escapeHtml(msg)}</div>
         </div>
       `;
+    }
+
+    // Track Brand Gift Click from Hall of Fame Winner Cards
+    window.trackBrandGiftClick = function(offerId) {
+      if (!offerId) return;
+      try {
+        fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'track_brand_offer_click', offer_id: offerId })
+        }).catch(() => {});
+      } catch (_) {}
+    };
+
+    // Brand Partner Catalog Showcase Drawer
+    let brandCatalogLoaded = false;
+    async function toggleBrandPartnersShowcase() {
+      const showcase = document.getElementById('brand-offers-showcase');
+      const btn = document.getElementById('btn-toggle-brands');
+      if (!showcase) return;
+      const isVisible = showcase.style.display === 'block';
+      showcase.style.display = isVisible ? 'none' : 'block';
+      if (btn) btn.textContent = isVisible ? '🛍️ View Partner Catalog' : '🔼 Hide Partner Catalog';
+
+      if (!isVisible && !brandCatalogLoaded) {
+        await loadBrandPartnersCatalog();
+      }
+    }
+
+    async function loadBrandPartnersCatalog() {
+      const grid = document.getElementById('brand-offers-grid');
+      if (!grid) return;
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get_brand_offers' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const offers = Array.isArray(data.offers) ? data.offers : [];
+          brandCatalogLoaded = true;
+          if (offers.length === 0) {
+            grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">No brand offers registered yet. Be the first!</div>';
+            return;
+          }
+          grid.innerHTML = offers.map(o => {
+            const disc = Number(o.discount_percent || 0);
+            const orgPrice = Number(o.organizer_price || 0).toFixed(2);
+            const retPrice = Number(o.retail_price || 0).toFixed(0);
+            const url = escapeHtml(o.product_url || '#');
+            return `
+              <div class="brand-offer-mini-card">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px;">
+                    <span style="font-size: 11px; font-weight: 800; color: #FBBF24; text-transform: uppercase;">${escapeHtml(o.brand_name)}</span>
+                    ${disc > 0 ? `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>` : ''}
+                  </div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(o.product_title)}</div>
+                  <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(o.description || '')}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+                  <div>
+                    <span style="font-size: 13px; font-weight: 800; color: #34D399;">Host: $${orgPrice}</span>
+                    <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+                  </div>
+                  <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">Unable to load partner offers right now.</div>';
+      }
+    }
+
+    // Brand Marketer Self-Registration Modal Handlers
+    function openBrandRegisterModal() {
+      const modal = document.getElementById('brand-register-modal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeBrandRegisterModal() {
+      const modal = document.getElementById('brand-register-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function updateDomainPreview(val) {
+      const img = document.getElementById('bm-logo-preview');
+      if (!img) return;
+      const clean = (val || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      if (clean && clean.includes('.')) {
+        img.src = `https://img.logo.dev/${encodeURIComponent(clean)}?format=png&size=256&token=pk_ALfnmL3AQTqaatAQSzQxvQ`;
+        img.style.display = 'inline-block';
+      } else {
+        img.style.display = 'none';
+      }
+    }
+
+    function updateDiscountBadge() {
+      const retail = parseFloat(document.getElementById('bm-retail-price')?.value || '0');
+      const org = parseFloat(document.getElementById('bm-org-price')?.value || '0');
+      const pill = document.getElementById('bm-discount-pill');
+      if (!pill) return;
+      if (retail > 0 && org < retail) {
+        const pct = Math.round(((retail - org) / retail) * 100);
+        pill.textContent = `(${pct}% OFF)`;
+        pill.style.display = 'inline';
+      } else {
+        pill.style.display = 'none';
+      }
+    }
+
+    async function submitBrandOfferRegistration(e) {
+      e.preventDefault();
+      const btn = document.getElementById('bm-submit-btn');
+      const msgEl = document.getElementById('bm-status-msg');
+      if (!btn || !msgEl) return;
+
+      const payload = {
+        action: 'register_brand_offer',
+        brand_name: document.getElementById('bm-brand-name').value.trim(),
+        brand_domain: document.getElementById('bm-domain').value.trim(),
+        contact_name: document.getElementById('bm-contact-name').value.trim(),
+        contact_email: document.getElementById('bm-contact-email').value.trim(),
+        product_title: document.getElementById('bm-product-title').value.trim(),
+        category: document.getElementById('bm-category').value,
+        retail_price: parseFloat(document.getElementById('bm-retail-price').value || '0'),
+        organizer_price: parseFloat(document.getElementById('bm-org-price').value || '0'),
+        product_url: document.getElementById('bm-product-url').value.trim(),
+        promo_code: document.getElementById('bm-promo-code').value.trim(),
+        description: document.getElementById('bm-description').value.trim()
+      };
+
+      btn.disabled = true;
+      btn.textContent = 'Publishing Offer...';
+      msgEl.style.display = 'none';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          msgEl.style.display = 'block';
+          msgEl.style.background = 'rgba(16, 185, 129, 0.16)';
+          msgEl.style.border = '1px solid rgba(16, 185, 129, 0.45)';
+          msgEl.style.color = '#6EE7B7';
+          msgEl.textContent = '🎉 ' + (data.message || 'Your Brand Gift Offer is now live in the DabHousie Host Catalog!');
+          document.getElementById('brand-register-form').reset();
+          brandCatalogLoaded = false;
+          loadBrandPartnersCatalog();
+        } else {
+          throw new Error(data.error || 'Failed to register brand offer');
+        }
+      } catch (err) {
+        msgEl.style.display = 'block';
+        msgEl.style.background = 'rgba(239, 68, 68, 0.16)';
+        msgEl.style.border = '1px solid rgba(239, 68, 68, 0.45)';
+        msgEl.style.color = '#FCA5A5';
+        msgEl.textContent = '⚠️ ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 Publish Brand Gift Offer';
+      }
     }
 
     fetchRecentGames();

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
@@ -979,12 +980,15 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Prize Name + Claim Status Badge
+          // Header Row: Prize Name + Value + Claim Status Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Row(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Icon(
                       isAvailable
@@ -995,18 +999,38 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           : const Color(0xFF10B981),
                       size: 22,
                     ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        Formatters.formatPrizeName(reward.prizeType),
-                        style: const TextStyle(
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      Formatters.formatPrizeName(reward.prizeType),
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
+                    if (reward.prizeValue != null && reward.prizeValue! > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppTheme.accentSuccess.withValues(
+                              alpha: 0.45,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          '\$${reward.prizeValue!.toStringAsFixed(0)} Value',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.accentSuccess,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -1104,6 +1128,163 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             },
           ),
 
+          if ((reward.fulfilledGiftTitle != null &&
+                  reward.fulfilledGiftTitle!.trim().isNotEmpty) ||
+              (reward.fulfilledBrandName != null &&
+                  reward.fulfilledBrandName!.trim().isNotEmpty)) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFA855F7).withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: const Color(0xFFA855F7).withValues(alpha: 0.5),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.card_giftcard_rounded,
+                        size: 17,
+                        color: Color(0xFFE9D5FF),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '🎁 Brand Gift Awarded: ${reward.fulfilledBrandName != null ? "${reward.fulfilledBrandName} • " : ""}${reward.fulfilledGiftTitle ?? "Sponsored Gift"}',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (reward.fulfilledGiftCode != null &&
+                          reward.fulfilledGiftCode!.trim().isNotEmpty)
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(
+                              ClipboardData(text: reward.fulfilledGiftCode!),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Gift redemption code copied!'),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.darkCard,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(
+                                  0xFFA855F7,
+                                ).withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  reward.fulfilledGiftCode!,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.secondaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.copy_rounded,
+                                  size: 12,
+                                  color: AppTheme.secondaryColor,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (reward.fulfillmentNote != null &&
+                      reward.fulfillmentNote!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      reward.fulfillmentNote!,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFFE9D5FF),
+                      ),
+                    ),
+                  ],
+                  if (reward.fulfilledProductUrl != null &&
+                      reward.fulfilledProductUrl!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        ref
+                            .read(gameRepositoryProvider)
+                            .trackBrandOfferClick(reward.brandOfferId);
+                        final uri = Uri.tryParse(
+                          reward.fulfilledProductUrl!.trim(),
+                        );
+                        if (uri != null) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(
+                              alpha: 0.6,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Explore ${reward.fulfilledBrandName ?? "Brand"} Product / Offer',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 13,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 10),
 
           Container(
@@ -1136,12 +1317,150 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  onPressed: () => _promptEmailPrizeVoucher(context, reward),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryLight,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
+                  icon: const Icon(Icons.forward_to_inbox_rounded, size: 15),
+                  label: const Text(
+                    'Email My Prize',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _promptEmailPrizeVoucher(
+    BuildContext context,
+    MptReward reward,
+  ) async {
+    final user = ref.read(currentUserProvider).value;
+    final emailCtrl = TextEditingController(text: user?.email ?? '');
+    bool sending = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+            ),
+          ),
+          title: const Row(
+            children: [
+              Icon(
+                Icons.forward_to_inbox_rounded,
+                color: AppTheme.secondaryColor,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Email Prize & Gift Voucher',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Send an official HTML certificate with your prize value, Brand Gift link, and verification code (${reward.claimReference}) to your inbox:',
+                style: const TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 13.5, color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Your Email Address',
+                  hintText: 'you@example.com',
+                  prefixIcon: const Icon(Icons.email_outlined, size: 18),
+                  filled: true,
+                  fillColor: AppTheme.darkSurface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: sending ? null : () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final email = emailCtrl.text.trim();
+                      if (!email.contains('@')) return;
+                      setModalState(() => sending = true);
+                      final ok = await ref
+                          .read(rewardsRepositoryProvider)
+                          .sendWinnerGiftEmail(toEmail: email, reward: reward);
+                      if (!ctx.mounted) return;
+                      Navigator.of(ctx).pop();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              ok
+                                  ? '📩 Prize & Brand Gift details emailed to $email!'
+                                  : 'Could not send email right now. Please verify the address.',
+                            ),
+                            backgroundColor: ok
+                                ? AppTheme.accentSuccess
+                                : AppTheme.accentDanger,
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.black,
+              ),
+              icon: sending
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Icon(Icons.send_rounded, size: 15),
+              label: const Text(
+                'Send Email',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    emailCtrl.dispose();
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
@@ -1168,3 +1487,4 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     );
   }
 }
+

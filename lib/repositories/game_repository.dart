@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/brand_offer.dart';
 import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
 import '../models/mpt_seat_otp.dart';
@@ -18,6 +19,9 @@ class GameRepository {
     DateTime? scheduledAt,
     List<String>? prizesConfig,
     bool isPrivate = false,
+    double totalPrizeBudget = 0,
+    Map<String, dynamic> prizeGiftsConfig = const {},
+    String minorPrizePolicy = 'ONE_MINOR_PER_PLAYER',
   }) async {
     // Validate UUID format; pass null if not a valid UUID string
     String? effectiveTierId = plannedCapacityTierId;
@@ -34,6 +38,9 @@ class GameRepository {
         'p_scheduled_at': scheduledAt?.toIso8601String(),
         'p_prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
         'p_is_private': isPrivate,
+        'p_total_prize_budget': totalPrizeBudget,
+        'p_prize_gifts_config': prizeGiftsConfig,
+        'p_minor_prize_policy': minorPrizePolicy,
       });
 
       if (res is Map<String, dynamic>) {
@@ -60,6 +67,9 @@ class GameRepository {
         'scheduled_at': scheduledAt?.toIso8601String(),
         'is_private': isPrivate,
         'prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
+        'total_prize_budget': totalPrizeBudget,
+        'prize_gifts_config': prizeGiftsConfig,
+        'minor_prize_policy': minorPrizePolicy,
       }).select().single();
       return MptGame.fromJson(row);
     }
@@ -624,5 +634,41 @@ class GameRepository {
       // Best-effort email dispatch; token is safely persisted in DB
     }
   }
+
+  /// Fetches all active Brand Publisher Gift Offers for the Host Gift Catalog
+  Future<List<BrandOffer>> getActiveBrandOffers() async {
+    try {
+      final res = await _supabase.rpc('MPT_get_active_brand_offers');
+      if (res is List) {
+        return res
+            .map((e) => BrandOffer.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      }
+    } catch (_) {}
+
+    try {
+      final rows = await _supabase
+          .from('MPT_brand_offers')
+          .select()
+          .eq('status', 'ACTIVE')
+          .order('retail_price', ascending: true);
+      return (rows as List)
+          .map((e) => BrandOffer.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Increments the referral click counter for a Brand Offer
+  Future<void> trackBrandOfferClick(String? offerId) async {
+    if (offerId == null || offerId.trim().isEmpty) return;
+    try {
+      await _supabase.rpc('MPT_track_brand_offer_click', params: {
+        'p_offer_id': offerId.trim(),
+      });
+    } catch (_) {}
+  }
 }
+
 

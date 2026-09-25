@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
@@ -77,6 +78,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         onRefresh: () {
           ref.invalidate(walletProvider);
           ref.invalidate(creditTransactionsProvider);
+          ref.invalidate(organizerAllGamesClaimsProvider);
           ref.invalidate(currentUserProvider);
         },
       ),
@@ -115,6 +117,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           _buildGuestAccountWarning(),
                           const SizedBox(height: 20),
                         ],
+                        _buildOrganizerClaimsHubBanner(),
+                        const SizedBox(height: 20),
                         if (isTwoColumn)
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,6 +141,152 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildOrganizerClaimsHubBanner() {
+    final claimsSummaryAsync = ref.watch(organizerAllGamesClaimsProvider);
+    final gamesCount = claimsSummaryAsync.valueOrNull?.length ?? 0;
+    final unsettledCount =
+        claimsSummaryAsync.valueOrNull?.fold<int>(
+          0,
+          (sum, g) => sum + g.unsettledCount,
+        ) ??
+        0;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF172554), Color(0xFF1A1F35)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+          width: 1.4,
+        ),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 12,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.card_giftcard_rounded,
+                  color: AppTheme.secondaryColor,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        const Text(
+                          'Conducted Games Claims & Brand Gift Store',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (unsettledCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor.withValues(
+                                alpha: 0.2,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppTheme.secondaryColor.withValues(
+                                  alpha: 0.6,
+                                ),
+                              ),
+                            ),
+                            child: Text(
+                              '$unsettledCount Unsettled Claims',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                          )
+                        else if (gamesCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentSuccess.withValues(
+                                alpha: 0.16,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '$gamesCount Games • All Settled ✓',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.accentSuccess,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'View all conducted games in collapsible drawers, inspect winner details & voucher codes, offer discounted Brand Publisher gifts, and close unsettled claims.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCBD5E1),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          ElevatedButton.icon(
+            onPressed: () => context.push('/wallet/claims'),
+            icon: const Icon(Icons.redeem_rounded, size: 17),
+            label: const Text('Open Claims & Brand Gifts'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              textStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

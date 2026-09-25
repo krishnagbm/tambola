@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
@@ -56,6 +57,7 @@ class _OrganizerGameClaimsDialogState
             claimId: reward.claimId,
           );
       ref.invalidate(hostGameRewardsProvider(widget.gameId));
+      ref.invalidate(organizerAllGamesClaimsProvider);
       ref.invalidate(myRewardsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,6 +90,7 @@ class _OrganizerGameClaimsDialogState
           .read(rewardsRepositoryProvider)
           .closeGameClaim(gameId: widget.gameId, closeAll: true);
       ref.invalidate(hostGameRewardsProvider(widget.gameId));
+      ref.invalidate(organizerAllGamesClaimsProvider);
       ref.invalidate(myRewardsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -401,35 +404,92 @@ class _OrganizerGameClaimsDialogState
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Row(
+                                          Wrap(
+                                            crossAxisAlignment:
+                                                WrapCrossAlignment.center,
+                                            spacing: 6,
+                                            runSpacing: 4,
                                             children: [
-                                              Flexible(
-                                                child: Text(
-                                                  Formatters.formatPrizeName(
-                                                    r.prizeType,
-                                                  ),
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                  ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                              Text(
+                                                Formatters.formatPrizeName(
+                                                  r.prizeType,
+                                                ),
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
                                                 ),
                                               ),
-                                              const SizedBox(width: 6),
                                               Text(
                                                 '• ${r.winnerName ?? "Player"}',
                                                 style: const TextStyle(
-                                                  fontSize: 12.5,
-                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
                                                   color:
                                                       AppTheme.secondaryColor,
                                                 ),
                                               ),
+                                              if (r.ticketNumber != null)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 1.5,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFF1E293B,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          5,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: const Color(
+                                                        0xFF334155,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    'Ticket #${r.ticketNumber}',
+                                                    style: const TextStyle(
+                                                      fontSize: 10.5,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: Color(0xFFCBD5E1),
+                                                    ),
+                                                  ),
+                                                ),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 1.5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFF1E293B,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                child: Text(
+                                                  r.winnerEmail != null &&
+                                                          r.winnerEmail!
+                                                              .isNotEmpty
+                                                      ? r.winnerEmail!
+                                                      : (r.isGuest
+                                                            ? 'Guest'
+                                                            : 'Registered'),
+                                                  style: const TextStyle(
+                                                    fontSize: 10,
+                                                    color: Color(0xFF94A3B8),
+                                                  ),
+                                                ),
+                                              ),
                                             ],
                                           ),
-                                          const SizedBox(height: 3),
+                                          const SizedBox(height: 4),
                                           Row(
                                             children: [
                                               InkWell(
@@ -471,6 +531,20 @@ class _OrganizerGameClaimsDialogState
                                               ],
                                             ],
                                           ),
+                                          if (r.fulfilledGiftTitle != null &&
+                                              r.fulfilledGiftTitle!
+                                                  .trim()
+                                                  .isNotEmpty) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '🎁 ${r.fulfilledBrandName != null ? "${r.fulfilledBrandName}: " : ""}${r.fulfilledGiftTitle}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFFD8B4FE),
+                                              ),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
@@ -548,6 +622,42 @@ class _OrganizerGameClaimsDialogState
                     );
                   },
                 ),
+              ),
+              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF2E334D), height: 1),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Flexible(
+                    child: Text(
+                      'Want to offer discounted Brand Publisher gifts to winners?',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      context.push('/wallet/claims');
+                    },
+                    icon: const Icon(
+                      Icons.redeem_rounded,
+                      size: 15,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    label: const Text(
+                      'Open Claims & Brand Gift Hub →',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

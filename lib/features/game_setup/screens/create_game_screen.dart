@@ -10,6 +10,7 @@ import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/widgets/company_logo.dart';
+import '../../../models/brand_offer.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
@@ -17,6 +18,7 @@ import '../../../repositories/auth_repository.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
+import '../widgets/brand_gift_picker_dialog.dart';
 
 class CreateGameScreen extends ConsumerStatefulWidget {
   const CreateGameScreen({super.key});
@@ -46,6 +48,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   late final TextEditingController _orgNameController;
   late final TextEditingController _orgLogoUrlController;
   late final TextEditingController _orgApproverEmailController;
+  late final TextEditingController _totalBudgetController;
+  final Map<String, TextEditingController> _prizeValueControllers = {};
+  final Map<String, BrandOffer> _selectedPrizeGifts = {};
+  String _minorPrizePolicy = 'ONE_MINOR_PER_PLAYER';
   bool _enableOrgBranding = false;
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
@@ -74,6 +80,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'FOUR_CORNERS': true,
     'FULL_HOUSE': true,
     'SECOND_FULL_HOUSE': false,
+  };
+
+  static const Map<String, double> _defaultPrizeWeights = {
+    'EARLY_FIVE': 10,
+    'FOUR_CORNERS': 10,
+    'TOP_LINE': 15,
+    'MIDDLE_LINE': 15,
+    'BOTTOM_LINE': 15,
+    'FULL_HOUSE': 35,
+    'SECOND_FULL_HOUSE': 20,
   };
 
   late final List<Map<String, String>> _mockWinners;
@@ -149,7 +165,77 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     _orgNameController = TextEditingController()..addListener(() => setState(() {}));
     _orgLogoUrlController = TextEditingController()..addListener(() => setState(() {}));
     _orgApproverEmailController = TextEditingController()..addListener(() => setState(() {}));
+    _totalBudgetController = TextEditingController(text: '100');
+    for (final entry in _defaultPrizeWeights.entries) {
+      _prizeValueControllers[entry.key] = TextEditingController(
+        text: entry.value.toStringAsFixed(0),
+      );
+    }
     _shuffleMockWinners();
+  }
+
+  double get _allocatedPrizeSum {
+    double sum = 0;
+    for (final entry in _prizes.entries) {
+      if (entry.value) {
+        final v = double.tryParse(_prizeValueControllers[entry.key]?.text.trim() ?? '') ?? 0;
+        sum += v;
+      }
+    }
+    return sum;
+  }
+
+  void _autoSplitBudget() {
+    final total = double.tryParse(_totalBudgetController.text.trim()) ?? 100.0;
+    if (total <= 0) return;
+    final enabledKeys = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
+    if (enabledKeys.isEmpty) return;
+
+    double weightSum = 0;
+    for (final k in enabledKeys) {
+      weightSum += _defaultPrizeWeights[k] ?? 15.0;
+    }
+    if (weightSum <= 0) weightSum = enabledKeys.length.toDouble();
+
+    double running = 0;
+    for (int i = 0; i < enabledKeys.length; i++) {
+      final k = enabledKeys[i];
+      if (i == enabledKeys.length - 1) {
+        final remainder = (total - running).clamp(0, total);
+        _prizeValueControllers[k]?.text = remainder.round().toString();
+      } else {
+        final w = _defaultPrizeWeights[k] ?? 15.0;
+        final share = ((total * (w / weightSum)) / 5).round() * 5.0;
+        final clamped = share > 0 ? share : (total / enabledKeys.length).roundToDouble();
+        running += clamped;
+        _prizeValueControllers[k]?.text = clamped.toStringAsFixed(0);
+      }
+    }
+    setState(() {});
+  }
+
+  void _syncTotalBudgetFromIndividualValues() {
+    final sum = _allocatedPrizeSum;
+    _totalBudgetController.text = sum.toStringAsFixed(sum == sum.roundToDouble() ? 0 : 2);
+    setState(() {});
+  }
+
+  Map<String, dynamic> _buildPrizeGiftsConfigPayload() {
+    final map = <String, dynamic>{};
+    for (final entry in _prizes.entries) {
+      if (!entry.value) continue;
+      final key = entry.key;
+      final val = double.tryParse(_prizeValueControllers[key]?.text.trim() ?? '') ?? 0;
+      final offer = _selectedPrizeGifts[key];
+      if (offer != null) {
+        map[key] = offer.toPrizeConfigJson(customPrizeValue: val > 0 ? val : offer.retailPrice);
+      } else if (val > 0) {
+        map[key] = {
+          'prize_value': val,
+        };
+      }
+    }
+    return map;
   }
 
   void _randomizeName() {
@@ -169,6 +255,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     _orgNameController.dispose();
     _orgLogoUrlController.dispose();
     _orgApproverEmailController.dispose();
+    _totalBudgetController.dispose();
+    for (final c in _prizeValueControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -346,6 +436,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         tierUuid = null;
       }
 
+      final totalBudgetVal = double.tryParse(_totalBudgetController.text.trim()) ?? _allocatedPrizeSum;
+      final prizeGiftsPayload = _buildPrizeGiftsConfigPayload();
+
       final game = await gameRepo.createGame(
         name: _nameController.text.trim(),
         plannedCapacity: _selectedCapacity,
@@ -353,6 +446,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         scheduledAt: _scheduledDateTime,
         prizesConfig: activePrizes,
         isPrivate: _isPrivate,
+        totalPrizeBudget: totalBudgetVal,
+        prizeGiftsConfig: prizeGiftsPayload,
+        minorPrizePolicy: _minorPrizePolicy,
       );
 
       String? brandApprovalMsg;
@@ -1872,26 +1968,223 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
+  Future<void> _openBrandGiftPicker(String key, String label) async {
+    final targetVal = double.tryParse(_prizeValueControllers[key]?.text.trim() ?? '');
+    final result = await BrandGiftPickerDialog.show(
+      context,
+      prizeKey: key,
+      prizeLabel: label,
+      targetBudgetValue: targetVal,
+      currentSelection: _selectedPrizeGifts[key],
+    );
+    if (result == null || !mounted) return;
+
+    setState(() {
+      if (result.cleared) {
+        _selectedPrizeGifts.remove(key);
+      } else if (result.offer != null) {
+        final offer = result.offer!;
+        _selectedPrizeGifts[key] = offer;
+        _prizeValueControllers[key]?.text =
+            offer.retailPrice.toStringAsFixed(0);
+
+        if (result.applyToAllRowLines) {
+          for (final lineKey in ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE']) {
+            _selectedPrizeGifts[lineKey] = offer;
+            _prizeValueControllers[lineKey]?.text =
+                offer.retailPrice.toStringAsFixed(0);
+          }
+        }
+        _syncTotalBudgetFromIndividualValues();
+      }
+    });
+  }
+
   Widget _buildWinningPatternsSection({bool includeCreateButton = true}) {
+    final allocatedSum = _allocatedPrizeSum;
+    final totalBudgetVal =
+        double.tryParse(_totalBudgetController.text.trim()) ?? allocatedSum;
+    final assignedGiftsCount = _prizes.entries
+        .where((e) => e.value && _selectedPrizeGifts.containsKey(e.key))
+        .length;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Winning Patterns / Prizes',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Expanded(
+              child: Text(
+                'Winning Patterns, Budget & Brand Gifts',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (assignedGiftsCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.accentSuccess.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  '🎁 $assignedGiftsCount Brand Gift${assignedGiftsCount == 1 ? '' : 's'} Linked',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.accentSuccess,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 6),
         const Text(
-          'Select winning combinations eligible for prize claims during the game.',
+          'Set your total game budget, customize individual prize values, and link discounted Brand Partner gifts.',
           style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
         ),
         const SizedBox(height: 12),
+
+        // 1. Total Game Budget + Smart Auto-Split Bar
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.darkSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.savings_outlined,
+                    size: 18,
+                    color: AppTheme.secondaryColor,
+                  ),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Total Game Prize Budget',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 92,
+                    child: TextField(
+                      controller: _totalBudgetController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textAlign: TextAlign.right,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      decoration: InputDecoration(
+                        prefixText: '\$ ',
+                        prefixStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.secondaryColor,
+                        ),
+                        isDense: true,
+                        filled: true,
+                        fillColor: AppTheme.darkCard,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: _autoSplitBudget,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.auto_fix_high_rounded, size: 14),
+                    label: const Text(
+                      'Auto-Split',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Allocated across active prizes: \$${allocatedSum.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: (allocatedSum - totalBudgetVal).abs() < 0.5
+                          ? AppTheme.accentSuccess
+                          : const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                  if ((allocatedSum - totalBudgetVal).abs() >= 0.5)
+                    InkWell(
+                      onTap: _syncTotalBudgetFromIndividualValues,
+                      child: const Text(
+                        'Sync Total to Sum ↻',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryLight,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 2. Per-Prize Value & Brand Gift Mapping List
         Card(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
             child: Column(
               children: _prizes.keys.map((key) {
                 String label;
+                String? goldenRuleBadge;
                 switch (key) {
                   case 'EARLY_FIVE':
                     label = 'Early 5 (Jaldi 5)';
@@ -1909,25 +2202,337 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     label = 'Four Corners';
                     break;
                   case 'FULL_HOUSE':
-                    label = 'Full House (First Winner)';
+                    label = 'Full House (1st)';
+                    goldenRuleBadge = '🔓 Open to ALL';
                     break;
                   case 'SECOND_FULL_HOUSE':
-                    label = 'Second Full House';
+                    label = '2nd Full House';
+                    goldenRuleBadge = '🔓 Except 1st FH';
                     break;
                   default:
                     label = key;
                 }
-                return CheckboxListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  title: Text(label, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
-                  value: _prizes[key],
-                  activeColor: AppTheme.primaryColor,
-                  onChanged: (val) => setState(() => _prizes[key] = val ?? false),
+                final isEnabled = _prizes[key] ?? false;
+                final assignedOffer = _selectedPrizeGifts[key];
+
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isEnabled
+                        ? AppTheme.darkSurface.withValues(alpha: 0.7)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: assignedOffer != null && isEnabled
+                          ? AppTheme.secondaryColor.withValues(alpha: 0.45)
+                          : const Color(0xFF2E334D).withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: Checkbox(
+                              value: isEnabled,
+                              activeColor: AppTheme.primaryColor,
+                              onChanged: (val) {
+                                setState(() {
+                                  _prizes[key] = val ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 2,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: isEnabled
+                                        ? Colors.white
+                                        : const Color(0xFF64748B),
+                                  ),
+                                ),
+                                if (goldenRuleBadge != null)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.accentSuccess.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      goldenRuleBadge,
+                                      style: const TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.accentSuccess,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (isEnabled) ...[
+                            SizedBox(
+                              width: 68,
+                              child: TextField(
+                                controller: _prizeValueControllers[key],
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                textAlign: TextAlign.right,
+                                onChanged: (_) =>
+                                    _syncTotalBudgetFromIndividualValues(),
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                                decoration: InputDecoration(
+                                  prefixText: '\$',
+                                  prefixStyle: const TextStyle(
+                                    fontSize: 11.5,
+                                    color: AppTheme.secondaryColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor: AppTheme.darkCard,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 6,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(7),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF334155),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            InkWell(
+                              onTap: () => _openBrandGiftPicker(key, label),
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: assignedOffer != null
+                                      ? AppTheme.secondaryColor.withValues(
+                                          alpha: 0.18,
+                                        )
+                                      : AppTheme.primaryColor.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: assignedOffer != null
+                                        ? AppTheme.secondaryColor
+                                        : AppTheme.primaryLight.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      assignedOffer != null
+                                          ? assignedOffer.emoji
+                                          : '🎁',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      assignedOffer != null
+                                          ? assignedOffer.brandName
+                                          : 'Brand Gift',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: assignedOffer != null
+                                            ? AppTheme.secondaryColor
+                                            : AppTheme.primaryLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      if (isEnabled && assignedOffer != null)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 34,
+                            top: 4,
+                            right: 4,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: \$${assignedOffer.organizerPrice.toStringAsFixed(2)})',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.secondaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              InkWell(
+                                onTap: () => setState(
+                                  () => _selectedPrizeGifts.remove(key),
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
                 );
               }).toList(),
             ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 3. Winner Eligibility & Minor Prize Combination Rules
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.darkSurface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.primaryLight.withValues(alpha: 0.35),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.verified_user_outlined,
+                    size: 16,
+                    color: AppTheme.accentSuccess,
+                  ),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Winner Eligibility & Combination Rules',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                '• 🏆 1st Full House is ALWAYS open to ALL players (so nobody logs off early!).\n'
+                '• 🥈 2nd Full House is open to ALL players except the 1st Full House winner.',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFFA7F3D0),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Minor Prizes (Early 5, Corners & Row Lines) Policy:',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFCBD5E1),
+                ),
+              ),
+              const SizedBox(height: 6),
+              DropdownButtonFormField<String>(
+                initialValue: _minorPrizePolicy,
+                isExpanded: true,
+                dropdownColor: AppTheme.darkCard,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+                decoration: InputDecoration(
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppTheme.darkCard,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 9,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF334155)),
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'ONE_MINOR_PER_PLAYER',
+                    child: Text(
+                      'Max 1 Minor Prize per Player + Full House (Spreads Winners)',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'ONE_LINE_PLUS_BONUS',
+                    child: Text(
+                      'Max 1 Row Line + 1 Bonus (Early 5/Corners) + Full House',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'UNLIMITED',
+                    child: Text(
+                      'Unlimited Minor Prizes per Player + Full House',
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _minorPrizePolicy = val);
+                  }
+                },
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 8),

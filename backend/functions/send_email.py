@@ -15,6 +15,8 @@ from email_ses import (
     send_brand_approval_email,
     send_brand_acknowledgement_email,
     send_brand_approved_confirmation_email,
+    send_winner_gift_email,
+    send_brand_offer_registered_email,
 )
 
 
@@ -53,6 +55,10 @@ def handler(event, context):
          - action: "get_recent_games"
          - action: "get_brand_approval_preview"
          - action: "verify_and_approve_brand"
+         - action: "get_brand_offers"
+         - action: "register_brand_offer"
+         - action: "track_brand_offer_click"
+         - action: "send_winner_gift_email"
       1. Brand Approval Request / Acknowledgement / Confirmation
       2. Private Party Passcodes
     """
@@ -151,6 +157,124 @@ def handler(event, context):
                 },
             )
             return _r(status_code if status_code in (200, 400, 404) else 200, data if isinstance(data, dict) else {"success": False})
+
+        # Route 0D: Get Active Brand Gift Offers (Public & Host Catalog)
+        if action == "get_brand_offers":
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_get_active_brand_offers",
+                method="POST",
+                payload={},
+            )
+            if status_code == 200 and isinstance(data, list):
+                return _r(200, {"success": True, "offers": data})
+            return _r(200, {"success": True, "offers": []})
+
+        # Route 0E: Register Brand Gift Offer (from Hall of Fame / Brand Marketer Portal)
+        if action == "register_brand_offer":
+            brand_name = (payload.get("brand_name") or "").strip()
+            brand_domain = (payload.get("brand_domain") or "").strip().lower()
+            brand_logo_url = (payload.get("brand_logo_url") or "").strip()
+            marketer_name = (payload.get("marketer_name") or payload.get("contact_name") or "").strip()
+            marketer_email = (payload.get("marketer_email") or payload.get("contact_email") or "").strip().lower()
+            gift_title = (payload.get("gift_title") or payload.get("product_title") or "").strip()
+            gift_description = (payload.get("gift_description") or payload.get("product_description") or "").strip()
+            category = (payload.get("category") or "Shopping Vouchers").strip()
+            retail_value = float(payload.get("retail_value") or payload.get("retail_price") or 0)
+            organizer_price = float(payload.get("organizer_price") or retail_value)
+            product_url = (payload.get("product_url") or "").strip()
+            product_image_url = (payload.get("product_image_url") or "").strip()
+            promo_code = (payload.get("promo_code") or "").strip()
+            emoji = (payload.get("emoji") or "🎁").strip()
+
+            BLOCKED_FREE_DOMAINS = {
+                "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
+                "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "mac.com",
+                "aol.com", "zoho.com", "proton.me", "protonmail.com", "mail.com", "gmx.com",
+            }
+            email_domain = marketer_email.split("@")[-1] if "@" in marketer_email else ""
+            if not email_domain or email_domain in BLOCKED_FREE_DOMAINS:
+                return _r(400, {
+                    "success": False,
+                    "message": "Please use your official corporate work email (e.g. name@brand.com) to register a Brand Gift offer.",
+                })
+
+            if not brand_domain:
+                brand_domain = email_domain
+            if not brand_logo_url and brand_domain:
+                brand_logo_url = f"https://img.logo.dev/{brand_domain}?token=pk_VAZ6tvAVQHCDwKeaNRVyjQ&size=256&format=png"
+
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_register_brand_offer",
+                method="POST",
+                payload={
+                    "p_brand_name": brand_name,
+                    "p_brand_domain": brand_domain,
+                    "p_brand_logo_url": brand_logo_url,
+                    "p_contact_name": marketer_name,
+                    "p_contact_email": marketer_email,
+                    "p_product_title": gift_title,
+                    "p_product_description": gift_description or None,
+                    "p_category": category,
+                    "p_product_url": product_url,
+                    "p_product_image_url": product_image_url or None,
+                    "p_retail_price": retail_value,
+                    "p_organizer_price": organizer_price,
+                    "p_promo_code": promo_code or None,
+                    "p_emoji": emoji,
+                },
+            )
+            if status_code == 200 and isinstance(data, dict) and data.get("success"):
+                try:
+                    send_brand_offer_registered_email(
+                        to_email=marketer_email,
+                        marketer_name=marketer_name or brand_name,
+                        brand_name=brand_name,
+                        gift_title=gift_title,
+                        retail_value=retail_value,
+                        organizer_price=organizer_price,
+                        product_url=product_url,
+                        promo_code=promo_code or None,
+                        brand_logo_url=brand_logo_url,
+                    )
+                except Exception as e_mail:
+                    print(f"  [ SES ] Non-fatal brand offer email error: {e_mail}")
+                return _r(200, data)
+            return _r(400, data if isinstance(data, dict) else {"success": False, "message": "Could not register brand offer."})
+
+        # Route 0F: Track Brand Offer Product Link Click (from Hall of Fame / Rewards)
+        if action == "track_brand_offer_click":
+            offer_id = (payload.get("offer_id") or payload.get("p_offer_id") or "").strip()
+            if not offer_id:
+                return _r(200, {"success": False})
+            status_code, data = _supabase_rest(
+                "/rest/v1/rpc/MPT_track_brand_offer_click",
+                method="POST",
+                payload={"p_offer_id": offer_id},
+            )
+            return _r(200, data if isinstance(data, dict) else {"success": True})
+
+        # Route 0G: Send Winner Brand Gift & Prize Voucher Email
+        if action == "send_winner_gift_email":
+            to_email_winner = (payload.get("to_email") or "").strip()
+            if not to_email_winner or "@" not in to_email_winner:
+                return _r(400, {"success": False, "error": "Please provide a valid recipient email address."})
+            ok = send_winner_gift_email(
+                to_email=to_email_winner,
+                player_name=(payload.get("player_name") or "DabHousie Winner").strip(),
+                game_name=(payload.get("game_name") or "DabHousie Event").strip(),
+                invite_code=(payload.get("invite_code") or "------").strip(),
+                prize_type=(payload.get("prize_type") or "Prize").strip(),
+                verification_code=(payload.get("verification_code") or "Dab-Housie").strip(),
+                prize_value=payload.get("prize_value"),
+                brand_name=payload.get("brand_name"),
+                gift_title=payload.get("gift_title"),
+                product_url=payload.get("product_url"),
+                fulfilled_code=payload.get("fulfilled_code"),
+                brand_logo_url=payload.get("brand_logo_url"),
+            )
+            if ok:
+                return _r(200, {"success": True, "message": f"Prize & Brand Gift voucher emailed to {to_email_winner}!"})
+            return _r(500, {"success": False, "error": "Failed to dispatch prize email via AWS SES."})
 
         to_email = payload.get("to_email", "").strip()
         game_name = payload.get("game_name", "DabHousie Game")

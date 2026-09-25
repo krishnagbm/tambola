@@ -9,6 +9,7 @@ import '../features/registration/screens/join_game_screen.dart';
 import '../features/registration/screens/registration_status_screen.dart';
 import '../features/rewards/screens/rewards_screen.dart';
 import '../features/rewards/screens/verify_reward_screen.dart';
+import '../features/wallet/screens/organizer_claims_screen.dart';
 import '../features/wallet/screens/wallet_screen.dart';
 
 final appRouter = GoRouter(
@@ -72,6 +73,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/wallet',
       builder: (context, state) => const WalletScreen(),
+    ),
+    GoRoute(
+      path: '/wallet/claims',
+      builder: (context, state) {
+        final gameId = state.uri.queryParameters['gameId'];
+        return OrganizerClaimsScreen(initialGameId: gameId);
+      },
     ),
     GoRoute(
       path: '/rewards',

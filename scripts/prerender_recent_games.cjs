@@ -135,16 +135,48 @@ function generateCardsHtml(games) {
       winners.forEach(w => {
         const pInfo = formatPrize(w.prize_type);
         const avatarEmoji = AVATAR_MAP[w.winner_avatar] || '👤';
+        const prizeValNum = Number(w.prize_value || 0);
+        const prizeValBadge = prizeValNum > 0
+          ? `<span class="winner-val-pill">$${prizeValNum % 1 === 0 ? prizeValNum : prizeValNum.toFixed(2)}</span>`
+          : '';
+
+        let giftSubHtml = '';
+        if ((w.gift_title && String(w.gift_title).trim()) || (w.brand_name && String(w.brand_name).trim())) {
+          const brandLabel = w.brand_name ? `${escapeHtml(w.brand_name)} — ` : '';
+          const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
+          const offerIdAttr = escapeHtml(w.offer_id || '');
+          if (w.product_url && String(w.product_url).trim()) {
+            giftSubHtml = `
+              <div class="winner-gift-bar">
+                <a href="${escapeHtml(w.product_url.trim())}" target="_blank" rel="noopener sponsored" class="winner-gift-link" onclick="window.trackBrandGiftClick && window.trackBrandGiftClick('${offerIdAttr}')">
+                  <span>🎁 ${brandLabel}${giftLabel}</span>
+                  <span class="gift-cta-tag">Explore Product ↗</span>
+                </a>
+              </div>
+            `;
+          } else {
+            giftSubHtml = `
+              <div class="winner-gift-bar">
+                <span class="winner-gift-static">🎁 ${brandLabel}${giftLabel}</span>
+              </div>
+            `;
+          }
+        }
+
         winnersHtml += `
-          <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''}">
-            <div class="winner-prize-name">
-              <span>${pInfo.icon}</span>
-              <span>${escapeHtml(pInfo.label)}</span>
+          <div class="winner-row ${pInfo.isGrand ? 'grand-prize' : ''} ${giftSubHtml ? 'has-gift' : ''}">
+            <div class="winner-row-top">
+              <div class="winner-prize-name">
+                <span>${pInfo.icon}</span>
+                <span>${escapeHtml(pInfo.label)}</span>
+                ${prizeValBadge}
+              </div>
+              <div class="winner-player-tag">
+                <span class="winner-avatar-icon">${avatarEmoji}</span>
+                <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
+              </div>
             </div>
-            <div class="winner-player-tag">
-              <span class="winner-avatar-icon">${avatarEmoji}</span>
-              <strong>${escapeHtml(w.winner_name || 'Player')}</strong>
-            </div>
+            ${giftSubHtml}
           </div>
         `;
       });

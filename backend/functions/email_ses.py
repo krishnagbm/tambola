@@ -1237,5 +1237,245 @@ DabHousie - www.dabhousie.com
     )
 
 
+def send_winner_gift_email(
+    to_email: str,
+    player_name: str,
+    game_name: str,
+    invite_code: str,
+    prize_type: str,
+    verification_code: str,
+    prize_value: Optional[float] = None,
+    brand_name: Optional[str] = None,
+    gift_title: Optional[str] = None,
+    product_url: Optional[str] = None,
+    fulfilled_code: Optional[str] = None,
+    brand_logo_url: Optional[str] = None,
+    audit_email: str = AUDIT_EMAIL,
+) -> bool:
+    """
+    Sends a rich HTML Prize & Sponsored Brand Gift Voucher email to a game winner.
+    """
+    if not to_email:
+        print("  [ SES ] No recipient email provided for winner gift email. Skipping.")
+        return False
+
+    prize_label = (prize_type or "Prize").replace("_", " ").title()
+    val_str = f"${float(prize_value):.2f}".replace(".00", "") if prize_value and float(prize_value) > 0 else ""
+    val_badge = f" ({val_str} Value)" if val_str else ""
+    gift_display = gift_title or f"{prize_label} Winner Award"
+    brand_display = brand_name or "DabHousie Official Event"
+    cta_url = product_url if (product_url and product_url.startswith("http")) else f"{BASE_URL}/#/rewards"
+    cta_label = f"Explore {brand_name} Product & Redeem ↗" if (brand_name and product_url) else "View in My Rewards Dashboard →"
+
+    subject = f"🏆 You Won {prize_label}{val_badge} in \"{game_name}\"! ({gift_display})"
+
+    dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(brand_logo_url)
+
+    brand_box_html = ""
+    if brand_name or gift_title:
+        logo_img_html = ""
+        if brand_logo_url or org_logo_bytes:
+            logo_img_html = f"""
+            <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 12px auto;">
+              <tr>
+                <td align="center" bgcolor="#ffffff" style="background:#ffffff; border-radius:10px; padding:8px 14px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+                  <img src="{org_logo_src}" alt="{brand_display}" height="48" style="height:48px; max-height:48px; width:auto; max-width:160px; object-fit:contain; display:block; margin:0 auto;" />
+                </td>
+              </tr>
+            </table>
+            """
+        voucher_row_html = ""
+        if fulfilled_code:
+            voucher_row_html = f"""
+            <div style="margin-top:14px; padding:12px; background:#064e3b; border:1px dashed #10b981; border-radius:8px;">
+              <div style="font-size:11px; color:#6ee7b7; font-weight:700; text-transform:uppercase; letter-spacing:0.8px;">Redemption / Promo Voucher Code</div>
+              <div style="font-size:18px; color:#ffffff; font-family:Courier,'Courier New',monospace; font-weight:800; letter-spacing:1.5px; margin-top:4px;">{fulfilled_code}</div>
+            </div>
+            """
+        brand_box_html = f"""
+        <div style="background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border:1px solid #6366f1; border-radius:14px; padding:20px; text-align:center; margin-bottom:24px;">
+          <div style="font-size:11px; font-weight:800; color:#a5b4fc; text-transform:uppercase; letter-spacing:1.2px; margin-bottom:10px;">🎁 Sponsored Brand Gift Awarded</div>
+          {logo_img_html}
+          <div style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:4px;">{gift_display}</div>
+          <div style="font-size:13px; color:#c7d2fe; font-weight:600;">Sponsored by {brand_display}{val_badge}</div>
+          {voucher_row_html}
+        </div>
+        """
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your DabHousie Winner Award - {game_name}</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <tr>
+            <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{header_logo_src}" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 10px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Official Winner Certificate &amp; Gift Voucher</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800;">🏆 Congratulations, {player_name}!</h1>
+              <p style="margin:8px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name} (Code: {invite_code})</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 20px 0; font-size:14.5px; line-height:1.6; color:#cbd5e1;">
+                Your winning claim for <strong>{prize_label}</strong> has been officially verified on the DabHousie Zero-Trust Ledger! Below are your prize and brand gift details.
+              </p>
+
+              {brand_box_html}
+
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 18px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Winner Name:</td>
+                        <td style="padding:6px 0; color:#f8fafc; font-size:13.5px; font-weight:700;" align="right">{player_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Prize Category:</td>
+                        <td style="padding:6px 0; color:#f59e0b; font-size:14px; font-weight:800;" align="right">🏆 {prize_label}</td>
+                      </tr>
+                      {f'<tr><td style="padding:6px 0; color:#94a3b8; font-size:13px;">Prize Value:</td><td style="padding:6px 0; color:#10b981; font-size:14px; font-weight:800;" align="right">{val_str}</td></tr>' if val_str else ''}
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Verification Code:</td>
+                        <td style="padding:6px 0; color:#38bdf8; font-size:13.5px; font-weight:800; font-family:Courier,'Courier New',monospace;" align="right">{verification_code}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:20px auto 0 auto;">
+                <tr>
+                  <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:10px; border:1px solid #d97706; padding:0;">
+                    <a href="{cta_url}" target="_blank" style="background-color:#f59e0b; color:#0f172a !important; display:inline-block; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; font-weight:800; text-decoration:none; padding:15px 32px; border-radius:10px; line-height:1.2;">
+                      {cta_label}
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              <p style="margin:0 0 6px 0;">View all your event rewards anytime at <a href="{BASE_URL}/#/rewards" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com/#/rewards</a></p>
+              <p style="margin:0;">DabHousie &bull; Support: <a href="mailto:{FROM_EMAIL}" style="color:#38bdf8; text-decoration:none;">{FROM_EMAIL}</a></p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Congratulations {player_name}! You won {prize_label}{val_badge} in {game_name} (Code: {invite_code})!
+
+Prize Awarded: {gift_display} ({brand_display})
+Verification Code: {verification_code}
+{f'Voucher / Promo Code: {fulfilled_code}' if fulfilled_code else ''}
+Product / Redemption Link: {cta_url}
+
+View your rewards dashboard: {BASE_URL}/#/rewards
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=org_logo_bytes,
+        audit_email=audit_email,
+    )
 
 
+def send_brand_offer_registered_email(
+    to_email: str,
+    marketer_name: str,
+    brand_name: str,
+    gift_title: str,
+    retail_value: float,
+    organizer_price: float,
+    product_url: str,
+    promo_code: Optional[str] = None,
+    brand_logo_url: Optional[str] = None,
+    audit_email: str = AUDIT_EMAIL,
+) -> bool:
+    """
+    Sends confirmation to a Brand Marketing representative when their sponsored gift offer is published to the DabHousie Catalog.
+    """
+    if not to_email:
+        return False
+
+    subject = f"🎁 Brand Gift Offer Live in DabHousie Catalog: {brand_name} — {gift_title}"
+    dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(brand_logo_url)
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Brand Gift Offer Published</title></head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; margin:0 auto; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg, #065f46 0%, #0f172a 100%); padding:26px 20px; text-align:center; border-bottom:3px solid #10b981;">
+        <img src="{header_logo_src}" alt="DabHousie" width="200" style="max-width:200px; height:auto; display:block; margin:0 auto 10px auto;" />
+        <h1 style="margin:0; color:#ffffff; font-size:20px; font-weight:800;">🎁 Your Brand Gift Offer is Live!</h1>
+        <p style="margin:6px 0 0 0; color:#6ee7b7; font-size:14px; font-weight:600;">{brand_name} &bull; {gift_title}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px;">
+        <p style="margin:0 0 16px 0; font-size:14.5px; color:#cbd5e1; line-height:1.6;">
+          Hello <strong>{marketer_name}</strong>,<br><br>
+          Your sponsored product offer for <strong>{brand_name}</strong> is now live in the <strong>DabHousie Host Gift Catalog</strong>! Event Organizers can now assign your product to winning tiers (Early 5, Row Lines, and Full House), and every completed game card in the public <strong>Hall of Fame</strong> will display a direct clickable link to your product page.
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:20px;">
+          <tr>
+            <td style="padding:16px;">
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Offer Title: <strong style="color:#ffffff;">{gift_title}</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Retail Value: <strong style="color:#94a3b8; text-decoration:line-through;">${retail_value:.2f}</strong> &rarr; Organizer Deal: <strong style="color:#10b981;">${organizer_price:.2f}</strong></div>
+              {f'<div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Organizer Promo Code: <strong style="color:#f59e0b; font-family:monospace;">{promo_code}</strong></div>' if promo_code else ''}
+              <div style="font-size:13px; color:#94a3b8;">Product Link: <a href="{product_url}" style="color:#38bdf8;">{product_url}</a></div>
+            </td>
+          </tr>
+        </table>
+        <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0 auto;">
+          <tr>
+            <td align="center" bgcolor="#10b981" style="background-color:#10b981; border-radius:10px; padding:0;">
+              <a href="{BASE_URL}/recent-games.html" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:inline-block; font-size:14px; font-weight:800; text-decoration:none; padding:13px 28px; border-radius:10px;">
+                View Hall of Fame &amp; Brand Showcase &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+    text_content = f"""Hello {marketer_name},
+Your Brand Gift Offer for {brand_name} ({gift_title}) is now live in the DabHousie Host Gift Catalog!
+Retail Value: ${retail_value:.2f} | Organizer Price: ${organizer_price:.2f}
+Product Link: {product_url}
+Hall of Fame: {BASE_URL}/recent-games.html
+"""
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=org_logo_bytes,
+        audit_email=audit_email,
+    )
