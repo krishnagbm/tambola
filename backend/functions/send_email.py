@@ -169,6 +169,7 @@ def handler(event, context):
                     clean["has_promo_code"] = bool(clean.get("promo_code") and str(clean.get("promo_code")).strip())
                     # Do NOT expose actual voucher redemption codes or private contact/CRM fields publicly
                     clean.pop("promo_code", None)
+                    clean.pop("verification_token", None)
                     clean.pop("contact_email", None)
                     clean.pop("contact_name", None)
                     clean.pop("contact_role", None)

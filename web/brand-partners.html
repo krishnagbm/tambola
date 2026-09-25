@@ -232,7 +232,7 @@
     /* 4 Benefit Cards */
     .bp-benefits-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 20px;
     }
 
@@ -287,7 +287,7 @@
     /* Offer Types Grid */
     .bp-offer-types-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 14px;
     }
 
@@ -327,7 +327,7 @@
     /* How It Works 6 Steps */
     .bp-steps-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
 
@@ -377,7 +377,7 @@
 
     .bp-markets-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 14px;
       margin-top: 22px;
     }
@@ -447,7 +447,7 @@
     /* FAQ Grid */
     .bp-faq-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
 
@@ -495,9 +495,40 @@
       gap: 14px;
     }
 
+    .brand-form-grid-pricing {
+      display: grid;
+      grid-template-columns: 1fr 1.45fr 0.95fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 960px) {
+      .bp-benefits-grid,
+      .bp-offer-types-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .bp-steps-grid,
+      .bp-faq-grid,
+      .bp-markets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .brand-form-grid-3,
+      .brand-form-grid-pricing {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
     @media (max-width: 680px) {
       .brand-form-grid,
-      .brand-form-grid-3 {
+      .brand-form-grid-3,
+      .brand-form-grid-pricing,
+      .bp-benefits-grid,
+      .bp-offer-types-grid,
+      .bp-steps-grid,
+      .bp-faq-grid,
+      .bp-markets-grid {
         grid-template-columns: 1fr !important;
       }
       .bp-hero {
@@ -705,7 +736,7 @@
       <h1>Turn Your Brand Offer Into a Game-Winning Experience</h1>
       <p class="bp-hero-sub">Reach engaged players through DabHousie's global gaming platform.</p>
       <p class="bp-hero-lead">
-        DabHousie is a customer-acquisition and promotional channel that turns brand offers and promotional rewards into engaging game moments. Brands can start with a small 10-reward pilot (Start small → test → measure → scale), direct winners to their brand landing page, and scale based on engagement.
+        DabHousie is a customer-acquisition and promotional distribution channel for brands that turns brand offers and promotional rewards into engaging game moments. Brands can start with a small 10-reward pilot (Start small → test → measure → scale), direct winners to their brand landing page, and scale based on engagement.
       </p>
 
       <div class="bp-cta-row">
@@ -1027,7 +1058,7 @@
         </div>
 
         <p class="bp-global-warning">
-          Reward availability and redemption rules may vary by country, currency and brand.
+          We never assume a regional voucher works globally unless explicitly confirmed by your brand. Reward availability and redemption rules may vary by country, currency and brand.
         </p>
       </div>
     </section>
@@ -1164,17 +1195,14 @@
           </div>
 
           <!-- 2 & 3. Retail Value, Reward Sponsorship Value / Host Cost, Voucher Batch -->
-          <div class="brand-form-grid-3">
+          <div class="brand-form-grid-pricing">
             <div class="brand-form-group">
               <label for="bm-retail-price">Offer Retail Value ($) *</label>
               <input type="number" id="bm-retail-price" required min="1" step="0.5" value="15" oninput="updateDiscountBadge()">
               <span class="brand-form-helper">Customer-facing value of the promotional reward.</span>
             </div>
             <div class="brand-form-group">
-              <label for="bm-org-price">
-                Reward Sponsorship Value / Host Cost ($) *
-                <span id="bm-discount-pill" style="color: #34D399; font-weight: 800; margin-left: 4px;">(Brand Sponsored)</span>
-              </label>
+              <label for="bm-org-price">Reward Sponsorship Value / Host Cost ($) *</label>
               <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
               <span class="brand-form-helper">Amount associated with each reward when selected by a game host. Enter $0 if the reward is fully sponsored by the brand.</span>
             </div>
