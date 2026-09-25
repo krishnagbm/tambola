@@ -1803,7 +1803,10 @@
             const disc = Number(o.discount_percent || 0);
             const orgNum = Number(o.organizer_price || 0);
             const orgPrice = orgNum === 0 ? 'FREE ($0)' : `$${orgNum.toFixed(2)}`;
-            const retPrice = Number(o.retail_price || 0).toFixed(0);
+            const retPrice = Number(o.retail_price || o.retail_value || 0).toFixed(0);
+            const title = o.product_title || o.gift_title || 'Sponsored Brand Gift';
+            const desc = o.description || o.gift_description || o.product_description || '';
+            const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
             const url = escapeHtml(o.product_url || '#');
             const domain = resolveBrandDomain(o);
             const logoImg = domain
@@ -1819,22 +1822,25 @@
                     </span>
                     ${orgNum === 0 ? `<span style="background: rgba(16,185,129,0.22); color: #34D399; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;">100% FREE FOR HOST</span>` : (disc > 0 ? `<span style="background: rgba(16,185,129,0.18); color: #34D399; font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 4px;">SAVE ${disc}%</span>` : '')}
                   </div>
-                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(o.product_title)}</div>
-                  <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(o.description || '')}</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(title)}</div>
+                  <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(desc)}</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
                   <div>
                     <span style="font-size: 12.5px; font-weight: 800; color: #34D399;">Host: ${orgPrice}</span>
                     <span style="font-size: 11px; color: #64748B; text-decoration: line-through; margin-left: 4px;">$${retPrice}</span>
+                    <span style="font-size: 10.5px; color: #FCD34D; margin-left: 6px; font-weight: 700;">🎟️ ${vouchersLeft} left</span>
                   </div>
                   <a href="${url}" target="_blank" rel="noopener sponsored" onclick="window.trackBrandGiftClick('${escapeHtml(o.id || '')}')" style="font-size: 11.5px; font-weight: 700; color: #38BDF8; text-decoration: none;">Visit Brand ↗</a>
                 </div>
               </div>
             `;
           }).join('');
+        } else {
+          throw new Error('Server status ' + res.status);
         }
       } catch (e) {
-        grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">Unable to load partner offers right now.</div>';
+        grid.innerHTML = '<div style="font-size: 13px; color: #94A3B8;">Unable to load partner offers right now. <button onclick="loadBrandPartnersCatalog()" style="margin-left:8px; background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4); color:#FDE68A; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:11.5px; font-weight:700;">Retry</button></div>';
       }
     }
 
