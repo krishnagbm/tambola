@@ -22,6 +22,7 @@ docs/generated_200_tickets.json
 docs/generated_250_tickets.json
 docs/sql_generated_250_tickets.json
 docs/AmplifyLogs
+docs/marketting
 docs/secrets
 test/multiplayerTestOutputs
 tests/multiplayer/.auth_cache.json
