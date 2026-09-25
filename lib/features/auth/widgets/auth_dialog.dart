@@ -105,8 +105,12 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     try {
       await signInAction();
       if (mounted) {
+        final user = ref.read(currentUserProvider).value;
+        final isActuallyAuthed = user != null && user.isRegistered;
         Navigator.pop(context);
-        widget.onAuthenticated?.call();
+        if (isActuallyAuthed) {
+          widget.onAuthenticated?.call();
+        }
       }
     } catch (e) {
       if (mounted) {

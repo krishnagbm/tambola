@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/auth_guard.dart';
 import 'corporate_inquiry_dialog.dart';
 
 class DashboardHeroSection extends ConsumerWidget {
@@ -96,11 +95,7 @@ class DashboardHeroSection extends ConsumerWidget {
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
-                      onPressed: () => AuthGuard.requireHostAuth(
-                        context,
-                        ref,
-                        () => context.push('/create-game'),
-                      ),
+                      onPressed: () => context.push('/create-game'),
                       icon: const Icon(Icons.add_circle_outline, size: 18),
                       label: const Text('Host a Game'),
                       style: ElevatedButton.styleFrom(
@@ -140,11 +135,7 @@ class DashboardHeroSection extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     ElevatedButton.icon(
-                      onPressed: () => AuthGuard.requireHostAuth(
-                        context,
-                        ref,
-                        () => context.push('/create-game'),
-                      ),
+                      onPressed: () => context.push('/create-game'),
                       icon: const Icon(Icons.add_circle_outline, size: 18),
                       label: const Text('Host a Game'),
                       style: ElevatedButton.styleFrom(

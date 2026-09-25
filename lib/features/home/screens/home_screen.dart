@@ -6,7 +6,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/auth_guard.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_game.dart';
@@ -512,11 +511,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 14),
                 ElevatedButton.icon(
-                  onPressed: () => AuthGuard.requireHostAuth(
-                    context,
-                    ref,
-                    () => context.push('/create-game'),
-                  ),
+                  onPressed: () => context.push('/create-game'),
                   icon: const Icon(Icons.add_circle_outline, size: 18),
                   label: const Text('Start Free Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
@@ -566,11 +561,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 14),
                 ElevatedButton.icon(
-                  onPressed: () => AuthGuard.requireHostAuth(
-                    context,
-                    ref,
-                    () => context.push('/create-game'),
-                  ),
+                  onPressed: () => context.push('/create-game'),
                   icon: const Icon(Icons.celebration_rounded, size: 18),
                   label: const Text('Host Party (6+ Players)', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
@@ -1087,13 +1078,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Create New Game Hero Button (Guarded)
+            // Create New Game Hero Button
             ElevatedButton.icon(
-              onPressed: () => AuthGuard.requireHostAuth(
-                context,
-                ref,
-                () => context.push('/create-game'),
-              ),
+              onPressed: () => context.push('/create-game'),
               icon: const Icon(Icons.add_circle, color: Colors.black, size: 20),
               label: const Text(
                 'Create New Game Event',
