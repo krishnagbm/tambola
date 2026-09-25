@@ -194,7 +194,7 @@
 
     <div class="highlight-box">
       <h4>🔒 Summary of Our Privacy Commitment</h4>
-      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties, data brokers, or advertising networks. We access authentication provider data (Google Identity, Sign in with Apple, Microsoft / Azure AD OAuth, and verified corporate email OTP) solely for user authentication, organizer session management, and profile display.</p>
+      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties, data brokers, or advertising networks. We access authentication provider data (Google Identity and verified corporate email OTP) solely for user authentication, organizer session management, and profile display.</p>
     </div>
 
     <h2>1. Introduction &amp; Scope</h2>
@@ -203,8 +203,8 @@
 
     <h2>2. Information We Collect and How We Collect It</h2>
 
-    <h3>A. Identity &amp; Single Sign-On (SSO) Providers (Google, Apple, Microsoft / Azure AD, &amp; Corporate Email)</h3>
-    <p>When you register or sign in as an event organizer, we support secure Single Sign-On (SSO) and passwordless authentication through industry-standard OAuth 2.0 and OpenID Connect providers. We request only the minimal public profile information required to identify your account and display your organizer badge:</p>
+    <h3>A. Identity &amp; Single Sign-On (SSO) Providers (Google Identity &amp; Corporate Email OTP)</h3>
+    <p>When you register or sign in as an event organizer, we support secure Single Sign-On (SSO) and passwordless authentication through industry-standard OAuth 2.0 and email verification providers. We request only the minimal public profile information required to identify your account and display your organizer badge:</p>
     
     <div class="table-wrapper">
       <table>
@@ -224,27 +224,15 @@
             <td>Organizer authentication, session security, hosted game history recovery, and display in the organizer dashboard.</td>
           </tr>
           <tr>
-            <td><strong>Sign in with Apple</strong></td>
-            <td>Apple Subject ID (`sub`), Email address (or Apple Private Relay alias `@privaterelay.appleid.com`), Name (shared once upon initial sign-in)</td>
-            <td>Apple ID OAuth / OpenID Connect Scope (`name`, `email`)</td>
-            <td>One-tap native and web organizer authentication. Fully respects Apple's "Hide My Email" privacy relay forwarding.</td>
-          </tr>
-          <tr>
-            <td><strong>Microsoft Entra ID / Azure AD</strong></td>
-            <td>Corporate Email address, Display Name, Tenant/Object ID (`oid`/`sub`)</td>
-            <td>Microsoft Identity OAuth (`openid`, `profile`, `email`, `User.Read`)</td>
-            <td>Corporate organizer authentication, workplace team games, and instant domain-matching verification under our DVAA™ protocol.</td>
-          </tr>
-          <tr>
-            <td><strong>Corporate Email OTP &amp; Passkeys</strong></td>
-            <td>Email address, cryptographic public keys (WebAuthn / FIDO2), and temporary one-time passcodes</td>
-            <td>Direct email OTP verification &amp; browser WebAuthn credentials</td>
-            <td>Passwordless organizer sign-in and cryptographic domain verification for corporate branding without third-party SSO dependencies.</td>
+            <td><strong>Corporate Email OTP</strong></td>
+            <td>Email address and temporary one-time passcode</td>
+            <td>Direct email OTP verification</td>
+            <td>Passwordless organizer sign-in and domain verification for corporate branding without third-party SSO dependencies.</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p><em>Note: We do <strong>NOT</strong> request, receive, or store your passwords, cloud storage files (Google Drive, iCloud, OneDrive), contacts, calendars, or sensitive enterprise tenant directory data.</em></p>
+    <p><em>Note: We do <strong>NOT</strong> request, receive, or store your passwords, cloud storage files (Google Drive), contacts, calendars, or sensitive enterprise directory data.</em></p>
 
     <h3>B. Information Collected During Gameplay (Guests &amp; Players)</h3>
     <ul>
@@ -290,21 +278,12 @@
       <li>We do not use Google user data to train generalized artificial intelligence (AI) or machine learning (ML) models.</li>
     </ul>
 
-    <h2>5A. Apple &amp; Enterprise Identity Disclosures (Sign in with Apple &amp; Microsoft Entra ID)</h2>
-    <p>DabHousie respects user privacy across all supported authentication frameworks:</p>
-    <ul>
-      <li><strong>Sign in with Apple</strong>: Our integration complies fully with Apple's Developer Program License Agreement and Human Interface Guidelines. DabHousie natively honors Apple's "Hide My Email" Private Relay service (generating an anonymous <code>@privaterelay.appleid.com</code> address). We never track users across third-party websites or apps, and we do not share Apple user identifiers with advertising brokers or analytics aggregators.</li>
-      <li><strong>Microsoft Entra ID / Azure AD OAuth</strong>: When authenticating via Microsoft enterprise accounts, we request only the minimal delegated OpenID Connect scopes (<code>openid</code>, <code>profile</code>, <code>email</code>, <code>User.Read</code>) needed to authenticate corporate organizers. DabHousie does not access, read, or index your organization's emails, OneDrive files, Teams messages, or employee directories. Corporate domain verification is solely used to activate Domain-Verified Automated Approval (DVAA™) for official company events.</li>
-    </ul>
-
     <h2>6. Data Sharing and Third-Party Infrastructure</h2>
     <p>We do <strong>NOT</strong> sell, rent, monetize, or trade your personal data. We share data only with the following essential cloud infrastructure subprocessors who are contractually bound to confidentiality and security standards:</p>
     <ul>
       <li><strong>Supabase Inc.</strong> (Database &amp; Authentication): Encrypted PostgreSQL database and authentication engine hosted on secure AWS infrastructure with Row Level Security (RLS).</li>
       <li><strong>Amazon Web Services (AWS Amplify / CloudFront / SES)</strong>: Secure HTTPS web hosting, SSL/TLS certificate management, Content Delivery Network (CDN), and automated transactional email audit deliveries.</li>
       <li><strong>Google LLC (Google Identity Services)</strong>: OAuth 2.0 authentication provider for Google accounts.</li>
-      <li><strong>Apple Inc. (Sign in with Apple)</strong>: Authentication provider for Apple ID and Private Relay email forwarding.</li>
-      <li><strong>Microsoft Corporation (Microsoft Entra ID / Azure AD)</strong>: Enterprise SSO and workplace identity provider.</li>
     </ul>
 
     <h2>7. Cookies and Local Storage</h2>
@@ -321,8 +300,6 @@
     <ul>
       <li><strong>Request Data Deletion</strong>: You can request complete deletion of your account, email address, profile, and hosted game history at any time by emailing us at <a href="mailto:contact@dabhousie.com">contact@dabhousie.com</a> with the subject <em>"Data Deletion Request"</em>. We process all verified deletion requests within 7 business days.</li>
       <li><strong>Revoke Google Account Access</strong>: You can revoke DabHousie's access to your Google Account at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account Permissions Settings</a>.</li>
-      <li><strong>Revoke Apple ID Access</strong>: You can manage or revoke DabHousie's access to your Apple ID at any time through your Apple device settings (<em>Settings &gt; Apple ID &gt; Sign-In &amp; Security &gt; Sign in with Apple</em>) or at <a href="https://appleid.apple.com" target="_blank" rel="noopener">appleid.apple.com</a>.</li>
-      <li><strong>Revoke Microsoft Account Access</strong>: You can review and revoke DabHousie app permissions at any time via your Microsoft account at <a href="https://account.microsoft.com/privacy" target="_blank" rel="noopener">account.microsoft.com/privacy</a> or the enterprise portal at <a href="https://myapps.microsoft.com" target="_blank" rel="noopener">myapps.microsoft.com</a>.</li>
     </ul>
 
     <h2>9. Data Security &amp; Encryption</h2>
