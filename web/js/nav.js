@@ -269,8 +269,63 @@
     autoTrimLogo: window.autoTrimLogo,
   };
 
+  function initDropdownMenus() {
+    const dropdowns = document.querySelectorAll('.nav-dropdown');
+    dropdowns.forEach((dropdown) => {
+      if (dropdown.dataset.dropdownBound === '1') return;
+      dropdown.dataset.dropdownBound = '1';
+
+      let closeTimer = null;
+      const toggle = dropdown.querySelector('.nav-dropdown-toggle');
+
+      dropdown.addEventListener('mouseenter', () => {
+        if (closeTimer) {
+          clearTimeout(closeTimer);
+          closeTimer = null;
+        }
+        dropdown.classList.add('open');
+      });
+
+      dropdown.addEventListener('mouseleave', () => {
+        if (closeTimer) clearTimeout(closeTimer);
+        closeTimer = setTimeout(() => {
+          dropdown.classList.remove('open');
+        }, 200);
+      });
+
+      if (toggle) {
+        toggle.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (closeTimer) {
+            clearTimeout(closeTimer);
+            closeTimer = null;
+          }
+          const isOpen = dropdown.classList.contains('open');
+          document.querySelectorAll('.nav-dropdown.open').forEach((d) => {
+            if (d !== dropdown) d.classList.remove('open');
+          });
+          dropdown.classList.toggle('open', !isOpen);
+        });
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.nav-dropdown')) {
+        document.querySelectorAll('.nav-dropdown.open').forEach((d) => d.classList.remove('open'));
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.nav-dropdown.open').forEach((d) => d.classList.remove('open'));
+      }
+    });
+  }
+
   function initNavAndLogos() {
     syncNavAuth();
+    initDropdownMenus();
     document.querySelectorAll('img.org-logo-img').forEach((img) => {
       if (img.complete && img.naturalWidth > 0) {
         window.autoTrimLogo(img);

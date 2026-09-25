@@ -135,14 +135,15 @@ header.site-header {
   transition: transform 0.2s ease;
 }
 
-.nav-dropdown:hover .arrow-icon {
+.nav-dropdown:hover .arrow-icon,
+.nav-dropdown.open .arrow-icon {
   transform: rotate(180deg);
 }
 
 .dropdown-menu {
   display: none;
   position: absolute;
-  top: calc(100% + 4px);
+  top: 100%;
   left: 0;
   min-width: 270px;
   background: rgba(18, 24, 38, 0.98);
@@ -153,12 +154,23 @@ header.site-header {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   list-style: none;
   padding: 8px;
-  margin: 0;
+  margin-top: 4px;
   z-index: 1010;
 }
 
+/* Invisible hover bridge so moving the cursor from trigger to menu never loses :hover */
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+
 .nav-dropdown:hover .dropdown-menu,
-.nav-dropdown:focus-within .dropdown-menu {
+.nav-dropdown:focus-within .dropdown-menu,
+.nav-dropdown.open .dropdown-menu {
   display: block;
 }
 
