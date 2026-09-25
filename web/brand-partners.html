@@ -1372,9 +1372,22 @@
           </button>
         </div>
 
-        <div class="bp-filter-pills" id="bp-status-filter-group">
-          <button type="button" class="bp-filter-pill active" onclick="setCatalogStatusFilter('ACTIVE', this)">Active</button>
-          <button type="button" class="bp-filter-pill" onclick="setCatalogStatusFilter('EXPIRED', this)">Expired</button>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <select id="bp-category-filter" onchange="setCatalogCategoryFilter(this.value)" aria-label="Filter partner offers by category" style="background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255, 255, 255, 0.14); color: #E2E8F0; border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;">
+            <option value="ALL">🏷️ All Categories</option>
+            <option value="COFFEE">☕ Coffee &amp; Dining</option>
+            <option value="SHOPPING">🛍️ Shopping Vouchers</option>
+            <option value="TECH">🎧 Tech &amp; Gadgets</option>
+            <option value="GOURMET">🍫 Gourmet Hampers</option>
+            <option value="STREAMING">🎬 Entertainment</option>
+            <option value="BEAUTY">✨ Beauty &amp; Lifestyle</option>
+            <option value="FITNESS">👟 Sports &amp; Fitness</option>
+          </select>
+
+          <div class="bp-filter-pills" id="bp-status-filter-group">
+            <button type="button" class="bp-filter-pill active" onclick="setCatalogStatusFilter('ACTIVE', this)">Active</button>
+            <button type="button" class="bp-filter-pill" onclick="setCatalogStatusFilter('EXPIRED', this)">Expired</button>
+          </div>
         </div>
       </div>
 
@@ -1613,6 +1626,49 @@
       loadPartnerDirectory();
     }
 
+    let currentCatalogCategory = 'ALL';
+
+    const CATEGORY_LABELS = {
+      'COFFEE': '☕ Coffee & Dining',
+      'SHOPPING': '🛍️ Shopping',
+      'TECH': '🎧 Tech & Gadgets',
+      'GOURMET': '🍫 Gourmet',
+      'STREAMING': '🎬 Entertainment',
+      'BEAUTY': '✨ Beauty & Lifestyle',
+      'FITNESS': '👟 Sports & Fitness'
+    };
+
+    function setCatalogCategoryFilter(category) {
+      currentCatalogCategory = category || 'ALL';
+      loadPartnerDirectory();
+    }
+
+    function matchesCatalogCategory(offer, categoryFilter) {
+      if (!categoryFilter || categoryFilter === 'ALL') return true;
+      const cat = String(offer.category || '').toLowerCase();
+      const title = String(offer.product_title || offer.gift_title || '').toLowerCase();
+      const brand = String(offer.brand_name || '').toLowerCase();
+      const combined = `${cat} ${title} ${brand}`;
+      switch (categoryFilter) {
+        case 'COFFEE':
+          return cat.includes('coffee') || cat.includes('dining') || combined.includes('starbucks') || combined.includes('uber') || combined.includes('doordash') || combined.includes('swiggy');
+        case 'SHOPPING':
+          return cat.includes('shopping') || cat.includes('retail') || combined.includes('amazon') || combined.includes('target') || combined.includes('flipkart');
+        case 'TECH':
+          return cat.includes('tech') || cat.includes('gadget') || combined.includes('apple') || combined.includes('sony') || combined.includes('digital app') || combined.includes('consulting');
+        case 'GOURMET':
+          return cat.includes('gourmet') || cat.includes('hamper') || combined.includes('godiva') || combined.includes('chocolate');
+        case 'STREAMING':
+          return cat.includes('streaming') || cat.includes('entertainment') || combined.includes('netflix') || combined.includes('spotify');
+        case 'BEAUTY':
+          return cat.includes('beauty') || cat.includes('lifestyle') || combined.includes('sephora') || combined.includes('nykaa');
+        case 'FITNESS':
+          return cat.includes('fitness') || cat.includes('sport') || cat.includes('apparel') || combined.includes('nike') || combined.includes('wellness');
+        default:
+          return cat.includes(categoryFilter.toLowerCase());
+      }
+    }
+
     async function loadPartnerDirectory() {
       const grid = document.getElementById('bp-catalog-grid');
       if (!grid) return;
@@ -1647,9 +1703,12 @@
             return reg.includes(targetLower) || arr.includes(targetLower) || arr.includes('global');
           });
         }
+        if (currentCatalogCategory && currentCatalogCategory !== 'ALL') {
+          offers = offers.filter(o => matchesCatalogCategory(o, currentCatalogCategory));
+        }
 
         if (offers.length === 0) {
-          grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #94A3B8; padding: 32px;">No partner offers found for <strong>${escapeHtml(currentCatalogStatus)}</strong> in <strong>${escapeHtml(currentCatalogCountry)}</strong>.</div>`;
+          grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #94A3B8; padding: 32px;">No partner offers found for the selected filters.</div>`;
           return;
         }
 
@@ -1659,6 +1718,11 @@
             ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" style="width:24px;height:24px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
             : '';
           const offerTypeLabel = OFFER_TYPE_LABELS[String(o.offer_type || 'GIFT_VOUCHER').toUpperCase()] || 'Promotional reward';
+          const rawCat = String(o.category || '').trim();
+          const catLabel = CATEGORY_LABELS[rawCat.toUpperCase()] || rawCat;
+          const catBadgeHtml = catLabel
+            ? `<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(245,158,11,0.14);color:#FCD34D;padding:2px 7px;border-radius:4px;font-weight:600;">${escapeHtml(catLabel)}</span>`
+            : '';
           const regionRaw = o.target_region || 'Global';
           const regionLabel = escapeHtml(regionRaw);
           const regionFlag = getRegionFlagSvg(regionRaw);
@@ -1695,6 +1759,7 @@
                 <div style="font-size:12px;color:#94A3B8;line-height:1.45;margin-bottom:8px;">${escapeHtml(o.product_description || o.description || '')}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:#CBD5E1;">
                   <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🏷️ ${escapeHtml(offerTypeLabel)}</span>
+                  ${catBadgeHtml}
                   <span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">${regionFlag} ${regionLabel}</span>
                   <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:4px;">🗓️ ${expiryStr}</span>
                 </div>

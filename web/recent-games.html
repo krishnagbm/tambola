@@ -1451,9 +1451,9 @@
             </button>
           </div>
 
-          <!-- Country / Region & Status Filters -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 0 6px;">
-            <select id="catalog-country-filter" onchange="filterBrandPartnersCatalog()" aria-label="Filter by Country or Region" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
+          <!-- Country / Region, Category & Status Filters -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 10px 0 6px;">
+            <select id="catalog-country-filter" onchange="filterBrandPartnersCatalog()" aria-label="Filter by Country or Region" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 600; min-width: 0;">
               <option value="ALL">🌎 All Regions</option>
               <option value="Global">🌐 Global</option>
               <option value="United States">United States (USD)</option>
@@ -1463,7 +1463,17 @@
               <option value="Australia">Australia (AUD)</option>
               <option value="Europe">Europe (EUR)</option>
             </select>
-            <select id="catalog-status-filter" onchange="loadBrandPartnersCatalog()" aria-label="Filter by Offer Status" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600;">
+            <select id="catalog-category-filter" onchange="filterBrandPartnersCatalog()" aria-label="Filter by Category" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 600; min-width: 0;">
+              <option value="ALL">🏷️ All Categories</option>
+              <option value="COFFEE">☕ Coffee &amp; Dining</option>
+              <option value="SHOPPING">🛍️ Shopping &amp; Retail</option>
+              <option value="TECH">🔊 Tech, Apps &amp; Audio</option>
+              <option value="GOURMET">🍫 Food &amp; Gourmet</option>
+              <option value="STREAMING">🎬 Streaming &amp; Digital</option>
+              <option value="BEAUTY">✨ Beauty &amp; Wellness</option>
+              <option value="FITNESS">👟 Sports &amp; Apparel</option>
+            </select>
+            <select id="catalog-status-filter" onchange="loadBrandPartnersCatalog()" aria-label="Filter by Offer Status" style="background: #1E293B; border: 1px solid #334155; color: #F8FAFC; border-radius: 6px; padding: 5px 6px; font-size: 11px; font-weight: 600; min-width: 0;">
               <option value="ACTIVE">🟢 Active Offers</option>
               <option value="EXPIRED">⌛ Expired</option>
             </select>
@@ -1957,15 +1967,56 @@
       }
     }
 
+    const CATEGORY_LABELS = {
+      'COFFEE': '☕ Coffee & Dining',
+      'SHOPPING': '🛍️ Shopping',
+      'TECH': '🎧 Tech & Gadgets',
+      'GOURMET': '🍫 Gourmet',
+      'STREAMING': '🎬 Entertainment',
+      'BEAUTY': '✨ Beauty & Lifestyle',
+      'FITNESS': '👟 Sports & Fitness'
+    };
+
+    function matchesCatalogCategory(offer, categoryFilter) {
+      if (!categoryFilter || categoryFilter === 'ALL') return true;
+      const cat = String(offer.category || '').toLowerCase();
+      const title = String(offer.product_title || offer.gift_title || '').toLowerCase();
+      const brand = String(offer.brand_name || '').toLowerCase();
+      const combined = `${cat} ${title} ${brand}`;
+      switch (categoryFilter) {
+        case 'COFFEE':
+          return cat.includes('coffee') || cat.includes('dining') || combined.includes('starbucks') || combined.includes('uber') || combined.includes('doordash') || combined.includes('swiggy');
+        case 'SHOPPING':
+          return cat.includes('shopping') || cat.includes('retail') || combined.includes('amazon') || combined.includes('target') || combined.includes('flipkart');
+        case 'TECH':
+          return cat.includes('tech') || cat.includes('gadget') || combined.includes('apple') || combined.includes('sony') || combined.includes('digital app') || combined.includes('consulting');
+        case 'GOURMET':
+          return cat.includes('gourmet') || cat.includes('hamper') || combined.includes('godiva') || combined.includes('chocolate');
+        case 'STREAMING':
+          return cat.includes('streaming') || cat.includes('entertainment') || combined.includes('netflix') || combined.includes('spotify');
+        case 'BEAUTY':
+          return cat.includes('beauty') || cat.includes('lifestyle') || combined.includes('sephora') || combined.includes('nykaa');
+        case 'FITNESS':
+          return cat.includes('fitness') || cat.includes('sport') || cat.includes('apparel') || combined.includes('nike') || combined.includes('wellness');
+        default:
+          return cat.includes(categoryFilter.toLowerCase());
+      }
+    }
+
     function filterBrandPartnersCatalog() {
       const grid = document.getElementById('brand-offers-grid');
       if (!grid) return;
       const countryFilter = document.getElementById('catalog-country-filter')?.value || 'ALL';
+      const categoryFilter = document.getElementById('catalog-category-filter')?.value || 'ALL';
       const statusFilter = document.getElementById('catalog-status-filter')?.value || 'ACTIVE';
 
       const filtered = allCatalogOffers.filter(o => {
         const oStatus = String(o.status || 'ACTIVE').toUpperCase();
-        if (statusFilter !== 'ALL' && oStatus !== statusFilter) return false;
+        if (statusFilter !== 'ALL') {
+          if (statusFilter === 'ACTIVE' && oStatus !== 'ACTIVE' && oStatus !== 'APPROVED') return false;
+          if (statusFilter !== 'ACTIVE' && oStatus !== statusFilter) return false;
+        }
+        if (!matchesCatalogCategory(o, categoryFilter)) return false;
         if (countryFilter === 'ALL') return true;
         const region = String(o.target_region || 'Global');
         const countries = Array.isArray(o.target_countries) ? o.target_countries : [region];
@@ -1997,6 +2048,11 @@
           : '';
         const regionBadge = escapeHtml(o.target_region || 'Global');
         const offerTypeLabel = OFFER_TYPE_LABELS[o.offer_type] || '🎟️ Partner Offer';
+        const rawCat = String(o.category || '').trim();
+        const catLabel = CATEGORY_LABELS[rawCat.toUpperCase()] || rawCat;
+        const catBadgeHtml = catLabel
+          ? `<span style="font-size: 10px; background: rgba(245,158,11,0.14); color: #FCD34D; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${escapeHtml(catLabel)}</span>`
+          : '';
 
         let topBadgeHtml = '';
         if (isFreeSponsored) {
@@ -2040,6 +2096,7 @@
               <div style="font-size: 13px; font-weight: 700; color: #FFFFFF; margin-bottom: 4px;">${escapeHtml(title)}</div>
               <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px;">
                 <span style="font-size: 10px; background: rgba(56,189,248,0.12); color: #7DD3FC; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${offerTypeLabel}</span>
+                ${catBadgeHtml}
                 <span style="font-size: 10px; background: rgba(255,255,255,0.06); color: #CBD5E1; padding: 1px 6px; border-radius: 4px;">🌍 ${regionBadge}</span>
               </div>
               <div style="font-size: 11.5px; color: #94A3B8; line-height: 1.35;">${escapeHtml(desc)}</div>
