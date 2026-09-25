@@ -76,19 +76,26 @@ class CompanyLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sanitizedDomain = cleanDomain(domain);
-    final fallback = fallbackWidget ??
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: borderRadius ?? BorderRadius.circular(size * 0.15),
-          ),
-          child: Image.asset(AppAssets.monogramDH, fit: fit),
-        );
+    final dabhousieAssetLogo = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: borderRadius ?? BorderRadius.circular(size * 0.15),
+      ),
+      child: Image.asset(AppAssets.monogramDH, fit: fit),
+    );
+    final fallback = fallbackWidget ?? dabhousieAssetLogo;
 
     if (sanitizedDomain.isEmpty) {
       return fallback;
+    }
+
+    if (sanitizedDomain == 'dabhousie.com') {
+      return ClipRRect(
+        borderRadius: borderRadius ?? BorderRadius.circular(size * 0.15),
+        child: dabhousieAssetLogo,
+      );
     }
 
     final logoUrl = buildLogoUrl(

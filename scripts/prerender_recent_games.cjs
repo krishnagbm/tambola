@@ -161,8 +161,11 @@ function generateCardsHtml(games) {
           const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
           const offerIdAttr = escapeHtml(w.offer_id || '');
           const domain = resolveBrandDomain(w);
-          const brandLogoHtml = domain
-            ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+          const logoSrc = (domain === 'dabhousie.com' || String(w.brand_name || '').trim().toLowerCase() === 'dabhousie')
+            ? '/icons/Icon-192.png'
+            : (domain ? `https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}` : '');
+          const brandLogoHtml = logoSrc
+            ? `<img src="${logoSrc}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
             : `<span>🎁</span>`;
 
           if (w.product_url && String(w.product_url).trim()) {

@@ -422,9 +422,8 @@
 
     /* Brand Partner Right-Side Top Card */
     .brand-partner-banner {
-      flex: 1;
-      max-width: 560px;
-      min-width: 340px;
+      width: 380px;
+      flex-shrink: 0;
       display: flex;
     }
 
@@ -481,33 +480,48 @@
     }
 
     .btn-view-brands {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      color: #E2E8F0;
-      padding: 9px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
+      background: rgba(30, 27, 75, 0.85);
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      color: #F8FAFC;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      font-weight: 700;
       cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: border-color 0.15s ease, background 0.15s ease;
     }
 
     .btn-view-brands:hover {
-      border-color: #A855F7;
+      border-color: #C084FC;
+      background: rgba(46, 16, 101, 0.92);
       color: #FFFFFF;
     }
 
-    /* Right-Side Partner Catalog Column (Beside Middle Games Column) */
-    .brand-offers-showcase {
+    /* Dedicated Right Column (Reserves 380px so Middle Games Column Never Jerks/Shifts) */
+    .hall-right-column {
       width: 380px;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: sticky;
+      top: 86px;
+    }
+
+    /* Right-Side Partner Catalog Drawer (Hidden by Default Inside Right Column) */
+    .brand-offers-showcase {
+      width: 100%;
       background: linear-gradient(160deg, rgba(30, 27, 75, 0.94), rgba(15, 23, 42, 0.98));
       border: 1px solid rgba(168, 85, 247, 0.45);
       border-radius: 18px;
       padding: 16px;
       box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
-      position: sticky;
-      top: 86px;
-      max-height: calc(100vh - 106px);
+      max-height: calc(100vh - 148px);
       overflow-y: auto;
       display: none;
     }
@@ -561,14 +575,17 @@
         flex-direction: column;
       }
       .brand-partner-banner {
-        max-width: 100%;
+        width: 100%;
       }
       .hall-workspace-row {
         flex-direction: column-reverse;
       }
-      .brand-offers-showcase {
+      .hall-right-column {
         width: 100%;
         position: static;
+      }
+      .brand-offers-showcase {
+        width: 100%;
         max-height: none;
       }
     }
@@ -796,11 +813,8 @@
             </p>
           </div>
           <div class="brand-banner-actions">
-            <button class="btn-register-brand" onclick="openBrandRegisterModal()">
+            <button class="btn-register-brand" onclick="openBrandRegisterModal()" style="width: 100%; justify-content: center;">
               🚀 Register Brand Gift Offer
-            </button>
-            <button class="btn-view-brands" onclick="toggleBrandPartnersShowcase()" id="btn-toggle-brands">
-              🛍️ View Partner Catalog
             </button>
           </div>
         </div>
@@ -1331,25 +1345,31 @@
         </div>
       </div>
 
-      <!-- Right Empty Space Sidebar: Active Brand Gift Catalog -->
-      <aside class="brand-offers-showcase" id="brand-offers-showcase">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-          <div>
-            <span style="font-size: 12px; font-weight: 800; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px; display: block;">
-              ✨ Partner Gift Catalog
-            </span>
-            <a href="/#/create-game" style="font-size: 11.5px; color: #38BDF8; font-weight: 700; text-decoration: none;">
-              Host a Game &amp; Assign Prizes →
-            </a>
+      <!-- Dedicated Right Column: View Partner Catalog Button + Collapsible Catalog Drawer -->
+      <div class="hall-right-column">
+        <button class="btn-view-brands" onclick="toggleBrandPartnersShowcase()" id="btn-toggle-brands">
+          🛍️ View Partner Catalog
+        </button>
+
+        <aside class="brand-offers-showcase" id="brand-offers-showcase">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div>
+              <span style="font-size: 12px; font-weight: 800; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px; display: block;">
+                ✨ Partner Gift Catalog
+              </span>
+              <a href="/#/create-game" style="font-size: 11.5px; color: #38BDF8; font-weight: 700; text-decoration: none;">
+                Host a Game &amp; Assign Prizes →
+              </a>
+            </div>
+            <button onclick="toggleBrandPartnersShowcase()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: #CBD5E1; border-radius: 8px; padding: 4px 9px; font-size: 11.5px; cursor: pointer;">
+              ✕ Hide
+            </button>
           </div>
-          <button onclick="toggleBrandPartnersShowcase()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.16); color: #CBD5E1; border-radius: 8px; padding: 4px 9px; font-size: 11.5px; cursor: pointer;">
-            ✕ Hide
-          </button>
-        </div>
-        <div class="brand-offers-grid" id="brand-offers-grid">
-          <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
-        </div>
-      </aside>
+          <div class="brand-offers-grid" id="brand-offers-grid">
+            <div style="font-size: 13px; color: #94A3B8; padding: 12px 0;">Loading partner offers...</div>
+          </div>
+        </aside>
+      </div>
     </div>
 
     <!-- Sticky Bottom-Right Register Brand Gift Offer Button (Appears on Scroll) -->
@@ -1446,6 +1466,15 @@
         } catch (_) {}
       }
       return '';
+    }
+
+    function resolveBrandLogoUrl(w) {
+      const domain = resolveBrandDomain(w);
+      if (domain === 'dabhousie.com' || (w && String(w.brand_name || '').trim().toLowerCase() === 'dabhousie')) {
+        return '/icons/Icon-192.png';
+      }
+      if (!domain) return '';
+      return `https://img.logo.dev/${encodeURIComponent(domain)}?format=png&size=128&token=${LOGO_DEV_PK}`;
     }
 
     function formatPrize(type) {
@@ -1596,8 +1625,9 @@
               const giftLabel = escapeHtml(w.gift_title || 'Sponsored Gift');
               const offerIdAttr = escapeHtml(w.offer_id || '');
               const domain = resolveBrandDomain(w);
-              const brandLogoHtml = domain
-                ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+              const logoSrc = resolveBrandLogoUrl(w);
+              const brandLogoHtml = logoSrc
+                ? `<img src="${logoSrc}" alt="${escapeHtml(w.brand_name || domain)} Logo" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
                 : `<span>🎁</span>`;
 
               if (w.product_url && String(w.product_url).trim()) {
@@ -1808,9 +1838,9 @@
             const desc = o.description || o.gift_description || o.product_description || '';
             const vouchersLeft = o.vouchers_remaining != null ? Number(o.vouchers_remaining) : Number(o.vouchers_total_count || 10);
             const url = escapeHtml(o.product_url || '#');
-            const domain = resolveBrandDomain(o);
-            const logoImg = domain
-              ? `<img src="https://img.logo.dev/${encodeURIComponent(domain)}?format=png&amp;size=128&amp;token=${LOGO_DEV_PK}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
+            const logoSrc = resolveBrandLogoUrl(o);
+            const logoImg = logoSrc
+              ? `<img src="${logoSrc}" alt="${escapeHtml(o.brand_name)}" class="winner-brand-logo" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)" onerror="this.style.display='none'">`
               : '';
             return `
               <div class="brand-offer-mini-card">
