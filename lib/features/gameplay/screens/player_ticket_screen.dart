@@ -2103,6 +2103,34 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  String? _formatPrizeGiftDetail(MptGame? game, String prizeKey) {
+    if (game == null) return null;
+    final raw = game.prizeGiftsConfig[prizeKey];
+    if (raw == null) return null;
+    if (raw is String) {
+      final s = raw.trim();
+      return s.isNotEmpty ? s : null;
+    }
+    if (raw is Map) {
+      final title = (raw['title'] ?? raw['brand_name'] ?? '').toString().trim();
+      final val = (raw['prize_value'] as num?)?.toDouble() ?? 0.0;
+      final sym = (raw['currency_symbol'] ??
+              game.prizeGiftsConfig['_currency_symbol'] ??
+              '₹')
+          .toString()
+          .trim();
+      final valStr = val > 0
+          ? '$sym${val == val.roundToDouble() ? val.toInt() : val.toStringAsFixed(2)}'
+          : '';
+      if (title.isNotEmpty && valStr.isNotEmpty) {
+        return '$title ($valStr)';
+      }
+      if (title.isNotEmpty) return title;
+      if (valStr.isNotEmpty) return 'Prize Value: $valStr';
+    }
+    return null;
+  }
+
   Widget _buildPrizeClaimsSection(
     List<String> activePrizes,
     Map<String, MptClaim> approvedClaims,
@@ -2217,7 +2245,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             final winnerUid = approvedClaim?.userId ?? flashWinnerUid;
             final isWonByMe =
                 isApproved && winnerUid != null && winnerUid == currentUserId;
-            final giftDetail = currentGame?.prizeGiftsConfig[prize]?.trim();
+            final giftDetail = _formatPrizeGiftDetail(currentGame, prize);
 
             // Build score summary if FlashHousie prize
             String? scoreSummary =
@@ -2227,7 +2255,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 prize.startsWith('ROUND_')) {
               final rNum = int.tryParse(prize.replaceFirst('ROUND_', ''));
               if (rNum != null) {
-                final cSpec = flashConfig.cycleAt(rNum - 1);
+                final cSpec = flashConfig.cycleAt(rNum);
                 if (cSpec != null && cSpec.winnerCorrectCount != null) {
                   final sec = ((cSpec.winnerReactionMs ?? 0) / 1000)
                       .toStringAsFixed(1);
