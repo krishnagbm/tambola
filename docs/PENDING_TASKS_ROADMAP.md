@@ -1,119 +1,113 @@
-# DabHousie (Multiplayer Tambola) — Pending Task List & Production Roadmap
+# DabHousie™ (Multiplayer Tambola) — Production Readiness & Roadmap
 
-*Generated: September 15, 2026*
-*Platform: DabHousie (https://www.dabhousie.com)*
+*Last Updated: September 26, 2026*  
+*Platform: DabHousie ([https://www.dabhousie.com](https://www.dabhousie.com))*  
+*Release Status: ✅ **100% Ready for Production Go-Live***
 
 ---
 
 ## 🚀 Executive Summary
 
-This document captures the remaining feature backlog, authentication integrations, access-control policies, infrastructure tasks, and monetization milestones for **DabHousie.com**.
+All core gameplay, multi-provider authentication, monetization, corporate security (DVAA™), brand partner marketplace, SEO content, legal compliance, and player onboarding features planned for the **DabHousie™ v1.0 Production Launch** are **completed, verified, and live on `main`**.
 
 ---
 
-## 📌 Phase 1: Authentication & Access Control (High Priority)
+## ✅ Completed Production Milestones (v1.0 Go-Live)
 
-### 1.1 Google & Apple Social Sign-In Integration
-- [ ] **Supabase Provider Setup**:
-  - Enable **Google OAuth** in Supabase Dashboard (Client ID, Client Secret, Authorized Redirect URI `https://itfcnurjrnyalauwwdkj.supabase.co/auth/v1/callback`).
-  - Enable **Sign in with Apple** in Supabase Dashboard (Services ID, Apple Team ID, Key ID, Private Key).
-- [ ] **Web & Mobile Redirects**:
-  - Configure `https://www.dabhousie.com` and `https://www.dabhousie.com/#/` as authorized redirect URLs.
-  - Set up deep-link URI schemes for native iOS/Android apps (`dabhousie://login-callback`).
-- [ ] **Unified Authentication Modal (`AuthModal` / `SignInDialog`)**:
-  - Design a rich, party-themed authentication dialog featuring:
-    - 🔵 **Continue with Google**
-    - 🍏 **Sign in with Apple**
-    - ✉️ **Magic Link / Email OTP**
-- [ ] **Seamless Account Linking (Anonymous to Registered)**:
-  - Allow anonymous players who joined via invite link to link their Google or Apple account seamlessly without losing their wallet balance, hosted games, or ticket history.
-- [ ] **User Profile & Navigation Header**:
-  - Show user's profile avatar, signed-in email/badge in the app bar.
-  - Provide a "Sign In / Register" button for guests and "Manage Account / Sign Out" for authenticated users.
+### 1. Authentication, SSO & Access Control
+- [x] **Google OAuth Sign-In**:
+  - Configured in Supabase & Google Cloud Console; OAuth branding and privacy policy 100% approved by Google.
+- [x] **Sign in with Apple**:
+  - Configured and live in `AuthDialog` and the Profile tab with full Apple Private Relay (`@privaterelay.appleid.com`) support.
+- [x] **Microsoft / Microsoft Entra ID (Azure AD) Sign-In**:
+  - Multitenant + Personal Microsoft account app registered in Azure Portal (`https://itfcnurjrnyalauwwdkj.supabase.co/auth/v1/callback`), enabled in Supabase with `email profile openid` scopes, and live across `AuthDialog` and `HomeScreen`.
+- [x] **6-Digit Passwordless Email OTP**:
+  - Powered by Amazon SES custom SMTP for both corporate work emails (unlocking DVAA™ company branding) and personal emails.
+- [x] **Host & Scheduling Permission Guard (`AuthGuard`)**:
+  - Restricts game creation, scheduling, and credit wallet actions strictly to authenticated organizers while preserving 100% frictionless anonymous guest entry for players (`/#/join/:inviteCode` and `/join.html`).
+- [x] **625 Default Party Nicknames**:
+  - Automatic collision-free party nickname assignment (`Lucky Dabber`, `Cosmic Tiger`, etc.) for guests joining without typing a name.
 
 ---
 
-### 1.2 Host & Scheduling Permission Guard (Registered Users Only)
-- [ ] **Host / Create Game Restriction**:
-  - Restrict **Hosting** and **Scheduling** games strictly to registered/authenticated users (non-anonymous).
-  - When an anonymous user taps **"Host a Game"**, **"Schedule for Later"**, or submits the Create Game form:
-    - Display a polite modal: *"Please sign in with Google or Apple to host and manage DabHousie games."*
-    - Automatically redirect back to the setup flow once authentication succeeds.
-- [ ] **Frictionless Guest Player Entry (Preserve Zero-Friction Play)**:
-  - Maintain 100% frictionless joining for guest players (`/#/join/:inviteCode`) — guest players do **NOT** need to create an account to play.
-- [ ] **Backend Database RLS Enforcement**:
-  - Add PostgreSQL RLS check or RPC assertion in `MPT_create_game` to enforce `NOT auth.is_anonymous()` for game organizers.
+### 2. Player Waiting Lobby & Interactive Onboarding
+- [x] **Real-Time Registration Queue (`RegistrationStatusScreen`)**:
+  - Instant live status updates between `SEAT CONFIRMED` and `WAITING FOR ADMIN CONFIRMATION` with automatic First-Come-First-Served (FCFS) promotion when the host expands room capacity.
+- [x] **Interactive Waiting Lobby Showcase (`PlayerLobbyShowcasePlayer`)**:
+  - Auto-playing, zero-asset animated walkthrough keeping players engaged while waiting for game start:
+    - **Tab A (`🎯 How to Play & Win`)**: Interactive 3×9 ticket dabbing animation, live pattern tracker (Early 5, Lines, Full House), and 1-tap instant claim verification.
+    - **Tab B (`🚀 Host a Game Like This`)**: 3-step visual showcase for prospective hosts (Create Room in 60s, Custom Brand Prizes & DVAA™ Corporate Branding, Big-Screen TV Display & Auto Caller).
 
 ---
 
-## 💳 Phase 2: Monetization & Web Store Checkout
-
-### 2.1 Credit Pack Purchases & Payment Gateway
-- [x] **External Web Checkout Handoff**:
-  - Connect Stripe Hosted Checkout (`stripe.checkout.Session.create`) flow to the **"Buy Credits"** button on `/wallet` and `/pricing.html`.
-  - Pass `user_id`, `email`, and selected credit bundle.
-- [x] **Server-Side Webhook Fulfillment**:
-  - Deploy secure Stripe Webhook handler (`POST /webhook`) verifying signatures (`stripe.Webhook.construct_event`).
-  - Implement atomic, idempotent fulfillment RPC (`MPT_process_stripe_payment`) to credit `MPT_admin_wallets` balance and record ledger in `MPT_credit_transactions` and `MPT_payments`.
-  - Automated HTML purchase confirmation receipt email via AWS SES.
+### 3. Authoritative Gameplay, Audio & Live TV Display
+- [x] **Server-Authoritative 90-Ball Engine**:
+  - Deterministic, validated 3×9 ticket generation (`MPT_start_game_and_charge`), server-side number calling (`MPT_call_next_number`), and instant anti-bogey claim verification (`MPT_submit_claim`).
+- [x] **Synthesized Sound Effects & Voice Caller (`AudioService`)**:
+  - Web Speech API Text-to-Speech (TTS) announcing numbers with classic Tambola/Bingo calls + Web Audio API synthesized sound effects and mute/unmute controls.
+- [x] **Projector / Smart TV Live Display (`/#/live-display/:gameId`)**:
+  - Dedicated fullscreen broadcast view with animated current ball, 1–90 master board, live winners podium, join QR code, and casting guide.
 
 ---
 
-## 🎮 Phase 3: Gameplay & Host Control Enhancements
-
-### 3.1 Audio & Atmosphere (Sound System)
-- [ ] **Tambola Caller Sound Effects & Voice Synthesizer**:
-  - Add optional voice announcement for called numbers (English & Hindi bingo calls, e.g., *"Single number 7 — Lucky Seven!"*).
-  - Add audio cues for: Number Call, Winning Claim Announcement, Confetti Fanfare.
-  - Provide mute/unmute toggle in the gameplay and admin console.
-
-### 3.2 Custom Winning Patterns (Enterprise & Custom Rules)
-- [ ] **Dynamic Pattern Engine**:
-  - Allow hosts to configure custom winning patterns (Star, Breakfast/Lunch/Dinner lines, King/Queen, Corner Plus Center, Bullseye).
-  - Add pattern preview diagrams in the Game Setup screen.
+### 4. Enterprise Features: Private Parties, DVAA™ & Brand Partner Marketplace
+- [x] **Private Party Mode & Seat Passcodes (`MPT_seat_otps`)**:
+  - Excludes private events from public feeds/Hall of Fame and generates 6-digit individual seat passcodes for verified player entry.
+- [x] **Domain-Verified Automated Approval (DVAA™) Corporate Branding**:
+  - Zero-PII corporate identity verification: instant auto-approval when host email domain matches organization domain (via Email OTP or Microsoft Entra ID), or 1-click executive email approval (`brand-approval.html`) with immutable compliance audit logs.
+- [x] **Sponsored Brand Partner & Gift Marketplace**:
+  - Multi-currency prize budget auto-allocator (`USD`, `INR`, `GBP`, `EUR`, `CAD`, `AUD`, `AED`, `SGD`).
+  - Host custom voucher/gift configuration (`BrandGiftPickerDialog`).
+  - Public self-service **Brand Marketing Partner Portal** (`/brand-partners.html`) with one-click admin approval workflow (`brand-offer-approval.html`) and automated winner voucher fulfillment.
 
 ---
 
-## 📱 Phase 4: Mobile App Store Packaging & PWA Push Notifications
-
-### 4.1 Push Notifications & Event Reminders
-- [ ] **Web Push / OneSignal Integration**:
-  - Prompt players with: *"Remind me 5 minutes before the game starts"*.
-  - Send instant push notification when the Host starts the game or seats are confirmed.
-
-### 4.2 App Store Packaging (iOS & Android)
-- [ ] **Android Google Play Store**:
-  - Generate signed Android App Bundle (AAB).
-  - Configure Google Play Billing (if releasing native in-app purchases).
-- [ ] **Apple App Store**:
-  - Build signed iOS IPA with Apple Developer certificate.
-  - Configure StoreKit / In-App Purchases for iOS.
+### 5. Monetization, SEO Content, Legal Compliance & Marketing Suite
+- [x] **Stripe Hosted Checkout & Webhook Fulfillment**:
+  - Serverless AWS Lambda checkout creator (`create_checkout.py`) and signed webhook processor (`stripe_webhook.py`) crediting `MPT_admin_wallets` atomically via `MPT_process_stripe_payment` and sending AWS SES HTML receipts.
+- [x] **AdSense-Safe Integration**:
+  - Google AdSense publisher tags (`ca-pub-6136000774092015`) and `web/ads.txt` deployed; empty/unfilled placeholder boxes are automatically collapsed (`ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }`) so the UI stays clean before and after AdSense review.
+- [x] **Static SEO Content Suite & Sitemap**:
+  - Full static HTML suite (`how-it-works.html`, `how-to-play-tambola.html`, `how-to-play-housie.html`, `90-ball-bingo.html`, `pricing.html`, `recent-games.html`, `brand-partners.html`, `join.html`, `terms-conditions.html`, `privacy-policy.html`) indexed in `sitemap.xml` and linked across both the Flutter Canvas app bar and static headers/footers.
+- [x] **60-Day Automated Game Archival (`MPT_game_archives`)**:
+  - Preserves Hall of Fame winner summaries while purging heavy operational ticket/ball rows after 60 days.
+- [x] **Complete Marketing & Sales Kit (`docs/marketting/`)**:
+  - Playbooks (`00`–`04`), Word strategy guides, Excel CRM outreach tracker, and strictly 1-page Print-to-PDF brochures (`DabHousie_Organizer_Corporate_One_Pager.pdf`, `DabHousie_Brand_Partner_One_Pager.pdf`, `DabHousie_Executive_Media_Kit_2Pages.pdf`).
 
 ---
 
-## 🧹 Phase 5: Database Maintenance & Operations
+## ⏳ External Review & Post-Launch Phase 2 Backlog (Non-Blocking)
 
-### 5.1 Automated Cleanup & Analytics
-- [ ] **Stale Anonymous Session Pruning**:
-  - Set up a scheduled pg_cron job in Supabase to prune inactive anonymous user records (`is_anonymous = true`) with 0 games and 0 wallet balance older than 30 days.
-- [ ] **Host Analytics Dashboard**:
-  - Provide hosts with a summary of past games: total players joined, tickets issued, winners list, and game duration.
+### A. External Third-Party Review (No Code Action Needed)
+| Item | Current State | Notes |
+| :--- | :--- | :--- |
+| **Google AdSense Approval** | ⏳ Pending Google Review | Script & `ads.txt` are live; unfilled ad containers are hidden automatically until Google activates ad serving. |
+
+### B. Optional Phase 2 Post-Launch Enhancements
+These items are **not required** for web go-live and can be scheduled based on user feedback after launch:
+- [ ] **Native Mobile App Store Packaging (iOS `.ipa` & Android `.aab`)**:
+  - Package the Flutter project for Google Play Store and Apple App Store distribution (web app already works natively on all mobile browsers with zero install).
+- [ ] **Additional Custom Enterprise Winning Patterns**:
+  - Expand beyond the 7 core patterns (Early 5, Top/Middle/Bottom Line, Four Corners, 1st & 2nd Full House) to include optional novelty patterns (Star, Bullseye, Breakfast/Lunch/Dinner).
+- [ ] **Web Push Notifications (OneSignal / FCM)**:
+  - Optional browser push reminders 5 minutes before a scheduled game starts.
 
 ---
 
-## 📋 Summary Checklist
+## 📋 Production Go-Live Summary Matrix
 
 | Task Area | Feature / Goal | Status |
 | :--- | :--- | :--- |
-| **Auth** | Google OAuth Implementation & Profile Sync | ✅ Completed & Live |
-| **Auth** | Google Cloud OAuth Branding & Privacy Approval | ✅ 100% Approved by Google |
-| **Auth** | Host Permission Guard (Registered Users Only) | ✅ Completed & Guarded |
-| **Auth** | Apple OAuth Sign-In (Services ID / Apple Key) | ⏳ Ready to Implement |
-| **Auth** | Frictionless Anonymous Joining for Players | ✅ Completed & Live |
-| **Capacity** | Instant 0ms Group Size Selector (6 Confirmed Tiers) | ✅ Completed & Live |
-| **Brand** | DabHousie Logo, Dark Mode UI & OpenGraph Preview | ✅ Completed & Live |
-| **Domain** | Custom Domain (`dabhousie.com`) Live on Amplify | ✅ Completed & Live |
-| **Payments** | Stripe Hosted Checkout & Webhook Fulfillment | ✅ Completed & Ready to Deploy |
-| **Audio** | Sound Effects & Bingo Call Synthesizer | ⏳ Ready to Plan |
-| **Patterns** | Custom Enterprise Winning Patterns | ⏳ Backlog |
-| **Mobile** | Native iOS & Android App Store Packaging | ⏳ Backlog |
+| **Auth** | Google OAuth Implementation & Google Cloud Verification | ✅ Completed & Live |
+| **Auth** | Apple OAuth Sign-In (Services ID / Apple Key) | ✅ Completed & Live |
+| **Auth** | Microsoft / Entra ID OAuth Sign-In (Work & Personal) | ✅ Completed & Live |
+| **Auth** | 6-Digit Email OTP via Amazon SES | ✅ Completed & Live |
+| **Auth** | Host Permission Guard & Frictionless Anonymous Guest Join | ✅ Completed & Live |
+| **Lobby** | Interactive Waiting Lobby Showcase (How to Play + Host Promo) | ✅ Completed & Live |
+| **Gameplay** | 90-Ball Engine, Audio/TTS Caller & Big-Screen TV Display | ✅ Completed & Live |
+| **Enterprise** | Private Party Passcodes & DVAA™ Corporate Brand Verification | ✅ Completed & Live |
+| **Marketplace** | Brand Partner Portal (`brand-partners.html`) & Multi-Currency Gifts | ✅ Completed & Live |
+| **Payments** | Stripe Hosted Checkout, Webhook Fulfillment & SES Receipts | ✅ Completed & Live |
+| **Ads** | AdSense Setup (`ads.txt` + Unfilled Placeholder Hiding) | ✅ Completed & Live (Review Pending) |
+| **Legal & SEO** | Privacy Policy, Terms (incl. Microsoft & Brand Partners) & Sitemap | ✅ Completed & Live |
+| **Marketing** | Complete Marketing Kit, CRM Tracker & 1-Page PDF Brochures | ✅ Completed & Ready |

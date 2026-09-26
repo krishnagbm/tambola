@@ -1,109 +1,54 @@
-# Walkthrough: Multiplayer Tambola Mobile Application (Flutter / Android & iOS)
+# Technical Walkthrough: DabHousie™ Multiplayer Tambola Platform
 
-We have implemented the complete cross-platform **Multiplayer Tambola Mobile App** adhering to all frozen product decisions, identity rules (Master README v1.2 & Document 9), and database namespace isolation requirements (`MPT_`).
+*Last Updated: September 26, 2026*  
+*Production URL: [https://www.dabhousie.com](https://www.dabhousie.com)*
+
+We have implemented and deployed the complete cross-platform **DabHousie™ (Multiplayer Tambola, Housie & 90-Ball Bingo)** platform adhering to all product, security, identity, monetization, and database namespace isolation requirements (`MPT_`).
 
 ---
 
-## 1. Key Accomplishments
+## 1. Key Architectural Accomplishments
 
-### Database Architecture & Strict `MPT_` Isolation
-All tables, views, and RPC functions use the `MPT_` namespace to ensure coexistence and isolation within your shared Supabase project:
-- [20260901000001_mpt_core_schema.sql](file:///c:/dev/Tambola/supabase/migrations/20260901000001_mpt_core_schema.sql):
+### A. Database Architecture & Strict `MPT_` Isolation (33 Migrations)
+All tables, views, triggers, and RPC functions use the `MPT_` namespace within Supabase PostgreSQL:
+- **Core Schema & Gameplay Engine** ([20260901000001_mpt_core_schema.sql](file:///c:/dev/Tambola/supabase/migrations/20260901000001_mpt_core_schema.sql) – [20260914000001_sync_custom_capacity_tiers.sql](file:///c:/dev/Tambola/supabase/migrations/20260914000001_sync_custom_capacity_tiers.sql)):
   - Tables: `MPT_users`, `MPT_admin_profiles`, `MPT_capacity_tiers`, `MPT_admin_wallets`, `MPT_credit_transactions`, `MPT_games`, `MPT_game_registrations`, `MPT_player_tickets`, `MPT_game_charges`, `MPT_called_numbers`, `MPT_claims`, `MPT_rewards`, `MPT_notifications`.
-  - Indexes & Row Level Security (RLS) policies for secure multi-tenant access.
-- [20260901000002_mpt_functions_and_rpcs.sql](file:///c:/dev/Tambola/supabase/migrations/20260901000002_mpt_functions_and_rpcs.sql):
-  - `MPT_upsert_user`: Synchronizes anonymous player profile.
-  - `MPT_create_game`: Generates 6-character alphanumeric invite code and initializes game.
-  - `MPT_register_player`: Server-authoritative sequence assignment with automatic `CONFIRMED` vs `WAITING` assignment.
-  - `MPT_increase_game_capacity`: Promotes `WAITING` players First-Come-First-Served (FCFS) by sequence and publishes `SEAT_CONFIRMED` notifications.
-  - `MPT_add_mock_credits`: Ledger-backed mock top-up for testing.
-  - `MPT_start_game_and_charge`: Atomic transaction that charges credits, freezes capacity, promotes confirmed seats to `ELIGIBLE`, and generates 3x9 tickets.
-  - `MPT_call_next_number`: Authoritative server caller broadcasting numbers (1–90).
-- [20260901000003_mpt_claims_and_rewards_rpc.sql](file:///c:/dev/Tambola/supabase/migrations/20260901000003_mpt_claims_and_rewards_rpc.sql):
-  - `MPT_submit_claim`: Validates marked numbers against authoritative called numbers (detects Bogey vs Valid claims) and generates unique voucher reference codes.
-  - `MPT_verify_reward`: Admin reward verification interface.
+  - Authoritative RPCs: `MPT_upsert_user`, `MPT_create_game`, `MPT_register_player`, `MPT_increase_game_capacity`, `MPT_start_game_and_charge`, `MPT_call_next_number`, `MPT_submit_claim`, `MPT_verify_reward`, `MPT_organizer_close_claim`.
+- **Stripe Payments & Ledger** ([20260916000001_mpt_payments_and_stripe.sql](file:///c:/dev/Tambola/supabase/migrations/20260916000001_mpt_payments_and_stripe.sql)):
+  - `MPT_payments` table and idempotent `MPT_process_stripe_payment` RPC.
+- **Private Party Passcodes** ([20260920000001_mpt_private_parties_otps.sql](file:///c:/dev/Tambola/supabase/migrations/20260920000001_mpt_private_parties_otps.sql)):
+  - `MPT_seat_otps` and `MPT_verify_seat_otp` for private events.
+- **60-Day Game Archives & DVAA™ Corporate Brand Approvals** ([20260922000001_mpt_game_archives_and_purge.sql](file:///c:/dev/Tambola/supabase/migrations/20260922000001_mpt_game_archives_and_purge.sql) – [20260924000003_fix_archive_and_dvaa_sync.sql](file:///c:/dev/Tambola/supabase/migrations/20260924000003_fix_archive_and_dvaa_sync.sql)):
+  - `MPT_game_archives`, `MPT_brand_approvals`, and automated 60-day operational data purge preserving Hall of Fame winner records.
+- **Sponsored Brand Partner & Voucher Marketplace** ([20260925000001_brand_gifts_marketplace.sql](file:///c:/dev/Tambola/supabase/migrations/20260925000001_brand_gifts_marketplace.sql) – [20260925000009_fix_uber_gift_card_url.sql](file:///c:/dev/Tambola/supabase/migrations/20260925000009_fix_uber_gift_card_url.sql)):
+  - `MPT_brand_offers`, `MPT_brand_vouchers`, `MPT_register_brand_offer`, and `MPT_approve_brand_offer`.
 
 ---
 
-### Core Flutter Mobile Implementation
-- **Configuration & Environment**: [AppConfig](file:///c:/dev/Tambola/lib/core/config/app_config.dart) loads credentials from `.env` or `--dart-define` with configurable web purchase URL.
-- **Theme**: [AppTheme](file:///c:/dev/Tambola/lib/core/theme/app_theme.dart) provides celebratory, high-contrast dark theme optimized for mobile and projector screens.
-- **Ticket Engine**: [TambolaTicketHelper](file:///c:/dev/Tambola/lib/core/utils/tambola_ticket.dart) manages 3x9 grid rules, vertical column ordering, and pattern validation (Early 5, Top/Middle/Bottom Line, Four Corners, Full House).
-- **State Management**: [app_providers.dart](file:///c:/dev/Tambola/lib/providers/app_providers.dart) with Riverpod and Supabase Realtime stream bindings.
-- **Declarative Navigation**: [app_router.dart](file:///c:/dev/Tambola/lib/router/app_router.dart) with GoRouter deep linking.
+### B. Multi-Provider Identity & Access Control
+- **Organizer Authentication** ([auth_dialog.dart](file:///c:/dev/Tambola/lib/features/auth/widgets/auth_dialog.dart), [auth_repository.dart](file:///c:/dev/Tambola/lib/repositories/auth_repository.dart)):
+  - **Google Sign-In** (OAuth 2.0)
+  - **Sign in with Apple** (OAuth 2.0 + Apple Private Relay support)
+  - **Microsoft / Microsoft Entra ID** (Azure AD Multitenant + Personal Microsoft Accounts with `email profile openid` scopes)
+  - **6-Digit Email OTP** (Amazon SES SMTP for corporate work emails and personal emails)
+- **Zero-Friction Guest Entry**:
+  - Players join via `/#/join/:inviteCode` or `/join.html` using anonymous Supabase sessions and automatic collision-free party nicknames (625 combinations).
 
 ---
 
-### Feature Screens & User Flows
-
-1. **Home Screen** ([home_screen.dart](file:///c:/dev/Tambola/lib/features/home/screens/home_screen.dart)):
-   - Anonymous player profile bar with avatar/display name editor.
-   - Action cards for **Join Game** and **Create Game**.
-   - Admin wallet credits summary and quick navigation to Rewards & Verification.
-2. **Game Setup** ([create_game_screen.dart](file:///c:/dev/Tambola/lib/features/game_setup/screens/create_game_screen.dart)):
-   - Event name, capacity tier selection (1–25, 26–50, 51–100, 101–250), and customizable winning prize rules.
-   - Generates invite code with one-tap clipboard copy.
-3. **Join Game** ([join_game_screen.dart](file:///c:/dev/Tambola/lib/features/registration/screens/join_game_screen.dart)):
-   - Invite code lookup with live game preview and display profile confirmation.
-4. **Registration Status** ([registration_status_screen.dart](file:///c:/dev/Tambola/lib/features/registration/screens/registration_status_screen.dart)):
-   - Clear, unambiguous distinction between `SEAT CONFIRMED` (green card with registration #) and `WAITING FOR ADMIN CONFIRMATION` (amber card with queue position).
-   - Real-time listener: When Admin expands capacity, screen automatically updates to `SEAT CONFIRMED!`.
-5. **Admin Lobby** ([admin_lobby_screen.dart](file:///c:/dev/Tambola/lib/features/admin_lobby/screens/admin_lobby_screen.dart)):
-   - Live metrics (Registered, Confirmed, Waiting, Capacity, Credits).
-   - Capacity warning alert when overflow players are waiting.
-   - "+25 Seats Capacity" and "+200 Mock Credits" buttons.
-   - "Start Game & Deduct Credits" button.
-6. **Player Ticket Screen** ([player_ticket_screen.dart](file:///c:/dev/Tambola/lib/features/gameplay/screens/player_ticket_screen.dart)):
-   - Interactive 3x9 grid ticket with tap-to-dab numbers.
-   - Latest called ball banner and past called carousel.
-   - Instant prize claim buttons with server validation and Bogey detection.
-7. **Admin Game Control Screen** ([admin_game_control_screen.dart](file:///c:/dev/Tambola/lib/features/gameplay/screens/admin_game_control_screen.dart)):
-   - Number caller button with 1–90 master board matrix and claims queue.
-8. **Admin Wallet & Web Checkout** ([wallet_screen.dart](file:///c:/dev/Tambola/lib/features/wallet/screens/wallet_screen.dart)):
-   - Credit balance, validity policy (1 year from most recent paid game), pricing tier table, transaction ledger, and external web checkout handoff.
-9. **Rewards & Verification** ([rewards_screen.dart](file:///c:/dev/Tambola/lib/features/rewards/screens/rewards_screen.dart), [verify_reward_screen.dart](file:///c:/dev/Tambola/lib/features/rewards/screens/verify_reward_screen.dart)):
-   - In-app rewards list with server-generated voucher reference codes and QR codes.
-   - Admin voucher lookup and verification screen.
-10. **Live Display (Projector Screen)** ([live_game_display_screen.dart](file:///c:/dev/Tambola/lib/features/live_display/screens/live_game_display_screen.dart)):
-    - Responsive big-screen view displaying the master board, animated current ball, and live winners ticker.
-
----
-
-## 2. Test Verification
-
-Automated unit tests verified:
-- **Tambola Ticket Generator & Pattern Engine**: Validated 3x9 grid rules, exactly 5 numbers per row, column limits, and winning conditions (Early 5, Top Line, Middle Line, Bottom Line, Four Corners, Full House).
-- **Models & Serialization**: Validated JSON serialization for `MptUser`, `MptGame`, `MptRegistration`, `MptWallet`, `MptTicket`, and `MptReward`.
-- **App Theme**: Tested Material 3 dark theme tokens and contrast ratios.
-
-```
-00:00 +0: C:/dev/Tambola/test/unit/models_test.dart: MptUser serialization
-00:00 +1: C:/dev/Tambola/test/unit/models_test.dart: MptGame state logic
-00:00 +2: C:/dev/Tambola/test/unit/models_test.dart: MptRegistration seat status checks
-00:00 +3: C:/dev/Tambola/test/unit/models_test.dart: MptWallet balance and transactions
-00:00 +4: C:/dev/Tambola/test/unit/models_test.dart: MptReward voucher reference
-00:00 +5: C:/dev/Tambola/test/unit/tambola_ticket_test.dart: 3x9 grid structure (15 numbers)
-00:00 +6: C:/dev/Tambola/test/unit/tambola_ticket_test.dart: Winning patterns detection
-00:00 +7: C:/dev/Tambola/test/widget_test.dart: App theme smoke test
-00:00 +8: All tests passed!
-```
-
----
-
-## 3. Applying Migrations to Your Supabase Project
-
-To execute the migrations in your existing Supabase project:
-1. Open your Supabase Dashboard -> **SQL Editor**.
-2. Run the SQL scripts in order:
-   - `supabase/migrations/20260901000001_mpt_core_schema.sql`
-   - `supabase/migrations/20260901000002_mpt_functions_and_rpcs.sql`
-   - `supabase/migrations/20260901000003_mpt_claims_and_rewards_rpc.sql`
-3. Update your `.env` file in `c:\dev\Tambola\.env` with your project URL and public anon key:
-   ```env
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your-supabase-anon-key
-   ```
-4. Run the app:
-   ```bash
-   flutter run
-   ```
+### C. Core Flutter Screens & User Flows
+1. **Home Dashboard** ([home_screen.dart](file:///c:/dev/Tambola/lib/features/home/screens/home_screen.dart)):
+   - Quick join/host actions, active & recent games feed, organizer wallet summary, rewards tab, and profile/SSO management.
+2. **Game Setup & Corporate Branding** ([create_game_screen.dart](file:///c:/dev/Tambola/lib/features/game_setup/screens/create_game_screen.dart), [brand_gift_picker_dialog.dart](file:///c:/dev/Tambola/lib/features/game_setup/widgets/brand_gift_picker_dialog.dart)):
+   - 6 instant capacity tiers (`1–5 Free`, `15`, `25`, `50`, `100`, `250`), Private Party toggle, DVAA™ corporate branding verification, and multi-currency prize & brand gift allocator (`USD`, `INR`, `GBP`, `EUR`, `CAD`, `AUD`, `AED`, `SGD`).
+3. **Player Waiting Lobby & Interactive Showcase** ([registration_status_screen.dart](file:///c:/dev/Tambola/lib/features/registration/screens/registration_status_screen.dart), [player_lobby_showcase_player.dart](file:///c:/dev/Tambola/lib/features/registration/widgets/player_lobby_showcase_player.dart)):
+   - Real-time `SEAT CONFIRMED` / `WAITING FOR ADMIN CONFIRMATION` status banner.
+   - Dual-tab auto-playing animated showcase (**🎯 How to Play & Win** and **🚀 Host a Game Like This**).
+4. **Admin Pre-Game Lobby** ([admin_lobby_screen.dart](file:///c:/dev/Tambola/lib/features/admin_lobby/screens/admin_lobby_screen.dart)):
+   - Live player roster, 1-click capacity expansion, WhatsApp/QR sharing, private seat OTP distribution, and atomic game start.
+5. **Live Gameplay & Audio Engine** ([player_ticket_screen.dart](file:///c:/dev/Tambola/lib/features/gameplay/screens/player_ticket_screen.dart), [admin_game_control_screen.dart](file:///c:/dev/Tambola/lib/features/gameplay/screens/admin_game_control_screen.dart), [audio_service.dart](file:///c:/dev/Tambola/lib/core/services/audio_service.dart)):
+   - Interactive 3×9 ticket with tap-to-dab, auto-caller timer, Web Speech TTS number announcements, synthesized sound effects, and instant server-side claim validation.
+6. **Big-Screen TV / Projector Display** ([live_game_display_screen.dart](file:///c:/dev/Tambola/lib/features/live_display/screens/live_game_display_screen.dart)):
+   - Fullscreen 90-ball master board, 3D animated current ball, live winners podium, and join QR code.
+7. **Rewards, Claims & Wallet** ([rewards_screen.dart](file:///c:/dev/Tambola/lib/features/rewards/screens/rewards_screen.dart), [verify_reward_screen.dart](file:///c:/dev/Tambola/lib/features/rewards/screens/verify_reward_screen.dart), [organizer_claims_screen.dart](file:///c:/dev/Tambola/lib/features/wallet/screens/organizer_claims_screen.dart), [wallet_screen.dart](file:///c:/dev/Tambola/lib/features/wallet/screens/wallet_screen.dart)):
+   - Digital winner reward cards with `DBH-` verification codes, brand voucher redemption links, and Stripe credit pack top-ups.
