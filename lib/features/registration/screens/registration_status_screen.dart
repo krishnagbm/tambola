@@ -9,6 +9,7 @@ import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
+import '../widgets/player_lobby_showcase_player.dart';
 
 class RegistrationStatusScreen extends ConsumerWidget {
   final String gameId;
@@ -137,6 +138,14 @@ class RegistrationStatusScreen extends ConsumerWidget {
 
                         const SizedBox(height: 20),
 
+                        // Interactive Lobby Showcase Player ("How to Play" + "How to Host") while waiting
+                        if (!game.isCompleted &&
+                            game.status != 'COMPLETED' &&
+                            !game.isCancelled) ...[
+                          const PlayerLobbyShowcasePlayer(),
+                          const SizedBox(height: 20),
+                        ],
+
                         // Sponsor / Ad Banner Slot (Item 3)
                         _buildAdBannerSlot(
                           isCompleted: game.isCompleted || game.status == 'COMPLETED',
@@ -182,7 +191,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.accentDanger.withOpacity(0.12),
+        color: AppTheme.accentDanger.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.accentDanger, width: 2),
       ),
@@ -191,7 +200,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.accentDanger.withOpacity(0.2),
+              color: AppTheme.accentDanger.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.cancel_outlined, size: 54, color: AppTheme.accentDanger),
@@ -252,7 +261,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.15),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.emoji_events, size: 54, color: AppTheme.secondaryColor),
@@ -358,7 +367,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.accentSuccess.withOpacity(0.12),
+        color: AppTheme.accentSuccess.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.accentSuccess, width: 2),
       ),
@@ -367,7 +376,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.accentSuccess.withOpacity(0.2),
+              color: AppTheme.accentSuccess.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check_circle, size: 54, color: AppTheme.accentSuccess),
@@ -422,7 +431,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.accentWarning.withOpacity(0.12),
+        color: AppTheme.accentWarning.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.accentWarning, width: 2),
       ),
@@ -431,7 +440,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.accentWarning.withOpacity(0.2),
+              color: AppTheme.accentWarning.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.hourglass_top_rounded, size: 54, color: AppTheme.accentWarning),
