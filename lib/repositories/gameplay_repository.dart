@@ -296,13 +296,37 @@ class GameplayRepository {
               winnerDisplayName = myScores.first.displayName;
             }
             final totalTargets = flashCfg.totalTargetNumbersAcrossAllCycles;
-            final totalRecalled = myScores.isNotEmpty
-                ? myScores.fold<int>(0, (sum, s) => sum + s.correctCount)
-                : markedNumbers.length;
+            final allCalledTrueNums = <int>{
+              for (final c in flashCfg.cycles)
+                ...c.trueNumbers.where((n) => c.calledNumbers.contains(n)),
+            };
+            final validMarkedAll = markedNumbers
+                .where((n) => allCalledTrueNums.contains(n))
+                .toSet();
+            for (final s in myScores) {
+              validMarkedAll.addAll(s.correctNumbers);
+            }
+            numbersToRecord = validMarkedAll.toList();
+
+            final scoreSum =
+                myScores.fold<int>(0, (sum, s) => sum + s.correctCount);
+            final totalRecalled = scoreSum >= validMarkedAll.length
+                ? scoreSum
+                : validMarkedAll.length;
             final totalReactMs = myScores.isNotEmpty
                 ? myScores.fold<int>(0, (sum, s) => sum + s.totalReactionMs)
                 : (totalRecalled * 2200);
-            final isLastRoundDone = flashCfg.cycles.last.isCompleted;
+            final lastRoundKey = 'ROUND_${flashCfg.totalCycles}';
+            final lastRoundWins = await _supabase
+                .from('MPT_claims')
+                .select('id')
+                .eq('game_id', gameId)
+                .eq('prize_type', lastRoundKey)
+                .eq('status', 'APPROVED');
+            final isLastRoundDone =
+                flashCfg.cycles.last.isCompleted ||
+                flashCfg.awardedWinners.containsKey(lastRoundKey) ||
+                (lastRoundWins as List).isNotEmpty;
             if (awardedUid != uid &&
                 !isLastRoundDone &&
                 totalRecalled < totalTargets) {
@@ -345,16 +369,82 @@ class GameplayRepository {
             });
           } catch (_) {}
 
+          final nextWinners = Map<String, String>.from(flashCfg.awardedWinners)
+            ..[prizeType] = uid;
+          final nextNames =
+              Map<String, String>.from(flashCfg.awardedWinnerNames)
+                ..[prizeType] = winnerDisplayName;
+          final nextSummaries =
+              Map<String, String>.from(flashCfg.awardedWinnerScoreSummaries)
+                ..[prizeType] = scoreSummary;
+
+          // If the final round (e.g. ROUND_3 of 3) was just won, automatically crown FULL_HOUSE immediately!
+          if (prizeType == 'ROUND_${flashCfg.totalCycles}') {
+            try {
+              final fhWins = await _supabase
+                  .from('MPT_claims')
+                  .select('id')
+                  .eq('game_id', gameId)
+                  .eq('prize_type', 'FULL_HOUSE')
+                  .eq('status', 'APPROVED');
+              if ((fhWins as List).isEmpty) {
+                final updatedAllScores = await getMemoryRoundScores(gameId);
+                final Map<String, MptMemoryRoundScore> cumByUser = {};
+                for (final s in updatedAllScores) {
+                  final ex = cumByUser[s.userId];
+                  if (ex == null) {
+                    cumByUser[s.userId] = s;
+                  } else {
+                    final comb = <int>{
+                      ...ex.correctNumbers,
+                      ...s.correctNumbers,
+                    }.toList();
+                    cumByUser[s.userId] = MptMemoryRoundScore(
+                      id: ex.id,
+                      gameId: ex.gameId,
+                      userId: ex.userId,
+                      displayName: s.displayName,
+                      avatar: s.avatar,
+                      cycleIndex: 0,
+                      quadrantLabel: 'CUMULATIVE',
+                      correctNumbers: comb,
+                      correctCount: ex.correctCount + s.correctCount,
+                      wrongTapCount: ex.wrongTapCount + s.wrongTapCount,
+                      totalReactionMs: ex.totalReactionMs + s.totalReactionMs,
+                      updatedAt: s.updatedAt,
+                    );
+                  }
+                }
+                final ranked = cumByUser.values
+                    .where((u) => u.correctCount > 0)
+                    .toList()
+                  ..sort(MptMemoryRoundScore.compareStandings);
+                final fhWinner = ranked.isNotEmpty ? ranked.first : null;
+                final fhUid = fhWinner?.userId ?? uid;
+                final fhName = fhWinner?.displayName ?? winnerDisplayName;
+                final totalTargets = flashCfg.totalTargetNumbersAcrossAllCycles;
+                final fhCount = fhWinner?.correctCount ?? numbersToRecord.length;
+                final fhReactSec =
+                    (((fhWinner?.totalReactionMs ?? 15000) / 1000))
+                        .toStringAsFixed(1);
+                final fhSummary =
+                    '✓ $fhCount/$totalTargets Total Recalls • ⚡ ${fhReactSec}s';
+                nextWinners['FULL_HOUSE'] = fhUid;
+                nextNames['FULL_HOUSE'] = fhName;
+                nextSummaries['FULL_HOUSE'] = fhSummary;
+                await _recordFlashHousieWinnerClaim(
+                  gameId: gameId,
+                  winnerUserId: fhUid,
+                  prizeType: 'FULL_HOUSE',
+                  markedNumbers: fhWinner?.correctNumbers ?? numbersToRecord,
+                  scoreSummary: fhSummary,
+                );
+              }
+            } catch (_) {}
+          }
+
           // Best-effort sync into MPT_games.prize_gifts_config['_flash_housie']
           try {
-            final nextWinners = Map<String, String>.from(flashCfg.awardedWinners)
-              ..[prizeType] = uid;
-            final nextNames =
-                Map<String, String>.from(flashCfg.awardedWinnerNames)
-                  ..[prizeType] = winnerDisplayName;
-            final nextSummaries =
-                Map<String, String>.from(flashCfg.awardedWinnerScoreSummaries)
-                  ..[prizeType] = scoreSummary;
             await updateFlashHousieConfig(
               gameId: gameId,
               currentPrizeGiftsConfig: prizeGifts,
@@ -828,6 +918,57 @@ class GameplayRepository {
             final existing = merged[key];
             merged[key] = existing == null ? s : _pickBetterScore(existing, s);
           }
+        }
+      }
+    } catch (_) {}
+
+    // 3b. Reconstruct round scores from APPROVED 'ROUND_%' claims in MPT_claims
+    try {
+      final roundWinRows = await _supabase
+          .from('MPT_claims')
+          .select('user_id, prize_type, marked_numbers, rejection_reason, submitted_at')
+          .eq('game_id', gameId)
+          .eq('status', 'APPROVED')
+          .like('prize_type', 'ROUND_%');
+      for (final raw in (roundWinRows as List)) {
+        final rowMap = Map<String, dynamic>.from(raw as Map);
+        final userId = rowMap['user_id'] as String?;
+        final prizeType = rowMap['prize_type'] as String?;
+        if (userId == null || prizeType == null) continue;
+        final cycleNum = int.tryParse(prizeType.replaceFirst('ROUND_', ''));
+        if (cycleNum == null) continue;
+        final markedRaw = rowMap['marked_numbers'];
+        final markedList = markedRaw is List
+            ? markedRaw.map((e) => (e as num).toInt()).toList()
+            : <int>[];
+        final reasonStr = rowMap['rejection_reason'] as String? ?? '';
+        int reactionMs = 0;
+        final match = RegExp(r'⚡\s*([\d.]+)s').firstMatch(reasonStr);
+        if (match != null) {
+          final secs = double.tryParse(match.group(1) ?? '');
+          if (secs != null) reactionMs = (secs * 1000).round();
+        }
+        final key = '${cycleNum}_$userId';
+        final existing = merged[key];
+        final s = MptMemoryRoundScore(
+          id: 'claim_${gameId}_r${cycleNum}_$userId',
+          gameId: gameId,
+          userId: userId,
+          displayName: existing?.displayName ?? 'Player',
+          avatar: existing?.avatar ?? '🎯',
+          cycleIndex: cycleNum,
+          quadrantLabel: 'R$cycleNum-Q$cycleNum',
+          correctNumbers: markedList,
+          correctCount: markedList.length,
+          wrongTapCount: existing?.wrongTapCount ?? 0,
+          totalReactionMs: reactionMs > 0
+              ? reactionMs
+              : (existing?.totalReactionMs ?? 0),
+          updatedAt: DateTime.tryParse(rowMap['submitted_at']?.toString() ?? '') ??
+              DateTime.now(),
+        );
+        if (existing == null || s.correctCount > existing.correctCount) {
+          merged[key] = s;
         }
       }
     } catch (_) {}

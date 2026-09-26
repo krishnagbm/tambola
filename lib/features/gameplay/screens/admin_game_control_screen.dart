@@ -51,6 +51,7 @@ class _AdminGameControlScreenState
   Timer? _autoEndTimer;
   Timer? _neuroWaveUiTimer;
   NeuroWavePhase? _lastNeuroPhase;
+  bool _isAutoFinalizingGrandWinners = false;
 
   @override
   void initState() {
@@ -377,7 +378,15 @@ class _AdminGameControlScreenState
           return;
         }
 
-        if (cycle.isCompleted) {
+        final claimsNow =
+            ref.read(claimsStreamProvider(widget.gameId)).value ?? [];
+        final isCycleAlreadyWon =
+            flashCfg.awardedWinners.containsKey(cycle.prizeKey) ||
+            claimsNow.any(
+              (c) => c.status == 'APPROVED' && c.prizeType == cycle.prizeKey,
+            );
+
+        if (cycle.isCompleted || isCycleAlreadyWon) {
           if (mounted) setState(() => _isCalling = false);
           await _handleAdvanceOrFinalizeFlashCycle(game);
           return;
@@ -1244,6 +1253,33 @@ class _AdminGameControlScreenState
         activePrizes.every((p) => approvedClaimPrizes.contains(p));
     final regMap = {for (final r in registrations) r.userId: r};
 
+    // If FlashHousie final round (e.g. ROUND_3) is won early (before 8/8 balls),
+    // automatically crown FULL_HOUSE & conclude immediately without waiting for decoy balls!
+    final flashCfgTop = game?.flashHousieConfig;
+    if (game?.isFlashHousie == true &&
+        flashCfgTop != null &&
+        !isGameCompleted &&
+        !_isAutoFinalizingGrandWinners &&
+        approvedClaimPrizes.contains('ROUND_${flashCfgTop.totalCycles}') &&
+        !approvedClaimPrizes.contains('FULL_HOUSE')) {
+      _isAutoFinalizingGrandWinners = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        try {
+          await ref
+              .read(gameplayRepositoryProvider)
+              .finalizeFlashHousieGrandWinners(game!);
+          if (!mounted) return;
+          ref.invalidate(gameStreamProvider(widget.gameId));
+          ref.invalidate(claimsStreamProvider(widget.gameId));
+          ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+          ref.invalidate(hostGameRewardsProvider(widget.gameId));
+        } catch (_) {
+          _isAutoFinalizingGrandWinners = false;
+        }
+      });
+    }
+
     if (allPrizesWon && !isGameCompleted && !_hasAutoConcluded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_hasAutoConcluded) {
@@ -1771,6 +1807,13 @@ class _AdminGameControlScreenState
         .toList()
       ..sort(MptMemoryRoundScore.compareStandings);
 
+    final claims = ref.watch(claimsStreamProvider(widget.gameId)).value ?? [];
+    final isRoundPrizeWon =
+        flashCfg.awardedWinners.containsKey(cycle.prizeKey) ||
+        claims.any(
+          (c) => c.status == 'APPROVED' && c.prizeType == cycle.prizeKey,
+        );
+
     final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
     final formattedDigital =
         '00:${secsLeft.clamp(0, 99).toString().padLeft(2, '0')}';
@@ -1796,10 +1839,14 @@ class _AdminGameControlScreenState
         statusColor = const Color(0xFFA78BFA);
         break;
       case NeuroWavePhase.callingActive:
-        statusTitle = cycle.isCompleted
+        statusTitle = isRoundPrizeWon
+            ? '🏆 Round ${flashCfg.currentCycle} Won! (${cycle.calledCount}/${cycle.drawPool.length} Balls Drawn)'
+            : cycle.isCompleted
             ? '🏁 Round ${flashCfg.currentCycle} Pool Complete (${cycle.calledCount}/${cycle.drawPool.length} Balls)'
             : '🎱 Caller Active • ${cycle.calledCount} / ${cycle.drawPool.length} Balls Drawn';
-        statusColor = AppTheme.accentSuccess;
+        statusColor = isRoundPrizeWon
+            ? AppTheme.secondaryColor
+            : AppTheme.accentSuccess;
         break;
     }
 
@@ -1965,7 +2012,8 @@ class _AdminGameControlScreenState
               ),
             ),
           ],
-          if (cycle.isCompleted && game.status != 'COMPLETED') ...[
+          if ((cycle.isCompleted || isRoundPrizeWon) &&
+              game.status != 'COMPLETED') ...[
             const SizedBox(height: 8),
             ElevatedButton.icon(
               onPressed: _isCalling
@@ -1975,6 +2023,8 @@ class _AdminGameControlScreenState
               label: Text(
                 flashCfg.isLastCycle
                     ? '🏆 Crown Final Round & Full House Winners'
+                    : isRoundPrizeWon
+                    ? '🏆 ${cycle.roundBadgeLabel} Won — Launch Round ${flashCfg.currentCycle + 1}'
                     : '🏆 Crown ${cycle.roundBadgeLabel} Winner & Launch Round ${flashCfg.currentCycle + 1}',
                 style: const TextStyle(
                   fontSize: 13.5,
@@ -2059,7 +2109,18 @@ class _AdminGameControlScreenState
       DateTime.now().millisecondsSinceEpoch,
     );
     final isFlashRevealing = neuroState?.isRevealing == true;
-    final isFlashRoundDone = activeFlashCycle?.isCompleted == true;
+    final claimsList =
+        ref.watch(claimsStreamProvider(widget.gameId)).value ?? [];
+    final isFlashRoundPrizeWon = activeFlashCycle != null &&
+        ((flashCfg?.awardedWinners.containsKey(activeFlashCycle.prizeKey) ==
+                true) ||
+            claimsList.any(
+              (c) =>
+                  c.status == 'APPROVED' &&
+                  c.prizeType == activeFlashCycle.prizeKey,
+            ));
+    final isFlashRoundDone =
+        (activeFlashCycle?.isCompleted == true) || isFlashRoundPrizeWon;
     final neuroSecsLeft = neuroState != null
         ? (neuroState.remainingMsInPhase / 1000).ceil()
         : 0;
