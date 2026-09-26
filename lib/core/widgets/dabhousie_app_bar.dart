@@ -277,6 +277,16 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse('${AppConfig.appBaseUrl}/brand-partners.html'),
+              webOnlyWindowName: '_self',
+            ),
+            child: const Text(
+              'Brand Partners',
+              style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
           const SizedBox(width: 8),
         ] else if (showDesktopNav && screenWidth <= 768) ...[
           PopupMenuButton<String>(
@@ -301,6 +311,19 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     Text(
                       'Recent Games & Hall of Fame',
                       style: TextStyle(color: AppTheme.secondaryColor, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/brand-partners.html',
+                child: const Row(
+                  children: [
+                    Text('🤝', style: TextStyle(fontSize: 14)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Brand Partners',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
