@@ -1739,6 +1739,8 @@ class _AdminGameControlScreenState
       ..sort(MptMemoryRoundScore.compareStandings);
 
     final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+    final formattedDigital =
+        '00:${secsLeft.clamp(0, 99).toString().padLeft(2, '0')}';
 
     String statusTitle;
     Color statusColor;
@@ -1748,17 +1750,16 @@ class _AdminGameControlScreenState
         statusColor = AppTheme.accentWarning;
         break;
       case NeuroWavePhase.stageReadiness:
-        statusTitle =
-            '🎯 NeuroWave™ Dynamic Stage Readiness ($secsLeft s)';
+        statusTitle = '🎯 NeuroWave™ Dynamic Stage Readiness';
         statusColor = const Color(0xFF38BDF8);
         break;
       case NeuroWavePhase.columnWave:
         statusTitle =
-            '🌊 NeuroWave™ Column Wave Active: Col ${(neuroState.visibleColumn ?? 0) + 1} ($secsLeft s)';
+            '🌊 NeuroWave™ Column Wave Active: Col ${(neuroState.visibleColumn ?? 0) + 1}';
         statusColor = AppTheme.secondaryColor;
         break;
       case NeuroWavePhase.memoryLockInPause:
-        statusTitle = '🧠 NeuroWave™ Memory Lock-In Pause ($secsLeft s)';
+        statusTitle = '🧠 NeuroWave™ Memory Lock-In Pause';
         statusColor = const Color(0xFFA78BFA);
         break;
       case NeuroWavePhase.callingActive:
@@ -1770,7 +1771,7 @@ class _AdminGameControlScreenState
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFF141829),
         borderRadius: BorderRadius.circular(14),
@@ -1785,24 +1786,30 @@ class _AdminGameControlScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.bolt_rounded,
-                    color: AppTheme.secondaryColor,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${flashCfg.displayTitle} • Round ${flashCfg.currentCycle} of ${flashCfg.totalCycles}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.bolt_rounded,
+                      color: AppTheme.secondaryColor,
+                      size: 20,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        '${flashCfg.displayTitle} • Round ${flashCfg.currentCycle} of ${flashCfg.totalCycles}',
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1813,7 +1820,7 @@ class _AdminGameControlScreenState
                 child: Text(
                   cycle.roundBadgeLabel,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.secondaryColor,
                   ),
@@ -1822,13 +1829,50 @@ class _AdminGameControlScreenState
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            statusTitle,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: statusColor,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  statusTitle,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+              if (neuroState.isRevealing) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor, width: 1.3),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.timer_outlined, size: 15, color: statusColor),
+                      const SizedBox(width: 5),
+                      Text(
+                        formattedDigital,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.0,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
           if (currentCycleScores.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -1845,9 +1889,9 @@ class _AdminGameControlScreenState
                   Text(
                     'LIVE ${cycle.roundBadgeLabel} RECALL LEADERBOARD (TOP 3)',
                     style: const TextStyle(
-                      fontSize: 9.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF94A3B8),
+                      color: Color(0xFFCBD5E1),
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1857,7 +1901,7 @@ class _AdminGameControlScreenState
                     final s = entry.value;
                     final medal = rank == 1 ? '🥇' : (rank == 2 ? '🥈' : '🥉');
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -1865,7 +1909,7 @@ class _AdminGameControlScreenState
                             child: Text(
                               '$medal ${s.displayName}',
                               style: const TextStyle(
-                                fontSize: 11.5,
+                                fontSize: 13,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
@@ -1875,8 +1919,8 @@ class _AdminGameControlScreenState
                           Text(
                             '✓ ${s.correctCount}  •  ✗ ${s.wrongTapCount}  •  ⚡ ${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s',
                             style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w800,
                               color: AppTheme.secondaryColor,
                             ),
                           ),
@@ -1894,13 +1938,13 @@ class _AdminGameControlScreenState
               onPressed: _isCalling
                   ? null
                   : () => _handleAdvanceOrFinalizeFlashCycle(game),
-              icon: const Icon(Icons.emoji_events_rounded, size: 16),
+              icon: const Icon(Icons.emoji_events_rounded, size: 18),
               label: Text(
                 flashCfg.isLastCycle
                     ? '🏆 Crown Final Round & Full House Winners'
                     : '🏆 Crown ${cycle.roundBadgeLabel} Winner & Launch Round ${flashCfg.currentCycle + 1}',
                 style: const TextStyle(
-                  fontSize: 12,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -2249,13 +2293,13 @@ class _AdminGameControlScreenState
                 ),
                 const SizedBox(width: 8),
 
-                // Right Column: Digital Countdown Timer Box
+                // Right Column: Digital Countdown Timer Box (Compact, no progress bar)
                 Expanded(
                   flex: 4,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
+                      horizontal: 10,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0F172A),
@@ -2266,7 +2310,7 @@ class _AdminGameControlScreenState
                             : _isAutoPilotPaused
                             ? AppTheme.accentWarning.withValues(alpha: 0.6)
                             : const Color(0xFF38BDF8).withValues(alpha: 0.4),
-                        width: 1.0,
+                        width: 1.2,
                       ),
                     ),
                     child: Column(
@@ -2281,7 +2325,7 @@ class _AdminGameControlScreenState
                                   : _isAutoPilotPaused
                                   ? Icons.pause_circle_outline_rounded
                                   : Icons.timer_outlined,
-                              size: 13,
+                              size: 14,
                               color: isCelebrating
                                   ? AppTheme.secondaryColor
                                   : _isAutoPilotPaused
@@ -2298,64 +2342,39 @@ class _AdminGameControlScreenState
                                   ? 'PAUSED'
                                   : 'NEXT BALL IN',
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
                                 color: isCelebrating || isFlashRevealing
                                     ? AppTheme.secondaryColor
                                     : _isAutoPilotPaused
                                     ? AppTheme.accentWarning
-                                    : const Color(0xFF94A3B8),
+                                    : const Color(0xFFCBD5E1),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 2),
                         Text(
                           isCelebrating
-                              ? '${_celebrationSecondsLeft}s'
+                              ? '00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
                               : isFlashRevealing
-                              ? '${neuroSecsLeft}s'
+                              ? '00:${neuroSecsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
                               : _isAutoPilotPaused
                               ? 'PAUSED'
                               : _isCalling
                               ? 'DRAWING...'
-                              : '${_countdownSecondsLeft}s',
+                              : '00:${_countdownSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
                           style: TextStyle(
-                            fontSize: 17,
+                            fontSize: 20,
                             fontWeight: FontWeight.w900,
                             fontFamily: 'monospace',
+                            letterSpacing: 1.0,
                             color: isCelebrating || isFlashRevealing
                                 ? AppTheme.secondaryColor
                                 : _isAutoPilotPaused
                                 ? AppTheme.accentWarning
                                 : const Color(0xFF38BDF8),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            value: isCelebrating
-                                ? (_celebrationSecondsLeft / 10.0).clamp(
-                                    0.0,
-                                    1.0,
-                                  )
-                                : _isAutoPilotPaused
-                                ? 1.0
-                                : ((_autoCallIntervalSeconds -
-                                              _countdownSecondsLeft) /
-                                          _autoCallIntervalSeconds)
-                                      .clamp(0.0, 1.0),
-                            minHeight: 3,
-                            backgroundColor: const Color(0xFF1E293B),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              isCelebrating
-                                  ? AppTheme.secondaryColor
-                                  : _isAutoPilotPaused
-                                  ? AppTheme.accentWarning
-                                  : const Color(0xFF38BDF8),
-                            ),
                           ),
                         ),
                       ],
@@ -2377,7 +2396,7 @@ class _AdminGameControlScreenState
                   color: AppTheme.secondaryColor,
                 ),
                 label: Text(
-                  '🎉 Celebrating Winner... (${_celebrationSecondsLeft}s)',
+                  '🎉 Celebrating Winner... (00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')})',
                   style: TextStyle(
                     fontSize: fontSize,
                     fontWeight: FontWeight.bold,
@@ -2401,15 +2420,16 @@ class _AdminGameControlScreenState
               ElevatedButton.icon(
                 onPressed: null,
                 icon: Icon(
-                  Icons.bolt_rounded,
+                  Icons.timer_outlined,
                   size: iconSize,
                   color: AppTheme.secondaryColor,
                 ),
                 label: Text(
-                  '⚡ NeuroWave™ Spotlight Active (${neuroSecsLeft}s)...',
+                  '⚡ NeuroWave™ Spotlight Active • 00:${neuroSecsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
                   style: TextStyle(
-                    fontSize: fontSize - 1,
-                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
                     color: AppTheme.secondaryColor,
                   ),
                 ),
@@ -2437,7 +2457,7 @@ class _AdminGameControlScreenState
                             ? '🏁 FINAL ROUND COMPLETE — CROWN WINNERS & CONCLUDE'
                             : '🏆 ${activeFlashCycle.roundBadgeLabel} COMPLETE — CROWN WINNER & LAUNCH ROUND ${flashCfg.currentCycle + 1}',
                         style: TextStyle(
-                          fontSize: fontSize - 1.5,
+                          fontSize: fontSize - 1,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.3,
                         ),
@@ -2470,7 +2490,7 @@ class _AdminGameControlScreenState
                                   ? 'CALL FIRST NUMBER'
                                   : 'CALL NEXT NUMBER ($calledCount / 90)'),
                         style: TextStyle(
-                          fontSize: fontSize,
+                          fontSize: fontSize + 0.5,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
@@ -2515,7 +2535,7 @@ class _AdminGameControlScreenState
                       child: Text(
                         'Want hands-free calling? Switch to Auto-Pilot Host to draw numbers automatically.',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           color: Color(0xFFCBD5E1),
                         ),
                       ),
@@ -2523,8 +2543,8 @@ class _AdminGameControlScreenState
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
+                        horizontal: 7,
+                        vertical: 3.5,
                       ),
                       decoration: BoxDecoration(
                         color: AppTheme.secondaryColor,
@@ -2533,7 +2553,7 @@ class _AdminGameControlScreenState
                       child: const Text(
                         'Launch Auto',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryDark,
                         ),
@@ -2555,7 +2575,7 @@ class _AdminGameControlScreenState
       onTap: () => _updateAutoCallInterval(seconds),
       borderRadius: BorderRadius.circular(5),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.secondaryColor : const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(5),
@@ -2568,9 +2588,9 @@ class _AdminGameControlScreenState
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? AppTheme.primaryDark : const Color(0xFF94A3B8),
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            color: isSelected ? AppTheme.primaryDark : const Color(0xFFCBD5E1),
           ),
         ),
       ),
@@ -3514,15 +3534,16 @@ class _AdminGameControlScreenState
                   const Text(
                     'LATEST NUMBER',
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
                       color: Colors.white70,
                     ),
                   ),
                   Text(
                     latest != null ? '$latest' : '---',
                     style: const TextStyle(
-                      fontSize: 32,
+                      fontSize: 36,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.secondaryColor,
                       height: 1.1,
@@ -3536,14 +3557,18 @@ class _AdminGameControlScreenState
                   Text(
                     '$totalCalled / $maxPoolCount',
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
                       color: Colors.white,
                     ),
                   ),
                   Text(
                     countLabel,
-                    style: const TextStyle(fontSize: 10, color: Colors.white70),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFCBD5E1),
+                    ),
                   ),
                 ],
               ),
@@ -3558,7 +3583,7 @@ class _AdminGameControlScreenState
                 Text(
                   isFlash ? 'ROUND BALLS: ' : 'LAST 6: ',
                   style: const TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.secondaryColor,
                     letterSpacing: 0.5,
@@ -3575,8 +3600,8 @@ class _AdminGameControlScreenState
                         return Container(
                           margin: const EdgeInsets.only(right: 5),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
+                            horizontal: 8,
+                            vertical: 3,
                           ),
                           decoration: BoxDecoration(
                             color: isLatestChip
@@ -3592,8 +3617,8 @@ class _AdminGameControlScreenState
                           child: Text(
                             '$ballNum',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
                               color: isLatestChip
                                   ? AppTheme.primaryDark
                                   : Colors.white,
@@ -3620,7 +3645,7 @@ class _AdminGameControlScreenState
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -3633,21 +3658,21 @@ class _AdminGameControlScreenState
                       ? 'Master Board (1–90) • ${activeFlashCycle?.roundBadgeLabel ?? "Round"}'
                       : 'Master Board (1–90)',
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
                   ),
                 ),
                 Text(
                   '${calledSet.length}/$maxPool Called',
                   style: const TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 12.5,
                     color: AppTheme.secondaryColor,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 6),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -3666,23 +3691,23 @@ class _AdminGameControlScreenState
                     color: isCalled
                         ? AppTheme.accentSuccess
                         : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(3.5),
+                    borderRadius: BorderRadius.circular(4),
                     border: Border.all(
                       color: isCalled
                           ? AppTheme.accentSuccess
                           : const Color(0xFF2E334D),
-                      width: 0.8,
+                      width: 0.9,
                     ),
                   ),
                   child: Center(
                     child: Text(
                       '$num',
                       style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
                         color: isCalled
                             ? Colors.white
-                            : const Color(0xFFA0AEC0),
+                            : const Color(0xFFCBD5E1),
                       ),
                     ),
                   ),

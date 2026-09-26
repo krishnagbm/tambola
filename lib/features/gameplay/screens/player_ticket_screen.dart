@@ -1492,8 +1492,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
-  /// Renders the NeuroWave™ Spotlight countdown, column wave indicator, 3s cooldown freeze,
-  /// and live player memory recall telemetry.
+  /// Renders the NeuroWave™ Spotlight digital countdown timer, column wave indicator, 3s cooldown freeze,
+  /// and live player memory recall telemetry without a vertical progress bar.
   Widget _buildNeuroWaveStatusBanner(
     FlashHousieConfig config,
     FlashHousieCycleSpec cycleSpec, {
@@ -1505,6 +1505,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     final recalledCount = _recalledForCycle(cycleSpec.cycleIndex).length;
     final targetCount = cycleSpec.trueNumbers.length;
     final wrongCount = _wrongTapsForCycle(cycleSpec.cycleIndex);
+    final neuroSecsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+    final digitalSecs = isFrozen ? _freezeRemainingSeconds : neuroSecsLeft;
+    final formattedDigital =
+        '00:${digitalSecs.clamp(0, 99).toString().padLeft(2, '0')}';
 
     Color borderColor = AppTheme.secondaryColor.withValues(alpha: 0.65);
     Color bgColor = AppTheme.darkCard;
@@ -1521,7 +1525,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isCompact ? 10 : 14,
-        vertical: isCompact ? 8 : 10,
+        vertical: isCompact ? 7 : 9,
       ),
       decoration: BoxDecoration(
         color: bgColor,
@@ -1541,8 +1545,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 ),
                 child: Text(
                   'Round ${config.currentCycle}/${config.totalCycles} • ${cycleSpec.label}',
-                  style: const TextStyle(
-                    fontSize: 11,
+                  style: TextStyle(
+                    fontSize: isCompact ? 11.5 : 12.5,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.secondaryColor,
                   ),
@@ -1552,34 +1556,64 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               Expanded(
                 child: Text(
                   isFrozen
-                      ? '❄️ ${_freezeRemainingSeconds}s Cooldown Freeze — Wait before tapping!'
+                      ? '❄️ Cooldown Freeze — Wait before tapping!'
                       : neuroState.statusLabel,
                   style: TextStyle(
-                    fontSize: isCompact ? 11.5 : 12.5,
+                    fontSize: isCompact ? 12.5 : 14,
                     fontWeight: FontWeight.w800,
                     color: isFrozen ? const Color(0xFFFCA5A5) : Colors.white,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (isFrozen || neuroState.isRevealing) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isFrozen
+                          ? AppTheme.accentDanger
+                          : AppTheme.secondaryColor,
+                      width: 1.3,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isFrozen
+                            ? Icons.ac_unit_rounded
+                            : Icons.timer_outlined,
+                        size: 15,
+                        color: isFrozen
+                            ? const Color(0xFFFCA5A5)
+                            : AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        formattedDigital,
+                        style: TextStyle(
+                          fontSize: isCompact ? 14.5 : 16,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.0,
+                          color: isFrozen
+                              ? const Color(0xFFFCA5A5)
+                              : AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
-          if (neuroState.isRevealing) ...[
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: neuroState.progress,
-                minHeight: 5,
-                backgroundColor: const Color(0xFF1E293B),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  neuroState.phase == NeuroWavePhase.columnWave
-                      ? AppTheme.secondaryColor
-                      : AppTheme.primaryLight,
-                ),
-              ),
-            ),
-          ],
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -1596,14 +1630,16 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
               _buildTelemetryPill(
                 '❄️ Wrong Taps: $wrongCount',
-                wrongCount > 0 ? AppTheme.accentWarning : const Color(0xFF94A3B8),
+                wrongCount > 0
+                    ? AppTheme.accentWarning
+                    : const Color(0xFF94A3B8),
               ),
               if (_flashTapFeedback != null)
                 Text(
                   _flashTapFeedback!,
                   style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
                     color: _flashTapFeedbackIsError
                         ? const Color(0xFFFCA5A5)
                         : AppTheme.accentSuccess,
@@ -1618,7 +1654,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
   Widget _buildTelemetryPill(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(6),
@@ -1627,7 +1663,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 10.5,
+          fontSize: 12,
           fontWeight: FontWeight.w800,
           color: color,
         ),
@@ -1652,9 +1688,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             child: Text(
               'ROUND BALLS (${called.length}):',
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFFA0AEC0),
+                color: Color(0xFFCBD5E1),
               ),
             ),
           ),
@@ -1679,7 +1715,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     '$numVal',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 16,
                       color: idx == 0 ? Colors.black : Colors.white,
                     ),
                   ),
@@ -1713,7 +1749,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               '${item.number}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 16,
                 color: idx == 0 ? Colors.black : Colors.white,
               ),
             ),
@@ -1727,7 +1763,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     MptTicket ticket,
     Set<int> calledSet, {
     bool isGameEnded = false,
-    double cellHeight = 48,
+    double cellHeight = 52,
     FlashHousieConfig? flashConfig,
     MptUser? currentUser,
   }) {
@@ -1760,8 +1796,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         ? '⚡ ${flashConfig!.modeDisplayName.toUpperCase()} • ${activeSpec.label}'
                         : 'DABHOUSIE TICKET #${ticket.ticketNumber}',
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w900,
                       color: activeSpec != null
                           ? AppTheme.secondaryColor
                           : AppTheme.primaryLight,
@@ -1777,9 +1813,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           ? '${_markedNumbers.length} / 15 Marked (Final)'
                           : '${_markedNumbers.length} / 15 Marked'),
                   style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFCBD5E1),
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
               ],
@@ -1796,7 +1832,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         flex: 3,
                         child: Container(
                           margin: const EdgeInsets.symmetric(horizontal: 2),
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
                           decoration: BoxDecoration(
                             color: activeSpec.activeQuadrants.contains(q)
                                 ? AppTheme.secondaryColor.withValues(alpha: 0.18)
@@ -1814,11 +1850,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                 ? '⚡ Q$q (${(q - 1) * 30 + 1}–${q * 30}) ACTIVE'
                                 : '🔒 Q$q (${(q - 1) * 30 + 1}–${q * 30})',
                             style: TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 12,
                               fontWeight: FontWeight.w800,
                               color: activeSpec.activeQuadrants.contains(q)
                                   ? AppTheme.secondaryColor
-                                  : const Color(0xFF64748B),
+                                  : const Color(0xFF94A3B8),
                             ),
                           ),
                         ),
@@ -1911,7 +1947,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           child: const Center(
             child: Icon(
               Icons.lock_outline_rounded,
-              size: 13,
+              size: 14,
               color: Color(0xFF64748B),
             ),
           ),
@@ -1994,7 +2030,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               child: Text(
                 showTrueNumber ? '$numVal' : '?',
                 style: TextStyle(
-                  fontSize: height >= 52 ? 18 : 16,
+                  fontSize: height >= 52 ? 20 : 18,
                   fontWeight: FontWeight.w900,
                   color: textColor,
                 ),
@@ -2010,7 +2046,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     int numVal,
     Set<int> calledSet, {
     bool isGameEnded = false,
-    double height = 48,
+    double height = 52,
   }) {
     if (numVal == 0) {
       return Container(
@@ -2055,7 +2091,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               child: Text(
                 '$numVal',
                 style: TextStyle(
-                  fontSize: height >= 52 ? 18 : 16,
+                  fontSize: height >= 52 ? 20 : 18,
                   fontWeight: FontWeight.bold,
                   color: textColor,
                 ),
