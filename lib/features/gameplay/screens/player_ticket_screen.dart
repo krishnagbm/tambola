@@ -110,12 +110,29 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         : 'Player';
     final avatar = Formatters.getAvatarEmoji(user?.avatar);
 
-    // Check if the tapped cell matches a number called in this cycle
-    if (cycleSpec.calledNumbers.contains(numVal)) {
-      final isLatest = cycleSpec.latestCalledNumber == numVal;
+    // Check if the tapped cell matches a number called in this cycle.
+    // Re-fetch latest game snapshot if not yet in cached cycleSpec.calledNumbers
+    // so 2-second polling latency never causes a false wrong-tap penalty.
+    var effectiveCycleSpec = cycleSpec;
+    var effectiveCalled = effectiveCycleSpec.calledNumbers.contains(numVal);
+    if (!effectiveCalled) {
+      try {
+        final freshGame = await ref
+            .read(gameRepositoryProvider)
+            .getGame(widget.gameId);
+        final freshSpec = freshGame.flashHousieConfig?.cycleAt(cycleIdx);
+        if (freshSpec != null) {
+          effectiveCycleSpec = freshSpec;
+          effectiveCalled = freshSpec.calledNumbers.contains(numVal);
+        }
+      } catch (_) {}
+    }
+
+    if (effectiveCalled) {
+      final isLatest = effectiveCycleSpec.latestCalledNumber == numVal;
       final deltaMs = (isLatest && _lastFlashBallShownAtMs > 0)
           ? (nowMs - _lastFlashBallShownAtMs).clamp(150, 10000)
-          : 4500;
+          : 3500;
 
       setState(() {
         recalledSet.add(numVal);
@@ -123,7 +140,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         _flashReactionMsByCycle[cycleIdx] =
             _reactionMsForCycle(cycleIdx) + deltaMs;
         _flashTapFeedback =
-            '✅ Recalled $numVal in ${(deltaMs / 1000).toStringAsFixed(1)}s!';
+            '✅ Recalled $numVal in ${(deltaMs / 1000).toStringAsFixed(1)}s! (${recalledSet.length}/${effectiveCycleSpec.trueNumbers.length})';
         _flashTapFeedbackIsError = false;
       });
       _saveMarks();
@@ -131,7 +148,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
             gameId: widget.gameId,
             cycleIndex: cycleIdx,
-            quadrantLabel: cycleSpec.label,
+            quadrantLabel: effectiveCycleSpec.label,
             displayName: displayName,
             avatar: avatar,
             correctNumbers: recalledSet.toList(),
@@ -140,6 +157,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             lastRecalledNumber: numVal,
             lastReactionMs: deltaMs,
           );
+      ref.invalidate(gameStreamProvider(widget.gameId));
     } else {
       // Wrong cell or tapped during a Challenge (Decoy) Ball -> 3-second cooldown freeze!
       final newWrongCount = _wrongTapsForCycle(cycleIdx) + 1;
@@ -154,13 +172,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
             gameId: widget.gameId,
             cycleIndex: cycleIdx,
-            quadrantLabel: cycleSpec.label,
+            quadrantLabel: effectiveCycleSpec.label,
             displayName: displayName,
             avatar: avatar,
             correctNumbers: recalledSet.toList(),
             wrongTapCount: newWrongCount,
             totalReactionMs: _reactionMsForCycle(cycleIdx),
           );
+      ref.invalidate(gameStreamProvider(widget.gameId));
     }
   }
 
@@ -1617,32 +1636,58 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   }
 
   Widget _buildRecentCallsFromInts(List<int> called) {
-    final recent = called.reversed.take(6).toList();
+    final recent = called.reversed.toList();
     return SizedBox(
-      height: 38,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: recent.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (ctx, idx) {
-          final numVal = recent[idx];
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      height: 40,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: idx == 0 ? AppTheme.secondaryColor : AppTheme.darkSurface,
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF1E2235),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFF2E334D)),
             ),
             child: Text(
-              '$numVal',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: idx == 0 ? Colors.black : Colors.white,
+              'ROUND BALLS (${called.length}):',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFA0AEC0),
               ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: recent.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (ctx, idx) {
+                final numVal = recent[idx];
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: idx == 0
+                        ? AppTheme.secondaryColor
+                        : AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF2E334D)),
+                  ),
+                  child: Text(
+                    '$numVal',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: idx == 0 ? Colors.black : Colors.white,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1709,18 +1754,22 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  activeSpec != null
-                      ? '⚡ ${flashConfig!.modeDisplayName.toUpperCase()} • ${activeSpec.label}'
-                      : 'DABHOUSIE TICKET #${ticket.ticketNumber}',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: activeSpec != null
-                        ? AppTheme.secondaryColor
-                        : AppTheme.primaryLight,
+                Expanded(
+                  child: Text(
+                    activeSpec != null
+                        ? '⚡ ${flashConfig!.modeDisplayName.toUpperCase()} • ${activeSpec.label}'
+                        : 'DABHOUSIE TICKET #${ticket.ticketNumber}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: activeSpec != null
+                          ? AppTheme.secondaryColor
+                          : AppTheme.primaryLight,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   activeSpec != null
                       ? '${_recalledForCycle(activeSpec.cycleIndex).length} / ${activeSpec.trueNumbers.length} Recalled'
@@ -1728,8 +1777,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           ? '${_markedNumbers.length} / 15 Marked (Final)'
                           : '${_markedNumbers.length} / 15 Marked'),
                   style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFA0AEC0),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFCBD5E1),
                   ),
                 ),
               ],
@@ -2027,6 +2077,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     bool isCompact = false,
     FlashHousieConfig? flashConfig,
   }) {
+    final currentGame = ref.watch(gameStreamProvider(widget.gameId)).value;
     final registrations =
         ref.watch(registrationsStreamProvider(widget.gameId)).value ?? [];
     final regMap = {for (final r in registrations) r.userId: r};
@@ -2070,28 +2121,31 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              flashConfig != null
-                  ? '⚡ Round & Cumulative Full House Prizes'
-                  : 'Claim Winning Prize',
-              style: TextStyle(
-                fontSize: isCompact ? 12 : 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            Expanded(
+              child: Text(
+                flashConfig != null
+                    ? '🏆 Prizes & Winners (Round & Full House)'
+                    : '🏆 Prizes & Winners',
+                style: TextStyle(
+                  fontSize: isCompact ? 14 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (isGameEnded)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.black38,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFF3B4163)),
                 ),
                 child: const Text(
                   'CONCLUDED',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFA0AEC0),
                   ),
@@ -2099,26 +2153,26 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           isGameEnded
-              ? 'Game is over. Prize claiming is closed.'
+              ? 'Game is over. Final prize winners and scores are shown below.'
               : (flashConfig != null
                   ? 'Winners are crowned automatically by highest memory recall & fastest reaction speed!'
                   : 'Tap when completed. Server will validate your ticket.'),
           style: TextStyle(
-            fontSize: isCompact ? 9.5 : 11,
-            color: const Color(0xFFA0AEC0),
+            fontSize: isCompact ? 11 : 12.5,
+            color: const Color(0xFFCBD5E1),
           ),
         ),
-        SizedBox(height: isCompact ? 6 : 10),
+        SizedBox(height: isCompact ? 8 : 12),
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: isCompact ? 4 : 8,
-          mainAxisSpacing: isCompact ? 4 : 8,
-          childAspectRatio: isCompact ? 3.5 : 3.2,
+          crossAxisSpacing: isCompact ? 6 : 10,
+          mainAxisSpacing: isCompact ? 6 : 10,
+          childAspectRatio: isCompact ? 2.35 : 2.05,
           children: activePrizes.map((prize) {
             final approvedClaim = approvedClaims[prize];
             final flashWinnerUid = flashConfig?.awardedWinners[prize];
@@ -2127,6 +2181,25 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             final winnerUid = approvedClaim?.userId ?? flashWinnerUid;
             final isWonByMe =
                 isApproved && winnerUid != null && winnerUid == currentUserId;
+            final giftDetail = currentGame?.prizeGiftsConfig[prize]?.trim();
+
+            // Build score summary if FlashHousie prize
+            String? scoreSummary =
+                flashConfig?.awardedWinnerScoreSummaries[prize];
+            if ((scoreSummary == null || scoreSummary.isEmpty) &&
+                flashConfig != null &&
+                prize.startsWith('ROUND_')) {
+              final rNum = int.tryParse(prize.replaceFirst('ROUND_', ''));
+              if (rNum != null) {
+                final cSpec = flashConfig.cycleAt(rNum - 1);
+                if (cSpec != null && cSpec.winnerCorrectCount != null) {
+                  final sec = ((cSpec.winnerReactionMs ?? 0) / 1000)
+                      .toStringAsFixed(1);
+                  scoreSummary =
+                      '✓ ${cSpec.winnerCorrectCount}/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
+                }
+              }
+            }
 
             if (isApproved) {
               final playerReg = winnerUid != null ? regMap[winnerUid] : null;
@@ -2143,22 +2216,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 onPressed: null, // Disabled
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isWonByMe
-                      ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.22)
                       : Colors.black26,
                   disabledBackgroundColor: isWonByMe
                       ? AppTheme.accentSuccess.withValues(alpha: 0.25)
                       : const Color(0xFF222639),
                   disabledForegroundColor: isWonByMe
                       ? AppTheme.accentSuccess
-                      : const Color(0xFF718096),
+                      : Colors.white,
                   side: BorderSide(
                     color: isWonByMe
                         ? AppTheme.accentSuccess
-                        : const Color(0xFF2E334D),
+                        : AppTheme.secondaryColor.withValues(alpha: 0.55),
+                    width: 1.4,
                   ),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 4 : 6,
-                    vertical: isCompact ? 2 : 4,
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
                   ),
                 ),
                 child: Column(
@@ -2167,29 +2241,59 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 10 : 11.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 12.5 : 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       isWonByMe
                           ? (registrations.length > 1
-                              ? '🏆 Won (1 of ${registrations.length})'
+                              ? '🏆 Won by You! (1 of ${registrations.length})'
                               : '🏆 Won by You!')
-                          : '✓ $displayName',
+                          : '👑 Winner: $displayName',
                       style: TextStyle(
-                        fontSize: isCompact ? 8 : 9.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 11.5 : 13,
+                        fontWeight: FontWeight.w800,
                         color: isWonByMe
                             ? AppTheme.accentSuccess
-                            : const Color(0xFFA0AEC0),
+                            : AppTheme.secondaryColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (scoreSummary != null && scoreSummary.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          scoreSummary,
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF38BDF8),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -2200,11 +2304,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 onPressed: null, // Disabled when game ended
                 style: ElevatedButton.styleFrom(
                   disabledBackgroundColor: const Color(0xFF1E2235),
-                  disabledForegroundColor: const Color(0xFF64748B),
+                  disabledForegroundColor: const Color(0xFF94A3B8),
                   side: const BorderSide(color: Color(0xFF2E334D)),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 4 : 6,
-                    vertical: isCompact ? 2 : 4,
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
                   ),
                 ),
                 child: Column(
@@ -2213,22 +2317,37 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 10 : 11.5,
+                        fontSize: isCompact ? 12.5 : 14.5,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       'Unclaimed',
                       style: TextStyle(
-                        fontSize: isCompact ? 7.5 : 8.5,
-                        color: const Color(0xFF64748B),
+                        fontSize: isCompact ? 10.5 : 12,
+                        color: const Color(0xFF94A3B8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -2241,11 +2360,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   disabledBackgroundColor: AppTheme.darkSurface,
                   disabledForegroundColor: Colors.white,
                   side: BorderSide(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.55),
+                    width: 1.3,
                   ),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 4 : 6,
-                    vertical: isCompact ? 2 : 4,
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
                   ),
                 ),
                 child: Column(
@@ -2254,22 +2374,39 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 10 : 11.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 12.5 : 14.5,
+                        fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      '⚡ Auto-Scored Live',
+                      '⚡ Live Memory Leaderboard',
                       style: TextStyle(
-                        fontSize: isCompact ? 8 : 9,
+                        fontSize: isCompact ? 10.5 : 12,
                         color: AppTheme.secondaryColor,
                         fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -2286,21 +2423,39 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.darkSurface,
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: AppTheme.primaryColor),
+                side: const BorderSide(color: AppTheme.primaryColor, width: 1.3),
                 padding: EdgeInsets.symmetric(
-                  horizontal: isCompact ? 4 : 6,
-                  vertical: isCompact ? 2 : 4,
+                  horizontal: isCompact ? 6 : 10,
+                  vertical: isCompact ? 4 : 6,
                 ),
               ),
-              child: Text(
-                Formatters.formatPrizeName(prize),
-                style: TextStyle(
-                  fontSize: isCompact ? 10.5 : 12,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    Formatters.formatPrizeName(prize),
+                    style: TextStyle(
+                      fontSize: isCompact ? 12.5 : 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (giftDetail != null && giftDetail.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '🎁 $giftDetail',
+                      style: TextStyle(
+                        fontSize: isCompact ? 10 : 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFFBBF24),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             );
           }).toList(),

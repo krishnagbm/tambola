@@ -281,6 +281,8 @@ class FlashHousieConfig {
   final List<FlashHousieCycleSpec> cycles;
   final Map<String, String> awardedWinners; // prizeKey -> userId
   final Map<String, String> awardedWinnerNames; // prizeKey -> displayName
+  final Map<String, String> awardedWinnerScoreSummaries; // prizeKey -> score summary
+  final Map<String, MptMemoryRoundScore> embeddedScores; // '${cycleIndex}_$userId' -> score
 
   const FlashHousieConfig({
     required this.mode,
@@ -292,6 +294,8 @@ class FlashHousieConfig {
     required this.cycles,
     this.awardedWinners = const {},
     this.awardedWinnerNames = const {},
+    this.awardedWinnerScoreSummaries = const {},
+    this.embeddedScores = const {},
   });
 
   static FlashHousieConfig? fromPrizeGiftsConfig(
@@ -317,11 +321,34 @@ class FlashHousieConfig {
     }
   }
 
+  String get modeBadgeLabel {
+    switch (mode) {
+      case modeFlash5:
+        return '⚡ FlashHousie™ 5';
+      case modeFlash10:
+        return '⚡ FlashHousie™ 10';
+      case modeFlash15:
+        return '⚡ FlashHousie™ 15';
+      default:
+        return '🎱 Classic 90-Ball';
+    }
+  }
+
   String get displayTitle => modeDisplayName;
 
   FlashHousieCycleSpec get activeCycleSpec {
     final idx = (currentCycle - 1).clamp(0, cycles.length - 1);
     return cycles[idx];
+  }
+
+  FlashHousieCycleSpec? cycleAt(int indexOrCycleNumber) {
+    for (final c in cycles) {
+      if (c.cycleIndex == indexOrCycleNumber) return c;
+    }
+    if (indexOrCycleNumber >= 0 && indexOrCycleNumber < cycles.length) {
+      return cycles[indexOrCycleNumber];
+    }
+    return null;
   }
 
   NeuroWaveState computeNeuroWaveState(int nowMs) =>
@@ -337,6 +364,8 @@ class FlashHousieConfig {
     List<FlashHousieCycleSpec>? cycles,
     Map<String, String>? awardedWinners,
     Map<String, String>? awardedWinnerNames,
+    Map<String, String>? awardedWinnerScoreSummaries,
+    Map<String, MptMemoryRoundScore>? embeddedScores,
   }) {
     return FlashHousieConfig(
       mode: mode,
@@ -348,6 +377,9 @@ class FlashHousieConfig {
       cycles: cycles ?? this.cycles,
       awardedWinners: awardedWinners ?? this.awardedWinners,
       awardedWinnerNames: awardedWinnerNames ?? this.awardedWinnerNames,
+      awardedWinnerScoreSummaries:
+          awardedWinnerScoreSummaries ?? this.awardedWinnerScoreSummaries,
+      embeddedScores: embeddedScores ?? this.embeddedScores,
     );
   }
 
@@ -546,6 +578,18 @@ class FlashHousieConfig {
     final rawCycles = json['cycles'] as List? ?? [];
     final rawWinners = json['awarded_winners'];
     final rawWinnerNames = json['awarded_winner_names'];
+    final rawWinnerSummaries = json['awarded_winner_score_summaries'];
+    final rawEmbeddedScores = json['embedded_scores'];
+    final parsedEmbeddedScores = <String, MptMemoryRoundScore>{};
+    if (rawEmbeddedScores is Map) {
+      rawEmbeddedScores.forEach((k, v) {
+        if (v is Map) {
+          parsedEmbeddedScores[k.toString()] =
+              MptMemoryRoundScore.fromJson(Map<String, dynamic>.from(v));
+        }
+      });
+    }
+
     return FlashHousieConfig(
       mode: json['mode'] as String? ?? modeFlash5,
       totalCycles: (json['total_cycles'] as num?)?.toInt() ?? 3,
@@ -562,6 +606,10 @@ class FlashHousieConfig {
       awardedWinnerNames: rawWinnerNames is Map
           ? rawWinnerNames.map((k, v) => MapEntry(k.toString(), v.toString()))
           : const {},
+      awardedWinnerScoreSummaries: rawWinnerSummaries is Map
+          ? rawWinnerSummaries.map((k, v) => MapEntry(k.toString(), v.toString()))
+          : const {},
+      embeddedScores: parsedEmbeddedScores,
     );
   }
 
@@ -576,6 +624,8 @@ class FlashHousieConfig {
       'cycles': cycles.map((c) => c.toJson()).toList(),
       'awarded_winners': awardedWinners,
       'awarded_winner_names': awardedWinnerNames,
+      'awarded_winner_score_summaries': awardedWinnerScoreSummaries,
+      'embedded_scores': embeddedScores.map((k, v) => MapEntry(k, v.toJson())),
     };
   }
 }
@@ -654,5 +704,24 @@ class MptMemoryRoundScore {
           ? DateTime.parse(json['updated_at'].toString())
           : DateTime.now(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'game_id': gameId,
+      'user_id': userId,
+      'display_name': displayName,
+      'avatar': avatar,
+      'cycle_index': cycleIndex,
+      'quadrant_label': quadrantLabel,
+      'correct_numbers': correctNumbers,
+      'correct_count': correctCount,
+      'wrong_tap_count': wrongTapCount,
+      'total_reaction_ms': totalReactionMs,
+      'last_recalled_number': lastRecalledNumber,
+      'last_reaction_ms': lastReactionMs,
+      'updated_at': updatedAt.toUtc().toIso8601String(),
+    };
   }
 }

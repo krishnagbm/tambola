@@ -50,6 +50,7 @@ class _AdminGameControlScreenState
   int _autoEndSecondsLeft = 0;
   Timer? _autoEndTimer;
   Timer? _neuroWaveUiTimer;
+  NeuroWavePhase? _lastNeuroPhase;
 
   @override
   void initState() {
@@ -62,7 +63,9 @@ class _AdminGameControlScreenState
         final neuro = game!.flashHousieConfig?.computeNeuroWaveState(
           DateTime.now().millisecondsSinceEpoch,
         );
-        if (neuro != null && neuro.isRevealing) {
+        if (neuro != null &&
+            (neuro.isRevealing || _lastNeuroPhase != neuro.phase)) {
+          _lastNeuroPhase = neuro.phase;
           setState(() {});
         }
       }
@@ -256,17 +259,24 @@ class _AdminGameControlScreenState
   }
 
   Future<void> _handleAdvanceOrFinalizeFlashCycle(MptGame game) async {
-    final flashCfg = game.flashHousieConfig;
-    if (flashCfg == null || _isCalling) return;
+    if (_isCalling) return;
 
     setState(() => _isCalling = true);
     try {
+      MptGame latestGame = game;
+      try {
+        latestGame =
+            await ref.read(gameRepositoryProvider).getGame(widget.gameId);
+      } catch (_) {}
+      final flashCfg = latestGame.flashHousieConfig;
+      if (flashCfg == null) return;
+
       final repo = ref.read(gameplayRepositoryProvider);
       if (!flashCfg.isLastCycle) {
         final currentCycleNum = flashCfg.currentCycle;
         final roundLabel = flashCfg.activeCycleSpec.roundBadgeLabel;
         final updatedCfg = await repo.finalizeFlashHousieCycleAndAdvance(
-          game: game,
+          game: latestGame,
           advanceToNextCycle: true,
         );
         final finalizedSpec = updatedCfg?.cycles
@@ -276,6 +286,7 @@ class _AdminGameControlScreenState
         ref.invalidate(calledNumbersStreamProvider(widget.gameId));
         ref.invalidate(claimsStreamProvider(widget.gameId));
         ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+        ref.invalidate(hostGameRewardsProvider(widget.gameId));
 
         if (!mounted) return;
         if (finalizedSpec?.winnerName != null) {
@@ -288,15 +299,18 @@ class _AdminGameControlScreenState
           );
         }
       } else {
-        await repo.finalizeFlashHousieCycleAndAdvance(
-          game: game,
-          advanceToNextCycle: false,
-        );
-        await repo.finalizeFlashHousieGrandWinners(game);
+        final finalCfg = await repo.finalizeFlashHousieGrandWinners(latestGame);
         ref.invalidate(gameStreamProvider(widget.gameId));
         ref.invalidate(claimsStreamProvider(widget.gameId));
         ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+        ref.invalidate(hostGameRewardsProvider(widget.gameId));
         if (!mounted) return;
+        final fhWinner = finalCfg?.awardedWinnerNames['FULL_HOUSE'];
+        if (fhWinner != null) {
+          _triggerCelebrationPause(
+            '🏆 $fhWinner crowned FlashHousie™ Full House Champion! Finalizing event results...',
+          );
+        }
         _triggerAutoConclusion();
       }
     } catch (e) {
@@ -313,59 +327,62 @@ class _AdminGameControlScreenState
   }
 
   Future<void> _handleCallNext() async {
-    final game = ref.read(gameStreamProvider(widget.gameId)).value;
-    if (game?.status == 'COMPLETED') {
+    final cachedGame = ref.read(gameStreamProvider(widget.gameId)).value;
+    if (cachedGame?.status == 'COMPLETED') {
       _stopAutoPilot();
       return;
     }
 
     // Special handling for FlashHousie™ 5 / 10 / 15 multi-cycle gameplay
-    if (game != null && game.isFlashHousie && game.flashHousieConfig != null) {
-      final flashCfg = game.flashHousieConfig!;
-      final cycle = flashCfg.activeCycleSpec;
-
-      if (cycle.startedAtMs == null) {
-        setState(() => _isCalling = true);
-        try {
-          await ref.read(gameplayRepositoryProvider).launchFlashHousieCycle(
-                game: game,
-                cycleIndex: flashCfg.currentCycle,
-              );
-          ref.invalidate(gameStreamProvider(widget.gameId));
-        } finally {
-          if (mounted) setState(() => _isCalling = false);
-        }
-        return;
-      }
-
-      final neuroState = flashCfg.computeNeuroWaveState(
-        DateTime.now().millisecondsSinceEpoch,
-      );
-      if (neuroState.isRevealing) {
-        if (!_isAutoPilotEnabled && mounted) {
-          final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                '⚡ NeuroWave™ Spotlight is active ($secsLeft s remaining in phase). Calling unlocks right after the wave!',
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-        return;
-      }
-
-      if (cycle.isCompleted) {
-        await _handleAdvanceOrFinalizeFlashCycle(game);
-        return;
-      }
-
+    if (cachedGame != null &&
+        cachedGame.isFlashHousie &&
+        cachedGame.flashHousieConfig != null) {
+      if (_isCalling) return;
       setState(() {
         _isCalling = true;
         _countdownSecondsLeft = _autoCallIntervalSeconds;
       });
       try {
+        MptGame game = cachedGame;
+        try {
+          game = await ref.read(gameRepositoryProvider).getGame(widget.gameId);
+        } catch (_) {}
+        final flashCfg = game.flashHousieConfig!;
+        final cycle = flashCfg.activeCycleSpec;
+
+        if (cycle.startedAtMs == null) {
+          await ref.read(gameplayRepositoryProvider).launchFlashHousieCycle(
+                game: game,
+                cycleIndex: flashCfg.currentCycle,
+              );
+          ref.invalidate(gameStreamProvider(widget.gameId));
+          return;
+        }
+
+        final neuroState = flashCfg.computeNeuroWaveState(
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        if (neuroState.isRevealing) {
+          if (!_isAutoPilotEnabled && mounted) {
+            final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '⚡ NeuroWave™ Spotlight is active ($secsLeft s remaining in phase). Calling unlocks right after the wave!',
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          return;
+        }
+
+        if (cycle.isCompleted) {
+          if (mounted) setState(() => _isCalling = false);
+          await _handleAdvanceOrFinalizeFlashCycle(game);
+          return;
+        }
+
         final num = await ref
             .read(gameplayRepositoryProvider)
             .callNextFlashHousieNumber(game);
@@ -393,6 +410,8 @@ class _AdminGameControlScreenState
       }
       return;
     }
+
+    final game = cachedGame;
 
     final claims = ref.read(claimsStreamProvider(widget.gameId)).value ?? [];
     final activePrizes = game?.prizesConfig ??
@@ -1183,9 +1202,10 @@ class _AdminGameControlScreenState
     final approvedClaimsList = claims
         .where((c) => c.status == 'APPROVED')
         .toList();
-    final approvedClaimPrizes = approvedClaimsList
-        .map((c) => c.prizeType)
-        .toSet();
+    final approvedClaimPrizes = {
+      ...approvedClaimsList.map((c) => c.prizeType),
+      ...(game?.flashHousieConfig?.awardedWinners.keys ?? const <String>[]),
+    };
     final allPrizesWon =
         activePrizes.isNotEmpty &&
         activePrizes.every((p) => approvedClaimPrizes.contains(p));
@@ -1285,11 +1305,27 @@ class _AdminGameControlScreenState
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
         data: (calledNumbers) {
-          final latest = calledNumbers.isNotEmpty
-              ? calledNumbers.last.number
-              : null;
-          final calledSet = calledNumbers.map((e) => e.number).toSet();
-          final isMaxNumbers = calledNumbers.length >= 90;
+          final isFlashHousie =
+              game?.isFlashHousie == true && game?.flashHousieConfig != null;
+          final flashCfg = game?.flashHousieConfig;
+          final activeFlashCycle = flashCfg?.activeCycleSpec;
+          final flashCalledInts =
+              activeFlashCycle?.calledNumbers ?? const <int>[];
+
+          final latest = isFlashHousie
+              ? (flashCalledInts.isNotEmpty ? flashCalledInts.last : null)
+              : (calledNumbers.isNotEmpty ? calledNumbers.last.number : null);
+          final calledSet = isFlashHousie
+              ? flashCalledInts.toSet()
+              : calledNumbers.map((e) => e.number).toSet();
+          final effectiveCalledCount = isFlashHousie
+              ? flashCalledInts.length
+              : calledNumbers.length;
+          final isMaxNumbers = isFlashHousie
+              ? (flashCfg!.isLastCycle &&
+                  activeFlashCycle!.isCompleted &&
+                  flashCfg.awardedWinners.containsKey('FULL_HOUSE'))
+              : calledNumbers.length >= 90;
           final disableCalling =
               _isCalling ||
               isMaxNumbers ||
@@ -1326,7 +1362,7 @@ class _AdminGameControlScreenState
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                if (calledNumbers.isEmpty &&
+                                if (effectiveCalledCount == 0 &&
                                     !isGameCompleted) ...[
                                   _buildPreGameBanner(
                                     game,
@@ -1344,7 +1380,12 @@ class _AdminGameControlScreenState
                                   isGameCompleted,
                                 ),
                                 const SizedBox(height: 12),
-                                _buildClaimsQueue(claimsStream, regMap),
+                                _buildClaimsQueue(
+                                  claimsStream,
+                                  regMap,
+                                  game: game,
+                                  activePrizes: activePrizes,
+                                ),
                                 const SizedBox(height: 14),
                                 OutlinedButton.icon(
                                   onPressed: isGameCompleted
@@ -1391,7 +1432,7 @@ class _AdminGameControlScreenState
                                 _buildCallerHeader(
                                   game,
                                   latest,
-                                  calledNumbers.length,
+                                  effectiveCalledCount,
                                   calledNumbers,
                                   isGameCompleted,
                                 ),
@@ -1401,17 +1442,18 @@ class _AdminGameControlScreenState
                                 ],
                                 const SizedBox(height: 8),
                                 _buildMainActionButton(
+                                  game: game,
                                   isGameCompleted: isGameCompleted,
                                   allPrizesWon: allPrizesWon,
                                   isMaxNumbers: isMaxNumbers,
-                                  calledCount: calledNumbers.length,
+                                  calledCount: effectiveCalledCount,
                                   disableCalling: disableCalling,
                                   verticalPadding: 13,
                                   fontSize: 15,
                                   iconSize: 24,
                                 ),
                                 const SizedBox(height: 8),
-                                _buildMasterBoard(calledSet),
+                                _buildMasterBoard(calledSet, game: game),
                               ],
                             ),
                           ),
@@ -1467,7 +1509,7 @@ class _AdminGameControlScreenState
                             _buildAllPrizesWonBanner(),
                             const SizedBox(height: 14),
                           ],
-                          if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                          if (effectiveCalledCount == 0 && !isGameCompleted) ...[
                             _buildPreGameBanner(game, confirmedPlayers.length),
                             const SizedBox(height: 14),
                           ],
@@ -1485,7 +1527,7 @@ class _AdminGameControlScreenState
                                     _buildCallerHeader(
                                       game,
                                       latest,
-                                      calledNumbers.length,
+                                      effectiveCalledCount,
                                       calledNumbers,
                                       isGameCompleted,
                                     ),
@@ -1495,17 +1537,18 @@ class _AdminGameControlScreenState
                                     ],
                                     const SizedBox(height: 14),
                                     _buildMainActionButton(
+                                      game: game,
                                       isGameCompleted: isGameCompleted,
                                       allPrizesWon: allPrizesWon,
                                       isMaxNumbers: isMaxNumbers,
-                                      calledCount: calledNumbers.length,
+                                      calledCount: effectiveCalledCount,
                                       disableCalling: disableCalling,
                                       verticalPadding: 18,
                                       fontSize: 17,
                                       iconSize: 28,
                                     ),
                                     const SizedBox(height: 16),
-                                    _buildMasterBoard(calledSet),
+                                    _buildMasterBoard(calledSet, game: game),
                                     const SizedBox(height: 16),
                                     OutlinedButton.icon(
                                       onPressed: isGameCompleted
@@ -1546,7 +1589,12 @@ class _AdminGameControlScreenState
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    _buildClaimsQueue(claimsStream, regMap),
+                                    _buildClaimsQueue(
+                                      claimsStream,
+                                      regMap,
+                                      game: game,
+                                      activePrizes: activePrizes,
+                                    ),
                                     const SizedBox(height: 16),
                                     _buildConfirmedPlayersSidebarCard(
                                       game,
@@ -1586,7 +1634,7 @@ class _AdminGameControlScreenState
                           _buildAllPrizesWonBanner(),
                           const SizedBox(height: 14),
                         ],
-                        if (calledNumbers.isEmpty && !isGameCompleted) ...[
+                        if (effectiveCalledCount == 0 && !isGameCompleted) ...[
                           _buildPreGameBanner(game, confirmedPlayers.length),
                           const SizedBox(height: 14),
                         ],
@@ -1595,7 +1643,7 @@ class _AdminGameControlScreenState
                         _buildCallerHeader(
                           game,
                           latest,
-                          calledNumbers.length,
+                          effectiveCalledCount,
                           calledNumbers,
                           isGameCompleted,
                         ),
@@ -1605,19 +1653,25 @@ class _AdminGameControlScreenState
                         ],
                         const SizedBox(height: 14),
                         _buildMainActionButton(
+                          game: game,
                           isGameCompleted: isGameCompleted,
                           allPrizesWon: allPrizesWon,
                           isMaxNumbers: isMaxNumbers,
-                          calledCount: calledNumbers.length,
+                          calledCount: effectiveCalledCount,
                           disableCalling: disableCalling,
                           verticalPadding: 18,
                           fontSize: 17,
                           iconSize: 28,
                         ),
                         const SizedBox(height: 16),
-                        _buildMasterBoard(calledSet),
+                        _buildMasterBoard(calledSet, game: game),
                         const SizedBox(height: 16),
-                        _buildClaimsQueue(claimsStream, regMap),
+                        _buildClaimsQueue(
+                          claimsStream,
+                          regMap,
+                          game: game,
+                          activePrizes: activePrizes,
+                        ),
                         const SizedBox(height: 16),
                         _buildConfirmedPlayersSidebarCard(
                           game,
@@ -1863,6 +1917,7 @@ class _AdminGameControlScreenState
   }
 
   Widget _buildMainActionButton({
+    MptGame? game,
     required bool isGameCompleted,
     required bool allPrizesWon,
     required bool isMaxNumbers,
@@ -1898,7 +1953,9 @@ class _AdminGameControlScreenState
         label: Text(
           allPrizesWon
               ? '🏆 All Prizes Won — End & Conclude Event'
-              : '🏁 All 90 Numbers Called — End & Conclude Event',
+              : (game?.isFlashHousie == true
+                    ? '🏁 All Rounds Complete — End & Conclude Event'
+                    : '🏁 All 90 Numbers Called — End & Conclude Event'),
           style: TextStyle(
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
@@ -1919,6 +1976,16 @@ class _AdminGameControlScreenState
     }
 
     final isCelebrating = _celebrationSecondsLeft > 0;
+    final flashCfg = game?.flashHousieConfig;
+    final activeFlashCycle = flashCfg?.activeCycleSpec;
+    final neuroState = flashCfg?.computeNeuroWaveState(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    final isFlashRevealing = neuroState?.isRevealing == true;
+    final isFlashRoundDone = activeFlashCycle?.isCompleted == true;
+    final neuroSecsLeft = neuroState != null
+        ? (neuroState.remainingMsInPhase / 1000).ceil()
+        : 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -2147,15 +2214,24 @@ class _AdminGameControlScreenState
                             ),
                           const SizedBox(width: 6),
                           ElevatedButton.icon(
-                            onPressed: disableCalling ? null : _handleCallNext,
+                            onPressed:
+                                (disableCalling || isFlashRevealing)
+                                    ? null
+                                    : _handleCallNext,
                             icon: const Icon(Icons.skip_next_rounded, size: 15),
-                            label: const Text(
-                              'Draw Now',
-                              style: TextStyle(fontSize: 11.5),
+                            label: Text(
+                              isFlashRoundDone
+                                  ? 'Next Round'
+                                  : 'Draw Now',
+                              style: const TextStyle(fontSize: 11.5),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
+                              backgroundColor: isFlashRoundDone
+                                  ? AppTheme.secondaryColor
+                                  : AppTheme.primaryColor,
+                              foregroundColor: isFlashRoundDone
+                                  ? AppTheme.primaryDark
+                                  : Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 6,
@@ -2216,6 +2292,8 @@ class _AdminGameControlScreenState
                             Text(
                               isCelebrating
                                   ? 'WINNER PAUSE'
+                                  : isFlashRevealing
+                                  ? 'NEUROWAVE™'
                                   : _isAutoPilotPaused
                                   ? 'PAUSED'
                                   : 'NEXT BALL IN',
@@ -2223,7 +2301,7 @@ class _AdminGameControlScreenState
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
-                                color: isCelebrating
+                                color: isCelebrating || isFlashRevealing
                                     ? AppTheme.secondaryColor
                                     : _isAutoPilotPaused
                                     ? AppTheme.accentWarning
@@ -2236,6 +2314,8 @@ class _AdminGameControlScreenState
                         Text(
                           isCelebrating
                               ? '${_celebrationSecondsLeft}s'
+                              : isFlashRevealing
+                              ? '${neuroSecsLeft}s'
                               : _isAutoPilotPaused
                               ? 'PAUSED'
                               : _isCalling
@@ -2245,7 +2325,7 @@ class _AdminGameControlScreenState
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                             fontFamily: 'monospace',
-                            color: isCelebrating
+                            color: isCelebrating || isFlashRevealing
                                 ? AppTheme.secondaryColor
                                 : _isAutoPilotPaused
                                 ? AppTheme.accentWarning
@@ -2317,6 +2397,62 @@ class _AdminGameControlScreenState
                   ),
                 ),
               )
+            else if (isFlashRevealing)
+              ElevatedButton.icon(
+                onPressed: null,
+                icon: Icon(
+                  Icons.bolt_rounded,
+                  size: iconSize,
+                  color: AppTheme.secondaryColor,
+                ),
+                label: Text(
+                  '⚡ NeuroWave™ Spotlight Active (${neuroSecsLeft}s)...',
+                  style: TextStyle(
+                    fontSize: fontSize - 1,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledForegroundColor: AppTheme.secondaryColor,
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(
+                      color: AppTheme.secondaryColor,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              )
+            else if (isFlashRoundDone && flashCfg != null && activeFlashCycle != null)
+              ElevatedButton.icon(
+                onPressed: disableCalling ? null : _handleCallNext,
+                icon: Icon(Icons.emoji_events_rounded, size: iconSize),
+                label: _isCalling
+                    ? const Text('Finalizing Round Standings...')
+                    : Text(
+                        flashCfg.isLastCycle
+                            ? '🏁 FINAL ROUND COMPLETE — CROWN WINNERS & CONCLUDE'
+                            : '🏆 ${activeFlashCycle.roundBadgeLabel} COMPLETE — CROWN WINNER & LAUNCH ROUND ${flashCfg.currentCycle + 1}',
+                        style: TextStyle(
+                          fontSize: fontSize - 1.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: AppTheme.primaryDark,
+                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledForegroundColor: const Color(0xFF718096),
+                  padding: EdgeInsets.symmetric(vertical: verticalPadding),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              )
             else
               ElevatedButton.icon(
                 onPressed: disableCalling ? null : _handleCallNext,
@@ -2324,9 +2460,15 @@ class _AdminGameControlScreenState
                 label: _isCalling
                     ? const Text('Selecting Number...')
                     : Text(
-                        calledCount == 0
-                            ? 'CALL FIRST NUMBER'
-                            : 'CALL NEXT NUMBER',
+                        flashCfg != null && activeFlashCycle != null
+                            ? (activeFlashCycle.startedAtMs == null
+                                  ? '🚀 LAUNCH ${activeFlashCycle.roundBadgeLabel} NEUROWAVE™ SPOTLIGHT'
+                                  : (calledCount == 0
+                                        ? 'CALL FIRST BALL (${activeFlashCycle.roundBadgeLabel})'
+                                        : 'CALL NEXT BALL ($calledCount / ${activeFlashCycle.drawPool.length})'))
+                            : (calledCount == 0
+                                  ? 'CALL FIRST NUMBER'
+                                  : 'CALL NEXT NUMBER ($calledCount / 90)'),
                         style: TextStyle(
                           fontSize: fontSize,
                           fontWeight: FontWeight.bold,
@@ -3256,9 +3398,21 @@ class _AdminGameControlScreenState
     List<MptCalledNumber>? calledNumbers,
     bool isGameCompleted = false,
   ]) {
-    final recent = (calledNumbers != null && calledNumbers.isNotEmpty)
-        ? calledNumbers.reversed.skip(1).take(6).toList()
-        : <MptCalledNumber>[];
+    final isFlash =
+        game?.isFlashHousie == true && game?.flashHousieConfig != null;
+    final activeFlashCycle = game?.flashHousieConfig?.activeCycleSpec;
+    final flashCalledInts = activeFlashCycle?.calledNumbers ?? const <int>[];
+    final recentInts = isFlash
+        ? flashCalledInts.reversed.toList()
+        : ((calledNumbers != null && calledNumbers.isNotEmpty)
+              ? calledNumbers.reversed.skip(1).take(6).map((e) => e.number).toList()
+              : <int>[]);
+    final maxPoolCount = isFlash
+        ? (activeFlashCycle?.drawPool.length ?? 8)
+        : 90;
+    final countLabel = isFlash
+        ? '${activeFlashCycle?.roundBadgeLabel ?? "Round"} Pool Called'
+        : 'Total Called';
     final capacity = game?.fundedCapacity ?? 5;
     final isFreeTier = capacity <= 5;
 
@@ -3380,30 +3534,30 @@ class _AdminGameControlScreenState
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '$totalCalled / 90',
+                    '$totalCalled / $maxPoolCount',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  const Text(
-                    'Total Called',
-                    style: TextStyle(fontSize: 10, color: Colors.white70),
+                  Text(
+                    countLabel,
+                    style: const TextStyle(fontSize: 10, color: Colors.white70),
                   ),
                 ],
               ),
             ],
           ),
-          if (recent.isNotEmpty) ...[
+          if (recentInts.isNotEmpty) ...[
             const SizedBox(height: 6),
             const Divider(color: Color(0xFF2E334D), height: 1),
             const SizedBox(height: 6),
             Row(
               children: [
-                const Text(
-                  'LAST 6: ',
-                  style: TextStyle(
+                Text(
+                  isFlash ? 'ROUND BALLS: ' : 'LAST 6: ',
+                  style: const TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.secondaryColor,
@@ -3415,7 +3569,9 @@ class _AdminGameControlScreenState
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
-                      children: recent.map((item) {
+                      children: recentInts.asMap().entries.map((entry) {
+                        final isLatestChip = isFlash && entry.key == 0;
+                        final ballNum = entry.value;
                         return Container(
                           margin: const EdgeInsets.only(right: 5),
                           padding: const EdgeInsets.symmetric(
@@ -3423,16 +3579,24 @@ class _AdminGameControlScreenState
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppTheme.darkSurface,
+                            color: isLatestChip
+                                ? AppTheme.secondaryColor
+                                : AppTheme.darkSurface,
                             borderRadius: BorderRadius.circular(5),
-                            border: Border.all(color: const Color(0xFF3B4163)),
+                            border: Border.all(
+                              color: isLatestChip
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF3B4163),
+                            ),
                           ),
                           child: Text(
-                            '${item.number}',
-                            style: const TextStyle(
+                            '$ballNum',
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: isLatestChip
+                                  ? AppTheme.primaryDark
+                                  : Colors.white,
                             ),
                           ),
                         );
@@ -3448,7 +3612,12 @@ class _AdminGameControlScreenState
     );
   }
 
-  Widget _buildMasterBoard(Set<int> calledSet) {
+  Widget _buildMasterBoard(Set<int> calledSet, {MptGame? game}) {
+    final isFlash =
+        game?.isFlashHousie == true && game?.flashHousieConfig != null;
+    final activeFlashCycle = game?.flashHousieConfig?.activeCycleSpec;
+    final maxPool = isFlash ? (activeFlashCycle?.drawPool.length ?? 8) : 90;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -3459,12 +3628,17 @@ class _AdminGameControlScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Master Board (1–90)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                Text(
+                  isFlash
+                      ? 'Master Board (1–90) • ${activeFlashCycle?.roundBadgeLabel ?? "Round"}'
+                      : 'Master Board (1–90)',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
                 Text(
-                  '${calledSet.length}/90 Called',
+                  '${calledSet.length}/$maxPool Called',
                   style: const TextStyle(
                     fontSize: 10.5,
                     color: AppTheme.secondaryColor,
@@ -3521,12 +3695,47 @@ class _AdminGameControlScreenState
     );
   }
 
+  String? _formatPrizeGiftDetail(MptGame? game, String prizeKey) {
+    if (game == null) return null;
+    final raw = game.prizeGiftsConfig[prizeKey];
+    if (raw is! Map) return null;
+    final title = (raw['title'] ?? raw['brand_name'] ?? '').toString().trim();
+    final val = (raw['prize_value'] as num?)?.toDouble() ?? 0.0;
+    final sym =
+        (raw['currency_symbol'] ?? game.prizeGiftsConfig['_currency_symbol'] ?? '₹')
+            .toString()
+            .trim();
+    final valStr = val > 0
+        ? '$sym${val == val.roundToDouble() ? val.toInt() : val.toStringAsFixed(2)}'
+        : '';
+    if (title.isNotEmpty && valStr.isNotEmpty) {
+      return '🎁 $title ($valStr)';
+    }
+    if (title.isNotEmpty) return '🎁 $title';
+    if (valStr.isNotEmpty) return '🎁 Prize Value: $valStr';
+    return null;
+  }
+
   Widget _buildClaimsQueue(
     AsyncValue<List<MptClaim>> claimsStream,
-    Map<String, MptRegistration> regMap,
-  ) {
+    Map<String, MptRegistration> regMap, {
+    MptGame? game,
+    List<String> activePrizes = const [],
+  }) {
     final hostRewardsAsync = ref.watch(hostGameRewardsProvider(widget.gameId));
     final hostRewards = hostRewardsAsync.value ?? [];
+    final flashCfg = game?.flashHousieConfig;
+    final prizeList = activePrizes.isNotEmpty
+        ? activePrizes
+        : (game?.prizesConfig ??
+              const [
+                'EARLY_FIVE',
+                'TOP_LINE',
+                'MIDDLE_LINE',
+                'BOTTOM_LINE',
+                'FOUR_CORNERS',
+                'FULL_HOUSE',
+              ]);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3557,10 +3766,11 @@ class _AdminGameControlScreenState
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Prize Claims & Winners',
+                      'Prizes & Winners',
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
                       ),
                     ),
                     if (approvedClaims.isNotEmpty && hasUnclaimed)
@@ -3598,13 +3808,13 @@ class _AdminGameControlScreenState
                         },
                         icon: const Icon(
                           Icons.done_all_rounded,
-                          size: 15,
+                          size: 16,
                           color: AppTheme.secondaryColor,
                         ),
                         label: const Text(
                           'Close All Claims',
                           style: TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.secondaryColor,
                           ),
@@ -3620,197 +3830,372 @@ class _AdminGameControlScreenState
                   ],
                 ),
                 const SizedBox(height: 10),
-                if (approvedClaims.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Center(
-                        child: Text(
-                          'No approved winners yet. Announce prizes to your players!',
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: approvedClaims.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (ctx, idx) {
-                      final claim = approvedClaims[idx];
-                      final playerReg = regMap[claim.userId];
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: prizeList.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (ctx, idx) {
+                    final prizeKey = prizeList[idx];
+                    final claim = approvedClaims
+                        .where((c) => c.prizeType == prizeKey)
+                        .firstOrNull;
+                    final flashWinnerUserId =
+                        flashCfg?.awardedWinners[prizeKey];
+                    final flashWinnerName =
+                        flashCfg?.awardedWinnerNames[prizeKey];
+                    String? flashScoreSummary =
+                        flashCfg?.awardedWinnerScoreSummaries[prizeKey];
+                    if (flashScoreSummary == null &&
+                        prizeKey.startsWith('ROUND_') &&
+                        flashCfg != null) {
+                      final rNum = int.tryParse(prizeKey.substring(6));
+                      final cSpec = flashCfg.cycles
+                          .where((c) => c.cycleIndex == rNum)
+                          .firstOrNull;
+                      if (cSpec?.winnerCorrectCount != null) {
+                        final reactSec = ((cSpec?.winnerReactionMs ?? 0) / 1000)
+                            .toStringAsFixed(1);
+                        flashScoreSummary =
+                            '✓ ${cSpec!.winnerCorrectCount}/${flashCfg.cellsPerQuadrant} Recalled  •  ⚡ ${reactSec}s';
+                      }
+                    }
+
+                    final isWon =
+                        claim != null ||
+                        (flashWinnerUserId != null &&
+                            flashWinnerUserId.isNotEmpty);
+                    final giftDetail = _formatPrizeGiftDetail(game, prizeKey);
+
+                    if (isWon) {
+                      final winnerUserId =
+                          claim?.userId ?? flashWinnerUserId ?? '';
+                      final playerReg = regMap[winnerUserId];
                       final displayName =
                           (playerReg?.displayName.isNotEmpty == true)
                           ? playerReg!.displayName
-                          : (claim.userName != null &&
-                                claim.userName != 'Player')
+                          : (flashWinnerName != null &&
+                                flashWinnerName.isNotEmpty)
+                          ? flashWinnerName
+                          : (claim?.userName != null &&
+                                claim!.userName != 'Player')
                           ? claim.userName!
                           : 'Player';
                       final avatar =
-                          playerReg?.avatar ?? claim.userAvatar ?? 'avatar_1';
+                          playerReg?.avatar ?? claim?.userAvatar ?? 'avatar_1';
                       final matchedReward = hostRewards
                           .where(
                             (rw) =>
-                                rw.claimId == claim.id ||
-                                (rw.prizeType == claim.prizeType &&
-                                    rw.userId == claim.userId),
+                                (claim != null && rw.claimId == claim.id) ||
+                                (rw.prizeType == prizeKey &&
+                                    rw.userId == winnerUserId),
                           )
                           .firstOrNull;
                       final isClaimed = matchedReward?.isClaimed ?? false;
 
                       return Card(
-                        color: AppTheme.accentSuccess.withValues(alpha: 0.12),
+                        color: AppTheme.accentSuccess.withValues(alpha: 0.14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                           side: BorderSide(
                             color: isClaimed
                                 ? const Color(0xFF2E334D)
                                 : AppTheme.accentSuccess,
-                            width: 1.2,
+                            width: 1.5,
                           ),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor.withValues(
-                                alpha: 0.2,
-                              ),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppTheme.secondaryColor,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              Formatters.getAvatarEmoji(avatar),
-                              style: const TextStyle(fontSize: 22),
-                            ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
                           ),
-                          title: Text(
-                            '🏆 ${Formatters.formatPrizeName(claim.prizeType)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 2),
-                              Text(
-                                'Won by: $displayName',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.accentSuccess,
+                              Container(
+                                width: 46,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.secondaryColor.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppTheme.secondaryColor,
+                                    width: 1.4,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  Formatters.getAvatarEmoji(avatar),
+                                  style: const TextStyle(fontSize: 24),
                                 ),
                               ),
-                              Text(
-                                matchedReward != null
-                                    ? 'Ref: ${matchedReward.claimReference}'
-                                    : 'Verified • ${Formatters.formatShortDate(claim.submittedAt)}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFFCBD5E1),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '🏆 ${Formatters.formatPrizeName(prizeKey, cellsPerQuadrant: flashCfg?.cellsPerQuadrant)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    if (giftDetail != null) ...[
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        giftDetail,
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Won by: $displayName',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.accentSuccess,
+                                      ),
+                                    ),
+                                    if (flashScoreSummary != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        flashScoreSummary,
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      matchedReward != null
+                                          ? 'Ref: ${matchedReward.claimReference}'
+                                          : (claim != null
+                                                ? 'Verified • ${Formatters.formatShortDate(claim.submittedAt)}'
+                                                : 'Verified FlashHousie™ Standings'),
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: Color(0xFFCBD5E1),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
-                          trailing: isClaimed
-                              ? Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 9,
-                                    vertical: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(
-                                      0xFF10B981,
-                                    ).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: const Color(
-                                        0xFF10B981,
-                                      ).withValues(alpha: 0.5),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    '✓ CLAIMED',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10.5,
-                                      color: Color(0xFF10B981),
-                                    ),
-                                  ),
-                                )
-                              : ElevatedButton.icon(
-                                  onPressed: () async {
-                                    try {
-                                      await ref
-                                          .read(rewardsRepositoryProvider)
-                                          .closeGameClaim(
-                                            gameId: widget.gameId,
-                                            rewardId: matchedReward?.id,
-                                            claimId: claim.id,
-                                          );
-                                      ref.invalidate(
-                                        hostGameRewardsProvider(widget.gameId),
-                                      );
-                                      ref.invalidate(myRewardsProvider);
-                                      if (!mounted) return;
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Marked ${Formatters.formatPrizeName(claim.prizeType)} ($displayName) as Claimed!',
+                              if (claim != null) ...[
+                                const SizedBox(width: 8),
+                                isClaimed
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(
+                                            0xFF10B981,
+                                          ).withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
+                                          border: Border.all(
+                                            color: const Color(
+                                              0xFF10B981,
+                                            ).withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          '✓ CLAIMED',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11.5,
+                                            color: Color(0xFF10B981),
+                                          ),
+                                        ),
+                                      )
+                                    : ElevatedButton.icon(
+                                        onPressed: () async {
+                                          try {
+                                            await ref
+                                                .read(rewardsRepositoryProvider)
+                                                .closeGameClaim(
+                                                  gameId: widget.gameId,
+                                                  rewardId: matchedReward?.id,
+                                                  claimId: claim.id,
+                                                );
+                                            ref.invalidate(
+                                              hostGameRewardsProvider(
+                                                widget.gameId,
+                                              ),
+                                            );
+                                            ref.invalidate(myRewardsProvider);
+                                            if (!mounted) return;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Marked ${Formatters.formatPrizeName(prizeKey, cellsPerQuadrant: flashCfg?.cellsPerQuadrant)} ($displayName) as Claimed!',
+                                                ),
+                                                backgroundColor:
+                                                    AppTheme.accentSuccess,
+                                              ),
+                                            );
+                                          } catch (e) {
+                                            if (!mounted) return;
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  'Failed to close claim: $e',
+                                                ),
+                                                backgroundColor:
+                                                    AppTheme.accentDanger,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(
+                                          Icons.check_circle_outline,
+                                          size: 15,
+                                        ),
+                                        label: const Text('Close Claim'),
+                                        style: ElevatedButton.styleFrom(
                                           backgroundColor:
                                               AppTheme.accentSuccess,
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      if (!mounted) return;
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Failed to close claim: $e',
+                                          foregroundColor: Colors.white,
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 7,
                                           ),
-                                          backgroundColor:
-                                              AppTheme.accentDanger,
+                                          textStyle: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(
-                                    Icons.check_circle_outline,
-                                    size: 14,
-                                  ),
-                                  label: const Text('Close Claim'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.accentSuccess,
-                                    foregroundColor: Colors.white,
-                                    visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    textStyle: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                                      ),
+                              ],
+                            ],
+                          ),
                         ),
                       );
-                    },
-                  ),
+                    }
+
+                    // Prize not yet won — show rich open prize card with larger font
+                    String openStatusText = '🟢 Open for Claims';
+                    Color openStatusColor = const Color(0xFF38BDF8);
+                    if (flashCfg != null) {
+                      if (prizeKey.startsWith('ROUND_')) {
+                        final rNum = int.tryParse(prizeKey.substring(6)) ?? 1;
+                        if (rNum == flashCfg.currentCycle &&
+                            game?.status != 'COMPLETED') {
+                          openStatusText =
+                              '⚡ Round $rNum Live Now — Top Recall Accuracy + Speed Wins';
+                          openStatusColor = AppTheme.secondaryColor;
+                        } else if (rNum > flashCfg.currentCycle) {
+                          openStatusText = '⏳ Upcoming Round $rNum Prize';
+                          openStatusColor = const Color(0xFF94A3B8);
+                        } else {
+                          openStatusText = '🏁 Round $rNum Concluded';
+                          openStatusColor = const Color(0xFF94A3B8);
+                        }
+                      } else if (prizeKey == 'FULL_HOUSE' ||
+                          prizeKey == 'SECOND_FULL_HOUSE') {
+                        openStatusText =
+                            '🏆 Crowned after Round ${flashCfg.totalCycles} (Cumulative Recall + Speed)';
+                        openStatusColor = AppTheme.secondaryColor;
+                      }
+                    }
+
+                    return Card(
+                      color: AppTheme.darkSurface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: const BorderSide(color: Color(0xFF2E334D)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.22,
+                                ),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppTheme.primaryLight.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.emoji_events_outlined,
+                                color: AppTheme.secondaryColor,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    Formatters.formatPrizeName(
+                                      prizeKey,
+                                      cellsPerQuadrant:
+                                          flashCfg?.cellsPerQuadrant,
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  if (giftDetail != null) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      giftDetail,
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppTheme.secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    openStatusText,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: openStatusColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             );
           },

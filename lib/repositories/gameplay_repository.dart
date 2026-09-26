@@ -169,6 +169,78 @@ class GameplayRepository {
     required String prizeType,
     required List<int> markedNumbers,
   }) async {
+    final uid = _supabase.auth.currentUser?.id;
+
+    // Special path for FlashHousie™ 5 / 10 / 15 auto-scored prizes
+    try {
+      final gameRow = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', gameId)
+          .maybeSingle();
+      if (gameRow != null && gameRow['prize_gifts_config'] is Map) {
+        final prizeGifts =
+            Map<String, dynamic>.from(gameRow['prize_gifts_config'] as Map);
+        final flashCfg = FlashHousieConfig.fromPrizeGiftsConfig(prizeGifts);
+        if (flashCfg != null && uid != null) {
+          final awardedUid = flashCfg.awardedWinners[prizeType];
+          if (awardedUid == uid) {
+            final existingWins = await _supabase
+                .from('MPT_claims')
+                .select()
+                .eq('game_id', gameId)
+                .eq('prize_type', prizeType)
+                .eq('status', 'APPROVED');
+            if ((existingWins as List).isNotEmpty) {
+              final existingReward = await _supabase
+                  .from('MPT_rewards')
+                  .select('claim_reference')
+                  .eq('game_id', gameId)
+                  .eq('prize_type', prizeType)
+                  .eq('user_id', uid)
+                  .maybeSingle();
+              return {
+                'status': 'APPROVED',
+                'prize_type': prizeType,
+                'claim_reference':
+                    existingReward?['claim_reference'] as String? ?? 'FLASH-WIN',
+              };
+            }
+
+            final rawHex = const Uuid().v4().replaceAll('-', '').toUpperCase();
+            final claimRef =
+                'Dab-Housie-${rawHex.substring(0, 4)}-${rawHex.substring(4, 8)}';
+            final claimRes = await _supabase
+                .from('MPT_claims')
+                .insert({
+                  'game_id': gameId,
+                  'user_id': uid,
+                  'prize_type': prizeType,
+                  'status': 'APPROVED',
+                  'marked_numbers': markedNumbers,
+                })
+                .select()
+                .maybeSingle();
+            try {
+              await _supabase.from('MPT_rewards').insert({
+                'game_id': gameId,
+                'user_id': uid,
+                'prize_type': prizeType,
+                'claim_id': claimRes?['id'],
+                'claim_reference': claimRef,
+                'status': 'AVAILABLE_TO_CLAIM',
+              });
+            } catch (_) {}
+            return {
+              'status': 'APPROVED',
+              'prize_type': prizeType,
+              'claim_reference': claimRef,
+            };
+          }
+        }
+      }
+    } catch (_) {}
+
     final idempotencyKey = const Uuid().v4();
     try {
       final res = await _supabase.rpc('MPT_submit_claim', params: {
@@ -181,7 +253,6 @@ class GameplayRepository {
 
       // Defensive guarantee: if claim was APPROVED, ensure reward row exists in MPT_rewards
       if (resultMap['status'] == 'APPROVED') {
-        final uid = _supabase.auth.currentUser?.id;
         final claimId = resultMap['claim_id'] as String?;
         final claimRef = resultMap['claim_reference'] as String?;
         if (uid != null && claimRef != null && claimRef.isNotEmpty) {
@@ -322,14 +393,24 @@ class GameplayRepository {
   // FLASHHOUSIE™ 5 / 10 / 15 & NEUROWAVE™ SPOTLIGHT ENGINE
   // ===========================================================================
 
+  /// In-memory score cache per gameId -> '${cycleIndex}_$userId' so local/same-browser
+  /// sessions and hosts have zero-latency score visibility even before DB migration.
+  static final Map<String, Map<String, MptMemoryRoundScore>>
+      _localMemoryScoreCache = {};
+
   /// Persists an updated [FlashHousieConfig] into `MPT_games.prize_gifts_config['_flash_housie']`
   Future<void> updateFlashHousieConfig({
     required String gameId,
     required Map<String, dynamic> currentPrizeGiftsConfig,
     required FlashHousieConfig updatedConfig,
   }) async {
+    final mergedEmbedded = <String, MptMemoryRoundScore>{
+      ...updatedConfig.embeddedScores,
+      ...?_localMemoryScoreCache[gameId],
+    };
+    final configToSave = updatedConfig.copyWith(embeddedScores: mergedEmbedded);
     final nextPrizeGifts = Map<String, dynamic>.from(currentPrizeGiftsConfig);
-    nextPrizeGifts['_flash_housie'] = updatedConfig.toJson();
+    nextPrizeGifts['_flash_housie'] = configToSave.toJson();
     await _supabase
         .from('MPT_games')
         .update({
@@ -414,7 +495,9 @@ class GameplayRepository {
     return nextNum;
   }
 
-  /// Upserts a player's live memory recall score into `MPT_memory_round_scores` (Option-B Live TV Board)
+  /// Upserts a player's live memory recall score into `MPT_memory_round_scores`
+  /// AND persists a backup into `MPT_games.prize_gifts_config['_flash_housie']['embedded_scores']`
+  /// plus the in-memory `_localMemoryScoreCache`.
   Future<void> upsertMemoryRoundScore({
     required String gameId,
     required int cycleIndex,
@@ -430,6 +513,29 @@ class GameplayRepository {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) return;
 
+    final scoreKey = '${cycleIndex}_$uid';
+    final now = DateTime.now().toUtc();
+    final scoreObj = MptMemoryRoundScore(
+      id: scoreKey,
+      gameId: gameId,
+      userId: uid,
+      displayName: displayName,
+      avatar: avatar,
+      cycleIndex: cycleIndex,
+      quadrantLabel: quadrantLabel,
+      correctNumbers: List<int>.from(correctNumbers),
+      correctCount: correctNumbers.length,
+      wrongTapCount: wrongTapCount,
+      totalReactionMs: totalReactionMs,
+      lastRecalledNumber: lastRecalledNumber,
+      lastReactionMs: lastReactionMs,
+      updatedAt: now,
+    );
+
+    // 1. Always store in local memory cache immediately
+    _localMemoryScoreCache.putIfAbsent(gameId, () => {})[scoreKey] = scoreObj;
+
+    // 2. Try upserting into dedicated MPT_memory_round_scores table
     try {
       await _supabase.from('MPT_memory_round_scores').upsert(
         {
@@ -445,30 +551,103 @@ class GameplayRepository {
           'total_reaction_ms': totalReactionMs,
           'last_recalled_number': lastRecalledNumber,
           'last_reaction_ms': lastReactionMs,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
+          'updated_at': now.toIso8601String(),
         },
         onConflict: 'game_id,user_id,cycle_index',
       );
     } catch (e) {
-      debugPrint('MPT_memory_round_scores upsert warning: $e');
+      debugPrint('MPT_memory_round_scores upsert fallback to embedded_scores: $e');
     }
+
+    // 3. Also persist into MPT_games.prize_gifts_config['_flash_housie']['embedded_scores']
+    try {
+      final gameRow = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', gameId)
+          .maybeSingle();
+      if (gameRow != null && gameRow['prize_gifts_config'] is Map) {
+        final prizeGifts =
+            Map<String, dynamic>.from(gameRow['prize_gifts_config'] as Map);
+        final flashCfg = FlashHousieConfig.fromPrizeGiftsConfig(prizeGifts);
+        if (flashCfg != null) {
+          final nextEmbedded = Map<String, MptMemoryRoundScore>.from(
+            flashCfg.embeddedScores,
+          );
+          nextEmbedded[scoreKey] = scoreObj;
+          await updateFlashHousieConfig(
+            gameId: gameId,
+            currentPrizeGiftsConfig: prizeGifts,
+            updatedConfig: flashCfg.copyWith(embeddedScores: nextEmbedded),
+          );
+        }
+      }
+    } catch (_) {}
   }
 
-  /// Fetches all `MPT_memory_round_scores` rows for a game
+  /// Helper to pick the more complete / newer score between two snapshots
+  MptMemoryRoundScore _pickBetterScore(
+    MptMemoryRoundScore a,
+    MptMemoryRoundScore b,
+  ) {
+    if (b.correctCount != a.correctCount) {
+      return b.correctCount > a.correctCount ? b : a;
+    }
+    if (b.wrongTapCount != a.wrongTapCount) {
+      return b.wrongTapCount > a.wrongTapCount ? b : a;
+    }
+    return b.updatedAt.isAfter(a.updatedAt) ? b : a;
+  }
+
+  /// Fetches and merges all `MPT_memory_round_scores` rows, `embeddedScores`, and `_localMemoryScoreCache` for a game
   Future<List<MptMemoryRoundScore>> getMemoryRoundScores(String gameId) async {
+    final merged = <String, MptMemoryRoundScore>{};
+
+    // 1. Local memory cache
+    final localMap = _localMemoryScoreCache[gameId];
+    if (localMap != null) {
+      merged.addAll(localMap);
+    }
+
+    // 2. Embedded scores inside MPT_games.prize_gifts_config['_flash_housie']
+    try {
+      final gameRow = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', gameId)
+          .maybeSingle();
+      if (gameRow != null && gameRow['prize_gifts_config'] is Map) {
+        final prizeGifts =
+            Map<String, dynamic>.from(gameRow['prize_gifts_config'] as Map);
+        final flashCfg = FlashHousieConfig.fromPrizeGiftsConfig(prizeGifts);
+        if (flashCfg != null) {
+          flashCfg.embeddedScores.forEach((k, v) {
+            final existing = merged[k];
+            merged[k] = existing == null ? v : _pickBetterScore(existing, v);
+          });
+        }
+      }
+    } catch (_) {}
+
+    // 3. Dedicated MPT_memory_round_scores table (if migrated)
     try {
       final res = await _supabase
           .from('MPT_memory_round_scores')
           .select()
           .eq('game_id', gameId);
-      final list = (res as List)
-          .map((e) => MptMemoryRoundScore.fromJson(Map<String, dynamic>.from(e as Map)))
-          .toList();
-      list.sort(MptMemoryRoundScore.compareStandings);
-      return list;
-    } catch (e) {
-      return const [];
-    }
+      for (final raw in (res as List)) {
+        final s = MptMemoryRoundScore.fromJson(
+          Map<String, dynamic>.from(raw as Map),
+        );
+        final key = '${s.cycleIndex}_${s.userId}';
+        final existing = merged[key];
+        merged[key] = existing == null ? s : _pickBetterScore(existing, s);
+      }
+    } catch (_) {}
+
+    final list = merged.values.toList()
+      ..sort(MptMemoryRoundScore.compareStandings);
+    return list;
   }
 
   /// Smart Polling stream for `MPT_memory_round_scores` (1.5s interval for Live TV Board)
@@ -533,7 +712,20 @@ class GameplayRepository {
     required MptGame game,
     required bool advanceToNextCycle,
   }) async {
-    final config = game.flashHousieConfig;
+    // Always fetch latest game snapshot from DB so we don't overwrite recent embeddedScores
+    MptGame latestGame = game;
+    try {
+      final row = await _supabase
+          .from('MPT_games')
+          .select()
+          .eq('id', game.id)
+          .maybeSingle();
+      if (row != null) {
+        latestGame = MptGame.fromJson(row);
+      }
+    } catch (_) {}
+
+    final config = latestGame.flashHousieConfig ?? game.flashHousieConfig;
     if (config == null) return null;
 
     final activeSpec = config.activeCycleSpec;
@@ -547,10 +739,14 @@ class GameplayRepository {
 
     final nextWinners = Map<String, String>.from(config.awardedWinners);
     final nextWinnerNames = Map<String, String>.from(config.awardedWinnerNames);
+    final nextWinnerSummaries =
+        Map<String, String>.from(config.awardedWinnerScoreSummaries);
 
     if (topScore != null) {
       nextWinners[activeSpec.prizeKey] = topScore.userId;
       nextWinnerNames[activeSpec.prizeKey] = topScore.displayName;
+      nextWinnerSummaries[activeSpec.prizeKey] =
+          '✓ ${topScore.correctCount}/${activeSpec.trueNumbers.length} Recalled • ⚡ ${(topScore.totalReactionMs / 1000).toStringAsFixed(1)}s';
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: topScore.userId,
@@ -586,11 +782,12 @@ class GameplayRepository {
       cycles: updatedCycles,
       awardedWinners: nextWinners,
       awardedWinnerNames: nextWinnerNames,
+      awardedWinnerScoreSummaries: nextWinnerSummaries,
     );
 
     await updateFlashHousieConfig(
       gameId: game.id,
-      currentPrizeGiftsConfig: game.prizeGiftsConfig,
+      currentPrizeGiftsConfig: latestGame.prizeGiftsConfig,
       updatedConfig: updatedConfig,
     );
 
@@ -641,11 +838,16 @@ class GameplayRepository {
 
     final nextWinners = Map<String, String>.from(afterCycleConfig.awardedWinners);
     final nextWinnerNames = Map<String, String>.from(afterCycleConfig.awardedWinnerNames);
+    final nextWinnerSummaries =
+        Map<String, String>.from(afterCycleConfig.awardedWinnerScoreSummaries);
+    final totalTargets = afterCycleConfig.totalTargetNumbersAcrossAllCycles;
 
     if (rankedUsers.isNotEmpty && game.prizesConfig.contains('FULL_HOUSE')) {
       final firstWinner = rankedUsers[0];
       nextWinners['FULL_HOUSE'] = firstWinner.userId;
       nextWinnerNames['FULL_HOUSE'] = firstWinner.displayName;
+      nextWinnerSummaries['FULL_HOUSE'] =
+          '✓ ${firstWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(firstWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: firstWinner.userId,
@@ -658,6 +860,8 @@ class GameplayRepository {
       final secondWinner = rankedUsers[1];
       nextWinners['SECOND_FULL_HOUSE'] = secondWinner.userId;
       nextWinnerNames['SECOND_FULL_HOUSE'] = secondWinner.displayName;
+      nextWinnerSummaries['SECOND_FULL_HOUSE'] =
+          '✓ ${secondWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(secondWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: secondWinner.userId,
@@ -669,11 +873,26 @@ class GameplayRepository {
     final finalConfig = afterCycleConfig.copyWith(
       awardedWinners: nextWinners,
       awardedWinnerNames: nextWinnerNames,
+      awardedWinnerScoreSummaries: nextWinnerSummaries,
     );
+
+    // Fetch latest prizeGiftsConfig before saving
+    Map<String, dynamic> latestPrizeGifts = game.prizeGiftsConfig;
+    try {
+      final row = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', game.id)
+          .maybeSingle();
+      if (row != null && row['prize_gifts_config'] is Map) {
+        latestPrizeGifts =
+            Map<String, dynamic>.from(row['prize_gifts_config'] as Map);
+      }
+    } catch (_) {}
 
     await updateFlashHousieConfig(
       gameId: game.id,
-      currentPrizeGiftsConfig: game.prizeGiftsConfig,
+      currentPrizeGiftsConfig: latestPrizeGifts,
       updatedConfig: finalConfig,
     );
 
