@@ -56,6 +56,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   bool _enableOrgBranding = false;
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
+  bool _freeToPlayConfirmed = false;
 
   static const Map<String, Map<String, dynamic>> _currencyOptions = {
     'USD': {
@@ -533,6 +534,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         );
         return;
       }
+    }
+
+    if (!_freeToPlayConfirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please check the Free-to-Play & Voucher-Only compliance box before creating your game.'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+      return;
     }
 
     setState(() => _isLoading = true);
@@ -2227,7 +2238,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           children: [
             const Expanded(
               child: Text(
-                'Winning Patterns, Budget & Brand Gifts',
+                'Winning Patterns, Voucher Budget & Brand Gifts',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -2254,7 +2265,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
         const SizedBox(height: 6),
         const Text(
-          'Select your country currency, set your total game budget, and link global gift templates or custom offers.',
+          'Select your country currency, set your promotional voucher budget, and link brand sponsor offers or host-fulfilled gift vouchers (no cash payouts allowed).',
           style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
         ),
         const SizedBox(height: 12),
@@ -2916,34 +2927,164 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildCreateButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleCreate,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 3,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildFreeToPlayComplianceCard(),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _handleCreate,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 3,
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.rocket_launch_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Create Game & Generate Invite Code',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+          ),
         ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-              )
-            : const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      ],
+    );
+  }
+
+  Widget _buildFreeToPlayComplianceCard() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _freeToPlayConfirmed
+            ? AppTheme.accentSuccess.withValues(alpha: 0.1)
+            : AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _freeToPlayConfirmed
+              ? AppTheme.accentSuccess.withValues(alpha: 0.55)
+              : const Color(0xFF334155),
+          width: _freeToPlayConfirmed ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _freeToPlayConfirmed ? Icons.verified_user_rounded : Icons.gavel_rounded,
+                size: 16,
+                color: _freeToPlayConfirmed ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Free-to-Play & Voucher-Only Policy (No Gambling)',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            '• Zero Player Entry Fees: DabHousie is strictly a social event platform. Organizers must never collect entry fees, ticket charges, or wagers from players (online or offline).\n'
+            '• Vouchers & Gifts Only: All prizes are promotional gift vouchers or sponsor offers fulfilled by the Host or Brand Partner. No cash payouts are permitted.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFFCBD5E1),
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _freeToPlayConfirmed
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.5)
+                      : const Color(0xFF334155),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.rocket_launch_rounded, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Create Game & Generate Invite Code',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Checkbox(
+                      value: _freeToPlayConfirmed,
+                      activeColor: AppTheme.accentSuccess,
+                      onChanged: (val) => setState(() => _freeToPlayConfirmed = val ?? false),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Colors.white,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        children: [
+                          const TextSpan(
+                            text: 'I confirm that no money or entry fee is collected from players to join this game, and prizes are strictly promotional vouchers/gifts (no cash delivery) per our ',
+                          ),
+                          WidgetSpan(
+                            alignment: PlaceholderAlignment.middle,
+                            child: InkWell(
+                              onTap: () async {
+                                final uri = Uri.parse('${AppConfig.appBaseUrl}/terms-conditions.html#anti-gambling-policy');
+                                if (await canLaunchUrl(uri)) {
+                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                }
+                              },
+                              child: const Text(
+                                'Terms & Conditions',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: AppTheme.secondaryColor,
+                                  decoration: TextDecoration.underline,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const TextSpan(text: '.'),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
