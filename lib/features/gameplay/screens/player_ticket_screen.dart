@@ -88,6 +88,60 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           .ceil()
           .clamp(1, 5);
 
+  Future<void> _triggerFlashPrizeClaim({
+    required String prizeType,
+    required List<int> markedNumbers,
+    bool isAuto = true,
+  }) async {
+    if (markedNumbers.isEmpty) return;
+    if (!isAuto) {
+      setState(() => _isClaiming = true);
+    }
+    try {
+      final res = await ref.read(gameplayRepositoryProvider).submitClaim(
+            gameId: widget.gameId,
+            prizeType: prizeType,
+            markedNumbers: markedNumbers,
+          );
+      if (!mounted) return;
+      final status = res['status'] as String? ?? 'UNKNOWN';
+      if (status == 'APPROVED') {
+        _autoClaimedFlashPrizes.add(prizeType);
+        ref.invalidate(claimsStreamProvider(widget.gameId));
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        ref.invalidate(myRewardsProvider);
+        final refCode = res['claim_reference'] as String? ?? 'FLASH-WIN';
+        final regList =
+            ref.read(registrationsStreamProvider(widget.gameId)).value ?? [];
+        final confirmedCount = regList.where((r) => r.isConfirmed).length;
+        final totalPlayers = confirmedCount > 0 ? confirmedCount : 1;
+        _showWinnerDialog(prizeType, refCode, totalPlayers);
+      } else if (!isAuto) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              res['reason'] as String? ?? 'Unable to claim prize yet.',
+            ),
+            backgroundColor: AppTheme.accentWarning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!isAuto && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Claim error: $e'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      }
+    } finally {
+      if (!isAuto && mounted) {
+        setState(() => _isClaiming = false);
+      }
+    }
+  }
+
   Future<void> _handleFlashCellTap({
     required int numVal,
     required FlashHousieCycleSpec cycleSpec,
@@ -158,6 +212,28 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             lastReactionMs: deltaMs,
           );
       ref.invalidate(gameStreamProvider(widget.gameId));
+
+      // Instant auto-crown if player recalled all 5/5 numbers in this round!
+      if (recalledSet.length >= effectiveCycleSpec.trueNumbers.length &&
+          !_autoClaimedFlashPrizes.contains(effectiveCycleSpec.prizeKey)) {
+        _autoClaimedFlashPrizes.add(effectiveCycleSpec.prizeKey);
+        await _triggerFlashPrizeClaim(
+          prizeType: effectiveCycleSpec.prizeKey,
+          markedNumbers: recalledSet.toList(),
+          isAuto: true,
+        );
+      }
+
+      // Instant auto-crown Full House if player recalled all target numbers across all rounds!
+      if (_cumulativeFlashCorrect >= config.totalTargetNumbersAcrossAllCycles &&
+          !_autoClaimedFlashPrizes.contains('FULL_HOUSE')) {
+        _autoClaimedFlashPrizes.add('FULL_HOUSE');
+        await _triggerFlashPrizeClaim(
+          prizeType: 'FULL_HOUSE',
+          markedNumbers: _markedNumbers.toList(),
+          isAuto: true,
+        );
+      }
     } else {
       // Wrong cell or tapped during a Challenge (Decoy) Ball -> 3-second cooldown freeze!
       final newWrongCount = _wrongTapsForCycle(cycleIdx) + 1;
@@ -777,6 +853,20 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final currentGame = gameStream.value;
               final flashConfig = currentGame?.flashHousieConfig;
               final activeCycleSpec = flashConfig?.activeCycleSpec;
+
+              // Hydrate per-round recall sets from saved _markedNumbers across reloads
+              if (flashConfig != null && _markedNumbers.isNotEmpty) {
+                for (final c in flashConfig.cycles) {
+                  final recalledSet = _recalledForCycle(c.cycleIndex);
+                  final calledInCycle = c.calledNumbers.toSet();
+                  for (final numVal in c.trueNumbers) {
+                    if (_markedNumbers.contains(numVal) &&
+                        calledInCycle.contains(numVal)) {
+                      recalledSet.add(numVal);
+                    }
+                  }
+                }
+              }
 
               // Track reaction timer & voice caller when a new FlashHousie™ ball is drawn
               if (activeCycleSpec != null) {
@@ -2146,9 +2236,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ref.watch(registrationsStreamProvider(widget.gameId)).value ?? [];
     final regMap = {for (final r in registrations) r.userId: r};
 
-    // Auto-claim backup: if host crowned this player in FlashHousieConfig.awardedWinners,
-    // ensure an official MPT_claims + MPT_rewards voucher is minted in the player's own session!
-    if (flashConfig != null && currentUserId != null) {
+    // Auto-claim for FlashHousie™ 5 / 10 / 15:
+    // 1. If host crowned this player in FlashHousieConfig.awardedWinners, OR
+    // 2. If player recalled all target numbers in a round (5/5), OR
+    // 3. If all 8/8 balls of a round have been called and player has recalled numbers in that round!
+    if (flashConfig != null && currentUserId != null && !isGameEnded) {
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
       for (final entry in flashConfig.awardedWinners.entries) {
         final prizeKey = entry.key;
         final winnerUid = entry.value;
@@ -2156,25 +2249,62 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             approvedClaims[prizeKey] == null &&
             !_autoClaimedFlashPrizes.contains(prizeKey)) {
           _autoClaimedFlashPrizes.add(prizeKey);
-          Future.microtask(() async {
-            try {
-              final res = await ref
-                  .read(gameplayRepositoryProvider)
-                  .submitClaim(
-                    gameId: widget.gameId,
-                    prizeType: prizeKey,
-                    markedNumbers: _markedNumbers.toList(),
-                  );
-              if (mounted && res['status'] == 'APPROVED') {
-                final refCode = res['claim_reference'] as String? ?? 'N/A';
-                _showWinnerDialog(
-                  prizeKey,
-                  refCode,
-                  registrations.isNotEmpty ? registrations.length : 1,
-                );
-              }
-            } catch (_) {}
-          });
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: prizeKey,
+              markedNumbers: _markedNumbers.toList(),
+              isAuto: true,
+            ),
+          );
+        }
+      }
+
+      for (final c in flashConfig.cycles) {
+        final prizeKey = c.prizeKey;
+        final recalledSet = _recalledForCycle(c.cycleIndex);
+        final isFullRecall =
+            c.trueNumbers.isNotEmpty && recalledSet.length >= c.trueNumbers.length;
+        final isRoundPoolDone =
+            c.isCompleted &&
+            recalledSet.isNotEmpty &&
+            (_lastFlashBallShownAtMs == 0 ||
+                nowMs - _lastFlashBallShownAtMs >= 2000);
+        if ((isFullRecall || isRoundPoolDone) &&
+            approvedClaims[prizeKey] == null &&
+            flashConfig.awardedWinners[prizeKey] == null &&
+            !_autoClaimedFlashPrizes.contains(prizeKey)) {
+          _autoClaimedFlashPrizes.add(prizeKey);
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: prizeKey,
+              markedNumbers: recalledSet.toList(),
+              isAuto: true,
+            ),
+          );
+        }
+      }
+
+      if (activePrizes.contains('FULL_HOUSE') &&
+          approvedClaims['FULL_HOUSE'] == null &&
+          flashConfig.awardedWinners['FULL_HOUSE'] == null &&
+          !_autoClaimedFlashPrizes.contains('FULL_HOUSE') &&
+          _cumulativeFlashCorrect > 0) {
+        final totalTargets = flashConfig.totalTargetNumbersAcrossAllCycles;
+        final isAllRecalled = _cumulativeFlashCorrect >= totalTargets;
+        final isFinalRoundDone =
+            flashConfig.cycles.isNotEmpty &&
+            flashConfig.cycles.last.isCompleted &&
+            (_lastFlashBallShownAtMs == 0 ||
+                nowMs - _lastFlashBallShownAtMs >= 2200);
+        if (isAllRecalled || isFinalRoundDone) {
+          _autoClaimedFlashPrizes.add('FULL_HOUSE');
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: 'FULL_HOUSE',
+              markedNumbers: _markedNumbers.toList(),
+              isAuto: true,
+            ),
+          );
         }
       }
     }
@@ -2251,6 +2381,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             String? scoreSummary =
                 flashConfig?.awardedWinnerScoreSummaries[prize];
             if ((scoreSummary == null || scoreSummary.isEmpty) &&
+                approvedClaim?.rejectionReason != null &&
+                approvedClaim!.rejectionReason!.trim().startsWith('✓')) {
+              scoreSummary = approvedClaim.rejectionReason!.trim();
+            }
+            if ((scoreSummary == null || scoreSummary.isEmpty) &&
                 flashConfig != null &&
                 prize.startsWith('ROUND_')) {
               final rNum = int.tryParse(prize.replaceFirst('ROUND_', ''));
@@ -2261,6 +2396,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       .toStringAsFixed(1);
                   scoreSummary =
                       '✓ ${cSpec.winnerCorrectCount}/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
+                } else if (isWonByMe && cSpec != null) {
+                  final myRecalled = _recalledForCycle(rNum).length;
+                  final sec =
+                      (_reactionMsForCycle(rNum) / 1000).toStringAsFixed(1);
+                  if (myRecalled > 0) {
+                    scoreSummary =
+                        '✓ $myRecalled/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
+                  }
                 }
               }
             }
@@ -2418,14 +2561,64 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             }
 
             if (flashConfig != null) {
+              bool canClaimNow = false;
+              String flashSubtitle = '⚡ Live Memory Leaderboard';
+              List<int> claimNums = _markedNumbers.toList();
+
+              if (prize.startsWith('ROUND_')) {
+                final rNum = int.tryParse(prize.replaceFirst('ROUND_', '')) ?? 1;
+                final cSpec = flashConfig.cycleAt(rNum);
+                final recalledInRound = _recalledForCycle(rNum);
+                claimNums = recalledInRound.toList();
+                if (cSpec != null) {
+                  if (recalledInRound.length >= cSpec.trueNumbers.length ||
+                      (cSpec.isCompleted && recalledInRound.isNotEmpty)) {
+                    canClaimNow = true;
+                    flashSubtitle =
+                        '🏆 ${recalledInRound.length}/${cSpec.trueNumbers.length} Recalled • Tap to Claim!';
+                  } else if (rNum == flashConfig.currentCycle) {
+                    flashSubtitle =
+                        '🎯 ${recalledInRound.length}/${cSpec.trueNumbers.length} Recalled • Auto-Crowns';
+                  } else if (rNum > flashConfig.currentCycle) {
+                    flashSubtitle = '⏳ Unlocks in Round $rNum';
+                  }
+                }
+              } else if (prize == 'FULL_HOUSE' || prize == 'SECOND_FULL_HOUSE') {
+                final totalTargets = flashConfig.totalTargetNumbersAcrossAllCycles;
+                final isLastDone =
+                    flashConfig.cycles.isNotEmpty &&
+                    flashConfig.cycles.last.isCompleted;
+                if (_cumulativeFlashCorrect >= totalTargets ||
+                    (isLastDone && _cumulativeFlashCorrect > 0)) {
+                  canClaimNow = true;
+                  flashSubtitle =
+                      '🏆 $_cumulativeFlashCorrect/$totalTargets Recalled • Tap to Claim!';
+                } else {
+                  flashSubtitle =
+                      '🎯 $_cumulativeFlashCorrect/$totalTargets Total Recalls';
+                }
+              }
+
               return ElevatedButton(
-                onPressed: null,
+                onPressed: (canClaimNow && !_isClaiming)
+                    ? () => _triggerFlashPrizeClaim(
+                          prizeType: prize,
+                          markedNumbers: claimNums,
+                          isAuto: false,
+                        )
+                    : null,
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: canClaimNow
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.22)
+                      : AppTheme.darkSurface,
+                  foregroundColor: Colors.white,
                   disabledBackgroundColor: AppTheme.darkSurface,
                   disabledForegroundColor: Colors.white,
                   side: BorderSide(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.55),
-                    width: 1.3,
+                    color: canClaimNow
+                        ? AppTheme.accentSuccess
+                        : AppTheme.secondaryColor.withValues(alpha: 0.55),
+                    width: canClaimNow ? 1.6 : 1.3,
                   ),
                   padding: EdgeInsets.symmetric(
                     horizontal: isCompact ? 6 : 10,
@@ -2448,10 +2641,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '⚡ Live Memory Leaderboard',
+                      flashSubtitle,
                       style: TextStyle(
                         fontSize: isCompact ? 10.5 : 12,
-                        color: AppTheme.secondaryColor,
+                        color: canClaimNow
+                            ? AppTheme.accentSuccess
+                            : AppTheme.secondaryColor,
                         fontWeight: FontWeight.w700,
                       ),
                       maxLines: 1,

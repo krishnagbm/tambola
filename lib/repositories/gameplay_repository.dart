@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../core/utils/tambola_ticket.dart';
@@ -171,7 +172,7 @@ class GameplayRepository {
   }) async {
     final uid = _supabase.auth.currentUser?.id;
 
-    // Special path for FlashHousie™ 5 / 10 / 15 auto-scored prizes
+    // Special path for FlashHousie™ 5 / 10 / 15 auto-scored & player-claimed prizes
     try {
       final gameRow = await _supabase
           .from('MPT_games')
@@ -183,15 +184,16 @@ class GameplayRepository {
             Map<String, dynamic>.from(gameRow['prize_gifts_config'] as Map);
         final flashCfg = FlashHousieConfig.fromPrizeGiftsConfig(prizeGifts);
         if (flashCfg != null && uid != null) {
-          final awardedUid = flashCfg.awardedWinners[prizeType];
-          if (awardedUid == uid) {
-            final existingWins = await _supabase
-                .from('MPT_claims')
-                .select()
-                .eq('game_id', gameId)
-                .eq('prize_type', prizeType)
-                .eq('status', 'APPROVED');
-            if ((existingWins as List).isNotEmpty) {
+          final existingWins = await _supabase
+              .from('MPT_claims')
+              .select()
+              .eq('game_id', gameId)
+              .eq('prize_type', prizeType)
+              .eq('status', 'APPROVED');
+          final winList = List<Map<String, dynamic>>.from(existingWins as List);
+          if (winList.isNotEmpty) {
+            final myWin = winList.where((w) => w['user_id'] == uid).firstOrNull;
+            if (myWin != null) {
               final existingReward = await _supabase
                   .from('MPT_rewards')
                   .select('claim_reference')
@@ -206,40 +208,175 @@ class GameplayRepository {
                     existingReward?['claim_reference'] as String? ?? 'FLASH-WIN',
               };
             }
+            return {
+              'status': 'REJECTED',
+              'reason': 'Prize already won by another player',
+            };
+          }
 
-            final rawHex = const Uuid().v4().replaceAll('-', '').toUpperCase();
-            final claimRef =
-                'Dab-Housie-${rawHex.substring(0, 4)}-${rawHex.substring(4, 8)}';
-            final claimRes = await _supabase
-                .from('MPT_claims')
-                .insert({
-                  'game_id': gameId,
-                  'user_id': uid,
-                  'prize_type': prizeType,
-                  'status': 'APPROVED',
-                  'marked_numbers': markedNumbers,
-                })
-                .select()
-                .maybeSingle();
-            try {
-              await _supabase.from('MPT_rewards').insert({
+          final awardedUid = flashCfg.awardedWinners[prizeType];
+          if (awardedUid != null && awardedUid.isNotEmpty && awardedUid != uid) {
+            return {
+              'status': 'REJECTED',
+              'reason': 'Prize already won by another player',
+            };
+          }
+
+          final allScores = await getMemoryRoundScores(gameId);
+          String scoreSummary =
+              flashCfg.awardedWinnerScoreSummaries[prizeType] ?? '';
+          String winnerDisplayName =
+              flashCfg.awardedWinnerNames[prizeType] ?? 'Player';
+          List<int> numbersToRecord = List<int>.from(markedNumbers);
+
+          if (prizeType.startsWith('ROUND_')) {
+            final rNum = int.tryParse(prizeType.replaceFirst('ROUND_', '')) ??
+                flashCfg.currentCycle;
+            final cSpec = flashCfg.cycleAt(rNum) ?? flashCfg.activeCycleSpec;
+            final myScore = allScores
+                .where((s) => s.cycleIndex == rNum && s.userId == uid)
+                .firstOrNull;
+            if (myScore != null && myScore.displayName.isNotEmpty) {
+              winnerDisplayName = myScore.displayName;
+            }
+            final calledInCycle = cSpec.calledNumbers.toSet();
+            final trueInCycle = cSpec.trueNumbers.toSet();
+            final validMarked = markedNumbers
+                .where((n) => trueInCycle.contains(n) && calledInCycle.contains(n))
+                .toSet();
+            if (myScore != null) {
+              validMarked.addAll(myScore.correctNumbers);
+            }
+            numbersToRecord = validMarked.toList();
+
+            if (awardedUid != uid) {
+              if (validMarked.isEmpty) {
+                return {
+                  'status': 'REJECTED',
+                  'reason': 'Recall at least 1 called number in Round $rNum to claim.',
+                };
+              }
+              if (!cSpec.isCompleted &&
+                  validMarked.length < cSpec.trueNumbers.length) {
+                return {
+                  'status': 'REJECTED',
+                  'reason':
+                      'Recall all ${cSpec.trueNumbers.length} numbers (${validMarked.length}/${cSpec.trueNumbers.length}) or wait for all ${cSpec.drawPool.length} round balls to be called.',
+                };
+              }
+              if (cSpec.isCompleted &&
+                  validMarked.length < cSpec.trueNumbers.length) {
+                final cycleScores = allScores
+                    .where((s) => s.cycleIndex == rNum && s.correctCount > 0)
+                    .toList()
+                  ..sort(MptMemoryRoundScore.compareStandings);
+                if (cycleScores.isNotEmpty &&
+                    cycleScores.first.userId != uid &&
+                    cycleScores.first.correctCount > validMarked.length) {
+                  return {
+                    'status': 'REJECTED',
+                    'reason':
+                        '${cycleScores.first.displayName} won Round $rNum with ${cycleScores.first.correctCount}/${cSpec.trueNumbers.length} recalls.',
+                  };
+                }
+              }
+            }
+
+            final reactMs =
+                myScore?.totalReactionMs ?? (validMarked.length * 2200);
+            final reactSec = (reactMs / 1000).toStringAsFixed(1);
+            if (scoreSummary.isEmpty) {
+              scoreSummary =
+                  '✓ ${validMarked.length}/${cSpec.trueNumbers.length} Recalled • ⚡ ${reactSec}s';
+            }
+          } else {
+            // FULL_HOUSE or SECOND_FULL_HOUSE
+            final myScores = allScores.where((s) => s.userId == uid).toList();
+            if (myScores.isNotEmpty && myScores.first.displayName.isNotEmpty) {
+              winnerDisplayName = myScores.first.displayName;
+            }
+            final totalTargets = flashCfg.totalTargetNumbersAcrossAllCycles;
+            final totalRecalled = myScores.isNotEmpty
+                ? myScores.fold<int>(0, (sum, s) => sum + s.correctCount)
+                : markedNumbers.length;
+            final totalReactMs = myScores.isNotEmpty
+                ? myScores.fold<int>(0, (sum, s) => sum + s.totalReactionMs)
+                : (totalRecalled * 2200);
+            final isLastRoundDone = flashCfg.cycles.last.isCompleted;
+            if (awardedUid != uid &&
+                !isLastRoundDone &&
+                totalRecalled < totalTargets) {
+              return {
+                'status': 'REJECTED',
+                'reason':
+                    'Recall all $totalTargets numbers ($totalRecalled/$totalTargets) or complete the final round to claim Full House.',
+              };
+            }
+            final reactSec = (totalReactMs / 1000).toStringAsFixed(1);
+            if (scoreSummary.isEmpty) {
+              scoreSummary =
+                  '✓ $totalRecalled/$totalTargets Total Recalls • ⚡ ${reactSec}s';
+            }
+          }
+
+          final rawHex = const Uuid().v4().replaceAll('-', '').toUpperCase();
+          final claimRef =
+              'Dab-Housie-${rawHex.substring(0, 4)}-${rawHex.substring(4, 8)}';
+          final claimRes = await _supabase
+              .from('MPT_claims')
+              .insert({
                 'game_id': gameId,
                 'user_id': uid,
                 'prize_type': prizeType,
-                'claim_id': claimRes?['id'],
-                'claim_reference': claimRef,
-                'status': 'AVAILABLE_TO_CLAIM',
-              });
-            } catch (_) {}
-            return {
-              'status': 'APPROVED',
+                'status': 'APPROVED',
+                'marked_numbers': numbersToRecord,
+                'rejection_reason': scoreSummary,
+              })
+              .select()
+              .maybeSingle();
+          try {
+            await _supabase.from('MPT_rewards').insert({
+              'game_id': gameId,
+              'user_id': uid,
               'prize_type': prizeType,
+              'claim_id': claimRes?['id'],
               'claim_reference': claimRef,
-            };
-          }
+              'status': 'AVAILABLE_TO_CLAIM',
+            });
+          } catch (_) {}
+
+          // Best-effort sync into MPT_games.prize_gifts_config['_flash_housie']
+          try {
+            final nextWinners = Map<String, String>.from(flashCfg.awardedWinners)
+              ..[prizeType] = uid;
+            final nextNames =
+                Map<String, String>.from(flashCfg.awardedWinnerNames)
+                  ..[prizeType] = winnerDisplayName;
+            final nextSummaries =
+                Map<String, String>.from(flashCfg.awardedWinnerScoreSummaries)
+                  ..[prizeType] = scoreSummary;
+            await updateFlashHousieConfig(
+              gameId: gameId,
+              currentPrizeGiftsConfig: prizeGifts,
+              updatedConfig: flashCfg.copyWith(
+                awardedWinners: nextWinners,
+                awardedWinnerNames: nextNames,
+                awardedWinnerScoreSummaries: nextSummaries,
+              ),
+            );
+          } catch (_) {}
+
+          return {
+            'status': 'APPROVED',
+            'prize_type': prizeType,
+            'claim_reference': claimRef,
+            'score_summary': scoreSummary,
+          };
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('FlashHousie submitClaim path warning: $e');
+    }
 
     final idempotencyKey = const Uuid().v4();
     try {
@@ -366,14 +503,20 @@ class GameplayRepository {
       try {
         final rpcRes = await _supabase.rpc('MPT_get_game_claims', params: {'p_game_id': gameId});
         if (rpcRes is List) {
-          yield (rpcRes).map((e) => MptClaim.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+          yield (rpcRes)
+              .map((e) => MptClaim.fromJson(Map<String, dynamic>.from(e as Map)))
+              .where((c) => !c.prizeType.startsWith('FLASH_SCORE_'))
+              .toList();
         } else {
           final res = await _supabase
               .from('MPT_claims')
               .select('*, user:MPT_users(display_name, avatar)')
               .eq('game_id', gameId)
               .order('submitted_at', ascending: false);
-          yield (res as List).map((e) => MptClaim.fromJson(e)).toList();
+          yield (res as List)
+              .map((e) => MptClaim.fromJson(e))
+              .where((c) => !c.prizeType.startsWith('FLASH_SCORE_'))
+              .toList();
         }
       } catch (_) {
         try {
@@ -382,7 +525,10 @@ class GameplayRepository {
               .select('*')
               .eq('game_id', gameId)
               .order('submitted_at', ascending: false);
-          yield (res as List).map((e) => MptClaim.fromJson(e)).toList();
+          yield (res as List)
+              .map((e) => MptClaim.fromJson(e))
+              .where((c) => !c.prizeType.startsWith('FLASH_SCORE_'))
+              .toList();
         } catch (_) {}
       }
       await Future.delayed(const Duration(seconds: 2));
@@ -559,7 +705,39 @@ class GameplayRepository {
       debugPrint('MPT_memory_round_scores upsert fallback to embedded_scores: $e');
     }
 
-    // 3. Also persist into MPT_games.prize_gifts_config['_flash_housie']['embedded_scores']
+    // 3. Persist into player-writable MPT_claims telemetry row ('FLASH_SCORE_R$cycleIndex')
+    // so non-host player scores sync across browsers/devices with 100% RLS compatibility
+    try {
+      final telemetryPrizeType = 'FLASH_SCORE_R$cycleIndex';
+      final encodedScore = jsonEncode(scoreObj.toJson());
+      final existingRow = await _supabase
+          .from('MPT_claims')
+          .select('id')
+          .eq('game_id', gameId)
+          .eq('user_id', uid)
+          .eq('prize_type', telemetryPrizeType)
+          .maybeSingle();
+      if (existingRow != null && existingRow['id'] != null) {
+        await _supabase
+            .from('MPT_claims')
+            .update({
+              'marked_numbers': correctNumbers,
+              'rejection_reason': encodedScore,
+            })
+            .eq('id', existingRow['id']);
+      } else {
+        await _supabase.from('MPT_claims').insert({
+          'game_id': gameId,
+          'user_id': uid,
+          'prize_type': telemetryPrizeType,
+          'status': 'SUBMITTED',
+          'marked_numbers': correctNumbers,
+          'rejection_reason': encodedScore,
+        });
+      }
+    } catch (_) {}
+
+    // 4. Also persist into MPT_games.prize_gifts_config['_flash_housie']['embedded_scores']
     try {
       final gameRow = await _supabase
           .from('MPT_games')
@@ -599,7 +777,8 @@ class GameplayRepository {
     return b.updatedAt.isAfter(a.updatedAt) ? b : a;
   }
 
-  /// Fetches and merges all `MPT_memory_round_scores` rows, `embeddedScores`, and `_localMemoryScoreCache` for a game
+  /// Fetches and merges all `MPT_memory_round_scores` rows, `MPT_claims` telemetry rows,
+  /// `embeddedScores`, and `_localMemoryScoreCache` for a game
   Future<List<MptMemoryRoundScore>> getMemoryRoundScores(String gameId) async {
     final merged = <String, MptMemoryRoundScore>{};
 
@@ -629,7 +808,31 @@ class GameplayRepository {
       }
     } catch (_) {}
 
-    // 3. Dedicated MPT_memory_round_scores table (if migrated)
+    // 3. Player-writable MPT_claims telemetry rows ('FLASH_SCORE_R%')
+    try {
+      final claimRows = await _supabase
+          .from('MPT_claims')
+          .select('user_id, prize_type, marked_numbers, rejection_reason, submitted_at')
+          .eq('game_id', gameId)
+          .like('prize_type', 'FLASH_SCORE_R%');
+      for (final raw in (claimRows as List)) {
+        final rowMap = Map<String, dynamic>.from(raw as Map);
+        final payloadStr = rowMap['rejection_reason'] as String?;
+        if (payloadStr != null && payloadStr.trim().startsWith('{')) {
+          final decoded = jsonDecode(payloadStr);
+          if (decoded is Map) {
+            final s = MptMemoryRoundScore.fromJson(
+              Map<String, dynamic>.from(decoded),
+            );
+            final key = '${s.cycleIndex}_${s.userId}';
+            final existing = merged[key];
+            merged[key] = existing == null ? s : _pickBetterScore(existing, s);
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 4. Dedicated MPT_memory_round_scores table (if migrated)
     try {
       final res = await _supabase
           .from('MPT_memory_round_scores')
@@ -665,6 +868,7 @@ class GameplayRepository {
     required String winnerUserId,
     required String prizeType,
     required List<int> markedNumbers,
+    String? scoreSummary,
   }) async {
     try {
       final existingWins = await _supabase
@@ -688,6 +892,8 @@ class GameplayRepository {
             'prize_type': prizeType,
             'status': 'APPROVED',
             'marked_numbers': markedNumbers,
+            if (scoreSummary != null && scoreSummary.isNotEmpty)
+              'rejection_reason': scoreSummary,
           })
           .select()
           .maybeSingle();
@@ -742,16 +948,18 @@ class GameplayRepository {
     final nextWinnerSummaries =
         Map<String, String>.from(config.awardedWinnerScoreSummaries);
 
-    if (topScore != null) {
+    if (topScore != null && !nextWinners.containsKey(activeSpec.prizeKey)) {
+      final summaryStr =
+          '✓ ${topScore.correctCount}/${activeSpec.trueNumbers.length} Recalled • ⚡ ${(topScore.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners[activeSpec.prizeKey] = topScore.userId;
       nextWinnerNames[activeSpec.prizeKey] = topScore.displayName;
-      nextWinnerSummaries[activeSpec.prizeKey] =
-          '✓ ${topScore.correctCount}/${activeSpec.trueNumbers.length} Recalled • ⚡ ${(topScore.totalReactionMs / 1000).toStringAsFixed(1)}s';
+      nextWinnerSummaries[activeSpec.prizeKey] = summaryStr;
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: topScore.userId,
         prizeType: activeSpec.prizeKey,
         markedNumbers: topScore.correctNumbers,
+        scoreSummary: summaryStr,
       );
     }
 
@@ -842,31 +1050,39 @@ class GameplayRepository {
         Map<String, String>.from(afterCycleConfig.awardedWinnerScoreSummaries);
     final totalTargets = afterCycleConfig.totalTargetNumbersAcrossAllCycles;
 
-    if (rankedUsers.isNotEmpty && game.prizesConfig.contains('FULL_HOUSE')) {
+    if (rankedUsers.isNotEmpty &&
+        game.prizesConfig.contains('FULL_HOUSE') &&
+        !nextWinners.containsKey('FULL_HOUSE')) {
       final firstWinner = rankedUsers[0];
+      final summaryStr =
+          '✓ ${firstWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(firstWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners['FULL_HOUSE'] = firstWinner.userId;
       nextWinnerNames['FULL_HOUSE'] = firstWinner.displayName;
-      nextWinnerSummaries['FULL_HOUSE'] =
-          '✓ ${firstWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(firstWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
+      nextWinnerSummaries['FULL_HOUSE'] = summaryStr;
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: firstWinner.userId,
         prizeType: 'FULL_HOUSE',
         markedNumbers: firstWinner.correctNumbers,
+        scoreSummary: summaryStr,
       );
     }
 
-    if (rankedUsers.length >= 2 && game.prizesConfig.contains('SECOND_FULL_HOUSE')) {
+    if (rankedUsers.length >= 2 &&
+        game.prizesConfig.contains('SECOND_FULL_HOUSE') &&
+        !nextWinners.containsKey('SECOND_FULL_HOUSE')) {
       final secondWinner = rankedUsers[1];
+      final summaryStr =
+          '✓ ${secondWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(secondWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners['SECOND_FULL_HOUSE'] = secondWinner.userId;
       nextWinnerNames['SECOND_FULL_HOUSE'] = secondWinner.displayName;
-      nextWinnerSummaries['SECOND_FULL_HOUSE'] =
-          '✓ ${secondWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(secondWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
+      nextWinnerSummaries['SECOND_FULL_HOUSE'] = summaryStr;
       await _recordFlashHousieWinnerClaim(
         gameId: game.id,
         winnerUserId: secondWinner.userId,
         prizeType: 'SECOND_FULL_HOUSE',
         markedNumbers: secondWinner.correctNumbers,
+        scoreSummary: summaryStr,
       );
     }
 

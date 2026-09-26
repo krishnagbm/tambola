@@ -391,6 +391,39 @@ class _AdminGameControlScreenState
 
         if (num != null) {
           TambolaAudioCaller().announceNumber(num);
+          // If this was the final ball of the round pool (e.g. 8/8), auto-crown the round winner
+          // after a brief 3s tap window so players/host see the winner immediately!
+          if (cycle.calledCount + 1 >= cycle.drawPool.length) {
+            final completedCycleIdx = cycle.cycleIndex;
+            final isFinalCycle = flashCfg.isLastCycle;
+            Future.delayed(const Duration(seconds: 3), () async {
+              if (!mounted) return;
+              try {
+                final freshGame = await ref
+                    .read(gameRepositoryProvider)
+                    .getGame(widget.gameId);
+                final freshCfg = freshGame.flashHousieConfig;
+                if (freshCfg == null ||
+                    freshCfg.currentCycle != completedCycleIdx) {
+                  return;
+                }
+                final repo = ref.read(gameplayRepositoryProvider);
+                if (isFinalCycle) {
+                  await repo.finalizeFlashHousieGrandWinners(freshGame);
+                } else {
+                  await repo.finalizeFlashHousieCycleAndAdvance(
+                    game: freshGame,
+                    advanceToNextCycle: false,
+                  );
+                }
+                if (!mounted) return;
+                ref.invalidate(gameStreamProvider(widget.gameId));
+                ref.invalidate(claimsStreamProvider(widget.gameId));
+                ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+                ref.invalidate(hostGameRewardsProvider(widget.gameId));
+              } catch (_) {}
+            });
+          }
         } else {
           if (mounted) {
             setState(() => _isCalling = false);
@@ -3871,6 +3904,12 @@ class _AdminGameControlScreenState
                         flashCfg?.awardedWinnerNames[prizeKey];
                     String? flashScoreSummary =
                         flashCfg?.awardedWinnerScoreSummaries[prizeKey];
+                    if ((flashScoreSummary == null ||
+                            flashScoreSummary.isEmpty) &&
+                        claim?.rejectionReason != null &&
+                        claim!.rejectionReason!.trim().startsWith('✓')) {
+                      flashScoreSummary = claim.rejectionReason!.trim();
+                    }
                     if (flashScoreSummary == null &&
                         prizeKey.startsWith('ROUND_') &&
                         flashCfg != null) {
