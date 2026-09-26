@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../core/utils/tambola_ticket.dart';
 import '../../../core/utils/wake_lock_helper.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/celebration_overlay.dart';
+import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
@@ -33,17 +35,133 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   int _lastAnnouncedSeq = 0;
   bool _showCelebration = false;
 
+  // FlashHousie™ 5 / 10 / 15 & NeuroWave™ Spotlight State
+  Timer? _neuroWaveUiTimer;
+  final Map<int, Set<int>> _flashRecalledByCycle = {};
+  final Map<int, int> _flashWrongTapsByCycle = {};
+  final Map<int, int> _flashReactionMsByCycle = {};
+  final Set<String> _autoClaimedFlashPrizes = {};
+  int _freezeUntilMs = 0;
+  int? _lastSeenFlashBall;
+  int _lastFlashBallShownAtMs = 0;
+  String? _flashTapFeedback;
+  bool _flashTapFeedbackIsError = false;
+
   @override
   void initState() {
     super.initState();
     WakeLockHelper.keepScreenOn();
     _loadSavedMarks();
+    _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (!mounted) return;
+      final game = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (game?.isFlashHousie == true) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
+    _neuroWaveUiTimer?.cancel();
     WakeLockHelper.release();
     super.dispose();
+  }
+
+  Set<int> _recalledForCycle(int cycleIndex) =>
+      _flashRecalledByCycle.putIfAbsent(cycleIndex, () => <int>{});
+
+  int _wrongTapsForCycle(int cycleIndex) =>
+      _flashWrongTapsByCycle[cycleIndex] ?? 0;
+
+  int _reactionMsForCycle(int cycleIndex) =>
+      _flashReactionMsByCycle[cycleIndex] ?? 0;
+
+  int get _cumulativeFlashCorrect => _flashRecalledByCycle.values
+      .fold(0, (sum, set) => sum + set.length);
+
+  bool get _isFrozen =>
+      DateTime.now().millisecondsSinceEpoch < _freezeUntilMs;
+
+  int get _freezeRemainingSeconds =>
+      ((_freezeUntilMs - DateTime.now().millisecondsSinceEpoch) / 1000)
+          .ceil()
+          .clamp(1, 5);
+
+  Future<void> _handleFlashCellTap({
+    required int numVal,
+    required FlashHousieCycleSpec cycleSpec,
+    required FlashHousieConfig config,
+    required MptUser? user,
+  }) async {
+    if (numVal <= 0) return;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs < _freezeUntilMs) return;
+
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    if (!neuroState.isCallingReady) return;
+
+    final cycleIdx = cycleSpec.cycleIndex;
+    final recalledSet = _recalledForCycle(cycleIdx);
+    if (recalledSet.contains(numVal)) return;
+
+    final displayName = (user?.displayName.trim().isNotEmpty == true)
+        ? user!.displayName.trim()
+        : 'Player';
+    final avatar = Formatters.getAvatarEmoji(user?.avatar);
+
+    // Check if the tapped cell matches a number called in this cycle
+    if (cycleSpec.calledNumbers.contains(numVal)) {
+      final isLatest = cycleSpec.latestCalledNumber == numVal;
+      final deltaMs = (isLatest && _lastFlashBallShownAtMs > 0)
+          ? (nowMs - _lastFlashBallShownAtMs).clamp(150, 10000)
+          : 4500;
+
+      setState(() {
+        recalledSet.add(numVal);
+        _markedNumbers.add(numVal);
+        _flashReactionMsByCycle[cycleIdx] =
+            _reactionMsForCycle(cycleIdx) + deltaMs;
+        _flashTapFeedback =
+            '✅ Recalled $numVal in ${(deltaMs / 1000).toStringAsFixed(1)}s!';
+        _flashTapFeedbackIsError = false;
+      });
+      _saveMarks();
+
+      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+            gameId: widget.gameId,
+            cycleIndex: cycleIdx,
+            quadrantLabel: cycleSpec.label,
+            displayName: displayName,
+            avatar: avatar,
+            correctNumbers: recalledSet.toList(),
+            wrongTapCount: _wrongTapsForCycle(cycleIdx),
+            totalReactionMs: _reactionMsForCycle(cycleIdx),
+            lastRecalledNumber: numVal,
+            lastReactionMs: deltaMs,
+          );
+    } else {
+      // Wrong cell or tapped during a Challenge (Decoy) Ball -> 3-second cooldown freeze!
+      final newWrongCount = _wrongTapsForCycle(cycleIdx) + 1;
+      setState(() {
+        _flashWrongTapsByCycle[cycleIdx] = newWrongCount;
+        _freezeUntilMs = nowMs + (config.freezePenaltySec * 1000);
+        _flashTapFeedback =
+            '❄️ Wrong cell / Challenge ball! ${config.freezePenaltySec}s Cooldown';
+        _flashTapFeedbackIsError = true;
+      });
+
+      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+            gameId: widget.gameId,
+            cycleIndex: cycleIdx,
+            quadrantLabel: cycleSpec.label,
+            displayName: displayName,
+            avatar: avatar,
+            correctNumbers: recalledSet.toList(),
+            wrongTapCount: newWrongCount,
+            totalReactionMs: _reactionMsForCycle(cycleIdx),
+          );
+    }
   }
 
   Future<void> _loadSavedMarks() async {
@@ -637,17 +755,46 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
             data: (calledNumbers) {
-              final latestCalled = calledNumbers.isNotEmpty
-                  ? calledNumbers.last.number
-                  : null;
-              final calledSet = calledNumbers.map((e) => e.number).toSet();
               final currentGame = gameStream.value;
+              final flashConfig = currentGame?.flashHousieConfig;
+              final activeCycleSpec = flashConfig?.activeCycleSpec;
+
+              // Track reaction timer & voice caller when a new FlashHousie™ ball is drawn
+              if (activeCycleSpec != null) {
+                final latestFlashBall = activeCycleSpec.latestCalledNumber;
+                if (latestFlashBall != null &&
+                    latestFlashBall != _lastSeenFlashBall) {
+                  _lastSeenFlashBall = latestFlashBall;
+                  _lastFlashBallShownAtMs =
+                      DateTime.now().millisecondsSinceEpoch;
+                  if (_voiceEnabled) {
+                    TambolaAudioCaller().announceNumber(latestFlashBall);
+                  }
+                }
+              }
+
+              final latestCalled = activeCycleSpec != null
+                  ? activeCycleSpec.latestCalledNumber
+                  : (calledNumbers.isNotEmpty
+                      ? calledNumbers.last.number
+                      : null);
+              final calledSet = activeCycleSpec != null
+                  ? activeCycleSpec.calledNumbers.toSet()
+                  : calledNumbers.map((e) => e.number).toSet();
+              final totalCalledCount = activeCycleSpec != null
+                  ? activeCycleSpec.calledNumbers.length
+                  : calledNumbers.length;
+              final poolTotalCount = activeCycleSpec != null
+                  ? activeCycleSpec.drawPool.length
+                  : 90;
+
               final isGameEnded =
                   currentGame?.status == 'COMPLETED' ||
-                  calledNumbers.length >= 90;
+                  (flashConfig == null && calledNumbers.length >= 90);
               final isGameActive =
                   (currentGame?.status == 'IN_PROGRESS' ||
-                          calledNumbers.isNotEmpty) &&
+                          calledNumbers.isNotEmpty ||
+                          activeCycleSpec?.startedAtMs != null) &&
                       !isGameEnded &&
                       currentGame?.status != 'CANCELLED';
               final activePrizes =
@@ -708,18 +855,31 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                     const SizedBox(height: 8),
                                     _buildLatestNumberBanner(
                                       latestCalled,
-                                      calledNumbers.length,
+                                      totalCalledCount,
+                                      poolTotalCount: poolTotalCount,
+                                      cycleLabel: activeCycleSpec?.label,
                                       totalPlayers: totalPlayers,
                                       isGameEnded: isGameEnded,
                                       context: context,
                                       isCompact: true,
                                     ),
+                                    if (flashConfig != null &&
+                                        activeCycleSpec != null) ...[
+                                      const SizedBox(height: 8),
+                                      _buildNeuroWaveStatusBanner(
+                                        flashConfig,
+                                        activeCycleSpec,
+                                        isCompact: true,
+                                      ),
+                                    ],
                                     const SizedBox(height: 8),
                                     _buildTicketMatrix(
                                       ticket,
                                       calledSet,
                                       isGameEnded: isGameEnded,
                                       cellHeight: 52,
+                                      flashConfig: flashConfig,
+                                      currentUser: currentUser,
                                     ),
                                     const SizedBox(height: 12),
                                   ],
@@ -736,7 +896,13 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    if (calledNumbers.isNotEmpty) ...[
+                                    if (activeCycleSpec != null &&
+                                        activeCycleSpec.calledNumbers.isNotEmpty) ...[
+                                      _buildRecentCallsFromInts(
+                                        activeCycleSpec.calledNumbers,
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ] else if (calledNumbers.isNotEmpty) ...[
                                       _buildRecentCallsBar(calledNumbers),
                                       const SizedBox(height: 10),
                                     ],
@@ -749,6 +915,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         calledSet,
                                         isGameEnded: isGameEnded,
                                         isCompact: true,
+                                        flashConfig: flashConfig,
                                       ),
                                       error: (_, __) =>
                                           _buildPrizeClaimsSection(
@@ -759,6 +926,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                             calledSet,
                                             isGameEnded: isGameEnded,
                                             isCompact: true,
+                                            flashConfig: flashConfig,
                                           ),
                                       data: (claims) {
                                         final approvedClaims =
@@ -776,6 +944,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                           calledSet,
                                           isGameEnded: isGameEnded,
                                           isCompact: true,
+                                          flashConfig: flashConfig,
                                         );
                                       },
                                     ),
@@ -843,24 +1012,45 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           // Latest Called Ball / Game Concluded Banner
                           _buildLatestNumberBanner(
                             latestCalled,
-                            calledNumbers.length,
+                            totalCalledCount,
+                            poolTotalCount: poolTotalCount,
+                            cycleLabel: activeCycleSpec?.label,
                             totalPlayers: totalPlayers,
                             isGameEnded: isGameEnded,
                             context: context,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
+
+                          if (flashConfig != null &&
+                              activeCycleSpec != null) ...[
+                            _buildNeuroWaveStatusBanner(
+                              flashConfig,
+                              activeCycleSpec,
+                            ),
+                            const SizedBox(height: 10),
+                          ],
 
                           // Recent Calls List
-                          if (calledNumbers.isNotEmpty && !isGameEnded) ...[
+                          if (activeCycleSpec != null &&
+                              activeCycleSpec.calledNumbers.isNotEmpty &&
+                              !isGameEnded) ...[
+                            _buildRecentCallsFromInts(
+                              activeCycleSpec.calledNumbers,
+                            ),
+                            const SizedBox(height: 12),
+                          ] else if (calledNumbers.isNotEmpty &&
+                              !isGameEnded) ...[
                             _buildRecentCallsBar(calledNumbers),
                             const SizedBox(height: 14),
                           ],
 
-                          // Interactive 3x9 Ticket (Manual marking, no auto-yellow)
+                          // Interactive 3x9 Ticket (Preserved 3x9 layout for both Classic & FlashHousie)
                           _buildTicketMatrix(
                             ticket,
                             calledSet,
                             isGameEnded: isGameEnded,
+                            flashConfig: flashConfig,
+                            currentUser: currentUser,
                           ),
                           const SizedBox(height: 20),
 
@@ -873,6 +1063,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               ticket,
                               calledSet,
                               isGameEnded: isGameEnded,
+                              flashConfig: flashConfig,
                             ),
                             error: (_, __) => _buildPrizeClaimsSection(
                               activePrizes,
@@ -881,6 +1072,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               ticket,
                               calledSet,
                               isGameEnded: isGameEnded,
+                              flashConfig: flashConfig,
                             ),
                             data: (claims) {
                               final approvedClaims = <String, MptClaim>{};
@@ -896,6 +1088,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                 ticket,
                                 calledSet,
                                 isGameEnded: isGameEnded,
+                                flashConfig: flashConfig,
                               );
                             },
                           ),
@@ -1033,7 +1226,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
             ),
             child: Text(
-              'Ticket #${ticket.ticketNumber}',
+              game?.isFlashHousie == true
+                  ? '⚡ ${game!.flashHousieConfig!.activeCycleSpec.label}'
+                  : 'Ticket #${ticket.ticketNumber}',
               style: TextStyle(
                 fontSize: isCompact ? 11 : 12,
                 fontWeight: FontWeight.bold,
@@ -1093,6 +1288,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   Widget _buildLatestNumberBanner(
     int? latestNumber,
     int totalCalled, {
+    int poolTotalCount = 90,
+    String? cycleLabel,
     int totalPlayers = 1,
     bool isGameEnded = false,
     BuildContext? context,
@@ -1141,9 +1338,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              totalCalled >= 90
-                  ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
-                  : 'Game concluded across $totalPlayers players! Check your rewards below.',
+              'Game concluded across $totalPlayers players! Check your rewards below.',
               style: TextStyle(
                 fontSize: isCompact ? 11.5 : 13,
                 color: Colors.white,
@@ -1219,9 +1414,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'CURRENT CALL',
-                style: TextStyle(
+              Text(
+                cycleLabel != null
+                    ? '⚡ $cycleLabel • CURRENT CALL'
+                    : 'CURRENT CALL',
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -1257,21 +1454,195 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             child: Column(
               children: [
                 Text(
-                  '$totalCalled / 90',
+                  '$totalCalled / $poolTotalCount',
                   style: TextStyle(
                     fontSize: isCompact ? 14 : 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const Text(
-                  'Called',
-                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                Text(
+                  cycleLabel != null ? 'Round Pool' : 'Called',
+                  style: const TextStyle(fontSize: 11, color: Colors.white70),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Renders the NeuroWave™ Spotlight countdown, column wave indicator, 3s cooldown freeze,
+  /// and live player memory recall telemetry.
+  Widget _buildNeuroWaveStatusBanner(
+    FlashHousieConfig config,
+    FlashHousieCycleSpec cycleSpec, {
+    bool isCompact = false,
+  }) {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    final isFrozen = nowMs < _freezeUntilMs;
+    final recalledCount = _recalledForCycle(cycleSpec.cycleIndex).length;
+    final targetCount = cycleSpec.trueNumbers.length;
+    final wrongCount = _wrongTapsForCycle(cycleSpec.cycleIndex);
+
+    Color borderColor = AppTheme.secondaryColor.withValues(alpha: 0.65);
+    Color bgColor = AppTheme.darkCard;
+    if (isFrozen) {
+      borderColor = AppTheme.accentDanger;
+      bgColor = AppTheme.accentDanger.withValues(alpha: 0.14);
+    } else if (neuroState.phase == NeuroWavePhase.columnWave) {
+      borderColor = AppTheme.secondaryColor;
+      bgColor = AppTheme.secondaryColor.withValues(alpha: 0.12);
+    } else if (neuroState.phase == NeuroWavePhase.callingActive) {
+      borderColor = AppTheme.accentSuccess.withValues(alpha: 0.7);
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 10 : 14,
+        vertical: isCompact ? 8 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Round ${config.currentCycle}/${config.totalCycles} • ${cycleSpec.label}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isFrozen
+                      ? '❄️ ${_freezeRemainingSeconds}s Cooldown Freeze — Wait before tapping!'
+                      : neuroState.statusLabel,
+                  style: TextStyle(
+                    fontSize: isCompact ? 11.5 : 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: isFrozen ? const Color(0xFFFCA5A5) : Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          if (neuroState.isRevealing) ...[
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: neuroState.progress,
+                minHeight: 5,
+                backgroundColor: const Color(0xFF1E293B),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  neuroState.phase == NeuroWavePhase.columnWave
+                      ? AppTheme.secondaryColor
+                      : AppTheme.primaryLight,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _buildTelemetryPill(
+                '🎯 Round Recalls: $recalledCount / $targetCount',
+                AppTheme.accentSuccess,
+              ),
+              _buildTelemetryPill(
+                '🏆 Total Across Rounds: $_cumulativeFlashCorrect',
+                AppTheme.secondaryColor,
+              ),
+              _buildTelemetryPill(
+                '❄️ Wrong Taps: $wrongCount',
+                wrongCount > 0 ? AppTheme.accentWarning : const Color(0xFF94A3B8),
+              ),
+              if (_flashTapFeedback != null)
+                Text(
+                  _flashTapFeedback!,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _flashTapFeedbackIsError
+                        ? const Color(0xFFFCA5A5)
+                        : AppTheme.accentSuccess,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTelemetryPill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w800,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentCallsFromInts(List<int> called) {
+    final recent = called.reversed.take(6).toList();
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: recent.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (ctx, idx) {
+          final numVal = recent[idx];
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: idx == 0 ? AppTheme.secondaryColor : AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Text(
+              '$numVal',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: idx == 0 ? Colors.black : Colors.white,
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -1312,12 +1683,24 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Set<int> calledSet, {
     bool isGameEnded = false,
     double cellHeight = 48,
+    FlashHousieConfig? flashConfig,
+    MptUser? currentUser,
   }) {
+    final activeSpec = flashConfig?.activeCycleSpec;
+    final matrixToRender = activeSpec != null
+        ? activeSpec.ticketMatrix
+        : ticket.matrix;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.primaryLight, width: 1.5),
+        side: BorderSide(
+          color: activeSpec != null
+              ? AppTheme.secondaryColor
+              : AppTheme.primaryLight,
+          width: 1.5,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -1327,17 +1710,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'DABHOUSIE TICKET #${ticket.ticketNumber}',
-                  style: const TextStyle(
-                    fontSize: 13,
+                  activeSpec != null
+                      ? '⚡ ${flashConfig!.modeDisplayName.toUpperCase()} • ${activeSpec.label}'
+                      : 'DABHOUSIE TICKET #${ticket.ticketNumber}',
+                  style: TextStyle(
+                    fontSize: 12.5,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryLight,
+                    color: activeSpec != null
+                        ? AppTheme.secondaryColor
+                        : AppTheme.primaryLight,
                   ),
                 ),
                 Text(
-                  isGameEnded
-                      ? '${_markedNumbers.length} / 15 Marked (Final)'
-                      : '${_markedNumbers.length} / 15 Marked',
+                  activeSpec != null
+                      ? '${_recalledForCycle(activeSpec.cycleIndex).length} / ${activeSpec.trueNumbers.length} Recalled'
+                      : (isGameEnded
+                          ? '${_markedNumbers.length} / 15 Marked (Final)'
+                          : '${_markedNumbers.length} / 15 Marked'),
                   style: const TextStyle(
                     fontSize: 12,
                     color: Color(0xFFA0AEC0),
@@ -1346,6 +1735,48 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ],
             ),
             const Divider(color: Color(0xFF2E334D), height: 14),
+            if (activeSpec != null) ...[
+              // Quadrant Header Bar (Q1: Cols 1-3 | Q2: Cols 4-6 | Q3: Cols 7-9)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    for (int q = 1; q <= 3; q++)
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: activeSpec.activeQuadrants.contains(q)
+                                ? AppTheme.secondaryColor.withValues(alpha: 0.18)
+                                : const Color(0xFF1E2235),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: activeSpec.activeQuadrants.contains(q)
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF2E334D),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            activeSpec.activeQuadrants.contains(q)
+                                ? '⚡ Q$q (${(q - 1) * 30 + 1}–${q * 30}) ACTIVE'
+                                : '🔒 Q$q (${(q - 1) * 30 + 1}–${q * 30})',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: activeSpec.activeQuadrants.contains(q)
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             for (int r = 0; r < 3; r++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 5),
@@ -1353,17 +1784,173 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   children: [
                     for (int c = 0; c < 9; c++)
                       Expanded(
-                        child: _buildTicketCell(
-                          ticket.matrix[r][c],
-                          calledSet,
-                          isGameEnded: isGameEnded,
-                          height: cellHeight,
-                        ),
+                        child: activeSpec != null
+                            ? _buildFlashTicketCell(
+                                numVal: matrixToRender[r][c],
+                                col: c,
+                                cycleSpec: activeSpec,
+                                config: flashConfig!,
+                                currentUser: currentUser,
+                                isGameEnded: isGameEnded,
+                                height: cellHeight,
+                              )
+                            : _buildTicketCell(
+                                matrixToRender[r][c],
+                                calledSet,
+                                isGameEnded: isGameEnded,
+                                height: cellHeight,
+                              ),
                       ),
                   ],
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Renders a cell on the preserved 3x9 ticket grid during FlashHousie™ 5/10/15:
+  /// - Inactive quadrants are dimmed (`opacity: 0.30`) and locked.
+  /// - Active quadrant cells unmask ONLY when `neuroState.visibleColumn == col` during `NeuroWavePhase.columnWave`,
+  ///   or after the player recalls them during `NeuroWavePhase.callingActive`.
+  Widget _buildFlashTicketCell({
+    required int numVal,
+    required int col,
+    required FlashHousieCycleSpec cycleSpec,
+    required FlashHousieConfig config,
+    required MptUser? currentUser,
+    required bool isGameEnded,
+    required double height,
+  }) {
+    final quadrant = (col ~/ 3) + 1;
+    final isActiveQuad = cycleSpec.activeQuadrants.contains(quadrant);
+
+    if (numVal == 0) {
+      return Opacity(
+        opacity: isActiveQuad ? 1.0 : 0.30,
+        child: Container(
+          height: height,
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: AppTheme.darkBackground.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isActiveQuad
+                  ? const Color(0xFF2E334D)
+                  : Colors.transparent,
+              width: 0.6,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!isActiveQuad) {
+      // Inactive quadrant cell: dimmed & locked to preserve 3x9 spatial memory
+      return Opacity(
+        opacity: 0.28,
+        child: Container(
+          height: height,
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161929),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFF252A40)),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.lock_outline_rounded,
+              size: 13,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    final isRecalled = _recalledForCycle(cycleSpec.cycleIndex).contains(numVal);
+    final isSpotlightVisible =
+        neuroState.phase == NeuroWavePhase.columnWave &&
+        neuroState.visibleColumn == col;
+    final showTrueNumber = isRecalled || isSpotlightVisible || isGameEnded;
+    final canTap = neuroState.isCallingReady && !isRecalled && !isGameEnded && !_isFrozen;
+
+    Color bgColor = AppTheme.darkSurface;
+    Color borderColor = const Color(0xFF3B4163);
+    Color textColor = Colors.white;
+
+    if (isRecalled) {
+      bgColor = AppTheme.accentSuccess;
+      borderColor = AppTheme.accentSuccess;
+      textColor = Colors.white;
+    } else if (isSpotlightVisible) {
+      bgColor = AppTheme.secondaryColor.withValues(alpha: 0.26);
+      borderColor = AppTheme.secondaryColor;
+      textColor = AppTheme.secondaryColor;
+    } else if (neuroState.isCallingReady) {
+      bgColor = const Color(0xFF1E243B);
+      borderColor = AppTheme.primaryLight.withValues(alpha: 0.75);
+      textColor = const Color(0xFF93C5FD);
+    }
+
+    return Semantics(
+      label: showTrueNumber ? 'Ticket number $numVal' : 'Masked memory cell',
+      button: true,
+      enabled: canTap,
+      onTap: canTap
+          ? () => _handleFlashCellTap(
+                numVal: numVal,
+                cycleSpec: cycleSpec,
+                config: config,
+                user: currentUser,
+              )
+          : null,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: canTap
+              ? () => _handleFlashCellTap(
+                    numVal: numVal,
+                    cycleSpec: cycleSpec,
+                    config: config,
+                    user: currentUser,
+                  )
+              : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: height,
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: borderColor,
+                width: (isRecalled || isSpotlightVisible) ? 2.0 : 1.2,
+              ),
+              boxShadow: isSpotlightVisible
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: Text(
+                showTrueNumber ? '$numVal' : '?',
+                style: TextStyle(
+                  fontSize: height >= 52 ? 18 : 16,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -1438,10 +2025,44 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Set<int> calledSet, {
     bool isGameEnded = false,
     bool isCompact = false,
+    FlashHousieConfig? flashConfig,
   }) {
     final registrations =
         ref.watch(registrationsStreamProvider(widget.gameId)).value ?? [];
     final regMap = {for (final r in registrations) r.userId: r};
+
+    // Auto-claim backup: if host crowned this player in FlashHousieConfig.awardedWinners,
+    // ensure an official MPT_claims + MPT_rewards voucher is minted in the player's own session!
+    if (flashConfig != null && currentUserId != null) {
+      for (final entry in flashConfig.awardedWinners.entries) {
+        final prizeKey = entry.key;
+        final winnerUid = entry.value;
+        if (winnerUid == currentUserId &&
+            approvedClaims[prizeKey] == null &&
+            !_autoClaimedFlashPrizes.contains(prizeKey)) {
+          _autoClaimedFlashPrizes.add(prizeKey);
+          Future.microtask(() async {
+            try {
+              final res = await ref
+                  .read(gameplayRepositoryProvider)
+                  .submitClaim(
+                    gameId: widget.gameId,
+                    prizeType: prizeKey,
+                    markedNumbers: _markedNumbers.toList(),
+                  );
+              if (mounted && res['status'] == 'APPROVED') {
+                final refCode = res['claim_reference'] as String? ?? 'N/A';
+                _showWinnerDialog(
+                  prizeKey,
+                  refCode,
+                  registrations.isNotEmpty ? registrations.length : 1,
+                );
+              }
+            } catch (_) {}
+          });
+        }
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1450,7 +2071,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Claim Winning Prize',
+              flashConfig != null
+                  ? '⚡ Round & Cumulative Full House Prizes'
+                  : 'Claim Winning Prize',
               style: TextStyle(
                 fontSize: isCompact ? 12 : 14,
                 fontWeight: FontWeight.bold,
@@ -1480,7 +2103,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         Text(
           isGameEnded
               ? 'Game is over. Prize claiming is closed.'
-              : 'Tap when completed. Server will validate your ticket.',
+              : (flashConfig != null
+                  ? 'Winners are crowned automatically by highest memory recall & fastest reaction speed!'
+                  : 'Tap when completed. Server will validate your ticket.'),
           style: TextStyle(
             fontSize: isCompact ? 9.5 : 11,
             color: const Color(0xFFA0AEC0),
@@ -1496,18 +2121,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           childAspectRatio: isCompact ? 3.5 : 3.2,
           children: activePrizes.map((prize) {
             final approvedClaim = approvedClaims[prize];
-            final isApproved = approvedClaim != null;
+            final flashWinnerUid = flashConfig?.awardedWinners[prize];
+            final flashWinnerName = flashConfig?.awardedWinnerNames[prize];
+            final isApproved = approvedClaim != null || flashWinnerUid != null;
+            final winnerUid = approvedClaim?.userId ?? flashWinnerUid;
             final isWonByMe =
-                isApproved && approvedClaim.userId == currentUserId;
+                isApproved && winnerUid != null && winnerUid == currentUserId;
 
             if (isApproved) {
-              final playerReg = regMap[approvedClaim.userId];
+              final playerReg = winnerUid != null ? regMap[winnerUid] : null;
               final displayName = (playerReg?.displayName.isNotEmpty == true)
                   ? playerReg!.displayName
-                  : (approvedClaim.userName != null &&
-                          approvedClaim.userName != 'Player')
-                      ? approvedClaim.userName!
-                      : 'Player';
+                  : (flashWinnerName != null && flashWinnerName.isNotEmpty)
+                      ? flashWinnerName
+                      : (approvedClaim?.userName != null &&
+                              approvedClaim!.userName != 'Player')
+                          ? approvedClaim.userName!
+                          : 'Player';
 
               return ElevatedButton(
                 onPressed: null, // Disabled
@@ -1598,6 +2228,47 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (flashConfig != null) {
+              return ElevatedButton(
+                onPressed: null,
+                style: ElevatedButton.styleFrom(
+                  disabledBackgroundColor: AppTheme.darkSurface,
+                  disabledForegroundColor: Colors.white,
+                  side: BorderSide(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 4 : 6,
+                    vertical: isCompact ? 2 : 4,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      Formatters.formatPrizeName(prize),
+                      style: TextStyle(
+                        fontSize: isCompact ? 10 : 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '⚡ Auto-Scored Live',
+                      style: TextStyle(
+                        fontSize: isCompact ? 8 : 9,
+                        color: AppTheme.secondaryColor,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),

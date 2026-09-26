@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
+import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
@@ -48,11 +49,24 @@ class _AdminGameControlScreenState
   bool _hasAutoConcluded = false;
   int _autoEndSecondsLeft = 0;
   Timer? _autoEndTimer;
+  Timer? _neuroWaveUiTimer;
 
   @override
   void initState() {
     super.initState();
     _isMuted = TambolaAudioCaller().isMuted;
+    _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
+      if (!mounted) return;
+      final game = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (game?.isFlashHousie == true) {
+        final neuro = game!.flashHousieConfig?.computeNeuroWaveState(
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        if (neuro != null && neuro.isRevealing) {
+          setState(() {});
+        }
+      }
+    });
     if (widget.autoPilot) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _startAutoPilot();
@@ -62,6 +76,7 @@ class _AdminGameControlScreenState
 
   @override
   void dispose() {
+    _neuroWaveUiTimer?.cancel();
     _autoCallTimer?.cancel();
     _celebrationTimer?.cancel();
     _autoEndTimer?.cancel();
@@ -84,6 +99,17 @@ class _AdminGameControlScreenState
       if (!_isAutoPilotEnabled || _hasAutoConcluded) {
         timer.cancel();
         return;
+      }
+      // Hold countdown if FlashHousie NeuroWave Spotlight is currently revealing
+      final currentGame = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (currentGame?.isFlashHousie == true &&
+          currentGame?.flashHousieConfig != null) {
+        final neuro = currentGame!.flashHousieConfig!.computeNeuroWaveState(
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        if (neuro.isRevealing) {
+          return;
+        }
       }
       // If celebrating a winner or currently making an async call, auto-concluding, or paused, hold the countdown
       if (_celebrationSecondsLeft > 0 ||
@@ -229,12 +255,145 @@ class _AdminGameControlScreenState
     await Share.share(text, subject: 'Join DabHousie: ${game.name}');
   }
 
+  Future<void> _handleAdvanceOrFinalizeFlashCycle(MptGame game) async {
+    final flashCfg = game.flashHousieConfig;
+    if (flashCfg == null || _isCalling) return;
+
+    setState(() => _isCalling = true);
+    try {
+      final repo = ref.read(gameplayRepositoryProvider);
+      if (!flashCfg.isLastCycle) {
+        final currentCycleNum = flashCfg.currentCycle;
+        final roundLabel = flashCfg.activeCycleSpec.roundBadgeLabel;
+        final updatedCfg = await repo.finalizeFlashHousieCycleAndAdvance(
+          game: game,
+          advanceToNextCycle: true,
+        );
+        final finalizedSpec = updatedCfg?.cycles
+            .where((c) => c.cycleIndex == currentCycleNum)
+            .firstOrNull;
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        ref.invalidate(calledNumbersStreamProvider(widget.gameId));
+        ref.invalidate(claimsStreamProvider(widget.gameId));
+        ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+
+        if (!mounted) return;
+        if (finalizedSpec?.winnerName != null) {
+          _triggerCelebrationPause(
+            '🏆 ${finalizedSpec!.winnerName} won Round $currentCycleNum ($roundLabel) with ${finalizedSpec.winnerCorrectCount ?? 0} recalls! Launching Round ${currentCycleNum + 1} NeuroWave™ Spotlight...',
+          );
+        } else {
+          _triggerCelebrationPause(
+            '⚡ Round $currentCycleNum ($roundLabel) complete! Launching Round ${currentCycleNum + 1} NeuroWave™ Spotlight...',
+          );
+        }
+      } else {
+        await repo.finalizeFlashHousieCycleAndAdvance(
+          game: game,
+          advanceToNextCycle: false,
+        );
+        await repo.finalizeFlashHousieGrandWinners(game);
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        ref.invalidate(claimsStreamProvider(widget.gameId));
+        ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
+        if (!mounted) return;
+        _triggerAutoConclusion();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error advancing FlashHousie™ round: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isCalling = false);
+    }
+  }
+
   Future<void> _handleCallNext() async {
     final game = ref.read(gameStreamProvider(widget.gameId)).value;
     if (game?.status == 'COMPLETED') {
       _stopAutoPilot();
       return;
     }
+
+    // Special handling for FlashHousie™ 5 / 10 / 15 multi-cycle gameplay
+    if (game != null && game.isFlashHousie && game.flashHousieConfig != null) {
+      final flashCfg = game.flashHousieConfig!;
+      final cycle = flashCfg.activeCycleSpec;
+
+      if (cycle.startedAtMs == null) {
+        setState(() => _isCalling = true);
+        try {
+          await ref.read(gameplayRepositoryProvider).launchFlashHousieCycle(
+                game: game,
+                cycleIndex: flashCfg.currentCycle,
+              );
+          ref.invalidate(gameStreamProvider(widget.gameId));
+        } finally {
+          if (mounted) setState(() => _isCalling = false);
+        }
+        return;
+      }
+
+      final neuroState = flashCfg.computeNeuroWaveState(
+        DateTime.now().millisecondsSinceEpoch,
+      );
+      if (neuroState.isRevealing) {
+        if (!_isAutoPilotEnabled && mounted) {
+          final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '⚡ NeuroWave™ Spotlight is active ($secsLeft s remaining in phase). Calling unlocks right after the wave!',
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (cycle.isCompleted) {
+        await _handleAdvanceOrFinalizeFlashCycle(game);
+        return;
+      }
+
+      setState(() {
+        _isCalling = true;
+        _countdownSecondsLeft = _autoCallIntervalSeconds;
+      });
+      try {
+        final num = await ref
+            .read(gameplayRepositoryProvider)
+            .callNextFlashHousieNumber(game);
+        ref.invalidate(calledNumbersStreamProvider(widget.gameId));
+        ref.invalidate(gameStreamProvider(widget.gameId));
+
+        if (num != null) {
+          TambolaAudioCaller().announceNumber(num);
+        } else {
+          if (mounted) {
+            setState(() => _isCalling = false);
+            await _handleAdvanceOrFinalizeFlashCycle(game);
+          }
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error calling FlashHousie™ ball: $e'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isCalling = false);
+      }
+      return;
+    }
+
     final claims = ref.read(claimsStreamProvider(widget.gameId)).value ?? [];
     final activePrizes = game?.prizesConfig ??
         [
@@ -1236,6 +1395,10 @@ class _AdminGameControlScreenState
                                   calledNumbers,
                                   isGameCompleted,
                                 ),
+                                if (game?.isFlashHousie == true) ...[
+                                  const SizedBox(height: 8),
+                                  _buildFlashHousieHostControlCard(game!),
+                                ],
                                 const SizedBox(height: 8),
                                 _buildMainActionButton(
                                   isGameCompleted: isGameCompleted,
@@ -1326,6 +1489,10 @@ class _AdminGameControlScreenState
                                       calledNumbers,
                                       isGameCompleted,
                                     ),
+                                    if (game?.isFlashHousie == true) ...[
+                                      const SizedBox(height: 12),
+                                      _buildFlashHousieHostControlCard(game!),
+                                    ],
                                     const SizedBox(height: 14),
                                     _buildMainActionButton(
                                       isGameCompleted: isGameCompleted,
@@ -1432,6 +1599,10 @@ class _AdminGameControlScreenState
                           calledNumbers,
                           isGameCompleted,
                         ),
+                        if (game?.isFlashHousie == true) ...[
+                          const SizedBox(height: 12),
+                          _buildFlashHousieHostControlCard(game!),
+                        ],
                         const SizedBox(height: 14),
                         _buildMainActionButton(
                           isGameCompleted: isGameCompleted,
@@ -1495,6 +1666,198 @@ class _AdminGameControlScreenState
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildFlashHousieHostControlCard(MptGame game) {
+    final flashCfg = game.flashHousieConfig;
+    if (flashCfg == null) return const SizedBox.shrink();
+    final cycle = flashCfg.activeCycleSpec;
+    final neuroState = flashCfg.computeNeuroWaveState(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+    final scoresAsync = ref.watch(memoryRoundScoresStreamProvider(widget.gameId));
+    final allScores = scoresAsync.value ?? const <MptMemoryRoundScore>[];
+    final currentCycleScores = allScores
+        .where((s) => s.cycleNumber == flashCfg.currentCycle)
+        .toList()
+      ..sort(MptMemoryRoundScore.compareStandings);
+
+    final secsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+
+    String statusTitle;
+    Color statusColor;
+    switch (neuroState.phase) {
+      case NeuroWavePhase.waitingToStart:
+        statusTitle = '⏳ Waiting to Launch Round ${flashCfg.currentCycle} NeuroWave™';
+        statusColor = AppTheme.accentWarning;
+        break;
+      case NeuroWavePhase.stageReadiness:
+        statusTitle =
+            '🎯 NeuroWave™ Dynamic Stage Readiness ($secsLeft s)';
+        statusColor = const Color(0xFF38BDF8);
+        break;
+      case NeuroWavePhase.columnWave:
+        statusTitle =
+            '🌊 NeuroWave™ Column Wave Active: Col ${(neuroState.visibleColumn ?? 0) + 1} ($secsLeft s)';
+        statusColor = AppTheme.secondaryColor;
+        break;
+      case NeuroWavePhase.memoryLockInPause:
+        statusTitle = '🧠 NeuroWave™ Memory Lock-In Pause ($secsLeft s)';
+        statusColor = const Color(0xFFA78BFA);
+        break;
+      case NeuroWavePhase.callingActive:
+        statusTitle = cycle.isCompleted
+            ? '🏁 Round ${flashCfg.currentCycle} Pool Complete (${cycle.calledCount}/${cycle.drawPool.length} Balls)'
+            : '🎱 Caller Active • ${cycle.calledCount} / ${cycle.drawPool.length} Balls Drawn';
+        statusColor = AppTheme.accentSuccess;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141829),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.65),
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.bolt_rounded,
+                    color: AppTheme.secondaryColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${flashCfg.displayTitle} • Round ${flashCfg.currentCycle} of ${flashCfg.totalCycles}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.secondaryColor),
+                ),
+                child: Text(
+                  cycle.roundBadgeLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            statusTitle,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: statusColor,
+            ),
+          ),
+          if (currentCycleScores.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF1E293B)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LIVE ${cycle.roundBadgeLabel} RECALL LEADERBOARD (TOP 3)',
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...currentCycleScores.take(3).toList().asMap().entries.map((entry) {
+                    final rank = entry.key + 1;
+                    final s = entry.value;
+                    final medal = rank == 1 ? '🥇' : (rank == 2 ? '🥈' : '🥉');
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 1.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '$medal ${s.displayName}',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '✓ ${s.correctCount}  •  ✗ ${s.wrongTapCount}  •  ⚡ ${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.secondaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+          if (cycle.isCompleted && game.status != 'COMPLETED') ...[
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _isCalling
+                  ? null
+                  : () => _handleAdvanceOrFinalizeFlashCycle(game),
+              icon: const Icon(Icons.emoji_events_rounded, size: 16),
+              label: Text(
+                flashCfg.isLastCycle
+                    ? '🏆 Crown Final Round & Full House Winners'
+                    : '🏆 Crown ${cycle.roundBadgeLabel} Winner & Launch Round ${flashCfg.currentCycle + 1}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: AppTheme.primaryDark,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

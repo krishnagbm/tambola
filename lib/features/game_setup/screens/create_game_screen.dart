@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
 import '../../../core/widgets/company_logo.dart';
 import '../../../models/brand_offer.dart';
+import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
@@ -57,6 +58,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
   bool _freeToPlayConfirmed = false;
+
+  // FlashHousie™ 5 / 10 / 15 Game Mode Configuration
+  String _selectedGameMode = FlashHousieConfig.modeClassic90;
+  int _flashTotalCycles = 3;
+  int _flashCellsPerQuadrant = 5;
+  int _flashDecoysPerCol = 1;
+
+  bool get _isFlashMode => _selectedGameMode != FlashHousieConfig.modeClassic90;
 
   static const Map<String, Map<String, dynamic>> _currencyOptions = {
     'USD': {
@@ -188,9 +197,36 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'TOP_LINE': 15,
     'MIDDLE_LINE': 15,
     'BOTTOM_LINE': 15,
+    'ROUND_1': 15,
+    'ROUND_2': 15,
+    'ROUND_3': 15,
+    'ROUND_4': 15,
+    'ROUND_5': 15,
+    'ROUND_6': 15,
     'FULL_HOUSE': 35,
     'SECOND_FULL_HOUSE': 20,
   };
+
+  void _syncPrizesForSelectedMode() {
+    final prevSecondFh = _prizes['SECOND_FULL_HOUSE'] ?? false;
+    _prizes.clear();
+    if (!_isFlashMode) {
+      _prizes['EARLY_FIVE'] = true;
+      _prizes['TOP_LINE'] = true;
+      _prizes['MIDDLE_LINE'] = true;
+      _prizes['BOTTOM_LINE'] = true;
+      _prizes['FOUR_CORNERS'] = true;
+      _prizes['FULL_HOUSE'] = true;
+      _prizes['SECOND_FULL_HOUSE'] = prevSecondFh;
+    } else {
+      for (int i = 1; i <= _flashTotalCycles; i++) {
+        _prizes['ROUND_$i'] = true;
+      }
+      _prizes['FULL_HOUSE'] = true;
+      _prizes['SECOND_FULL_HOUSE'] = prevSecondFh;
+    }
+    _autoSplitBudget();
+  }
 
   late final List<Map<String, String>> _mockWinners;
 
@@ -336,6 +372,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       '_currency_code': _selectedCurrencyCode,
       '_currency_symbol': _currencySymbol.trim(),
     };
+    if (_isFlashMode) {
+      final flashConfig = FlashHousieConfig.generate(
+        mode: _selectedGameMode,
+        totalCycles: _flashTotalCycles,
+        cellsPerQuadrant: _flashCellsPerQuadrant,
+        decoysPerColumn: _flashDecoysPerCol,
+      );
+      map['_flash_housie'] = flashConfig.toJson();
+    }
     for (final entry in _prizes.entries) {
       if (!entry.value) continue;
       final key = entry.key;
@@ -866,6 +911,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  _buildGameModeSelectorSection(),
+                  const SizedBox(height: 16),
+
                   _buildPrivatePartyToggle(),
                   const SizedBox(height: 16),
 
@@ -909,6 +957,307 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameModeSelectorSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isFlashMode
+            ? AppTheme.secondaryColor.withValues(alpha: 0.08)
+            : AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _isFlashMode
+              ? AppTheme.secondaryColor.withValues(alpha: 0.65)
+              : const Color(0xFF2E334D),
+          width: _isFlashMode ? 1.5 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isFlashMode
+                      ? AppTheme.secondaryColor.withValues(alpha: 0.22)
+                      : AppTheme.darkCard,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  _isFlashMode ? Icons.bolt_rounded : Icons.grid_on_rounded,
+                  color: AppTheme.secondaryColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '⚡ Game Mode & NeuroWave™ Format',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Choose Classic 90-Ball Tambola or high-energy FlashHousie™ 5 / 10 / 15 memory-speed rounds.',
+                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildModeChoiceChip(
+                mode: FlashHousieConfig.modeClassic90,
+                title: '🎱 Classic 90-Ball',
+                subtitle: 'Full 15-Number Ticket',
+              ),
+              _buildModeChoiceChip(
+                mode: FlashHousieConfig.modeFlash5,
+                title: '⚡ FlashHousie™ 5',
+                subtitle: '1 Quadrant / Round',
+              ),
+              _buildModeChoiceChip(
+                mode: FlashHousieConfig.modeFlash10,
+                title: '⚡ FlashHousie™ 10',
+                subtitle: '2 Quadrants / Round',
+              ),
+              _buildModeChoiceChip(
+                mode: FlashHousieConfig.modeFlash15,
+                title: '⚡ FlashHousie™ 15',
+                subtitle: 'All 3 Quadrants / Round',
+              ),
+            ],
+          ),
+          if (_isFlashMode) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: Color(0xFF2E334D), height: 1),
+            ),
+            Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              children: [
+                // 1. Number of Rounds / Cycles
+                SizedBox(
+                  width: 240,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _flashTotalCycles,
+                    dropdownColor: AppTheme.darkCard,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Number of Rounds (Cycles)',
+                      labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                      isDense: true,
+                      filled: true,
+                      fillColor: AppTheme.darkCard,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: [2, 3, 4, 5, 6].map((c) {
+                      return DropdownMenuItem<int>(
+                        value: c,
+                        child: Text('$c Rounds (R1..R$c + Full House)'),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _flashTotalCycles = val;
+                          _syncPrizesForSelectedMode();
+                        });
+                      }
+                    },
+                  ),
+                ),
+                // 2. Quadrant Density (5 vs 9 cells/quadrant)
+                SizedBox(
+                  width: 260,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _flashCellsPerQuadrant,
+                    dropdownColor: AppTheme.darkCard,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Quadrant Grid Density',
+                      labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                      isDense: true,
+                      filled: true,
+                      fillColor: AppTheme.darkCard,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 5,
+                        child: Text('Standard (5 Numbers / Quadrant)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 9,
+                        child: Text('Full 3×3 Grid (9 Numbers / Quadrant)'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _flashCellsPerQuadrant = val);
+                      }
+                    },
+                  ),
+                ),
+                // 3. Challenge Balls per Column
+                SizedBox(
+                  width: 230,
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _flashDecoysPerCol,
+                    dropdownColor: AppTheme.darkCard,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: 'Caller Challenge Balls',
+                      labelStyle: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                      isDense: true,
+                      filled: true,
+                      fillColor: AppTheme.darkCard,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text('1 Challenge Ball / Column'),
+                      ),
+                      DropdownMenuItem(
+                        value: 2,
+                        child: Text('2 Challenge Balls / Column'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _flashDecoysPerCol = val);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCard,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.flash_on_rounded, color: AppTheme.secondaryColor, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'NeuroWave™ Spotlight sweeps active columns before locking the grid into [?]. '
+                      'All players receive the identical symmetric card each round—pure memory & reaction speed crown each Round Winner (Rx-Qx) and the Cumulative Full House Champion!',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeChoiceChip({
+    required String mode,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _selectedGameMode == mode;
+    return InkWell(
+      onTap: () {
+        if (_selectedGameMode != mode) {
+          setState(() {
+            _selectedGameMode = mode;
+            _syncPrizesForSelectedMode();
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 200,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.secondaryColor.withValues(alpha: 0.18)
+              : AppTheme.darkCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.secondaryColor : const Color(0xFF334155),
+            width: isSelected ? 1.8 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: isSelected ? AppTheme.secondaryColor : Colors.white,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 16,
+                    color: AppTheme.secondaryColor,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+            ),
+          ],
         ),
       ),
     );
@@ -2483,32 +2832,44 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               children: _prizes.keys.map((key) {
                 String label;
                 String? goldenRuleBadge;
-                switch (key) {
-                  case 'EARLY_FIVE':
-                    label = 'Early 5 (Jaldi 5)';
-                    break;
-                  case 'TOP_LINE':
-                    label = 'Top Line';
-                    break;
-                  case 'MIDDLE_LINE':
-                    label = 'Middle Line';
-                    break;
-                  case 'BOTTOM_LINE':
-                    label = 'Bottom Line';
-                    break;
-                  case 'FOUR_CORNERS':
-                    label = 'Four Corners';
-                    break;
-                  case 'FULL_HOUSE':
-                    label = 'Full House (1st)';
-                    goldenRuleBadge = '🔓 Open to ALL';
-                    break;
-                  case 'SECOND_FULL_HOUSE':
-                    label = '2nd Full House';
-                    goldenRuleBadge = '🔓 Except 1st FH';
-                    break;
-                  default:
-                    label = key;
+                if (key.startsWith('ROUND_')) {
+                  final rNum = key.replaceFirst('ROUND_', '');
+                  label = '⚡ Round $rNum Winner (R$rNum-Qx)';
+                  goldenRuleBadge = '🎯 Max Round Recalls';
+                } else {
+                  switch (key) {
+                    case 'EARLY_FIVE':
+                      label = 'Early 5 (Jaldi 5)';
+                      break;
+                    case 'TOP_LINE':
+                      label = 'Top Line';
+                      break;
+                    case 'MIDDLE_LINE':
+                      label = 'Middle Line';
+                      break;
+                    case 'BOTTOM_LINE':
+                      label = 'Bottom Line';
+                      break;
+                    case 'FOUR_CORNERS':
+                      label = 'Four Corners';
+                      break;
+                    case 'FULL_HOUSE':
+                      label = _isFlashMode
+                          ? '🏆 1st Full House (Cumulative)'
+                          : 'Full House (1st)';
+                      goldenRuleBadge = _isFlashMode
+                          ? '🔥 All Rounds Total'
+                          : '🔓 Open to ALL';
+                      break;
+                    case 'SECOND_FULL_HOUSE':
+                      label = _isFlashMode
+                          ? '🥈 2nd Full House (Cumulative)'
+                          : '2nd Full House';
+                      goldenRuleBadge = '🔓 Except 1st FH';
+                      break;
+                    default:
+                      label = key;
+                  }
                 }
                 final isEnabled = _prizes[key] ?? false;
                 final assignedOffer = _selectedPrizeGifts[key];

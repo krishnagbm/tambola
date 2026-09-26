@@ -1,3 +1,5 @@
+import 'flash_housie_config.dart';
+
 class MptGame {
   final String id;
   final String adminUserId;
@@ -48,6 +50,13 @@ class MptGame {
   bool get isInProgress => status == 'IN_PROGRESS';
   bool get isCompleted => status == 'COMPLETED' || status == 'CLOSED';
   bool get isCancelled => status == 'CANCELLED';
+
+  FlashHousieConfig? get flashHousieConfig =>
+      FlashHousieConfig.fromPrizeGiftsConfig(prizeGiftsConfig);
+
+  bool get isFlashHousie => flashHousieConfig != null;
+
+  String get gameMode => flashHousieConfig?.mode ?? 'CLASSIC_90';
 
   factory MptGame.fromJson(Map<String, dynamic> json) {
     List<String> parsePrizes(dynamic val) {

@@ -14,7 +14,12 @@ class Formatters {
   }
 
   static String formatPrizeName(String prizeType) {
-    switch (prizeType.toUpperCase()) {
+    final upper = prizeType.toUpperCase();
+    if (upper.startsWith('ROUND_')) {
+      final numPart = upper.replaceFirst('ROUND_', '');
+      return 'Round $numPart Winner';
+    }
+    switch (upper) {
       case 'EARLY_FIVE':
         return 'Early 5 (Jaldi 5)';
       case 'TOP_LINE':
