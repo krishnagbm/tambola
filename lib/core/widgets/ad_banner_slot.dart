@@ -8,6 +8,10 @@ enum AdSlotType {
 }
 
 class AdBannerSlot extends StatelessWidget {
+  /// Keep false while AdSense approval is pending so empty/fake ad placeholder
+  /// boxes are not displayed to users or AdSense reviewers.
+  static const bool showPlaceholderWhenUnfilled = false;
+
   final AdSlotType slotType;
   final String slotId;
   final String title;
@@ -23,6 +27,9 @@ class AdBannerSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!showPlaceholderWhenUnfilled) {
+      return const SizedBox.shrink();
+    }
     if (slotType == AdSlotType.videoReward) {
       return Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
@@ -78,7 +85,7 @@ class AdBannerSlot extends StatelessWidget {
                       child: Image.asset(
                         'assets/branding/dabhousie_brand_identity_sheet.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
                       ),
                     ),
                   ),

@@ -951,3 +951,9 @@ footer.site-footer a:hover {
   margin-bottom: 0;
 }
 
+/* Google AdSense: collapse unfilled ad containers & hide placeholder boxes until ads serve */
+ins.adsbygoogle[data-ad-status="unfilled"],
+.ad-slot-wrapper:not(:has(ins.adsbygoogle[data-ad-status="filled"])),
+.ad-card-slot:not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
+  display: none !important;
+}
