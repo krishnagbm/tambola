@@ -313,7 +313,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                 ),
                 SizedBox(height: 2),
                 Text(
-                  'Guests cannot hold organizer credits or host games. Sign in with Google, Apple, or Email OTP to unlock organizer hosting & credit purchases.',
+                  'Guests cannot hold organizer credits or host games. Sign in with Google, Apple, Microsoft, or Email OTP to unlock organizer hosting & credit purchases.',
                   style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
                 ),
               ],

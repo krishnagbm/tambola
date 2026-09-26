@@ -202,7 +202,7 @@ class _ProfileEditDialogState extends ConsumerState<ProfileEditDialog> {
                       ),
                       const SizedBox(height: 6),
                       const Text(
-                        'Link Google, Apple, or Email OTP to safeguard tickets, game history, and rewards against browser cache wipes or device changes.',
+                        'Link Google, Apple, Microsoft, or Email OTP to safeguard tickets, game history, and rewards against browser cache wipes or device changes.',
                         style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
                       ),
                       const SizedBox(height: 10),

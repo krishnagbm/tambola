@@ -107,6 +107,7 @@ class AuthRepository {
     await _supabase.auth.signInWithOAuth(
       OAuthProvider.azure,
       redirectTo: _getEffectiveRedirectUrl(redirectTo),
+      scopes: 'email profile openid',
     );
   }
 

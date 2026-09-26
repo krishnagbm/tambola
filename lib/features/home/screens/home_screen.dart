@@ -1668,7 +1668,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Sign in with Google or Apple for personal parties. To host for your organization with official branding, sign in with your company work email via Email (OTP).',
+                      'Sign in with Google, Apple, or Microsoft for personal parties. To host for your organization with official branding, sign in with your company work email via Microsoft or Email (OTP).',
                       style: TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1), height: 1.4),
                     ),
                     const SizedBox(height: 18),
@@ -1696,6 +1696,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       subtitle: 'Continue with your Apple ID',
                       isLoading: _isSigningIn && _loadingProvider == 'Apple',
                       onTap: _isSigningIn ? null : _handleAppleSignIn,
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Microsoft Sign In
+                    _buildOAuthButton(
+                      icon: const CustomPaint(
+                        size: Size(22, 22),
+                        painter: MicrosoftLogoPainter(),
+                      ),
+                      title: 'Microsoft',
+                      subtitle: 'Continue with your Microsoft / Work Account',
+                      isLoading: _isSigningIn && _loadingProvider == 'Microsoft',
+                      onTap: _isSigningIn ? null : _handleMicrosoftSignIn,
                     ),
                     const SizedBox(height: 10),
 
@@ -2136,6 +2149,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _handleAppleSignIn() async {
     final authRepo = ref.read(authRepositoryProvider);
     await _handleOAuthSignIn('Apple', () => authRepo.signInWithApple());
+  }
+
+  Future<void> _handleMicrosoftSignIn() async {
+    final authRepo = ref.read(authRepositoryProvider);
+    await _handleOAuthSignIn('Microsoft', () => authRepo.signInWithMicrosoft());
   }
 
   Future<void> _handleSignOut() async {

@@ -58,7 +58,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
   static const bool _showApple = true;
 
   /// Control flag to reveal Microsoft button.
-  static const bool _showMicrosoft = false;
+  static const bool _showMicrosoft = true;
 
   @override
   void initState() {
@@ -300,7 +300,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                     : _authStep == _AuthStep.emailInput
                         ? 'Enter your work or personal email address. We will send a secure 6-digit passcode directly to your inbox.'
                         : widget.isHostContext
-                            ? 'Sign in with Google or Apple for personal parties. To host for your organization with official branding, sign in with your company work email via Email (OTP).'
+                            ? 'Sign in with Google, Apple, or Microsoft for personal parties. To host for your organization with official branding, sign in with your company work email via Microsoft or Email (OTP).'
                             : 'Sign in to protect your wallet credits, save your hosted games, and keep your profile synced across devices.',
                 style: const TextStyle(fontSize: 13, color: Color(0xFFCBD5E1), height: 1.4),
               ),
@@ -344,7 +344,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
               ],
 
               // ========================================================
-              // STEP 1: SOCIAL LIST (Default view with Google, Apple, Email)
+              // STEP 1: SOCIAL LIST (Default view with Google, Apple, Microsoft, Email)
               // ========================================================
               if (_authStep == _AuthStep.socialList) ...[
                 _buildOAuthButton(
@@ -378,7 +378,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                       painter: MicrosoftLogoPainter(),
                     ),
                     title: 'Microsoft',
-                    subtitle: 'Continue with Microsoft Account',
+                    subtitle: 'Continue with your Microsoft / Work Account',
                     isLoading: _isLoading && _loadingProvider == 'Microsoft',
                     onTap: _isLoading ? null : _handleMicrosoftSignIn,
                   ),

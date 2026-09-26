@@ -196,7 +196,7 @@
 
     <div class="highlight-box">
       <h4>🔒 Summary of Our Privacy Commitment</h4>
-      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties, data brokers, or advertising networks. We access authentication provider data (Google Identity, Sign in with Apple, and verified corporate email OTP) solely for user authentication, organizer session management, and profile display.</p>
+      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties, data brokers, or advertising networks. We access authentication provider data (Google Identity, Sign in with Apple, Microsoft / Microsoft Entra ID, and verified corporate email OTP) solely for user authentication, organizer session management, and profile display.</p>
     </div>
 
     <h2>1. Introduction &amp; Scope</h2>
@@ -205,7 +205,7 @@
 
     <h2>2. Information We Collect and How We Collect It</h2>
 
-    <h3>A. Identity &amp; Single Sign-On (SSO) Providers (Google, Apple, &amp; Corporate Email)</h3>
+    <h3>A. Identity &amp; Single Sign-On (SSO) Providers (Google, Apple, Microsoft, &amp; Corporate Email)</h3>
     <p>When you register or sign in as an event organizer, we support secure Single Sign-On (SSO) and passwordless authentication through industry-standard OAuth 2.0, OpenID Connect, and email verification providers. We request only the minimal public profile information required to identify your account and display your organizer badge:</p>
     
     <div class="table-wrapper">
@@ -232,6 +232,12 @@
             <td>One-tap native and web organizer authentication. Fully respects Apple's "Hide My Email" privacy relay forwarding.</td>
           </tr>
           <tr>
+            <td><strong>Microsoft / Microsoft Entra ID</strong></td>
+            <td>Email address, Display Name, Subject / Object ID (`sub` / `oid`)</td>
+            <td>Microsoft OAuth / OpenID Connect Scope (`email`, `profile`, `openid`)</td>
+            <td>Personal Microsoft account and corporate Microsoft 365 / Entra ID organizer authentication and domain verification.</td>
+          </tr>
+          <tr>
             <td><strong>Corporate Email OTP</strong></td>
             <td>Email address and temporary one-time passcode</td>
             <td>Direct email OTP verification</td>
@@ -240,7 +246,7 @@
         </tbody>
       </table>
     </div>
-    <p><em>Note: We do <strong>NOT</strong> request, receive, or store your passwords, cloud storage files (Google Drive, iCloud), contacts, calendars, or sensitive enterprise directory data.</em></p>
+    <p><em>Note: We do <strong>NOT</strong> request, receive, or store your passwords, cloud storage files (Google Drive, OneDrive, iCloud), contacts, calendars, or sensitive enterprise directory data.</em></p>
 
     <h3>B. Information Collected During Gameplay (Guests &amp; Players)</h3>
     <ul>
@@ -296,10 +302,11 @@
       <li>We do not use Google user data to train generalized artificial intelligence (AI) or machine learning (ML) models.</li>
     </ul>
 
-    <h2>5A. Apple Identity Disclosure (Sign in with Apple)</h2>
+    <h2>5A. Apple &amp; Microsoft Identity Disclosures</h2>
     <p>DabHousie respects user privacy across all supported authentication frameworks:</p>
     <ul>
       <li><strong>Sign in with Apple</strong>: Our integration complies fully with Apple's Developer Program License Agreement and Human Interface Guidelines. DabHousie natively honors Apple's "Hide My Email" Private Relay service (generating an anonymous <code>@privaterelay.appleid.com</code> address). We never track users across third-party websites or apps, and we do not share Apple user identifiers with advertising brokers or analytics aggregators.</li>
+      <li><strong>Microsoft Identity Platform (Microsoft Entra ID &amp; Personal Accounts)</strong>: When signing in with a Microsoft or work account, we request only standard OpenID Connect identity claims (<code>openid</code>, <code>profile</code>, <code>email</code>). We do not request access to your organization's Microsoft 365 files, Outlook mailbox, Teams chats, or Entra directory graph beyond your basic user sign-in profile.</li>
     </ul>
 
     <h2>6. Data Sharing and Third-Party Infrastructure</h2>
@@ -309,6 +316,7 @@
       <li><strong>Amazon Web Services (AWS Amplify / CloudFront / SES)</strong>: Secure HTTPS web hosting, SSL/TLS certificate management, Content Delivery Network (CDN), and automated transactional email audit deliveries.</li>
       <li><strong>Google LLC (Google Identity Services)</strong>: OAuth 2.0 authentication provider for Google accounts.</li>
       <li><strong>Apple Inc. (Sign in with Apple)</strong>: Authentication provider for Apple ID and Private Relay email forwarding.</li>
+      <li><strong>Microsoft Corporation (Microsoft Identity Platform / Entra ID)</strong>: OAuth 2.0 / OpenID Connect authentication provider for personal Microsoft and organizational work accounts.</li>
     </ul>
 
     <h2>7. Cookies and Local Storage</h2>
@@ -326,6 +334,7 @@
       <li><strong>Request Data Deletion</strong>: You can request complete deletion of your account, email address, profile, and hosted game history at any time by emailing us at <a href="mailto:contact@dabhousie.com">contact@dabhousie.com</a> with the subject <em>"Data Deletion Request"</em>. We process all verified deletion requests within 7 business days.</li>
       <li><strong>Revoke Google Account Access</strong>: You can revoke DabHousie's access to your Google Account at any time via your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account Permissions Settings</a>.</li>
       <li><strong>Revoke Apple ID Access</strong>: You can manage or revoke DabHousie's access to your Apple ID at any time through your Apple device settings (<em>Settings &gt; Apple ID &gt; Sign-In &amp; Security &gt; Sign in with Apple</em>) or at <a href="https://appleid.apple.com" target="_blank" rel="noopener">appleid.apple.com</a>.</li>
+      <li><strong>Revoke Microsoft Account Access</strong>: You can manage or revoke DabHousie's access to your Microsoft account at any time at <a href="https://account.live.com/consent/Manage" target="_blank" rel="noopener">account.live.com/consent/Manage</a> (for personal accounts) or <a href="https://myapps.microsoft.com" target="_blank" rel="noopener">myapps.microsoft.com</a> (for organizational work accounts).</li>
     </ul>
 
     <h2>9. Data Security &amp; Encryption</h2>
