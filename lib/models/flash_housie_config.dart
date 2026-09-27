@@ -668,11 +668,23 @@ class MptMemoryRoundScore {
 
   int get cumulativeReactionMs => totalReactionMs;
 
+  static const int pointsPerCorrectRecall = 10;
+  static const int penaltyPerWrongTap = 3;
+
+  /// Net score combining memory & reasoning accuracy (+10 pts per recall)
+  /// with wrong-guess deduction (-3 pts per wrong tap).
+  int get netScore =>
+      (correctCount * pointsPerCorrectRecall) -
+      (wrongTapCount * penaltyPerWrongTap);
+
   /// Canonical FlashHousie™ tie-breaker comparator:
-  /// 1. Highest [correctCount]
-  /// 2. Fewest [wrongTapCount]
-  /// 3. Fastest [totalReactionMs]
+  /// 1. Highest [netScore] (+10 per recall, -3 per wrong tap)
+  /// 2. Highest [correctCount]
+  /// 3. Fewest [wrongTapCount]
+  /// 4. Fastest [totalReactionMs]
   static int compareStandings(MptMemoryRoundScore a, MptMemoryRoundScore b) {
+    final cmpNet = b.netScore.compareTo(a.netScore);
+    if (cmpNet != 0) return cmpNet;
     final cmpCorrect = b.correctCount.compareTo(a.correctCount);
     if (cmpCorrect != 0) return cmpCorrect;
     final cmpWrong = a.wrongTapCount.compareTo(b.wrongTapCount);

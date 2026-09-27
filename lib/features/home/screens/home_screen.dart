@@ -707,6 +707,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00E676).withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: const Color(0xFF00E676).withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: const Text(
+                      '🧠 Memory • Logical Reasoning • Speed',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF69F0AE),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -728,7 +746,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           SizedBox(height: 4),
                           Text(
-                            'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then recall & tap called balls from memory across 1, 2, or 3 fast-paced rounds!',
+                            'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then combine memory, logical column reasoning & speed to pinpoint called balls across 1, 2, or 3 fast-paced rounds! Wrong guesses deduct score.',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: Color(0xFFE2E8F0),
@@ -753,7 +771,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then recall & tap called balls from memory across 1, 2, or 3 fast-paced rounds!',
+                  'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then combine memory, logical column reasoning & speed to pinpoint called balls across 1, 2, or 3 fast-paced rounds! Wrong guesses deduct score.',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFFE2E8F0),

@@ -1925,26 +1925,32 @@ class _AdminGameControlScreenState
                 const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: 12,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: statusColor, width: 1.3),
+                    color: const Color(0xFF090D16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: statusColor, width: 2.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withValues(alpha: 0.35),
+                        blurRadius: 10,
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.timer_outlined, size: 15, color: statusColor),
-                      const SizedBox(width: 5),
+                      Icon(Icons.timer_outlined, size: 20, color: statusColor),
+                      const SizedBox(width: 6),
                       Text(
                         formattedDigital,
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontFamily: 'monospace',
-                          letterSpacing: 1.0,
+                          letterSpacing: 1.5,
                           color: statusColor,
                         ),
                       ),
@@ -1997,7 +2003,7 @@ class _AdminGameControlScreenState
                             ),
                           ),
                           Text(
-                            '✓ ${s.correctCount}  •  ✗ ${s.wrongTapCount}  •  ⚡ ${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s',
+                            '⭐ ${s.netScore} pts  •  ✓ ${s.correctCount}  •  ✗ ${s.wrongTapCount}${s.wrongTapCount > 0 ? " (-${s.wrongTapCount * MptMemoryRoundScore.penaltyPerWrongTap})" : ""}  •  ⚡ ${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s',
                             style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
@@ -2392,19 +2398,19 @@ class _AdminGameControlScreenState
                   flex: 4,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 12,
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(8),
+                      color: const Color(0xFF090D16),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: isCelebrating
-                            ? AppTheme.secondaryColor.withValues(alpha: 0.6)
+                        color: isCelebrating || isFlashRevealing
+                            ? AppTheme.secondaryColor
                             : _isAutoPilotPaused
-                            ? AppTheme.accentWarning.withValues(alpha: 0.6)
-                            : const Color(0xFF38BDF8).withValues(alpha: 0.4),
-                        width: 1.2,
+                            ? AppTheme.accentWarning
+                            : const Color(0xFF38BDF8),
+                        width: 1.8,
                       ),
                     ),
                     child: Column(
@@ -2419,14 +2425,14 @@ class _AdminGameControlScreenState
                                   : _isAutoPilotPaused
                                   ? Icons.pause_circle_outline_rounded
                                   : Icons.timer_outlined,
-                              size: 14,
-                              color: isCelebrating
+                              size: 16,
+                              color: isCelebrating || isFlashRevealing
                                   ? AppTheme.secondaryColor
                                   : _isAutoPilotPaused
                                   ? AppTheme.accentWarning
                                   : const Color(0xFF38BDF8),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 5),
                             Text(
                               isCelebrating
                                   ? 'WINNER PAUSE'
@@ -2436,19 +2442,19 @@ class _AdminGameControlScreenState
                                   ? 'PAUSED'
                                   : 'NEXT BALL IN',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
+                                letterSpacing: 0.6,
                                 color: isCelebrating || isFlashRevealing
                                     ? AppTheme.secondaryColor
                                     : _isAutoPilotPaused
                                     ? AppTheme.accentWarning
-                                    : const Color(0xFFCBD5E1),
+                                    : Colors.white,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           isCelebrating
                               ? '00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
@@ -2460,10 +2466,10 @@ class _AdminGameControlScreenState
                               ? 'DRAWING...'
                               : '00:${_countdownSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 25,
                             fontWeight: FontWeight.w900,
                             fontFamily: 'monospace',
-                            letterSpacing: 1.0,
+                            letterSpacing: 1.5,
                             color: isCelebrating || isFlashRevealing
                                 ? AppTheme.secondaryColor
                                 : _isAutoPilotPaused
@@ -2492,20 +2498,21 @@ class _AdminGameControlScreenState
                 label: Text(
                   '🎉 Celebrating Winner... (00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')})',
                   style: TextStyle(
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.bold,
+                    fontSize: fontSize + 1,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
                     color: AppTheme.secondaryColor,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledBackgroundColor: const Color(0xFF161929),
                   disabledForegroundColor: AppTheme.secondaryColor,
                   padding: EdgeInsets.symmetric(vertical: verticalPadding),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: const BorderSide(
                       color: AppTheme.secondaryColor,
-                      width: 1.5,
+                      width: 2.0,
                     ),
                   ),
                 ),
@@ -2515,27 +2522,28 @@ class _AdminGameControlScreenState
                 onPressed: null,
                 icon: Icon(
                   Icons.timer_outlined,
-                  size: iconSize,
+                  size: iconSize + 2,
                   color: AppTheme.secondaryColor,
                 ),
                 label: Text(
                   '⚡ NeuroWave™ Spotlight Active • 00:${neuroSecsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
                   style: TextStyle(
-                    fontSize: fontSize,
+                    fontSize: fontSize + 2,
                     fontWeight: FontWeight.w900,
                     fontFamily: 'monospace',
+                    letterSpacing: 0.8,
                     color: AppTheme.secondaryColor,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  disabledBackgroundColor: const Color(0xFF222639),
+                  disabledBackgroundColor: const Color(0xFF161929),
                   disabledForegroundColor: AppTheme.secondaryColor,
                   padding: EdgeInsets.symmetric(vertical: verticalPadding),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: const BorderSide(
                       color: AppTheme.secondaryColor,
-                      width: 1.5,
+                      width: 2.0,
                     ),
                   ),
                 ),

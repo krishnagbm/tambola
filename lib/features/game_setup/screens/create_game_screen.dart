@@ -1172,7 +1172,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'Powered by NeuroWave™ Spotlight: High-energy multi-round memory & speed Housie on a 3×9 grid where active quadrants reveal column-by-column before locking into [?].',
+                          'Powered by NeuroWave™ Spotlight: High-energy multi-round Memory, Logical Reasoning & Speed Housie on a 3×9 grid where active quadrants reveal column-by-column before locking into [?].',
                           style: TextStyle(
                             fontSize: 12,
                             color: Color(0xFFE2E8F0),
@@ -1398,7 +1398,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       Expanded(
                         child: Text(
                           'NeuroWave™ Spotlight sweeps active columns before locking the grid into [?]. '
-                          'All players receive the identical symmetric card each round—pure memory & reaction speed crown each Round Winner (Rx-Qx) and the Cumulative Full House Champion!',
+                          'All players receive the identical symmetric card each round—spatial memory, logical column reasoning & reaction speed (+10 pts per recall, -3 pts & 3s cooldown per wrong guess) crown each Round Winner (Rx-Qx) and the Cumulative Full House Champion!',
                           style: TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFFE2E8F0),

@@ -282,12 +282,17 @@ class GameplayRepository {
               }
             }
 
+            final wrongCount = myScore?.wrongTapCount ?? 0;
+            final netScore =
+                (validMarked.length *
+                    MptMemoryRoundScore.pointsPerCorrectRecall) -
+                (wrongCount * MptMemoryRoundScore.penaltyPerWrongTap);
             final reactMs =
                 myScore?.totalReactionMs ?? (validMarked.length * 2200);
             final reactSec = (reactMs / 1000).toStringAsFixed(1);
             if (scoreSummary.isEmpty) {
               scoreSummary =
-                  '✓ ${validMarked.length}/${cSpec.trueNumbers.length} Recalled • ⚡ ${reactSec}s';
+                  '⭐ $netScore pts • ✓ ${validMarked.length}/${cSpec.trueNumbers.length}${wrongCount > 0 ? ' • ✗ $wrongCount (-${wrongCount * MptMemoryRoundScore.penaltyPerWrongTap})' : ''} • ⚡ ${reactSec}s';
             }
           } else {
             // FULL_HOUSE or SECOND_FULL_HOUSE
@@ -313,6 +318,11 @@ class GameplayRepository {
             final totalRecalled = scoreSum >= validMarkedAll.length
                 ? scoreSum
                 : validMarkedAll.length;
+            final totalWrong =
+                myScores.fold<int>(0, (sum, s) => sum + s.wrongTapCount);
+            final netScore =
+                (totalRecalled * MptMemoryRoundScore.pointsPerCorrectRecall) -
+                (totalWrong * MptMemoryRoundScore.penaltyPerWrongTap);
             final totalReactMs = myScores.isNotEmpty
                 ? myScores.fold<int>(0, (sum, s) => sum + s.totalReactionMs)
                 : (totalRecalled * 2200);
@@ -339,7 +349,7 @@ class GameplayRepository {
             final reactSec = (totalReactMs / 1000).toStringAsFixed(1);
             if (scoreSummary.isEmpty) {
               scoreSummary =
-                  '✓ $totalRecalled/$totalTargets Total Recalls • ⚡ ${reactSec}s';
+                  '⭐ $netScore pts • ✓ $totalRecalled/$totalTargets${totalWrong > 0 ? ' • ✗ $totalWrong (-${totalWrong * MptMemoryRoundScore.penaltyPerWrongTap})' : ''} • ⚡ ${reactSec}s';
             }
           }
 
@@ -1110,8 +1120,11 @@ class GameplayRepository {
         Map<String, String>.from(config.awardedWinnerScoreSummaries);
 
     if (topScore != null && !nextWinners.containsKey(activeSpec.prizeKey)) {
+      final wrongPart = topScore.wrongTapCount > 0
+          ? ' • ✗ ${topScore.wrongTapCount} (-${topScore.wrongTapCount * MptMemoryRoundScore.penaltyPerWrongTap})'
+          : '';
       final summaryStr =
-          '✓ ${topScore.correctCount}/${activeSpec.trueNumbers.length} Recalled • ⚡ ${(topScore.totalReactionMs / 1000).toStringAsFixed(1)}s';
+          '⭐ ${topScore.netScore} pts • ✓ ${topScore.correctCount}/${activeSpec.trueNumbers.length}$wrongPart • ⚡ ${(topScore.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners[activeSpec.prizeKey] = topScore.userId;
       nextWinnerNames[activeSpec.prizeKey] = topScore.displayName;
       nextWinnerSummaries[activeSpec.prizeKey] = summaryStr;
@@ -1215,8 +1228,11 @@ class GameplayRepository {
         game.prizesConfig.contains('FULL_HOUSE') &&
         !nextWinners.containsKey('FULL_HOUSE')) {
       final firstWinner = rankedUsers[0];
+      final wrongPart = firstWinner.wrongTapCount > 0
+          ? ' • ✗ ${firstWinner.wrongTapCount} (-${firstWinner.wrongTapCount * MptMemoryRoundScore.penaltyPerWrongTap})'
+          : '';
       final summaryStr =
-          '✓ ${firstWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(firstWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
+          '⭐ ${firstWinner.netScore} pts • ✓ ${firstWinner.correctCount}/$totalTargets$wrongPart • ⚡ ${(firstWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners['FULL_HOUSE'] = firstWinner.userId;
       nextWinnerNames['FULL_HOUSE'] = firstWinner.displayName;
       nextWinnerSummaries['FULL_HOUSE'] = summaryStr;
@@ -1233,8 +1249,11 @@ class GameplayRepository {
         game.prizesConfig.contains('SECOND_FULL_HOUSE') &&
         !nextWinners.containsKey('SECOND_FULL_HOUSE')) {
       final secondWinner = rankedUsers[1];
+      final wrongPart = secondWinner.wrongTapCount > 0
+          ? ' • ✗ ${secondWinner.wrongTapCount} (-${secondWinner.wrongTapCount * MptMemoryRoundScore.penaltyPerWrongTap})'
+          : '';
       final summaryStr =
-          '✓ ${secondWinner.correctCount}/$totalTargets Total Recalls • ⚡ ${(secondWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
+          '⭐ ${secondWinner.netScore} pts • ✓ ${secondWinner.correctCount}/$totalTargets$wrongPart • ⚡ ${(secondWinner.totalReactionMs / 1000).toStringAsFixed(1)}s';
       nextWinners['SECOND_FULL_HOUSE'] = secondWinner.userId;
       nextWinnerNames['SECOND_FULL_HOUSE'] = secondWinner.displayName;
       nextWinnerSummaries['SECOND_FULL_HOUSE'] = summaryStr;

@@ -96,3 +96,19 @@ sequenceDiagram
    - Keep the $3 \times 9$ card layout; add Quadrant headers, inactive quadrant dimming, the **`NeuroWave™` Spotlight** timer (internal random suspense + column wave), `?` masked tiles, and the **3-second freeze**.
 5. **Admin & Live TV Display ([`AdminGameControlScreen`](file:///c:/dev/Tambola/lib/features/gameplay/screens/admin_game_control_screen.dart) & [`LiveGameDisplayScreen`](file:///c:/dev/Tambola/lib/features/live_display/screens/live_game_display_screen.dart)):**
    - Restrict caller draws to the active cycle's `True + Decoy` pool, advance cycles, and display the real-time **`Rx-Qx` Round Leaderboard** and **Cumulative Full House Leaderboard** on the Live TV screen.
+
+---
+
+## 5. Gameplay & Anti-Camera Design Notes (v5.3 Refinements)
+
+1. **Why Cameras Are Defeated (Multi-Shot Reference Friction + Immediate Start):**
+   - Because `NeuroWave™ Spotlight` reveals only **one column at a time** (`1.8s` per column), a player trying to use an external camera must capture a series of 3 to 9 separate photos per round.
+   - Once ball calling starts, cross-referencing multiple separate photos while the clock is ticking is slower than human recall + column reasoning.
+   - **Rule — Do Not Give Extra Time to Start:** Keep pre-sweep suspense brief (`2–3s`) and transition **immediately** into ball calling as soon as the `NeuroWave™` sweep locks into `[?]`, leaving zero slack time to organize or inspect external camera shots.
+2. **Spatial Memory + Deductive Column Reasoning:**
+   - `FlashHousie™` rewards both **spatial memory** and **logical/deductive reasoning** (leveraging column decade bounds `1–9`, `10–19`, ..., `80–90`, ascending vertical ordering within each column, and eliminating already-recalled cells).
+3. **Net Score Penalty for Wrong Guesses & Round Lock:**
+   - **Net Score Formula:** $\text{Net Score} = (\text{Correct Recalls} \times 10) - (\text{Wrong Taps} \times 3)$.
+   - Every wrong guess deducts **3 points** from the player's Net Score in addition to a **3-second freeze cooldown** and a **+3,000 ms reaction penalty**, preventing blind trial-and-error clicking.
+   - **Immediate Round Lock:** As soon as a round (`Rx-Qx`) has an awarded winner or all balls in the round's pool have been drawn, remaining `[?]` tiles in that round lock immediately so players cannot click leftover cells after the round is decided.
+
