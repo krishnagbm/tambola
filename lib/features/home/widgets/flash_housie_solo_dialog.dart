@@ -47,7 +47,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   @override
   void initState() {
     super.initState();
-    _startNewSoloRound(_selectedMode);
+    _startNewSoloRound(_selectedMode, autoStart: false);
   }
 
   @override
@@ -66,7 +66,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     });
   }
 
-  void _startNewSoloRound(String mode) {
+  void _startNewSoloRound(String mode, {bool autoStart = false}) {
+    _uiTickTimer?.cancel();
+    _uiTickTimer = null;
     _autoCallTimer?.cancel();
     _autoCallTimer = null;
     final baseConfig = FlashHousieConfig.generate(
@@ -77,14 +79,14 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       random: Random(),
     );
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    final startedCycle = baseConfig.activeCycleSpec.copyWith(
-      startedAtMs: nowMs,
+    final cycleSpec = baseConfig.activeCycleSpec.copyWith(
+      startedAtMs: autoStart ? nowMs : null,
       calledNumbers: const [],
     );
 
     setState(() {
       _selectedMode = mode;
-      _config = baseConfig.copyWith(cycles: [startedCycle]);
+      _config = baseConfig.copyWith(cycles: [cycleSpec]);
       _recalledNumbers.clear();
       _wrongFlashingCells.clear();
       _wrongTapCount = 0;
@@ -94,11 +96,39 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       _lastBallCalledAtMs = null;
       _roundCompleted = false;
     });
+    if (autoStart) {
+      _startUiTicker();
+    }
+  }
+
+  void _launchActiveRound() {
+    final spec = _config.activeCycleSpec;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final startedCycle = spec.copyWith(
+      startedAtMs: nowMs,
+      calledNumbers: const [],
+    );
+    setState(() {
+      _config = _config.copyWith(cycles: [startedCycle]);
+      _roundCompleted = false;
+    });
     _startUiTicker();
+  }
+
+  String _modeShortName(String mode) {
+    switch (mode) {
+      case FlashHousieConfig.modeFlash10:
+        return 'Flash 10';
+      case FlashHousieConfig.modeFlash15:
+        return 'Flash 15';
+      default:
+        return 'Flash 5';
+    }
   }
 
   void _checkNeuroWaveTransition() {
     final spec = _config.activeCycleSpec;
+    if (spec.startedAtMs == null) return;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final waveState = spec.computeNeuroWaveState(nowMs);
     if (waveState.isCallingReady &&
@@ -215,6 +245,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     if (_roundCompleted) {
       return '${(_totalReactionMs / 1000).toStringAsFixed(1)}s';
     }
+    if (waveState.phase == NeuroWavePhase.waitingToStart) {
+      return '${_config.activeCycleSpec.trueNumbers.length} Balls';
+    }
     if (!waveState.isCallingReady) {
       return '00:${waveState.remainingSeconds.toString().padLeft(2, '0')}s';
     }
@@ -227,6 +260,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   String _formatClockSubtitle(NeuroWaveState waveState) {
     if (_roundCompleted) {
       return 'Reaction Time';
+    }
+    if (waveState.phase == NeuroWavePhase.waitingToStart) {
+      return 'Ready Mode';
     }
     if (!waveState.isCallingReady) {
       return 'Countdown';
@@ -247,6 +283,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
           : 0.0;
       return 'Avg ${avgSec.toStringAsFixed(1)}s • Rnd ${roundSec.toStringAsFixed(0)}s';
     }
+    if (waveState.phase == NeuroWavePhase.waitingToStart) {
+      return 'Pick Mode & Start';
+    }
     if (waveState.isCallingReady) {
       return 'Auto-draw 3.5s';
     }
@@ -258,11 +297,14 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     final spec = _config.activeCycleSpec;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final waveState = spec.computeNeuroWaveState(nowMs);
+    final isWaitingToStart =
+        !_roundCompleted && waveState.phase == NeuroWavePhase.waitingToStart;
     final isFrozen = !_roundCompleted && nowMs < _freezeUntilMs;
     final freezeRemSec =
         isFrozen ? ((_freezeUntilMs - nowMs) / 1000).ceil() : 0;
     final latestBall = spec.latestCalledNumber;
     final wonAll = _recalledNumbers.length >= spec.trueNumbers.length;
+    final activeQuadLabel = spec.activeQuadrants.map((q) => 'Q$q').join(' + ');
 
     return Dialog(
       backgroundColor: AppTheme.darkSurface,
@@ -341,7 +383,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               ),
               const SizedBox(height: 8),
 
-              // 2. Mode Selector & Restart Row
+              // 2. Mode Selector & New Card / Reset Row
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -367,9 +409,12 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                     ],
                   ),
                   OutlinedButton.icon(
-                    onPressed: () => _startNewSoloRound(_selectedMode),
+                    onPressed: () =>
+                        _startNewSoloRound(_selectedMode, autoStart: false),
                     icon: const Icon(Icons.refresh_rounded, size: 16),
-                    label: const Text('New Card / Restart'),
+                    label: Text(
+                      isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.secondaryColor,
                       side: BorderSide(
@@ -382,7 +427,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               ),
               const SizedBox(height: 10),
 
-              // 3. Fixed-Height Status Banner (handles Wave, Calling, Freeze & Completion without vertical layout shift)
+              // 3. Fixed-Height Status Banner (handles Pre-Game Ready, Wave, Calling, Freeze & Completion without vertical layout shift)
               Container(
                 constraints: const BoxConstraints(minHeight: 58),
                 padding: const EdgeInsets.symmetric(
@@ -414,14 +459,16 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                           ? Icons.ac_unit_rounded
                           : (_roundCompleted
                                 ? Icons.emoji_events_rounded
-                                : (waveState.isCallingReady
-                                      ? Icons.touch_app_rounded
-                                      : Icons.visibility_rounded)),
+                                : (isWaitingToStart
+                                      ? Icons.play_circle_fill_rounded
+                                      : (waveState.isCallingReady
+                                            ? Icons.touch_app_rounded
+                                            : Icons.visibility_rounded))),
                       color: isFrozen
                           ? const Color(0xFFF87171)
                           : (_roundCompleted
                                 ? AppTheme.secondaryColor
-                                : (waveState.isCallingReady
+                                : (isWaitingToStart || waveState.isCallingReady
                                       ? const Color(0xFF34D399)
                                       : AppTheme.secondaryColor)),
                       size: 22,
@@ -439,7 +486,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                       ? (wonAll
                                             ? '🏆 LEVEL 1 CLEARED! ALL ${spec.trueNumbers.length} NUMBERS RECALLED!'
                                             : '⏱️ ROUND OVER — ${_recalledNumbers.length}/${spec.trueNumbers.length} NUMBERS RECALLED')
-                                      : waveState.statusLabel),
+                                      : (isWaitingToStart
+                                            ? '🎯 ${_modeShortName(_selectedMode)} Ready • Active: $activeQuadLabel (${spec.trueNumbers.length} Target Numbers)'
+                                            : waveState.statusLabel)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -451,10 +500,12 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                           const SizedBox(height: 2),
                           Text(
                             _roundCompleted
-                                ? 'Great session! Tap "Play Again" below or try Flash 10 / Flash 15.'
-                                : (waveState.isCallingReady
-                                      ? 'Tap called numbers using memory & column logic! Wrong guess = -3 pts & 3s freeze.'
-                                      : 'Memorize active column numbers before they lock into [?] mystery cells!'),
+                                ? 'Great session! Tap "Play Again" below or pick Flash 10 / Flash 15.'
+                                : (isWaitingToStart
+                                      ? '1️⃣ Pick Flash 5/10/15 above  •  2️⃣ See [•] slots on grid  •  3️⃣ Tap "▶ Start" when ready!'
+                                      : (waveState.isCallingReady
+                                            ? 'Tap called numbers using memory & column logic! Wrong guess = -3 pts & 3s freeze.'
+                                            : 'Memorize active column numbers before they lock into [?] mystery cells!')),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -471,7 +522,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               const SizedBox(height: 10),
 
               // 4. 3-Column HUD Card:
-              //    - Col 1 (Left): Current Ball (hidden when round is over; replaced by Play Again)
+              //    - Col 1 (Left): Start Button (when ready) OR Current Ball (active) OR Play Again (when over)
               //    - Col 2 (Middle): Prominent Large SCORE
               //    - Col 3 (Right Edge): Prominent Large CLOCK / TIME
               Container(
@@ -488,41 +539,42 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // LEFT COLUMN: Drawn Ball (active) OR Round Complete / Play Again (when over)
+                    // LEFT COLUMN: Start Play (when waiting) OR Drawn Ball (active) OR Play Again (when over)
                     Expanded(
                       flex: 4,
-                      child: _roundCompleted
+                      child: isWaitingToStart
                           ? Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  wonAll ? '🎉 Round Won!' : 'Round Ended',
+                                  'Active: $activeQuadLabel',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11.5,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF34D399),
+                                    color: Color(0xFFCBD5E1),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
                                 ElevatedButton.icon(
-                                  onPressed: () =>
-                                      _startNewSoloRound(_selectedMode),
+                                  onPressed: _launchActiveRound,
                                   icon: const Icon(
-                                    Icons.replay_rounded,
-                                    size: 16,
+                                    Icons.play_arrow_rounded,
+                                    size: 18,
                                   ),
-                                  label: const Text(
-                                    'Play Again',
-                                    style: TextStyle(
+                                  label: Text(
+                                    'Start ${_modeShortName(_selectedMode)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.secondaryColor,
+                                    backgroundColor: const Color(0xFF10B981),
                                     foregroundColor: Colors.black,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -533,75 +585,125 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                 ),
                               ],
                             )
-                          : Row(
-                              children: [
-                                Container(
-                                  width: 46,
-                                  height: 46,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: latestBall != null
-                                        ? AppTheme.secondaryColor
-                                        : const Color(0xFF1E293B),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: latestBall != null
-                                          ? Colors.white
-                                          : const Color(0xFF334155),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    latestBall != null ? '$latestBall' : '—',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w900,
-                                      color: latestBall != null
-                                          ? Colors.black
-                                          : Colors.white54,
-                                      fontFeatures: const [
-                                        FontFeature.tabularFigures(),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.center,
+                          : (_roundCompleted
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        latestBall != null
-                                            ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
-                                            : 'Spot Numbers',
+                                        wonAll
+                                            ? '🎉 Round Won!'
+                                            : 'Round Ended',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                          fontSize: 12.5,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                                          color: Color(0xFF34D399),
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        spec.calledNumbers.isNotEmpty
-                                            ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
-                                            : 'NeuroWave™ active',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Color(0xFF94A3B8),
+                                      const SizedBox(height: 6),
+                                      ElevatedButton.icon(
+                                        onPressed: () => _startNewSoloRound(
+                                          _selectedMode,
+                                          autoStart: true,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.replay_rounded,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'Play Again',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              AppTheme.secondaryColor,
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          visualDensity: VisualDensity.compact,
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                                  )
+                                : Row(
+                                    children: [
+                                      Container(
+                                        width: 46,
+                                        height: 46,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: latestBall != null
+                                              ? AppTheme.secondaryColor
+                                              : const Color(0xFF1E293B),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: latestBall != null
+                                                ? Colors.white
+                                                : const Color(0xFF334155),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          latestBall != null
+                                              ? '$latestBall'
+                                              : '—',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w900,
+                                            color: latestBall != null
+                                                ? Colors.black
+                                                : Colors.white54,
+                                            fontFeatures: const [
+                                              FontFeature.tabularFigures(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              latestBall != null
+                                                  ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
+                                                  : 'Spot Numbers',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              spec.calledNumbers.isNotEmpty
+                                                  ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
+                                                  : 'NeuroWave™ active',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF94A3B8),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )),
                     ),
 
                     Container(
@@ -735,7 +837,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               _buildSoloTicketMatrix(spec, waveState, isFrozen),
               const SizedBox(height: 10),
               const Text(
-                '© 2026 DabHousie™ • FlashHousie™ & NeuroWave™ Anti-Camera Column Spotlight are proprietary game formats & copyrighted visual expressions of Digital App Studio.',
+                '© 2026 DabHousie™ • MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™, RowHousie™, FastTap™, SwapHousie™, BlastHousie™, StickHousie™ & NeuroWave™ are proprietary game formats & copyrighted visual expressions of Digital App Studio.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
@@ -764,7 +866,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       selected: isSelected,
       selectedColor: AppTheme.secondaryColor,
       backgroundColor: AppTheme.darkCard,
-      onSelected: (_) => _startNewSoloRound(mode),
+      onSelected: (_) => _startNewSoloRound(mode, autoStart: false),
     );
   }
 

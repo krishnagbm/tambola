@@ -171,7 +171,7 @@ class DashboardFooter extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'FlashHousie™, NeuroWave™ Column Spotlight, 3×3 Quadrant Recall, RowHousie™, FastTap™, BlastHousie™, SwapHousie™ & StickHousie™ are proprietary game formats, copyrighted visual expressions, and trademarks of Digital App Studio.',
+                    'MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™, RowHousie™, FastTap™, SwapHousie™, BlastHousie™, StickHousie™ & NeuroWave™ Column Spotlight are proprietary game formats, copyrighted visual expressions, and trademarks of Digital App Studio.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 10.5,

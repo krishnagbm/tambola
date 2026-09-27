@@ -85,6 +85,58 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
 
   static const List<_SkillLevelItem> _levels = [
     _SkillLevelItem(
+      id: 'level_0a_make',
+      levelBadge: 'LEVEL 0A • RELEASE 1',
+      title: '🎓 Level 0A: MakeHousie™ (Ticket Rule Builder)',
+      subtitle:
+          'Master the 3×9 grid rules! Place 15 generated numbers into their valid column decades (1–9, 10–19 … 80–90), vertical ascending order, and 5-per-row balance. Easy (guided) & Complex (random pool) modes.',
+      category: 'foundation',
+      categoryLabel: '🎓 Rules & Sorting',
+      playModes: '👤 Solo • 👥 Multi Race',
+      controls: '👆 Drag-Drop • 🖱️ Mouse • ⌨️ Keys',
+      unlockRequirement: 'Release 1 Foundation — Unlocks Level 0B (FixHousie™)',
+      isUnlocked: true,
+    ),
+    _SkillLevelItem(
+      id: 'level_0b_fix',
+      levelBadge: 'LEVEL 0B • RELEASE 1',
+      title: '🔍 Level 0B: FixHousie™ (Spot the Mistake)',
+      subtitle:
+          'Inspect a pre-filled 3×9 ticket and spot 1, 3, or 5 intentional rule bugs: wrong column decade, flipped vertical sequence, duplicate numbers, or >90 balls! Scored on speed & accuracy.',
+      category: 'foundation',
+      categoryLabel: '🔍 Audit & Logic',
+      playModes: '👤 Solo • 👥 Multi Race',
+      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
+      unlockRequirement: 'Release 1 Foundation — Unlocks after MakeHousie™',
+      isUnlocked: true,
+    ),
+    _SkillLevelItem(
+      id: 'level_0c_math',
+      levelBadge: 'LEVEL 0C • RELEASE 1',
+      title: '➕ Level 0C: MathHousie™ (Formula-to-Grid Hunt)',
+      subtitle:
+          'Mental math meets 3×9 column logic! Solve the live formula above the board (e.g. 67 + 3 = ??, 14 × 5 = ??), jump straight to the right decade column, and tap the answer on the grid.',
+      category: 'math',
+      categoryLabel: '➕ Mental Math & Hunt',
+      playModes: '👤 Solo • 👥 Multi Race',
+      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
+      unlockRequirement: 'Release 1 Foundation — Unlocks after FixHousie™',
+      isUnlocked: true,
+    ),
+    _SkillLevelItem(
+      id: 'level_0d_sum',
+      levelBadge: 'LEVEL 0D • RELEASE 1',
+      title: '🧮 Level 0D: SumHousie™ (Quadrant Rapid Sum)',
+      subtitle:
+          'Add all 5 numbers inside an active 3×3 quadrant (Q1, Q2, or Q3) before the timer runs out and pick the exact total from 4 smart multiple-choice options (with same-last-digit decoys)!',
+      category: 'math',
+      categoryLabel: '🧮 Rapid Addition MCQ',
+      playModes: '👤 Solo • 👥 Fastest Finger',
+      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
+      unlockRequirement: 'Release 1 Foundation — Unlocks Level 1 (FlashHousie™)',
+      isUnlocked: true,
+    ),
+    _SkillLevelItem(
       id: 'level_1_flash',
       levelBadge: 'LEVEL 1 • OPEN NOW',
       title: '⚡ Level 1: FlashHousie™ 5 • 10 • 15',
@@ -122,28 +174,28 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
       unlockRequirement: 'Unlocks after completing Level 2 (RowHousie™)',
     ),
     _SkillLevelItem(
-      id: 'level_3b_blast',
+      id: 'level_3b_swap',
       levelBadge: 'LEVEL 3B • LOCKED',
-      title: '🎯 Level 3B: BlastHousie™ (45° Arcade Shooter)',
-      subtitle:
-          'Slide your horizontal turret & tilt ±45° to blast called numbers! Bigger numbers in bottom rows block smaller top numbers — snipe through blank lanes or clear blockers first.',
-      category: 'speed',
-      categoryLabel: '🎯 Speed & Arcade',
-      playModes: '👤 Solo • 👥 Multiplayer',
-      controls: '⌨️ Keys • 🎮 Controller • 👆 Touch',
-      unlockRequirement: 'Unlocks after completing Level 3A (FastTap™)',
-    ),
-    _SkillLevelItem(
-      id: 'level_4_swap',
-      levelBadge: 'LEVEL 4 • LOCKED',
-      title: '🧩 Level 4: SwapHousie™ (Shuffle & Swap)',
+      title: '🧩 Level 3B: SwapHousie™ (Shuffle & Swap)',
       subtitle:
           'All 15 balls and 12 empty spaces are scrambled across the 3×9 grid. Drag & swap balls or blanks to restore valid column decades, ascending order & 5-per-row balance.',
       category: 'puzzle',
       categoryLabel: '🧩 Logic & Puzzle',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '👆 Drag-Drop • 🖱️ Mouse • ⌨️ Keys',
-      unlockRequirement: 'Unlocks after completing Level 3B (BlastHousie™)',
+      unlockRequirement: 'Unlocks after completing Level 3A (FastTap™)',
+    ),
+    _SkillLevelItem(
+      id: 'level_4_blast',
+      levelBadge: 'LEVEL 4 • LOCKED',
+      title: '🎯 Level 4: BlastHousie™ (45° Arcade Shooter)',
+      subtitle:
+          'Slide your horizontal turret & tilt ±45° to blast called numbers! Bigger numbers in bottom rows block smaller top numbers — snipe through blank lanes or clear blockers first.',
+      category: 'speed',
+      categoryLabel: '🎯 Speed & Arcade',
+      playModes: '👤 Solo • 👥 Multiplayer',
+      controls: '⌨️ Keys • 🎮 Controller • 👆 Touch',
+      unlockRequirement: 'Unlocks after completing Level 3B (SwapHousie™)',
     ),
     _SkillLevelItem(
       id: 'level_5_stick',
@@ -155,7 +207,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
       categoryLabel: '🏗️ Physics & Team Co-Op',
       playModes: '👤 Solo • 👥 Multi • 🤝 3–6 Team',
       controls: '👆 Drag-Drop • 🎮 Controller',
-      unlockRequirement: 'Unlocks after completing Level 4 (SwapHousie™)',
+      unlockRequirement: 'Unlocks after completing Level 4 (BlastHousie™)',
     ),
   ];
 
@@ -225,62 +277,56 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Eyebrow badges (No "Part 2" — just Skill)
-              SizedBox(
-                height: 26,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '🧠⚡ SKILL • DABHOUSIE™ SPECIALS',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '🧠⚡ SKILL • DABHOUSIE™ SPECIALS',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                        letterSpacing: 0.4,
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFF10B981).withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          _level1Completed
-                              ? '🏆 Lvl 1 Cleared ($_level1BestScore pts)'
-                              : '🔓 Level 1 Open Now',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF34D399),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      _level1Completed
+                          ? '🏆 Lvl 1 Cleared ($_level1BestScore pts)'
+                          : '🔓 Level 1 Open Now',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF34D399),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
 
@@ -312,93 +358,82 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               ),
               const SizedBox(height: 8),
 
-              // Concise Subhead matching Left Card (exact 2 lines on desktop)
-              SizedBox(
-                height: isWide ? 38 : null,
-                child: Text(
-                  'Spot your 3×3 quadrant during the live NeuroWave™ sweep, then combine memory, column logic & speed to recall called balls across 1–3 rounds.',
-                  maxLines: isWide ? 2 : 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: isWide ? 13 : 12.5,
-                    color: const Color(0xFFCBD5E1),
-                    height: 1.4,
-                  ),
+              // Concise Subhead matching Left Card
+              Text(
+                'Spot your 3×3 quadrant during the live NeuroWave™ sweep, then combine memory, column logic & speed to recall called balls across 1–3 rounds.',
+                maxLines: isWide ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: isWide ? 13 : 12.5,
+                  color: const Color(0xFFCBD5E1),
+                  height: 1.4,
                 ),
               ),
               const SizedBox(height: 14),
 
-              // CTAs: Play Solo + Join + Host (exact 40px single row)
-              SizedBox(
-                height: 40,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => FlashHousieSoloDialog.show(
-                          context,
-                          onLevelCompleted: _loadSoloProgress,
-                        ),
-                        icon: const Icon(
-                          Icons.play_circle_fill_rounded,
-                          size: 18,
-                        ),
-                        label: const Text('Play Solo'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+              // CTAs: Play Solo + Join + Host
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => FlashHousieSoloDialog.show(
+                      context,
+                      onLevelCompleted: _loadSoloProgress,
+                    ),
+                    icon: const Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 18,
+                    ),
+                    label: const Text('Play Solo'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
                       ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/join'),
-                        icon: const Icon(Icons.vpn_key_rounded, size: 17),
-                        label: const Text('Join a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
                       ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
-                        icon: const Icon(Icons.add_circle_outline, size: 18),
-                        label: const Text('Host a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryLight,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/join'),
+                    icon: const Icon(Icons.vpn_key_rounded, size: 17),
+                    label: const Text('Join a Game'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/create-game'),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text('Host a Game'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               const Text(
@@ -442,7 +477,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Upcoming Sequential Levels (Lvl 2–5):\nRowHousie™ • FastTap™ • Blast™ • Swap™ • Stick™ →',
+                          'Skill Levels (0–5): Make™ • Fix™ • Math™ • Sum™ • Flash™\nRowHousie™ • FastTap™ • Swap™ • Blast™ • Stick™ →',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -478,38 +513,31 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ];
 
     Widget buildLine(List<String> items) {
-      return SizedBox(
-        height: 16,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Text(
-                  items[i],
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFFA0AEC0),
-                    fontWeight: FontWeight.w500,
-                  ),
+      return Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            Text(
+              items[i],
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFFA0AEC0),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (i < items.length - 1)
+              const Text(
+                '•',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF718096),
                 ),
-                if (i < items.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      '•',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF718096),
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-          ),
-        ),
+              ),
+          ],
+        ],
       );
     }
 
@@ -554,7 +582,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
         ),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
+        constraints: const BoxConstraints(maxWidth: 580),
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(
@@ -571,7 +599,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'DabHousie™ Skill Levels (1–5)',
+                      'DabHousie™ Skill Levels (Levels 0–5)',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
@@ -737,7 +765,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
               ),
               const SizedBox(height: 10),
               const Text(
-                '© 2026 DabHousie™ by Digital App Studio. FlashHousie™, NeuroWave™, RowHousie™, FastTap™, BlastHousie™, SwapHousie™ & StickHousie™ are proprietary skill formats, copyrighted UI expressions, and trademarks. All rights reserved.',
+                '© 2026 DabHousie™ by Digital App Studio. MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™, RowHousie™, FastTap™, SwapHousie™, BlastHousie™, StickHousie™ & NeuroWave™ are proprietary skill formats, copyrighted UI expressions, and trademarks. All rights reserved.',
                 style: TextStyle(
                   fontSize: 10.5,
                   color: Color(0xFF64748B),

@@ -37,60 +37,54 @@ class DashboardHeroSection extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               // Eyebrow badges (No "Part 1" — just Luck)
-              SizedBox(
-                height: 26,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 9,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF38BDF8),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '🎲 LUCK • CLASSIC BINGO & VARIANTS',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF38BDF8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '🎲 LUCK • CLASSIC BINGO & VARIANTS',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                        letterSpacing: 0.4,
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppTheme.secondaryColor.withValues(
-                              alpha: 0.4,
-                            ),
-                          ),
-                        ),
-                        child: const Text(
-                          '🎉 Live Multiplayer',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.secondaryColor,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(
+                          alpha: 0.4,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      '🎉 Live Multiplayer',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
 
@@ -123,69 +117,59 @@ class DashboardHeroSection extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              // Subhead (exact 2 lines on desktop)
-              SizedBox(
-                height: isWide ? 38 : null,
-                child: Text(
-                  'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.',
-                  maxLines: isWide ? 2 : 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: isWide ? 13 : 12.5,
-                    color: const Color(0xFFCBD5E1),
-                    height: 1.4,
-                  ),
+              // Subhead
+              Text(
+                'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.',
+                maxLines: isWide ? 2 : 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: isWide ? 13 : 12.5,
+                  color: const Color(0xFFCBD5E1),
+                  height: 1.4,
                 ),
               ),
               const SizedBox(height: 14),
 
-              // CTAs: Join vs Host (exact 40px single row)
-              SizedBox(
-                height: 40,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/join'),
-                        icon: const Icon(Icons.vpn_key_rounded, size: 17),
-                        label: const Text('Join a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 18,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+              // CTAs: Join vs Host
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/join'),
+                    icon: const Icon(Icons.vpn_key_rounded, size: 17),
+                    label: const Text('Join a Game'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
                       ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
-                        icon: const Icon(Icons.add_circle_outline, size: 18),
-                        label: const Text('Host a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryLight,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 18,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/create-game'),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text('Host a Game'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               const Text(
@@ -265,38 +249,31 @@ class DashboardHeroSection extends ConsumerWidget {
     ];
 
     Widget buildLine(List<String> items) {
-      return SizedBox(
-        height: 16,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Text(
-                  items[i],
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFFA0AEC0),
-                    fontWeight: FontWeight.w500,
-                  ),
+      return Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 4,
+        children: [
+          for (int i = 0; i < items.length; i++) ...[
+            Text(
+              items[i],
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFFA0AEC0),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (i < items.length - 1)
+              const Text(
+                '•',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF718096),
                 ),
-                if (i < items.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      '•',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF718096),
-                      ),
-                    ),
-                  ),
-              ],
-            ],
-          ),
-        ),
+              ),
+          ],
+        ],
       );
     }
 

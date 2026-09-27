@@ -184,6 +184,10 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   @override
   Widget build(BuildContext context) {
     final current = _slides[_selectedIndex];
+    final isSkillCategory = _selectedIndex >= 1 && _selectedIndex <= 3;
+    final visibleIndices = isSkillCategory
+        ? const <int>[1, 2, 3]
+        : const <int>[0, 4, 5, 6, 7, 8];
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -195,7 +199,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Section Header
+          // Section Header + Prev/Next Controls
           Row(
             children: [
               Container(
@@ -204,7 +208,11 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                   color: AppTheme.secondaryColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.videogame_asset_outlined, color: AppTheme.secondaryColor, size: 20),
+                child: const Icon(
+                  Icons.videogame_asset_outlined,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -230,47 +238,207 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Interactive Tab Selector
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (int i = 0; i < _slides.length; i++) ...[
-                  InkWell(
-                    onTap: () => _onUserSelect(i),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: i == _selectedIndex
-                            ? AppTheme.primaryLight
-                            : const Color(0xFF1B223C),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: i == _selectedIndex
-                              ? AppTheme.secondaryColor
-                              : const Color(0xFF2E334D),
-                          width: i == _selectedIndex ? 1.5 : 1,
-                        ),
+              // Slide Counter & Prev / Next buttons
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151C35),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: () => _onUserSelect(
+                        (_selectedIndex - 1 + _slides.length) % _slides.length,
                       ),
-                      child: Text(
-                        _slides[i]['tabLabel'] as String,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: i == _selectedIndex ? FontWeight.w800 : FontWeight.w500,
-                          color: i == _selectedIndex ? Colors.white : const Color(0xFF94A3B8),
+                      borderRadius: BorderRadius.circular(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          size: 18,
+                          color: Colors.white,
                         ),
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        '${_selectedIndex + 1} / ${_slides.length}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _onUserSelect(
+                        (_selectedIndex + 1) % _slides.length,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Category Tabs (1. Classic 90-Ball & Live Hosting | 2. FlashHousie™ & Skill Arena)
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              InkWell(
+                onTap: () => _onUserSelect(0),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  if (i < _slides.length - 1) const SizedBox(width: 8),
-                ],
-              ],
-            ),
+                  decoration: BoxDecoration(
+                    color: !isSkillCategory
+                        ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: !isSkillCategory
+                          ? const Color(0xFF38BDF8)
+                          : const Color(0xFF2E334D),
+                      width: !isSkillCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.casino_rounded,
+                        size: 15,
+                        color: !isSkillCategory
+                            ? const Color(0xFF38BDF8)
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '🎲 Classic 90-Ball & Live Host (6)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: !isSkillCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: !isSkillCategory
+                              ? Colors.white
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _onUserSelect(1),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSkillCategory
+                        ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSkillCategory
+                          ? AppTheme.secondaryColor
+                          : const Color(0xFF2E334D),
+                      width: isSkillCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 16,
+                        color: isSkillCategory
+                            ? AppTheme.secondaryColor
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '🧠⚡ FlashHousie™ Skill Arena (3)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSkillCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isSkillCategory
+                              ? AppTheme.secondaryColor
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Wrapped Screen Selector Buttons (Never cuts off at right edge)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final i in visibleIndices)
+                InkWell(
+                  onTap: () => _onUserSelect(i),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: i == _selectedIndex
+                          ? AppTheme.primaryLight
+                          : const Color(0xFF1B223C),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: i == _selectedIndex
+                            ? AppTheme.secondaryColor
+                            : const Color(0xFF2E334D),
+                        width: i == _selectedIndex ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      _slides[i]['tabLabel'] as String,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: i == _selectedIndex
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                        color: i == _selectedIndex
+                            ? Colors.white
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
 
