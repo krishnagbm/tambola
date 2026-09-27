@@ -90,11 +90,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
       levelBadge: 'LEVEL 0A • OPEN NOW',
       title: '🎓 Level 0A: MakeHousie™ (Ticket Rule Builder)',
       subtitle:
-          'Natural Step 1 — Master the 3×9 grid rules! Place generated numbers into their valid column decades (1–9, 10–19 … 80–90), vertical ascending order, and 5-per-row balance. Includes Make 5 (1 Quad), Guided 15 & Master 15.',
+          'Natural Step 1 — Grab mystery balls (?) to reveal their numbers and spontaneously drag & drop them into valid 3×9 column decades (1–9 … 80–90) and vertical ascending order!',
       category: 'foundation',
-      categoryLabel: '🎓 Rules & Sorting',
+      categoryLabel: '🎓 Rules & Drag-Drop',
       playModes: '👤 Solo • 👥 Multi Race',
-      controls: '👆 Tap-to-Place • 🖱️ Mouse',
+      controls: '👆 Drag-Drop • 🖱️ Mouse',
       unlockRequirement: 'Open Now for Solo Play — Natural Foundation Step 1',
       isUnlocked: true,
     ),
@@ -405,7 +405,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               ),
               const SizedBox(height: 2),
               Text(
-                'FlashHousie™ 5 • 10 • 15',
+                'FlashHousie™ & Skill Specials',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -422,7 +422,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               SizedBox(
                 height: isWide ? 38 : null,
                 child: Text(
-                  'Natural skill path: master 3×9 grid rules in Level 0 (Make™ & Fix™), then recall NeuroWave™ spotlight numbers in Level 1 FlashHousie™.',
+                  'Playable 3×9 skill games — MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™ (5•10•15) & upcoming Levels 2–5.',
                   maxLines: isWide ? 2 : 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

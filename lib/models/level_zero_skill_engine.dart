@@ -29,23 +29,25 @@ class MakePlacementResult {
   final bool isSuccess;
   final String message;
   final bool isRulePenalty;
+  final List<int>? updatedColumnCells; // Length 3: [r0, r1, r2] for target col
 
   const MakePlacementResult({
     required this.isSuccess,
     required this.message,
     this.isRulePenalty = false,
+    this.updatedColumnCells,
   });
 }
 
 class MakeHousieRoundSpec {
   static const String modeMake5Quad = 'make_5_quad';
-  static const String modeMake15Guided = 'make_15_guided';
-  static const String modeMake15Master = 'make_15_master';
+  static const String modeMake15Guided = 'make_15_guided'; // Make 10 (2 Quads)
+  static const String modeMake15Master = 'make_15_master'; // Make 15 (3 Quads)
 
   final String mode;
   final List<List<int>> trueMatrix; // 3x9 canonical valid ticket
-  final List<int> activeQuadrants; // [1], [2], [3] or [1, 2, 3]
-  final List<int> dealPool; // numbers the player needs to place
+  final List<int> activeQuadrants; // [q] (5 balls), [q1, q2] (10 balls), or [1, 2, 3] (15 balls)
+  final List<int> dealPool; // Always shuffled in random order
 
   const MakeHousieRoundSpec({
     required this.mode,
@@ -59,7 +61,18 @@ class MakeHousieRoundSpec {
     return activeQuadrants.contains(q);
   }
 
-  /// Generate a new MakeHousie round.
+  /// Creates the initial 3x9 live board:
+  /// - Inactive quadrants are pre-filled with their locked numbers
+  /// - Active quadrants start completely blank (0) with NO pre-highlighted cells
+  List<List<int>> createInitialBoard() {
+    return List<List<int>>.generate(3, (r) {
+      return List<int>.generate(9, (c) {
+        return isColumnActive(c) ? 0 : trueMatrix[r][c];
+      });
+    });
+  }
+
+  /// Generate a new MakeHousie round with a randomized dealPool.
   factory MakeHousieRoundSpec.generate({
     required String mode,
     Random? random,
@@ -70,6 +83,9 @@ class MakeHousieRoundSpec {
     List<int> activeQuads;
     if (mode == modeMake5Quad) {
       activeQuads = [rng.nextInt(3) + 1];
+    } else if (mode == modeMake15Guided) {
+      final allQuads = [1, 2, 3]..shuffle(rng);
+      activeQuads = allQuads.take(2).toList()..sort();
     } else {
       activeQuads = const [1, 2, 3];
     }
@@ -84,10 +100,21 @@ class MakeHousieRoundSpec {
       }
     }
 
-    if (mode == modeMake15Master) {
-      pool.shuffle(rng);
-    } else {
-      pool.sort();
+    // Always shuffle in random order so numbers are never presented ascending!
+    pool.shuffle(rng);
+    // Ensure at least non-sorted order when possible
+    if (pool.length > 2) {
+      bool isSorted = true;
+      for (int i = 1; i < pool.length; i++) {
+        if (pool[i] < pool[i - 1]) {
+          isSorted = false;
+          break;
+        }
+      }
+      if (isSorted) {
+        final first = pool.removeAt(0);
+        pool.add(first);
+      }
     }
 
     return MakeHousieRoundSpec(
@@ -98,13 +125,27 @@ class MakeHousieRoundSpec {
     );
   }
 
-  /// Validates placing [selectedBall] into cell ([row], [col]).
+  /// Validates dropping [selectedBall] onto ([row], [col]) against the live [board] state.
+  /// - Enforces Rule 1 (Column Decade 1–9 .. 80–90)
+  /// - Enforces Rule 2 (Vertical Ascending Order within the column on [board])
+  /// - Allows any empty row when the column is empty, and auto-shifts an edge ball
+  ///   if the player drops a smaller ball onto Row 1 or a larger ball onto Row 3.
   MakePlacementResult validatePlacement({
     required int selectedBall,
     required int row,
     required int col,
     required Set<int> alreadyPlacedBalls,
+    List<List<int>>? liveBoard,
   }) {
+    if (!isColumnActive(col)) {
+      return MakePlacementResult(
+        isSuccess: false,
+        isRulePenalty: false,
+        message:
+            'Col ${col + 1} is in a locked quadrant! Drop Ball $selectedBall into an active column.',
+      );
+    }
+
     final expectedCol = expectedColumnForBall(selectedBall);
 
     // Rule 1: Column Decade Check
@@ -117,50 +158,153 @@ class MakeHousieRoundSpec {
       );
     }
 
-    final trueValAtCell = trueMatrix[row][col];
-
-    // Rule 3: 5-Per-Row & Active Slot Check
-    if (trueValAtCell == 0) {
-      // Find which row(s) in this column actually hold numbers
-      int correctRow = 0;
+    // Extract current column state from liveBoard (or derive from alreadyPlacedBalls)
+    final colCells = <int>[0, 0, 0];
+    if (liveBoard != null) {
       for (int r = 0; r < 3; r++) {
-        if (trueMatrix[r][col] == selectedBall) {
-          correctRow = r;
-          break;
+        final v = liveBoard[r][col];
+        if (v > 0 && v != selectedBall) {
+          colCells[r] = v;
         }
       }
+    } else {
+      for (int r = 0; r < 3; r++) {
+        final v = trueMatrix[r][col];
+        if (v > 0 && alreadyPlacedBalls.contains(v) && v != selectedBall) {
+          colCells[r] = v;
+        }
+      }
+    }
+
+    // Find existing placed balls in this column
+    int? existingRow;
+    int? existingVal;
+    for (int r = 0; r < 3; r++) {
+      if (colCells[r] > 0) {
+        existingRow = r;
+        existingVal = colCells[r];
+        break;
+      }
+    }
+
+    // Case 1: Column is currently empty -> any row (0, 1, or 2) is valid!
+    if (existingRow == null || existingVal == null) {
+      colCells[row] = selectedBall;
       return MakePlacementResult(
-        isSuccess: false,
-        isRulePenalty: mode == modeMake15Master,
+        isSuccess: true,
+        updatedColumnCells: colCells,
         message:
-            'Rule 3 (5-Per-Row Balance): Row ${row + 1} is reserved for other columns so every row has 5 numbers. Place $selectedBall in Row ${correctRow + 1}!',
+            '✓ Dropped $selectedBall into Col ${col + 1} (${columnDecadeLabel(col)}), Row ${row + 1}!',
       );
     }
 
-    // Rule 2: Vertical Ascending Order Check within the right column
-    if (trueValAtCell != selectedBall) {
-      int correctRow = 0;
-      for (int r = 0; r < 3; r++) {
-        if (trueMatrix[r][col] == selectedBall) {
-          correctRow = r;
-          break;
-        }
+    // Case 2: Column already has 1 ball -> enforce Rule 2 (Vertical Ascending Order)
+    if (selectedBall < existingVal) {
+      // New ball is smaller -> must go ABOVE existingVal
+      if (row < existingRow) {
+        colCells[row] = selectedBall;
+        return MakePlacementResult(
+          isSuccess: true,
+          updatedColumnCells: colCells,
+          message:
+              '✓ Rule 2 Mastered! $selectedBall placed above $existingVal in Col ${col + 1}!',
+        );
       }
-      final relation = selectedBall < trueValAtCell ? 'smaller' : 'larger';
-      final posWord = selectedBall < trueValAtCell ? 'above' : 'below';
+      if (existingRow == 0 && row == 0) {
+        // Existing ball was at top (Row 1); player dropped smaller ball at Row 1 -> shift existingVal down to Row 2
+        colCells[0] = selectedBall;
+        colCells[1] = existingVal;
+        return MakePlacementResult(
+          isSuccess: true,
+          updatedColumnCells: colCells,
+          message:
+              '✓ Rule 2 Mastered! $selectedBall took Row 1 and shifted $existingVal down to Row 2!',
+        );
+      }
+      final targetRowHint = existingRow == 0 ? 1 : existingRow;
       return MakePlacementResult(
         isSuccess: false,
         isRulePenalty: true,
         message:
-            'Rule 2 (Ascending Order): In Col ${col + 1}, $selectedBall is $relation than $trueValAtCell, so it must sit $posWord it (Row ${correctRow + 1})!',
+            'Rule 2 (Ascending Order): In Col ${col + 1}, $selectedBall is smaller than $existingVal, so drop it in Row $targetRowHint (above $existingVal)!',
+      );
+    } else {
+      // New ball is larger -> must go BELOW existingVal
+      if (row > existingRow) {
+        colCells[row] = selectedBall;
+        return MakePlacementResult(
+          isSuccess: true,
+          updatedColumnCells: colCells,
+          message:
+              '✓ Rule 2 Mastered! $selectedBall placed below $existingVal in Col ${col + 1}!',
+        );
+      }
+      if (existingRow == 2 && row == 2) {
+        // Existing ball was at bottom (Row 3); player dropped larger ball at Row 3 -> shift existingVal up to Row 2
+        colCells[1] = existingVal;
+        colCells[2] = selectedBall;
+        return MakePlacementResult(
+          isSuccess: true,
+          updatedColumnCells: colCells,
+          message:
+              '✓ Rule 2 Mastered! $selectedBall took Row 3 and shifted $existingVal up to Row 2!',
+        );
+      }
+      final targetRowHint = existingRow == 2 ? 3 : (existingRow + 2);
+      return MakePlacementResult(
+        isSuccess: false,
+        isRulePenalty: true,
+        message:
+            'Rule 2 (Ascending Order): In Col ${col + 1}, $selectedBall is larger than $existingVal, so drop it in Row $targetRowHint (below $existingVal)!',
       );
     }
+  }
 
-    return MakePlacementResult(
-      isSuccess: true,
-      message:
-          '✓ Placed $selectedBall in Col ${col + 1} (${columnDecadeLabel(col)}), Row ${row + 1}!',
-    );
+  /// Evaluates a placed ball at ([row], [col]) on [liveBoard].
+  /// Returns `null` if the ball is in its valid column decade and ascending order,
+  /// or a human-readable rule violation string if misplaced.
+  String? evaluateCellIssue(List<List<int>> liveBoard, int row, int col) {
+    if (!isColumnActive(col)) return null;
+    final val = liveBoard[row][col];
+    if (val <= 0) return null;
+
+    final expectedCol = expectedColumnForBall(val);
+    if (col != expectedCol) {
+      return 'Rule 1 (Column Decade): Ball $val is in Col ${col + 1} (${columnDecadeLabel(col)}) — drag it to Col ${expectedCol + 1} (${columnDecadeLabel(expectedCol)})!';
+    }
+
+    // Check vertical ascending order against other balls in the same column
+    for (int r = 0; r < 3; r++) {
+      if (r == row) continue;
+      final other = liveBoard[r][col];
+      if (other <= 0) continue;
+      if (r < row && other > val) {
+        return 'Rule 2 (Ascending Order): In Col ${col + 1}, $val is smaller than $other above it — drag to swap rows!';
+      }
+      if (r > row && other < val) {
+        return 'Rule 2 (Ascending Order): In Col ${col + 1}, $val is larger than $other below it — drag to swap rows!';
+      }
+    }
+    return null;
+  }
+
+  /// Counts how many balls from [dealPool] are currently placed in valid cells on [liveBoard].
+  int countValidPlacements(List<List<int>> liveBoard) {
+    int count = 0;
+    for (int r = 0; r < 3; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (!isColumnActive(c)) continue;
+        if (liveBoard[r][c] > 0 && evaluateCellIssue(liveBoard, r, c) == null) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  /// True when all balls in [dealPool] are placed on [liveBoard] with zero rule issues.
+  bool isBoardSolved(List<List<int>> liveBoard) {
+    return countValidPlacements(liveBoard) == dealPool.length;
   }
 }
 

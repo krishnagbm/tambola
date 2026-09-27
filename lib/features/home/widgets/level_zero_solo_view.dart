@@ -35,11 +35,14 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   bool _feedbackIsError = false;
   final Set<String> _wrongFlashingCells = <String>{};
 
-  // Level 0A: MakeHousie state
+  // Level 0A: MakeHousie state (Mystery ? balls + Drag & Drop + Unlimited re-drag)
   String _makeMode = MakeHousieRoundSpec.modeMake5Quad;
   late MakeHousieRoundSpec _makeSpec;
-  final Set<int> _placedBalls = <int>{};
+  late List<List<int>> _makeLiveBoard;
+  final Set<int> _revealedMakeBalls = <int>{};
+  final Set<int> _onBoardMakeBalls = <int>{};
   int? _selectedDealBall;
+  bool _isDraggingMakeBall = false;
 
   // Level 0B: FixHousie state
   String _fixMode = FixHousieRoundSpec.modeFix3;
@@ -94,6 +97,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     _makeSpec = MakeHousieRoundSpec.generate(mode: _makeMode, random: rng);
+    _makeLiveBoard = _makeSpec.createInitialBoard();
     _fixSpec = FixHousieRoundSpec.generate(mode: _fixMode, random: rng);
     _mathSpec = MathHousieRoundSpec.generate(mode: _mathMode, random: rng);
     _sumSpec = SumHousieRoundSpec.generate(mode: _sumMode, random: rng);
@@ -110,9 +114,10 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _feedbackIsError = false;
       _wrongFlashingCells.clear();
 
-      _placedBalls.clear();
-      _selectedDealBall =
-          _makeSpec.dealPool.isNotEmpty ? _makeSpec.dealPool.first : null;
+      _revealedMakeBalls.clear();
+      _onBoardMakeBalls.clear();
+      _selectedDealBall = null;
+      _isDraggingMakeBall = false;
 
       _repairedCellKeys.clear();
 
@@ -217,49 +222,174 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   // Interaction Handlers per Level 0 Game
   // --------------------------------------------------------------------------
 
-  void _handleMakeCellTap(int row, int col) {
-    if (_startedAtMs == null || _roundCompleted) return;
-    final ball = _selectedDealBall;
-    if (ball == null || _placedBalls.contains(ball)) return;
-
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
-    final res = _makeSpec.validatePlacement(
-      selectedBall: ball,
-      row: row,
-      col: col,
-      alreadyPlacedBalls: _placedBalls,
-    );
-
-    if (res.isSuccess) {
-      final stepMs = _stepStartedAtMs != null
-          ? (nowMs - _stepStartedAtMs!).clamp(150, 30000)
-          : 1000;
-      setState(() {
-        _placedBalls.add(ball);
-        _correctCount = _placedBalls.length;
-        _totalReactionMs += stepMs;
-        _stepStartedAtMs = nowMs;
-        _feedbackBannerText = res.message;
-        _feedbackIsError = false;
-        // Auto-select next unplaced ball in dealPool
-        _selectedDealBall = _makeSpec.dealPool
-            .where((b) => !_placedBalls.contains(b))
-            .cast<int?>()
-            .firstWhere((b) => b != null, orElse: () => null);
-      });
-      if (_placedBalls.length >= _makeSpec.dealPool.length) {
-        _completeRound();
+  /// Called when the player grabs/starts dragging or taps a ball in MakeHousie™.
+  /// Auto-starts the round clock if not already running and reveals the mystery ball!
+  void _onMakeBallPicked(int ball, {required bool isDrag}) {
+    if (_roundCompleted) return;
+    if (_startedAtMs == null) {
+      _launchRound();
+    }
+    setState(() {
+      _revealedMakeBalls.add(ball);
+      _selectedDealBall = ball;
+      if (isDrag) {
+        _isDraggingMakeBall = true;
       }
-    } else {
-      _flashWrongCell(row, col);
+      _feedbackBannerText =
+          '🎯 Ball #$ball revealed! Spontaneously drop it into its valid Decade Column (1–9 … 80–90) & Ascending Row!';
+      _feedbackIsError = false;
+    });
+  }
+
+  void _onMakeDragEnded() {
+    if (!mounted) return;
+    setState(() {
+      _isDraggingMakeBall = false;
+    });
+  }
+
+  /// Handles dropping [ball] onto cell ([row], [col]) on the 3×9 grid.
+  /// If placed in a wrong column or wrong vertical order, the ball still lands on
+  /// that cell with a warning border so the player has unlimited chances to drag it to the right place!
+  void _handleMakeBallDrop(int ball, int row, int col) {
+    if (_roundCompleted) return;
+    if (_startedAtMs == null) {
+      _launchRound();
+    }
+    if (!_makeSpec.isColumnActive(col)) {
       setState(() {
-        if (res.isRulePenalty) {
-          _wrongCount++;
-          _totalReactionMs += 1500;
-        }
-        _feedbackBannerText = res.message;
+        _isDraggingMakeBall = false;
+        _feedbackBannerText =
+            '🔒 Col ${col + 1} is pre-filled! Drop Ball #$ball into an active quadrant.';
         _feedbackIsError = true;
       });
+      return;
+    }
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final stepMs = _stepStartedAtMs != null
+        ? (nowMs - _stepStartedAtMs!).clamp(150, 30000)
+        : 1000;
+
+    // Locate if [ball] was already sitting on _makeLiveBoard
+    int? fromR;
+    int? fromC;
+    for (int r = 0; r < 3; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_makeLiveBoard[r][c] == ball) {
+          fromR = r;
+          fromC = c;
+          break;
+        }
+      }
+    }
+
+    // If dropped onto the exact same cell it came from, just clear drag state
+    if (fromR == row && fromC == col) {
+      setState(() {
+        _isDraggingMakeBall = false;
+      });
+      return;
+    }
+
+    if (fromR != null && fromC != null) {
+      _makeLiveBoard[fromR][fromC] = 0;
+    }
+
+    final occupant = _makeLiveBoard[row][col];
+    if (occupant > 0 && occupant != ball) {
+      if (fromR != null && fromC != null) {
+        // Swap with the origin grid cell!
+        _makeLiveBoard[fromR][fromC] = occupant;
+      } else {
+        // Came from Deal Pool onto an occupied cell -> shift occupant to an open row in this column if available
+        int? openRow;
+        if (ball < occupant && row == 0) {
+          // Prefer shifting larger occupant downward
+          if (_makeLiveBoard[1][col] == 0) {
+            openRow = 1;
+          } else if (_makeLiveBoard[2][col] == 0) {
+            openRow = 2;
+          }
+        } else if (ball > occupant && row == 2) {
+          // Prefer shifting smaller occupant upward
+          if (_makeLiveBoard[1][col] == 0) {
+            openRow = 1;
+          } else if (_makeLiveBoard[0][col] == 0) {
+            openRow = 0;
+          }
+        }
+        openRow ??= [0, 1, 2].cast<int?>().firstWhere(
+          (r) => r != row && _makeLiveBoard[r!][col] == 0,
+          orElse: () => null,
+        );
+        if (openRow != null) {
+          _makeLiveBoard[openRow][col] = occupant;
+        } else {
+          // All 3 rows in this column were full -> return occupant to Deal Pool (already revealed)
+          _onBoardMakeBalls.remove(occupant);
+        }
+      }
+    }
+
+    _makeLiveBoard[row][col] = ball;
+    _onBoardMakeBalls.add(ball);
+    _revealedMakeBalls.add(ball);
+
+    final cellIssue = _makeSpec.evaluateCellIssue(_makeLiveBoard, row, col);
+    // Also check if any other cell on the board still has an issue
+    String? anyOtherIssue;
+    for (int r = 0; r < 3; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (!_makeSpec.isColumnActive(c)) continue;
+        final iss = _makeSpec.evaluateCellIssue(_makeLiveBoard, r, c);
+        if (iss != null) {
+          anyOtherIssue = iss;
+          break;
+        }
+      }
+      if (anyOtherIssue != null) break;
+    }
+
+    setState(() {
+      _isDraggingMakeBall = false;
+      _selectedDealBall = null;
+      _correctCount = _makeSpec.countValidPlacements(_makeLiveBoard);
+      _totalReactionMs += stepMs;
+      _stepStartedAtMs = nowMs;
+
+      if (cellIssue != null) {
+        _wrongCount++;
+        _feedbackBannerText =
+            '⚠️ $cellIssue (Unlimited retries — drag Ball #$ball to the right cell!)';
+        _feedbackIsError = true;
+      } else if (anyOtherIssue != null) {
+        _feedbackBannerText =
+            '✓ Ball #$ball placed in Col ${col + 1}! Next, drag to fix: $anyOtherIssue';
+        _feedbackIsError = true;
+      } else {
+        _feedbackBannerText =
+            '✓ Dropped Ball #$ball into Col ${col + 1} (${columnDecadeLabel(col)}), Row ${row + 1}! ($_correctCount/${_makeSpec.dealPool.length} valid)';
+        _feedbackIsError = false;
+      }
+    });
+
+    if (_makeSpec.isBoardSolved(_makeLiveBoard)) {
+      _completeRound();
+    }
+  }
+
+  void _handleMakeCellTap(int row, int col) {
+    if (_roundCompleted) return;
+    final currentCellVal = _makeLiveBoard[row][col];
+    // If a ball is currently picked/selected, tapping a cell drops it there
+    if (_selectedDealBall != null) {
+      _handleMakeBallDrop(_selectedDealBall!, row, col);
+      return;
+    }
+    // Otherwise, tapping an already-placed ball on the grid picks it up so the player can move it
+    if (currentCellVal > 0 && _makeSpec.isColumnActive(col)) {
+      _onMakeBallPicked(currentCellVal, isDrag: false);
     }
   }
 
@@ -474,8 +604,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         activeMode = _makeMode;
         chips = const [
           (MakeHousieRoundSpec.modeMake5Quad, 'Make 5 (1 Quad)'),
-          (MakeHousieRoundSpec.modeMake15Guided, 'Make 15 (Guided)'),
-          (MakeHousieRoundSpec.modeMake15Master, 'Make 15 (Master)'),
+          (MakeHousieRoundSpec.modeMake15Guided, 'Make 10 (2 Quads)'),
+          (MakeHousieRoundSpec.modeMake15Master, 'Make 15 (Full Grid)'),
         ];
         onSelect = (m) {
           _makeMode = m;
@@ -571,9 +701,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       switch (widget.gameId) {
         case 'level_0a_make':
           headline =
-              '🏆 LEVEL 0A CLEARED! ALL ${_makeSpec.dealPool.length} NUMBERS PLACED VALIDLY!';
+              '🏆 LEVEL 0A CLEARED! ALL ${_makeSpec.dealPool.length} MYSTERY BALLS PLACED VALIDLY!';
           subline =
-              'You mastered 3×9 column decades & ascending order! Try Make 15 Master or advance to 0B FixHousie™.';
+              'You mastered 3×9 column decades & ascending order! Try Make 10/15 or advance to 0B FixHousie™.';
           break;
         case 'level_0b_fix':
           headline =
@@ -598,9 +728,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       switch (widget.gameId) {
         case 'level_0a_make':
           headline =
-              '🎓 MakeHousie™ Ready • Place ${_makeSpec.dealPool.length} Numbers onto the 3×9 Ticket';
+              '🎓 MakeHousie™ Ready • Drag & Drop ${_makeSpec.dealPool.length} Mystery (?) Balls onto the 3×9 Grid';
           subline =
-              'Rules: 1️⃣ Column Decades (1–9 .. 80–90) • 2️⃣ Top-to-Bottom Ascending Order • 3️⃣ 5 Numbers per Row!';
+              'Pick any (?) ball to reveal its number, then spontaneously drop it into its valid Column Decade & Ascending Row!';
           break;
         case 'level_0b_fix':
           headline =
@@ -628,8 +758,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       } else {
         switch (widget.gameId) {
           case 'level_0a_make':
-            headline =
-                '🎯 Tap the valid [•] cell for Ball #${_selectedDealBall ?? '—'} (${_placedBalls.length}/${_makeSpec.dealPool.length} placed)';
+            headline = _selectedDealBall != null
+                ? '🎯 Ball #$_selectedDealBall revealed! Drag & drop it into its valid Decade Column & Ascending Row!'
+                : '🎱 Grab & drag any Mystery (?) ball below to reveal its number and drop it on the 3×9 grid!';
             break;
           case 'level_0b_fix':
             headline =
@@ -648,7 +779,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         }
       }
       subline =
-          'Rule 1: Col Decades (1–9, 10–19 … 80–90) • Rule 2: Ascending Vertical Order • Rule 3: 5 Per Row';
+          'Rule 1: Col Decades (1–9, 10–19 … 80–90) • Rule 2: Ascending Vertical Order • Misplaced balls can be re-dragged anytime!';
     }
 
     return Container(
@@ -1001,8 +1132,6 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     switch (widget.gameId) {
       case 'level_0a_make':
         final ball = _selectedDealBall;
-        final col = ball != null ? expectedColumnForBall(ball) : 0;
-        final isMaster = _makeMode == MakeHousieRoundSpec.modeMake15Master;
         return Row(
           children: [
             Container(
@@ -1010,16 +1139,21 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor,
+                color: ball != null
+                    ? AppTheme.secondaryColor
+                    : const Color(0xFF1E293B),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
+                border: Border.all(
+                  color: ball != null ? Colors.white : AppTheme.secondaryColor,
+                  width: 1.5,
+                ),
               ),
               child: Text(
-                ball != null ? '$ball' : '✓',
-                style: const TextStyle(
+                ball != null ? '$ball' : '?',
+                style: TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w900,
-                  color: Colors.black,
+                  color: ball != null ? Colors.black : AppTheme.secondaryColor,
                 ),
               ),
             ),
@@ -1030,7 +1164,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ball != null ? 'Place Ball #$ball' : 'All Placed!',
+                    ball != null
+                        ? 'Ball #$ball Revealed!'
+                        : 'Drag Any (?) Ball',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1041,11 +1177,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    ball == null
-                        ? 'Complete!'
-                        : (isMaster
-                              ? 'Master Mode: Deduce Col & Order'
-                              : 'Hint: Col ${col + 1} (${columnDecadeLabel(col)})'),
+                    ball != null
+                        ? 'Drop into valid Col & Row!'
+                        : 'Reveals on grab • Drop on grid',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1184,6 +1318,48 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     }
   }
 
+  Widget _buildDragFeedbackBadge(int ball) {
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        width: 48,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppTheme.secondaryColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.45),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Text(
+          '$ball',
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool _isBallMisplacedOnBoard(int ball) {
+    for (int r = 0; r < 3; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (_makeLiveBoard[r][c] == ball) {
+          return _makeSpec.evaluateCellIssue(_makeLiveBoard, r, c) != null;
+        }
+      }
+    }
+    return false;
+  }
+
   Widget _buildMakeDealPoolStrip(bool isWaiting) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1198,18 +1374,23 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isWaiting
-                    ? '🎱 Number Pool (${_makeSpec.dealPool.length} balls — click "▶ Start" above to place)'
-                    : '🎱 Number Pool (Tap a ball below or tap its [•] slot on the 3×9 grid)',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF94A3B8),
+              Expanded(
+                child: Text(
+                  isWaiting
+                      ? '🎱 Mystery Ball Pool (${_makeSpec.dealPool.length} random ? balls — click "▶ Start" or drag any ? ball!)'
+                      : '🎱 Mystery Ball Pool (Drag any ? ball to reveal its number & drop onto the 3×9 grid)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF94A3B8),
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
-                '${_placedBalls.length}/${_makeSpec.dealPool.length} Placed',
+                '$_correctCount/${_makeSpec.dealPool.length} Valid',
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
@@ -1223,43 +1404,77 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             spacing: 6,
             runSpacing: 6,
             children: _makeSpec.dealPool.map((ball) {
-              final isPlaced = _placedBalls.contains(ball);
-              final isSelected = !isPlaced && _selectedDealBall == ball;
-              return InkWell(
-                onTap: (!isWaiting && !isPlaced && !_roundCompleted)
-                    ? () => setState(() => _selectedDealBall = ball)
-                    : null,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  width: 36,
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isPlaced
-                        ? const Color(0xFF064E3B)
+              final isOnBoard = _onBoardMakeBalls.contains(ball);
+              final isMisplaced = isOnBoard && _isBallMisplacedOnBoard(ball);
+              final isRevealed = _revealedMakeBalls.contains(ball);
+              final isSelected = !isOnBoard && _selectedDealBall == ball;
+
+              final chipWidget = Container(
+                width: 40,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isOnBoard
+                      ? (isMisplaced
+                            ? const Color(0xFF7F1D1D)
+                            : const Color(0xFF064E3B))
+                      : (isSelected
+                            ? AppTheme.secondaryColor
+                            : (isRevealed
+                                  ? const Color(0xFF312E81)
+                                  : const Color(0xFF1E293B))),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isOnBoard
+                        ? (isMisplaced
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFF10B981))
                         : (isSelected
-                              ? AppTheme.secondaryColor
-                              : const Color(0xFF1E293B)),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: isPlaced
-                          ? const Color(0xFF10B981)
-                          : (isSelected
-                                ? Colors.white
-                                : const Color(0xFF334155)),
-                      width: isSelected ? 1.8 : 1,
-                    ),
+                              ? Colors.white
+                              : (isRevealed
+                                    ? AppTheme.secondaryColor
+                                    : const Color(0xFF475569))),
+                    width: isSelected || isRevealed ? 1.6 : 1.0,
                   ),
-                  child: Text(
-                    isPlaced ? '✓' : '$ball',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: isPlaced
-                          ? const Color(0xFF34D399)
-                          : (isSelected ? Colors.black : Colors.white),
-                    ),
+                ),
+                child: Text(
+                  isOnBoard
+                      ? (isMisplaced ? '⚠️' : '✓')
+                      : (isRevealed ? '$ball' : '?'),
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w900,
+                    color: isOnBoard
+                        ? (isMisplaced
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFF34D399))
+                        : (isSelected
+                              ? Colors.black
+                              : (isRevealed
+                                    ? Colors.white
+                                    : AppTheme.secondaryColor)),
                   ),
+                ),
+              );
+
+              if (isOnBoard || _roundCompleted) {
+                return chipWidget;
+              }
+
+              return Draggable<int>(
+                data: ball,
+                feedback: _buildDragFeedbackBadge(ball),
+                childWhenDragging: Opacity(
+                  opacity: 0.35,
+                  child: chipWidget,
+                ),
+                onDragStarted: () => _onMakeBallPicked(ball, isDrag: true),
+                onDragEnd: (_) => _onMakeDragEnded(),
+                onDraggableCanceled: (_, _) => _onMakeDragEnded(),
+                child: InkWell(
+                  onTap: () => _onMakeBallPicked(ball, isDrag: false),
+                  borderRadius: BorderRadius.circular(8),
+                  child: chipWidget,
                 ),
               );
             }).toList(),
@@ -1513,69 +1728,145 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     bool isWaiting,
     bool isWrongFlash,
   ) {
-    final trueVal = _makeSpec.trueMatrix[row][col];
-    final isEmpty = trueVal == 0;
     final inActiveQuad = _makeSpec.isColumnActive(col);
-    final isPlaced = !isEmpty && _placedBalls.contains(trueVal);
+    final cellVal = _makeLiveBoard[row][col];
+    final showDropPlaceholders =
+        inActiveQuad &&
+        !_roundCompleted &&
+        (_isDraggingMakeBall || _selectedDealBall != null);
 
-    String label = '';
-    Color bg = const Color(0xFF0B1120);
-    Color border = const Color(0xFF1E293B);
-    Color textColor = Colors.white;
-
-    if (isWrongFlash) {
-      label = '✖';
-      bg = const Color(0xFFDC2626);
-      border = const Color(0xFFF87171);
-    } else if (isEmpty) {
-      bg = const Color(0xFF0B1120);
-      border = const Color(0xFF1E293B);
-    } else if (!inActiveQuad) {
-      // Pre-filled helper quadrants in Make 5 mode
-      label = '$trueVal';
-      bg = const Color(0xFF1E293B);
-      border = const Color(0xFF334155);
-      textColor = const Color(0xFF94A3B8);
-    } else if (isPlaced || _roundCompleted) {
-      label = '$trueVal';
-      bg = const Color(0xFF059669);
-      border = const Color(0xFF34D399);
-      textColor = Colors.white;
-    } else {
-      // Target slot [•] waiting for player placement
-      label = '•';
-      bg = const Color(0xFF1E1B4B);
-      border = AppTheme.secondaryColor.withValues(alpha: 0.65);
-      textColor = AppTheme.secondaryColor;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: InkWell(
-        onTap: (!isWaiting && !_roundCompleted && inActiveQuad && !isPlaced)
-            ? () => _handleMakeCellTap(row, col)
-            : null,
-        borderRadius: BorderRadius.circular(8),
+    // Pre-filled locked quadrant cells (in Make 5 or Make 10 modes)
+    if (!inActiveQuad) {
+      final isEmpty = cellVal == 0;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Container(
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: bg,
+            color: isEmpty ? const Color(0xFF0B1120) : const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: border,
-              width: isPlaced || (!isEmpty && inActiveQuad) ? 1.6 : 1.0,
+              color: isEmpty
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFF334155),
             ),
           ),
           child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15.5,
-              fontWeight: FontWeight.w900,
-              color: textColor,
+            isEmpty ? '' : '$cellVal',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF94A3B8),
             ),
           ),
         ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: DragTarget<int>(
+        onWillAcceptWithDetails: (details) => !_roundCompleted,
+        onAcceptWithDetails: (details) =>
+            _handleMakeBallDrop(details.data, row, col),
+        builder: (context, candidateData, rejectedData) {
+          final isHovered = candidateData.isNotEmpty;
+          final issue = cellVal > 0
+              ? _makeSpec.evaluateCellIssue(_makeLiveBoard, row, col)
+              : null;
+          final isMisplaced = issue != null;
+
+          String label = '';
+          Color bg = const Color(0xFF0B1120);
+          Color border = const Color(0xFF1E293B);
+          Color textColor = Colors.white;
+          double borderWidth = 1.0;
+
+          if (cellVal > 0) {
+            if (isMisplaced) {
+              label = '$cellVal ⇄';
+              bg = isHovered
+                  ? const Color(0xFFB91C1C)
+                  : const Color(0xFF7F1D1D);
+              border = const Color(0xFFFBBF24);
+              textColor = const Color(0xFFFDE68A);
+              borderWidth = 1.8;
+            } else {
+              label = '$cellVal';
+              bg = isHovered
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFF059669);
+              border = const Color(0xFF34D399);
+              textColor = Colors.white;
+              borderWidth = 1.6;
+            }
+          } else if (isHovered) {
+            label = '⬇';
+            bg = AppTheme.secondaryColor.withValues(alpha: 0.30);
+            border = AppTheme.secondaryColor;
+            textColor = AppTheme.secondaryColor;
+            borderWidth = 2.0;
+          } else if (showDropPlaceholders) {
+            // Uniform drop placeholder on all empty cells of active quadrant(s) while dragging/holding a ball
+            label = '⬇';
+            bg = const Color(0xFF172554);
+            border = AppTheme.secondaryColor.withValues(alpha: 0.55);
+            textColor = AppTheme.secondaryColor.withValues(alpha: 0.85);
+            borderWidth = 1.3;
+          } else {
+            // Idle empty cell: NO pre-highlighted cells!
+            label = '';
+            bg = const Color(0xFF0B1120);
+            border = const Color(0xFF1E293B);
+            borderWidth = 1.0;
+          }
+
+          final cellBox = InkWell(
+            onTap: !_roundCompleted
+                ? () => _handleMakeCellTap(row, col)
+                : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: border, width: borderWidth),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: isMisplaced ? 13.5 : 15,
+                      fontWeight: FontWeight.w900,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          // Any placed ball on the grid can be dragged unlimited times to another cell!
+          if (cellVal > 0 && !_roundCompleted) {
+            return Draggable<int>(
+              data: cellVal,
+              feedback: _buildDragFeedbackBadge(cellVal),
+              childWhenDragging: Opacity(opacity: 0.35, child: cellBox),
+              onDragStarted: () => _onMakeBallPicked(cellVal, isDrag: true),
+              onDragEnd: (_) => _onMakeDragEnded(),
+              onDraggableCanceled: (_, _) => _onMakeDragEnded(),
+              child: cellBox,
+            );
+          }
+
+          return cellBox;
+        },
       ),
     );
   }

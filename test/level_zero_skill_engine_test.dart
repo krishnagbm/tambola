@@ -4,7 +4,7 @@ import 'package:tambola/models/level_zero_skill_engine.dart';
 
 void main() {
   group('Level 0A — MakeHousieRoundSpec', () {
-    test('make_5_quad generates 5 dealPool numbers in active quadrant', () {
+    test('make_5_quad generates 5 dealPool numbers in random order and blank active quadrant', () {
       final spec = MakeHousieRoundSpec.generate(
         mode: MakeHousieRoundSpec.modeMake5Quad,
         random: Random(101),
@@ -12,68 +12,41 @@ void main() {
       expect(spec.dealPool.length, 5);
       expect(spec.activeQuadrants.length, 1);
 
+      // Verify dealPool is NOT sorted ascending
+      final sortedCopy = List<int>.from(spec.dealPool)..sort();
+      expect(spec.dealPool, isNot(equals(sortedCopy)));
+
+      final board = spec.createInitialBoard();
       final q = spec.activeQuadrants.first;
       final startCol = (q - 1) * 3;
       final endCol = startCol + 2;
-      for (final ball in spec.dealPool) {
-        final col = expectedColumnForBall(ball);
-        expect(col, inInclusiveRange(startCol, endCol));
+      for (int r = 0; r < 3; r++) {
+        for (int c = startCol; c <= endCol; c++) {
+          expect(board[r][c], equals(0));
+        }
       }
     });
 
-    test('validatePlacement enforces Rule 1 (Decade), Rule 2 (Ascending Order), Rule 3 (5-Per-Row)', () {
+    test('evaluateCellIssue and isBoardSolved allow unlimited re-drag from wrong cell to right cell', () {
       final spec = MakeHousieRoundSpec.generate(
         mode: MakeHousieRoundSpec.modeMake15Master,
         random: Random(202),
       );
+      final board = spec.createInitialBoard();
       final targetBall = spec.dealPool.first;
       final trueCol = expectedColumnForBall(targetBall);
-      int trueRow = 0;
-      for (int r = 0; r < 3; r++) {
-        if (spec.trueMatrix[r][trueCol] == targetBall) {
-          trueRow = r;
-          break;
-        }
-      }
-
-      // Rule 1: Wrong column decade
       final wrongCol = (trueCol + 1) % 9;
-      final r1 = spec.validatePlacement(
-        selectedBall: targetBall,
-        row: trueRow,
-        col: wrongCol,
-        alreadyPlacedBalls: const <int>{},
-      );
-      expect(r1.isSuccess, isFalse);
-      expect(r1.message, contains('Rule 1'));
 
-      // Valid placement at (trueRow, trueCol)
-      final ok = spec.validatePlacement(
-        selectedBall: targetBall,
-        row: trueRow,
-        col: trueCol,
-        alreadyPlacedBalls: const <int>{},
-      );
-      expect(ok.isSuccess, isTrue);
+      // Drop ball in wrong column first
+      board[0][wrongCol] = targetBall;
+      expect(spec.evaluateCellIssue(board, 0, wrongCol), contains('Rule 1'));
+      expect(spec.countValidPlacements(board), equals(0));
 
-      // Find an empty row in trueCol to test Rule 3 (5-Per-Row Balance)
-      int? emptyRow;
-      for (int r = 0; r < 3; r++) {
-        if (spec.trueMatrix[r][trueCol] == 0) {
-          emptyRow = r;
-          break;
-        }
-      }
-      if (emptyRow != null) {
-        final r3 = spec.validatePlacement(
-          selectedBall: targetBall,
-          row: emptyRow,
-          col: trueCol,
-          alreadyPlacedBalls: const <int>{},
-        );
-        expect(r3.isSuccess, isFalse);
-        expect(r3.message, contains('Rule 3'));
-      }
+      // Drag ball from wrong column to right column
+      board[0][wrongCol] = 0;
+      board[1][trueCol] = targetBall;
+      expect(spec.evaluateCellIssue(board, 1, trueCol), isNull);
+      expect(spec.countValidPlacements(board), equals(1));
     });
   });
 
@@ -157,7 +130,6 @@ void main() {
         expect(wave.options.length, 4);
         expect(wave.options, contains(wave.correctSum));
 
-        // Anti-shortcut check: at least 3 options (the true answer + 2 decoys) share the same units digit
         final targetLastDigit = wave.correctSum % 10;
         final matchingLastDigitCount = wave.options
             .where((opt) => opt % 10 == targetLastDigit)
