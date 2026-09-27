@@ -14,6 +14,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   Timer? _autoSlideTimer;
 
   static const _slides = [
+    // Tab 1: Classic 90-Ball & Live Host (Slides 1–6, indices 0–5)
     {
       'title': 'Player Ticket & Instant Play',
       'tabLabel': '📱 Player Tickets',
@@ -21,54 +22,6 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'image': 'assets/screenshots/screenshot_mobile_ticket.png',
       'desc': 'Crisp 3×9 digital tickets in any browser (Safari, Chrome). Players dab called numbers in real time, track drawn balls, and submit instant prize claims.',
       'aspectRatio': 1.08,
-    },
-    {
-      'title': 'FlashHousie™ Solo Arena — Perfect 5/5 Recall (50 pts)',
-      'tabLabel': '👤 Solo Q1 Perfect (50 pts)',
-      'badge': 'INSTANT SOLO SKILL PRACTICE • FLASH 5 / 10 / 15 SELECTOR',
-      'image': 'assets/screenshots/screenshot_flash_housie_solo_win.png',
-      'desc': 'Practice anytime on mobile or desktop! Choose Flash 5 (1 Quad), Flash 10 (2 Quads), or Flash 15 (3 Quads), memorize the NeuroWave™ sweep, and track your score & reaction time.',
-      'aspectRatio': 0.90,
-    },
-    {
-      'title': 'FlashHousie™ Solo Arena — Live Ball Call & Score Tracker',
-      'tabLabel': '⚡ Solo Live Call & Score',
-      'badge': 'REAL-TIME BALL CALLER • +10 PTS RECALL • -3 PTS FREEZE PENALTY',
-      'image': 'assets/screenshots/screenshot_flash_housie_solo_live.png',
-      'desc': 'Live solo practice HUD showing drawn ball history, active quadrant (Q1 Cols 1–29), recalled count (5/5), penalty tracker, and net score in real time.',
-      'aspectRatio': 0.81,
-    },
-    {
-      'title': 'FlashHousie™ Solo Arena — Quadrant Q3 Spatial Deduction',
-      'tabLabel': '🎯 Solo Q3 (Cols 7–9)',
-      'badge': '3×3 QUADRANT ROTATION • COLUMN DECADE LOGIC (60–90)',
-      'image': 'assets/screenshots/screenshot_flash_housie_solo_q3.png',
-      'desc': 'Every solo card rotates across Q1 (1–29), Q2 (30–59), or Q3 (60–90) so players master all 9 decade columns and vertical ascending sequences.',
-      'aspectRatio': 0.90,
-    },
-    {
-      'title': 'FlashHousie™ 5 / 10 / 15 Live Recall & Round Prizes',
-      'tabLabel': '⚡ FlashHousie™ Recall',
-      'badge': 'DABHOUSIE™ PROPRIETARY SPECIAL • MEMORY + REASONING + SPEED',
-      'image': 'assets/screenshots/screenshot_flash_housie_player.png',
-      'desc': 'Memorize active 3×3 quadrants during the NeuroWave™ Spotlight sweep, then combine spatial memory & logical column reasoning to recall called balls and win Round & Full House prizes.',
-      'aspectRatio': 3.35,
-    },
-    {
-      'title': 'NeuroWave™ Spotlight & Mystery [?] Quadrant Grid',
-      'tabLabel': '🧠 NeuroWave™ [?] Grid',
-      'badge': 'COLUMN-BY-COLUMN SPOTLIGHT REVEAL • SYMMETRIC SKILL PLAY',
-      'image': 'assets/screenshots/screenshot_flash_housie_locked.png',
-      'desc': 'After the NeuroWave™ Spotlight sweeps each active column, numbers lock into [?] tiles while inactive quadrants stay locked for future rounds.',
-      'aspectRatio': 3.22,
-    },
-    {
-      'title': 'FlashHousie™ Host Control & Live Recall Leaderboard',
-      'tabLabel': '🏆 FlashHousie™ Host',
-      'badge': 'AUTO-SCORED ROUND WINNERS & CUMULATIVE FULL HOUSE',
-      'image': 'assets/screenshots/screenshot_flash_housie_host.png',
-      'desc': 'Hosts track real-time player recall accuracy, reaction speed, and live round leaderboards with automatic Round (Rx-Qx) and Full House winner crowning.',
-      'aspectRatio': 2.22,
     },
     {
       'title': 'TV Screen & Projector Big Display',
@@ -109,6 +62,56 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'image': 'assets/screenshots/screenshot_private_passcodes.png',
       'desc': 'Generate single-use seat OTPs for private kitty parties, society clubs, and corporate galas to ensure only invited guests can join.',
       'aspectRatio': 1.01,
+    },
+    // Tab 2: FlashHousie™ Solo Play (Slides 7–9, indices 6–8)
+    {
+      'title': 'FlashHousie™ Solo Arena — Perfect 5/5 Recall (50 pts)',
+      'tabLabel': '👤 Solo Q1 Perfect (50 pts)',
+      'badge': 'INSTANT SOLO SKILL PRACTICE • FLASH 5 / 10 / 15 SELECTOR',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_win.png',
+      'desc': 'Practice anytime on mobile or desktop! Choose Flash 5 (1 Quad), Flash 10 (2 Quads), or Flash 15 (3 Quads), memorize the NeuroWave™ sweep, and track your score & reaction time.',
+      'aspectRatio': 0.90,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Live Ball Call & Score Tracker',
+      'tabLabel': '⚡ Solo Live Call & Score',
+      'badge': 'REAL-TIME BALL CALLER • +10 PTS RECALL • -3 PTS FREEZE PENALTY',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_live.png',
+      'desc': 'Live solo practice HUD showing drawn ball history, active quadrant (Q1 Cols 1–29), recalled count (5/5), penalty tracker, and net score in real time.',
+      'aspectRatio': 0.81,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Quadrant Q3 Spatial Deduction',
+      'tabLabel': '🎯 Solo Q3 (Cols 7–9)',
+      'badge': '3×3 QUADRANT ROTATION • COLUMN DECADE LOGIC (60–90)',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_q3.png',
+      'desc': 'Every solo card rotates across Q1 (1–29), Q2 (30–59), or Q3 (60–90) so players master all 9 decade columns and vertical ascending sequences.',
+      'aspectRatio': 0.90,
+    },
+    // Tab 3: FlashHousie™ Live Multiplayer (Slides 10–12, indices 9–11)
+    {
+      'title': 'FlashHousie™ 5 / 10 / 15 Live Recall & Round Prizes',
+      'tabLabel': '⚡ FlashHousie™ Recall',
+      'badge': 'DABHOUSIE™ PROPRIETARY SPECIAL • MEMORY + REASONING + SPEED',
+      'image': 'assets/screenshots/screenshot_flash_housie_player.png',
+      'desc': 'Memorize active 3×3 quadrants during the NeuroWave™ Spotlight sweep, then combine spatial memory & logical column reasoning to recall called balls and win Round & Full House prizes.',
+      'aspectRatio': 3.35,
+    },
+    {
+      'title': 'NeuroWave™ Spotlight & Mystery [?] Quadrant Grid',
+      'tabLabel': '🧠 NeuroWave™ [?] Grid',
+      'badge': 'COLUMN-BY-COLUMN SPOTLIGHT REVEAL • SYMMETRIC SKILL PLAY',
+      'image': 'assets/screenshots/screenshot_flash_housie_locked.png',
+      'desc': 'After the NeuroWave™ Spotlight sweeps each active column, numbers lock into [?] tiles while inactive quadrants stay locked for future rounds.',
+      'aspectRatio': 3.22,
+    },
+    {
+      'title': 'FlashHousie™ Host Control & Live Recall Leaderboard',
+      'tabLabel': '🏆 FlashHousie™ Host',
+      'badge': 'AUTO-SCORED ROUND WINNERS & CUMULATIVE FULL HOUSE',
+      'image': 'assets/screenshots/screenshot_flash_housie_host.png',
+      'desc': 'Hosts track real-time player recall accuracy, reaction speed, and live round leaderboards with automatic Round (Rx-Qx) and Full House winner crowning.',
+      'aspectRatio': 2.22,
     },
   ];
 
@@ -208,14 +211,14 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   @override
   Widget build(BuildContext context) {
     final current = _slides[_selectedIndex];
-    final isSoloCategory = _selectedIndex >= 1 && _selectedIndex <= 3;
-    final isSkillMultiplayerCategory = _selectedIndex >= 4 && _selectedIndex <= 6;
-    final isClassicCategory = !isSoloCategory && !isSkillMultiplayerCategory;
-    final visibleIndices = isSoloCategory
-        ? const <int>[1, 2, 3]
-        : (isSkillMultiplayerCategory
-              ? const <int>[4, 5, 6]
-              : const <int>[0, 7, 8, 9, 10, 11]);
+    final isClassicCategory = _selectedIndex >= 0 && _selectedIndex <= 5;
+    final isSoloCategory = _selectedIndex >= 6 && _selectedIndex <= 8;
+    final isSkillMultiplayerCategory = _selectedIndex >= 9 && _selectedIndex <= 11;
+    final visibleIndices = isClassicCategory
+        ? const <int>[0, 1, 2, 3, 4, 5]
+        : (isSoloCategory
+              ? const <int>[6, 7, 8]
+              : const <int>[9, 10, 11]);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -323,7 +326,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
           ),
           const SizedBox(height: 12),
 
-          // Category Tabs (1. Classic 90-Ball | 2. FlashHousie™ Solo Arena | 3. FlashHousie™ Live Multiplayer)
+          // Category Tabs (1. Classic 90-Ball [0..5] | 2. FlashHousie™ Solo Arena [6..8] | 3. FlashHousie™ Live Multiplayer [9..11])
           Wrap(
             spacing: 10,
             runSpacing: 8,
@@ -376,7 +379,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                 ),
               ),
               InkWell(
-                onTap: () => _onUserSelect(1),
+                onTap: () => _onUserSelect(6),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -423,7 +426,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                 ),
               ),
               InkWell(
-                onTap: () => _onUserSelect(4),
+                onTap: () => _onUserSelect(9),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
