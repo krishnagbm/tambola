@@ -644,7 +644,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final currentGame = gameStream.value;
               final isGameEnded =
                   currentGame?.status == 'COMPLETED' ||
+                  currentGame?.status == 'CANCELLED' ||
                   calledNumbers.length >= 90;
+              final hasApprovedWinners =
+                  (claimsStream.value ?? const <MptClaim>[])
+                      .any((c) => c.status == 'APPROVED');
+              final isCancelledOrNoWinners =
+                  currentGame?.status == 'CANCELLED' ||
+                  (isGameEnded && !hasApprovedWinners);
               final isGameActive =
                   (currentGame?.status == 'IN_PROGRESS' ||
                           calledNumbers.isNotEmpty) &&
@@ -663,7 +670,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final currentUser = ref.watch(currentUserProvider).value;
 
               return CelebrationOverlay(
-                isCelebrating: _showCelebration,
+                isCelebrating: _showCelebration && !isCancelledOrNoWinners,
                 child: LayoutBuilder(
                   builder: (ctx, constraints) {
                     final orientation = MediaQuery.of(ctx).orientation;
@@ -711,6 +718,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       calledNumbers.length,
                                       totalPlayers: totalPlayers,
                                       isGameEnded: isGameEnded,
+                                      isCancelledOrNoWinners:
+                                          isCancelledOrNoWinners,
                                       context: context,
                                       isCompact: true,
                                     ),
@@ -846,6 +855,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                             calledNumbers.length,
                             totalPlayers: totalPlayers,
                             isGameEnded: isGameEnded,
+                            isCancelledOrNoWinners: isCancelledOrNoWinners,
                             context: context,
                           ),
                           const SizedBox(height: 12),
@@ -1095,23 +1105,29 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     int totalCalled, {
     int totalPlayers = 1,
     bool isGameEnded = false,
+    bool isCancelledOrNoWinners = false,
     BuildContext? context,
     bool isCompact = false,
   }) {
     if (isGameEnded) {
+      final accentColor = isCancelledOrNoWinners
+          ? const Color(0xFFF87171)
+          : AppTheme.secondaryColor;
       return Container(
         padding: EdgeInsets.all(isCompact ? 12 : 16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF4338CA), Color(0xFF1E1B4B)],
+          gradient: LinearGradient(
+            colors: isCancelledOrNoWinners
+                ? const [Color(0xFF331B26), Color(0xFF1E1B2E)]
+                : const [Color(0xFF4338CA), Color(0xFF1E1B4B)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.secondaryColor, width: 1.5),
+          border: Border.all(color: accentColor, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.secondaryColor.withOpacity(0.25),
+              color: accentColor.withOpacity(0.22),
               blurRadius: 14,
               offset: const Offset(0, 4),
             ),
@@ -1122,28 +1138,37 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.celebration,
-                  color: AppTheme.secondaryColor,
+                Icon(
+                  isCancelledOrNoWinners
+                      ? Icons.cancel_outlined
+                      : Icons.celebration,
+                  color: accentColor,
                   size: 22,
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'GAME CONCLUDED 🎉',
-                  style: TextStyle(
-                    fontSize: isCompact ? 15 : 18,
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.secondaryColor,
-                    letterSpacing: 0.8,
+                Flexible(
+                  child: Text(
+                    isCancelledOrNoWinners
+                        ? 'GAME CANCELLED / ENDED WITHOUT WINNERS 🚫'
+                        : 'GAME CONCLUDED 🎉',
+                    style: TextStyle(
+                      fontSize: isCompact ? 14 : 17,
+                      fontWeight: FontWeight.w900,
+                      color: accentColor,
+                      letterSpacing: 0.6,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              totalCalled >= 90
-                  ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
-                  : 'Game concluded across $totalPlayers players! Check your rewards below.',
+              isCancelledOrNoWinners
+                  ? 'This game was cancelled or ended early without any prize winners.'
+                  : (totalCalled >= 90
+                        ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
+                        : 'Game concluded across $totalPlayers players! Check your rewards below.'),
               style: TextStyle(
                 fontSize: isCompact ? 11.5 : 13,
                 color: Colors.white,
@@ -1157,7 +1182,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               spacing: 8,
               runSpacing: 6,
               children: [
-                if (context != null)
+                if (context != null && !isCancelledOrNoWinners)
                   ElevatedButton.icon(
                     onPressed: () => context.push('/rewards'),
                     icon: const Icon(Icons.emoji_events, size: 16),
