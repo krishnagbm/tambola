@@ -39,6 +39,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   int _wrongTapCount = 0;
   int _freezeUntilMs = 0;
   int _totalReactionMs = 0;
+  int? _callingStartedAtMs;
   int? _lastBallCalledAtMs;
   bool _roundCompleted = false;
   bool _voiceEnabled = true;
@@ -47,11 +48,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   void initState() {
     super.initState();
     _startNewSoloRound(_selectedMode);
-    _uiTickTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      if (!mounted) return;
-      _checkNeuroWaveTransition();
-      setState(() {});
-    });
   }
 
   @override
@@ -61,8 +57,18 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     super.dispose();
   }
 
+  void _startUiTicker() {
+    _uiTickTimer?.cancel();
+    _uiTickTimer = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!mounted || _roundCompleted) return;
+      _checkNeuroWaveTransition();
+      setState(() {});
+    });
+  }
+
   void _startNewSoloRound(String mode) {
     _autoCallTimer?.cancel();
+    _autoCallTimer = null;
     final baseConfig = FlashHousieConfig.generate(
       mode: mode,
       totalCycles: 1,
@@ -84,9 +90,11 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       _wrongTapCount = 0;
       _freezeUntilMs = 0;
       _totalReactionMs = 0;
+      _callingStartedAtMs = null;
       _lastBallCalledAtMs = null;
       _roundCompleted = false;
     });
+    _startUiTicker();
   }
 
   void _checkNeuroWaveTransition() {
@@ -97,7 +105,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
         spec.calledNumbers.isEmpty &&
         _autoCallTimer == null &&
         !_roundCompleted) {
-      // Immediately draw first ball as soon as NeuroWave locks into [?]
+      _callingStartedAtMs = nowMs;
       _drawNextBall();
       _autoCallTimer = Timer.periodic(const Duration(milliseconds: 3600), (_) {
         if (!mounted || _roundCompleted) return;
@@ -126,7 +134,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       TambolaAudioCaller().announceNumber(nextBall);
     }
 
-    // If all pool numbers drawn and player hasn't finished all true numbers, conclude after a brief window
     if (updatedCalled.length >= spec.drawPool.length) {
       Future.delayed(const Duration(seconds: 4), () {
         if (mounted && !_roundCompleted) {
@@ -139,17 +146,21 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   Future<void> _finishRound() async {
     _autoCallTimer?.cancel();
     _autoCallTimer = null;
+    _uiTickTimer?.cancel();
+    _uiTickTimer = null;
     if (!mounted) return;
     final spec = _config.activeCycleSpec;
     final wonAll = _recalledNumbers.length >= spec.trueNumbers.length;
     setState(() {
       _roundCompleted = true;
+      _freezeUntilMs = 0;
     });
     if (wonAll) {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('dabhousie_skill_level_1_completed', true);
-        final prevBest = prefs.getInt('dabhousie_skill_level_1_best_score') ?? 0;
+        final prevBest =
+            prefs.getInt('dabhousie_skill_level_1_best_score') ?? 0;
         if (_netScore > prevBest) {
           await prefs.setInt('dabhousie_skill_level_1_best_score', _netScore);
         }
@@ -158,8 +169,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     }
   }
 
-  int get _netScore =>
-      (_recalledNumbers.length * 10) - (_wrongTapCount * 3);
+  int get _netScore => (_recalledNumbers.length * 10) - (_wrongTapCount * 3);
 
   void _handleCellTap(int row, int col, int trueVal) {
     if (trueVal == 0 || _roundCompleted) return;
@@ -193,11 +203,34 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
         _wrongFlashingCells.add(cellKey);
       });
       Future.delayed(const Duration(milliseconds: 900), () {
-        if (mounted) {
+        if (mounted && !_roundCompleted) {
           setState(() => _wrongFlashingCells.remove(cellKey));
         }
       });
     }
+  }
+
+  String _formatClockDisplay(NeuroWaveState waveState, int nowMs) {
+    if (_roundCompleted) {
+      return '${(_totalReactionMs / 1000).toStringAsFixed(1)}s';
+    }
+    if (!waveState.isCallingReady) {
+      return '00:${waveState.remainingSeconds.toString().padLeft(2, '0')}s';
+    }
+    final elapsedSec = _callingStartedAtMs != null
+        ? ((nowMs - _callingStartedAtMs!) / 1000).clamp(0.0, 999.0)
+        : 0.0;
+    return '${elapsedSec.toStringAsFixed(1)}s';
+  }
+
+  String _formatClockSubtitle(NeuroWaveState waveState) {
+    if (_roundCompleted) {
+      return 'Reaction Time';
+    }
+    if (!waveState.isCallingReady) {
+      return 'Wave Countdown';
+    }
+    return 'Play Clock';
   }
 
   @override
@@ -205,8 +238,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     final spec = _config.activeCycleSpec;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final waveState = spec.computeNeuroWaveState(nowMs);
-    final isFrozen = nowMs < _freezeUntilMs;
-    final freezeRemSec = isFrozen ? ((_freezeUntilMs - nowMs) / 1000).ceil() : 0;
+    final isFrozen = !_roundCompleted && nowMs < _freezeUntilMs;
+    final freezeRemSec =
+        isFrozen ? ((_freezeUntilMs - nowMs) / 1000).ceil() : 0;
     final latestBall = spec.latestCalledNumber;
     final wonAll = _recalledNumbers.length >= spec.trueNumbers.length;
 
@@ -221,14 +255,14 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
         ),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 760),
+        constraints: const BoxConstraints(maxWidth: 740),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header Bar
+              // 1. Header Bar
               Row(
                 children: [
                   Container(
@@ -241,19 +275,19 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: const Text(
-                      '⚡ LEVEL 1 • SOLO PRACTICE',
+                      '⚡ LEVEL 1 • SOLO',
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         color: Colors.black,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'FlashHousie™ Instant Solo Arena',
+                      'FlashHousie™ Solo Arena',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
@@ -271,19 +305,23 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                       size: 20,
                     ),
                     tooltip: 'Toggle Voice Caller',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                     onPressed: () =>
                         setState(() => _voiceEnabled = !_voiceEnabled),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
-                    tooltip: 'Close Solo Practice',
+                    tooltip: 'Close Solo Arena',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
 
-              // Mode Selector & Restart Row
+              // 2. Mode Selector & Restart Row
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -324,48 +362,66 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               ),
               const SizedBox(height: 10),
 
-              // NeuroWave / Calling Status Banner
+              // 3. Fixed-Height Status Banner (handles Wave, Calling, Freeze & Completion without vertical layout shift)
               Container(
+                constraints: const BoxConstraints(minHeight: 58),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: waveState.isCallingReady
-                        ? const [Color(0xFF064E3B), Color(0xFF0F172A)]
-                        : const [Color(0xFF311042), Color(0xFF0F172A)],
+                    colors: isFrozen
+                        ? const [Color(0xFF450A0A), Color(0xFF0F172A)]
+                        : (waveState.isCallingReady || _roundCompleted
+                              ? const [Color(0xFF064E3B), Color(0xFF0F172A)]
+                              : const [Color(0xFF311042), Color(0xFF0F172A)]),
                   ),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: waveState.isCallingReady
-                        ? const Color(0xFF10B981)
-                        : AppTheme.secondaryColor,
+                    color: isFrozen
+                        ? AppTheme.accentDanger
+                        : (waveState.isCallingReady || _roundCompleted
+                              ? const Color(0xFF10B981)
+                              : AppTheme.secondaryColor),
                     width: 1.4,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      waveState.isCallingReady
-                          ? Icons.touch_app_rounded
-                          : Icons.visibility_rounded,
-                      color: waveState.isCallingReady
-                          ? const Color(0xFF34D399)
-                          : AppTheme.secondaryColor,
+                      isFrozen
+                          ? Icons.ac_unit_rounded
+                          : (_roundCompleted
+                                ? Icons.emoji_events_rounded
+                                : (waveState.isCallingReady
+                                      ? Icons.touch_app_rounded
+                                      : Icons.visibility_rounded)),
+                      color: isFrozen
+                          ? const Color(0xFFF87171)
+                          : (_roundCompleted
+                                ? AppTheme.secondaryColor
+                                : (waveState.isCallingReady
+                                      ? const Color(0xFF34D399)
+                                      : AppTheme.secondaryColor)),
                       size: 22,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _roundCompleted
-                                ? (wonAll
-                                      ? '🏆 LEVEL 1 CLEARED! ALL ${spec.trueNumbers.length} NUMBERS RECALLED!'
-                                      : '⏱️ ROUND FINISHED — ${_recalledNumbers.length}/${spec.trueNumbers.length} RECALLED')
-                                : waveState.statusLabel,
+                            isFrozen
+                                ? '❄️ WRONG GUESS PENALTY (-3 PTS) — FROZEN FOR ${freezeRemSec}s'
+                                : (_roundCompleted
+                                      ? (wonAll
+                                            ? '🏆 LEVEL 1 CLEARED! ALL ${spec.trueNumbers.length} NUMBERS RECALLED!'
+                                            : '⏱️ ROUND OVER — ${_recalledNumbers.length}/${spec.trueNumbers.length} NUMBERS RECALLED')
+                                      : waveState.statusLabel),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w900,
@@ -374,9 +430,13 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            waveState.isCallingReady
-                                ? 'Combine spatial memory & column decade logic (Col 1: 1–9, Col 2: 10–19...) to tap called numbers! Wrong guess = -3 pts & 3s freeze.'
-                                : 'Watch the active column numbers carefully before they lock into [?] mystery cells!',
+                            _roundCompleted
+                                ? 'Great session! Tap "Play Again" below or try Flash 10 / Flash 15.'
+                                : (waveState.isCallingReady
+                                      ? 'Tap called numbers using memory & column logic! Wrong guess = -3 pts & 3s freeze.'
+                                      : 'Memorize active column numbers before they lock into [?] mystery cells!'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFFCBD5E1),
@@ -385,39 +445,17 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                         ],
                       ),
                     ),
-                    if (!waveState.isCallingReady) ...[
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF090D16),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFFFFD54F),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Text(
-                          '⏱ 00:${waveState.remainingSeconds.toString().padLeft(2, '0')}s',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFFFFF59D),
-                            fontFeatures: [FontFeature.tabularFigures()],
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
               const SizedBox(height: 10),
 
-              // Live Ball Call + Scoreboard Strip
+              // 4. 3-Column HUD Card:
+              //    - Col 1 (Left): Current Ball (hidden when round is over; replaced by Play Again)
+              //    - Col 2 (Middle): Prominent Large SCORE
+              //    - Col 3 (Right Edge): Prominent Large CLOCK / TIME
               Container(
+                constraints: const BoxConstraints(minHeight: 88),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 10,
@@ -425,193 +463,241 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                 decoration: BoxDecoration(
                   color: AppTheme.darkCard,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF2E334D)),
+                  border: Border.all(color: const Color(0xFF2E334D), width: 1.5),
                 ),
-                child: Wrap(
-                  spacing: 14,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: latestBall != null
-                                ? AppTheme.secondaryColor
-                                : const Color(0xFF1E293B),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            latestBall != null ? '$latestBall' : '—',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w900,
-                              color: latestBall != null
-                                  ? Colors.black
-                                  : Colors.white54,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // LEFT COLUMN: Drawn Ball (active) OR Round Complete / Play Again (when over)
+                      Expanded(
+                        flex: 4,
+                        child: _roundCompleted
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    wonAll ? '🎉 Round Won!' : 'Round Ended',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF34D399),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  ElevatedButton.icon(
+                                    onPressed: () =>
+                                        _startNewSoloRound(_selectedMode),
+                                    icon: const Icon(
+                                      Icons.replay_rounded,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Play Again',
+                                      style: TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.secondaryColor,
+                                      foregroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 8,
+                                      ),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: latestBall != null
+                                          ? AppTheme.secondaryColor
+                                          : const Color(0xFF1E293B),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: latestBall != null
+                                            ? Colors.white
+                                            : const Color(0xFF334155),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      latestBall != null ? '$latestBall' : '—',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        color: latestBall != null
+                                            ? Colors.black
+                                            : Colors.white54,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          latestBall != null
+                                              ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
+                                              : 'Spot Numbers',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          spec.calledNumbers.isNotEmpty
+                                              ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
+                                              : 'NeuroWave™ active',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF94A3B8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+
+                      Container(
+                        width: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: const Color(0xFF2E334D),
+                      ),
+
+                      // MIDDLE COLUMN: Prominent Large SCORE
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              latestBall != null
-                                  ? 'Ball #$latestBall Drawn (${spec.calledNumbers.length}/${spec.drawPool.length})'
-                                  : 'Waiting for NeuroWave™ Sweep...',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            const Text(
+                              'SCORE',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.8,
                               ),
                             ),
-                            if (spec.calledNumbers.isNotEmpty)
-                              Text(
-                                'Recent: ${spec.calledNumbers.reversed.take(6).join(', ')}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF94A3B8),
-                                ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '$_netScore pts',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.secondaryColor,
+                                height: 1.1,
+                                fontFeatures: [FontFeature.tabularFigures()],
                               ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '✓ ${_recalledNumbers.length}/${spec.trueNumbers.length}  •  ✖ $_wrongTapCount',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
                           ],
                         ),
-                      ],
-                    ),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _buildStatPill(
-                          'Recalled',
-                          '${_recalledNumbers.length}/${spec.trueNumbers.length}',
-                          const Color(0xFF10B981),
-                        ),
-                        _buildStatPill(
-                          'Wrong',
-                          '$_wrongTapCount (-${_wrongTapCount * 3})',
-                          const Color(0xFFF87171),
-                        ),
-                        _buildStatPill(
-                          'Net Score',
-                          '$_netScore pts',
-                          AppTheme.secondaryColor,
-                        ),
-                        if (waveState.isCallingReady && !_roundCompleted)
-                          ElevatedButton.icon(
-                            onPressed: _drawNextBall,
-                            icon: const Icon(Icons.skip_next_rounded, size: 16),
-                            label: const Text('Next Ball'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryLight,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              textStyle: const TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
+                      ),
+
+                      Container(
+                        width: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: const Color(0xFF2E334D),
+                      ),
+
+                      // RIGHT COLUMN (Right Edge): Prominent Large CLOCK / TIME
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.timer_outlined,
+                                  size: 13,
+                                  color: Color(0xFFFFD54F),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatClockSubtitle(waveState).toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF94A3B8),
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _formatClockDisplay(waveState, nowMs),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFFFF59D),
+                                height: 1.1,
+                                fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              if (isFrozen) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentDanger.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.accentDanger),
-                  ),
-                  child: Text(
-                    '❄️ Wrong guess penalty! Ticket frozen for ${freezeRemSec}s (-3 pts)',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFFCA5A5),
-                    ),
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 12),
-
-              // 3x9 Interactive Matrix
-              _buildSoloTicketMatrix(spec, waveState, isFrozen),
-
-              if (_roundCompleted) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: wonAll
-                        ? const Color(0xFF064E3B).withValues(alpha: 0.6)
-                        : const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: wonAll
-                          ? const Color(0xFF10B981)
-                          : AppTheme.secondaryColor,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        wonAll
-                            ? Icons.emoji_events_rounded
-                            : Icons.replay_circle_filled_rounded,
-                        color: wonAll
-                            ? AppTheme.secondaryColor
-                            : Colors.white70,
-                        size: 26,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          wonAll
-                              ? 'Awesome job! You scored $_netScore pts (${(_totalReactionMs / 1000).toStringAsFixed(1)}s total reaction) and completed Level 1 Solo! Next levels open sequentially as they launch.'
-                              : 'Round complete! You recalled ${_recalledNumbers.length}/${spec.trueNumbers.length} numbers ($_netScore pts). Try again to recall all ${spec.trueNumbers.length}!',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => _startNewSoloRound(_selectedMode),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.black,
-                        ),
-                        child: const Text(
-                          'Play Again',
-                          style: TextStyle(fontWeight: FontWeight.w900),
+                            const SizedBox(height: 3),
+                            Text(
+                              waveState.isCallingReady && !_roundCompleted
+                                  ? 'Auto-draw 3.5s'
+                                  : (_roundCompleted
+                                        ? 'Final Time'
+                                        : 'Get Ready'),
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(height: 12),
+
+              // 5. 3x9 Interactive Matrix (Rock-solid fixed height)
+              _buildSoloTicketMatrix(spec, waveState, isFrozen),
             ],
           ),
         ),
@@ -637,34 +723,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     );
   }
 
-  Widget _buildStatPill(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSoloTicketMatrix(
     FlashHousieCycleSpec spec,
     NeuroWaveState waveState,
@@ -683,7 +741,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       ),
       child: Column(
         children: [
-          // Quadrant header bar
+          // Single-line Quadrant header bar (never wraps unevenly)
           Row(
             children: List.generate(3, (qIdx) {
               final qNum = qIdx + 1;
@@ -692,7 +750,10 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               return Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 2),
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive
                         ? AppTheme.secondaryColor.withValues(alpha: 0.18)
@@ -706,11 +767,13 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                   ),
                   child: Text(
                     isActive
-                        ? '⚡ Q$qNum ACTIVE • ${ranges[qIdx]}'
+                        ? '⚡ Q$qNum • ${ranges[qIdx]}'
                         : '🔒 Q$qNum • ${ranges[qIdx]}',
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.bold,
                       color: isActive
                           ? AppTheme.secondaryColor
@@ -789,9 +852,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       textColor = Colors.white;
     } else if (isSpotlightCol || _roundCompleted) {
       label = '$trueVal';
-      bg = isSpotlightCol
-          ? AppTheme.secondaryColor
-          : const Color(0xFF334155);
+      bg = isSpotlightCol ? AppTheme.secondaryColor : const Color(0xFF334155);
       border = isSpotlightCol
           ? Colors.white
           : AppTheme.secondaryColor.withValues(alpha: 0.6);
@@ -811,12 +872,15 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: InkWell(
-        onTap: (!isEmpty && inActiveQuad && waveState.isCallingReady && !isFrozen)
+        onTap: (!isEmpty &&
+                inActiveQuad &&
+                waveState.isCallingReady &&
+                !isFrozen &&
+                !_roundCompleted)
             ? () => _handleCellTap(row, col, trueVal)
             : null,
         borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+        child: Container(
           height: 46,
           alignment: Alignment.center,
           decoration: BoxDecoration(
