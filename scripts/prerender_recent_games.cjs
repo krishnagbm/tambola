@@ -140,7 +140,7 @@ function generateCardsHtml(games) {
   let html = '';
   games.slice(0, 9).forEach((g) => {
     const capacity = g.player_count || g.funded_capacity || 5;
-    const balls = g.numbers_called_count || 68;
+    const balls = g.numbers_called_count != null ? g.numbers_called_count : 68;
     const duration = formatDuration(g.duration_seconds || 720);
     const dateStr = formatDate(g.completed_at || g.created_at);
     const winners = Array.isArray(g.winners_roster) ? g.winners_roster : [];
@@ -208,8 +208,8 @@ function generateCardsHtml(games) {
       });
     } else {
       winnersHtml = `
-        <div style="font-size: 13px; color: #64748B; padding: 10px 0; text-align: center;">
-          Game concluded with verified prizes awarded to participants.
+        <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
+          🚫 Game cancelled / ended early without winners.
         </div>
       `;
     }
@@ -254,7 +254,7 @@ function generateCardsHtml(games) {
               <div class="game-meta-item">📅 ${dateStr}</div>
             </div>
 
-            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-section-title">${winners.length > 0 ? 'Verified Prize Winners' : 'Event Status'}</div>
             <div class="winners-list">
               ${winnersHtml}
             </div>
