@@ -35,50 +35,27 @@ class DashboardHeroSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Eyebrow badge
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
-                    ),
-                    child: const Text(
-                      '🎉 Live Tambola, Housie & 90-Ball Bingo',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.secondaryColor,
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+                ),
+                child: const Text(
+                  '🎉 Live Tambola, Housie & 90-Ball Bingo',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF312E81),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.7)),
-                    ),
-                    child: const Text(
-                      '⚡ NEW: FlashHousie™ 5 • 10 • 15 (DabHousie™ Proprietary Specials)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               const SizedBox(height: 10),
 
               // Headline
               Text(
-                'Play Tambola & FlashHousie™. Connect. Win.',
+                'Play Tambola, Housie & 90-Ball Bingo. Connect. Win.',
                 style: TextStyle(
                   fontSize: isWide ? 26 : 20,
                   fontWeight: FontWeight.w900,
@@ -91,7 +68,7 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Subhead
               Text(
-                'Live multiplayer Classic 90-Ball Tambola plus DabHousie™ Proprietary Specials — FlashHousie™ 5, 10 & 15 powered by NeuroWave™ Spotlight. Join instantly on the web with zero app download.',
+                'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.',
                 style: TextStyle(
                   fontSize: isWide ? 14 : 12.5,
                   color: const Color(0xFFCBD5E1),
@@ -131,7 +108,7 @@ class DashboardHeroSection extends ConsumerWidget {
                     const SizedBox(width: 14),
                     const Expanded(
                       child: Text(
-                        'Free for 1–5 players • Classic 90-Ball & FlashHousie™ 5/10/15',
+                        'Free for 1–5 players • Paid hosting for larger groups',
                         style: TextStyle(
                           fontSize: 12.5,
                           color: Color(0xFF94A3B8),
@@ -171,7 +148,7 @@ class DashboardHeroSection extends ConsumerWidget {
                     const SizedBox(height: 6),
                     const Center(
                       child: Text(
-                        'Free for 1–5 players • Classic 90-Ball & FlashHousie™ 5/10/15',
+                        'Free for 1–5 players • Paid hosting for larger groups',
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     ),
@@ -226,14 +203,13 @@ class DashboardHeroSection extends ConsumerWidget {
 
   Widget _buildTrustStrip() {
     const line1 = [
-      '⚡ FlashHousie™ 5 / 10 / 15 Specials',
-      '🔦 NeuroWave™ Spotlight Engine',
-      '💃 Instant for Kitty & Office Parties',
+      '💃 Instant for Kitty Parties',
+      '🛡️ Private Parties (Seat OTPs)',
       '📺 Live Projector & TV Mode',
+      '⚡ Smart Waitlist Auto-Promotion',
     ];
     const line2 = [
-      '🔒 Auto server claims & leaderboards',
-      '🛡️ Private Parties (Seat OTPs)',
+      '🔒 Auto server claims',
       '🙅 Zero app download for guests',
       '✅ 100K+ Unique tickets (8.1T space)',
     ];

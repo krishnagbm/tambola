@@ -1022,7 +1022,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           const Text(
-                            '🎱 Classic 90-Ball Tambola',
+                            '🎱 Classic 90-Ball Tambola, Housie & Bingo',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
@@ -1052,7 +1052,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       ),
                       const SizedBox(height: 3),
                       const Text(
-                        'Traditional 90-Ball Housie with 15 numbers per ticket, Early 5, Top/Middle/Bottom Lines, Four Corners & Full House.',
+                        'Traditional 90-Ball Tambola, Housie & Bingo with 15 numbers per ticket, Early 5, Top/Middle/Bottom Lines, Four Corners & Full House.',
                         style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                       ),
                     ],
@@ -3728,7 +3728,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 ),
                 SizedBox(height: 3),
                 Text(
-                  'Host your live Housie party, set seats, and invite players.',
+                  'Host your live Tambola, Housie & 90-Ball Bingo or FlashHousie™ party, set seats, and invite players.',
                   style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                 ),
               ],

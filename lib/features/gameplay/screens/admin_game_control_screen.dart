@@ -195,33 +195,19 @@ class _AdminGameControlScreenState
     _stopAutoPilot();
     _autoEndTimer?.cancel();
 
-    setState(() {
-      _autoEndSecondsLeft = 10;
-    });
-
-    _autoEndTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_autoEndSecondsLeft > 1) {
-        setState(() {
-          _autoEndSecondsLeft--;
-        });
-      } else {
-        timer.cancel();
-        setState(() {
-          _autoEndSecondsLeft = 0;
-        });
-        await _autoFinalizeGame();
-      }
-    });
+    // Immediately mark the game COMPLETED in the database so navigating away
+    // to the Dashboard never leaves the game stuck in IN_PROGRESS!
+    _autoFinalizeGame();
   }
 
   Future<void> _autoFinalizeGame() async {
     try {
       await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
       ref.invalidate(gameStreamProvider(widget.gameId));
+      ref.invalidate(myHostedGamesProvider);
+      ref.invalidate(myJoinedGamesProvider);
+      ref.invalidate(organizerAllGamesClaimsProvider);
+      ref.invalidate(myRewardsProvider);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -553,6 +539,11 @@ class _AdminGameControlScreenState
 
     try {
       await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      ref.invalidate(myHostedGamesProvider);
+      ref.invalidate(myJoinedGamesProvider);
+      ref.invalidate(organizerAllGamesClaimsProvider);
+      ref.invalidate(myRewardsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1288,25 +1279,30 @@ class _AdminGameControlScreenState
       });
     }
 
-    if (_knownApprovedCount == -1) {
-      _knownApprovedCount = approvedClaimsList.length;
-    } else if (approvedClaimsList.length > _knownApprovedCount) {
-      final latestClaim = approvedClaimsList.first;
-      _knownApprovedCount = approvedClaimsList.length;
-      final playerReg = regMap[latestClaim.userId];
-      final winnerName = (playerReg?.displayName.isNotEmpty == true)
-          ? playerReg!.displayName
-          : (latestClaim.userName != null && latestClaim.userName != 'Player')
-          ? latestClaim.userName!
-          : 'Player';
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ref.invalidate(hostGameRewardsProvider(widget.gameId));
-          _triggerCelebrationPause(
-            'Player "$winnerName" won ${Formatters.formatPrizeName(latestClaim.prizeType)}!',
-          );
+    if (claimsStream.hasValue) {
+      if (_knownApprovedCount == -1) {
+        _knownApprovedCount = approvedClaimsList.length;
+      } else if (approvedClaimsList.length > _knownApprovedCount) {
+        final latestClaim = approvedClaimsList.first;
+        _knownApprovedCount = approvedClaimsList.length;
+        if (!isGameCompleted && !allPrizesWon) {
+          final playerReg = regMap[latestClaim.userId];
+          final winnerName = (playerReg?.displayName.isNotEmpty == true)
+              ? playerReg!.displayName
+              : (latestClaim.userName != null &&
+                      latestClaim.userName != 'Player')
+              ? latestClaim.userName!
+              : 'Player';
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.invalidate(hostGameRewardsProvider(widget.gameId));
+              _triggerCelebrationPause(
+                'Player "$winnerName" won ${Formatters.formatPrizeName(latestClaim.prizeType)}!',
+              );
+            }
+          });
         }
-      });
+      }
     }
 
     return Scaffold(
@@ -1314,7 +1310,11 @@ class _AdminGameControlScreenState
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Back to Home',
-          onPressed: () => context.go('/'),
+          onPressed: () {
+            ref.invalidate(myHostedGamesProvider);
+            ref.invalidate(myJoinedGamesProvider);
+            context.go('/');
+          },
         ),
         title: const Text('Organizer Game Control'),
         actions: [

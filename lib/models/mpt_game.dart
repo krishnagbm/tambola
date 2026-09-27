@@ -47,8 +47,12 @@ class MptGame {
 
   bool get isOpen => status == 'OPEN' || status == 'READY_TO_START';
   bool get isLobbyOpen => isOpen;
-  bool get isInProgress => status == 'IN_PROGRESS';
-  bool get isCompleted => status == 'COMPLETED' || status == 'CLOSED';
+  bool get isCompleted =>
+      status == 'COMPLETED' ||
+      status == 'CLOSED' ||
+      (flashHousieConfig != null &&
+          flashHousieConfig!.awardedWinners.containsKey('FULL_HOUSE'));
+  bool get isInProgress => status == 'IN_PROGRESS' && !isCompleted;
   bool get isCancelled => status == 'CANCELLED';
 
   FlashHousieConfig? get flashHousieConfig =>

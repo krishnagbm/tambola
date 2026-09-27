@@ -46,6 +46,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _currentTabIndex = widget.initialTabIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.invalidate(myHostedGamesProvider);
+        ref.invalidate(myJoinedGamesProvider);
+      }
+    });
   }
 
   @override
@@ -248,6 +254,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } else if (g is Map) {
       status = (g['status'] ?? '').toString();
       if (status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED') return false;
+      final prizeGifts = g['prize_gifts_config'];
+      if (prizeGifts is Map) {
+        final fhRaw = prizeGifts['_flash_housie'];
+        if (fhRaw is Map) {
+          final winnersRaw = fhRaw['awarded_winners'];
+          if (winnersRaw is Map && winnersRaw.containsKey('FULL_HOUSE')) {
+            return false;
+          }
+        }
+      }
       if (g['created_at'] != null) createdAt = DateTime.tryParse(g['created_at'].toString());
       if (g['started_at'] != null) startedAt = DateTime.tryParse(g['started_at'].toString());
     }
@@ -405,7 +421,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     colors: [Color(0xFFFFD700), Color(0xFFFF9E00), Color(0xFF4895EF)],
                   ).createShader(bounds),
                   child: const Text(
-                    'Play Live Tambola, Housie & FlashHousie™',
+                    'Play Live Tambola, Housie, 90-Ball Bingo',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -417,7 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Classic 90-Ball & DabHousie™ Proprietary Specials • Instant web play',
+                  'Connect with friends & family • Instant web play',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -590,7 +606,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildFlashHousieSpecialsBanner(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -606,98 +622,150 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           width: 1.5,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 680;
+          final buttonsRow = Wrap(
+            spacing: 10,
+            runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  '✨ DABHOUSIE™ PROPRIETARY SPECIALS',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.black26,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: const Text(
-                  '⚡ Powered by NeuroWave™ Spotlight',
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.secondaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '⚡ FlashHousie™ 5 • FlashHousie™ 10 • FlashHousie™ 15',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then recall & tap called balls from memory across 1, 2, or 3 fast-paced rounds!',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFFE2E8F0),
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
               ElevatedButton.icon(
-                onPressed: () => context.push('/create-game'),
-                icon: const Icon(Icons.bolt_rounded, size: 18),
+                onPressed: () => context.push('/join'),
+                icon: const Icon(Icons.vpn_key_rounded, size: 17),
                 label: const Text(
-                  'Host FlashHousie™',
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900),
+                  'Join a Game',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.secondaryColor,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => context.push('/create-game'),
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 17),
+                label: const Text(
+                  'Host a Game',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryLight,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                   ),
                 ),
               ),
             ],
-          ),
-        ],
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text(
+                      '✨ DABHOUSIE™ PROPRIETARY SPECIALS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: const Text(
+                      '⚡ Powered by NeuroWave™ Spotlight',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (isWide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '⚡ FlashHousie™ 5 • FlashHousie™ 10 • FlashHousie™ 15',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then recall & tap called balls from memory across 1, 2, or 3 fast-paced rounds!',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: Color(0xFFE2E8F0),
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    buttonsRow,
+                  ],
+                )
+              else ...[
+                const Text(
+                  '⚡ FlashHousie™ 5 • FlashHousie™ 10 • FlashHousie™ 15',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then recall & tap called balls from memory across 1, 2, or 3 fast-paced rounds!',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFFE2E8F0),
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                buttonsRow,
+              ],
+            ],
+          );
+        },
       ),
     );
   }

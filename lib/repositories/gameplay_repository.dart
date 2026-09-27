@@ -456,6 +456,15 @@ class GameplayRepository {
             );
           } catch (_) {}
 
+          // If FULL_HOUSE (or final round) was just won, immediately mark game COMPLETED & archive!
+          if (prizeType == 'FULL_HOUSE' ||
+              prizeType == 'ROUND_${flashCfg.totalCycles}' ||
+              nextWinners.containsKey('FULL_HOUSE')) {
+            try {
+              await endGame(gameId);
+            } catch (_) {}
+          }
+
           return {
             'status': 'APPROVED',
             'prize_type': prizeType,
@@ -575,15 +584,26 @@ class GameplayRepository {
 
   /// Ends the game, marks it COMPLETED, and archives it to Hall of Fame
   Future<void> endGame(String gameId) async {
+    final nowIso = DateTime.now().toUtc().toIso8601String();
+    try {
+      await _supabase
+          .from('MPT_games')
+          .update({
+            'status': 'COMPLETED',
+            'completed_at': nowIso,
+            'updated_at': nowIso,
+          })
+          .eq('id', gameId);
+    } catch (e) {
+      debugPrint('Direct MPT_games COMPLETED update warning: $e');
+    }
+
     try {
       await _supabase.rpc('MPT_archive_concluded_game', params: {
         'p_game_id': gameId,
       });
-    } catch (_) {
-      await _supabase.from('MPT_games').update({
-        'status': 'COMPLETED',
-        'completed_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', gameId);
+    } catch (e) {
+      debugPrint('MPT_archive_concluded_game RPC warning: $e');
     }
   }
 
@@ -1252,6 +1272,12 @@ class GameplayRepository {
       currentPrizeGiftsConfig: latestPrizeGifts,
       updatedConfig: finalConfig,
     );
+
+    if (finalConfig.awardedWinners.containsKey('FULL_HOUSE')) {
+      try {
+        await endGame(game.id);
+      } catch (_) {}
+    }
 
     return finalConfig;
   }
