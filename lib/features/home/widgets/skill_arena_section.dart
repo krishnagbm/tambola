@@ -735,7 +735,16 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              const Text(
+                '© 2026 DabHousie™ by Digital App Studio. FlashHousie™, NeuroWave™, RowHousie™, FastTap™, BlastHousie™, SwapHousie™ & StickHousie™ are proprietary skill formats, copyrighted UI expressions, and trademarks. All rights reserved.',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: Color(0xFF64748B),
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [

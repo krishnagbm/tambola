@@ -157,13 +157,29 @@ class DashboardFooter extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             InkWell(
-              onTap: () => _launchURL(AppConfig.appBaseUrl),
-              child: const Text(
-                '© 2026 DabHousie by Digital App Studio. All rights reserved.',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFA0AEC0),
-                ),
+              onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html#intellectual-property'),
+              child: const Column(
+                children: [
+                  Text(
+                    '© 2026 DabHousie™ by Digital App Studio. All rights reserved.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AEC0),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'FlashHousie™, NeuroWave™ Column Spotlight, 3×3 Quadrant Recall, RowHousie™, FastTap™, BlastHousie™, SwapHousie™ & StickHousie™ are proprietary game formats, copyrighted visual expressions, and trademarks of Digital App Studio.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFF64748B),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

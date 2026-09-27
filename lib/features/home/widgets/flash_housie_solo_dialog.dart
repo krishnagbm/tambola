@@ -154,6 +154,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     setState(() {
       _roundCompleted = true;
       _freezeUntilMs = 0;
+      _lastBallCalledAtMs = DateTime.now().millisecondsSinceEpoch;
     });
     if (wonAll) {
       try {
@@ -231,6 +232,25 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       return 'Countdown';
     }
     return 'Play Clock';
+  }
+
+  String _formatClockBottomCaption(NeuroWaveState waveState) {
+    if (_roundCompleted) {
+      final count = _recalledNumbers.isEmpty ? 1 : _recalledNumbers.length;
+      final avgSec = (_totalReactionMs / 1000) / count;
+      final roundSec =
+          (_callingStartedAtMs != null && _lastBallCalledAtMs != null)
+          ? ((_lastBallCalledAtMs! - _callingStartedAtMs!) / 1000).clamp(
+              1.0,
+              999.0,
+            )
+          : 0.0;
+      return 'Avg ${avgSec.toStringAsFixed(1)}s • Rnd ${roundSec.toStringAsFixed(0)}s';
+    }
+    if (waveState.isCallingReady) {
+      return 'Auto-draw 3.5s';
+    }
+    return 'Get Ready';
   }
 
   @override
@@ -689,18 +709,18 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                             ),
                           ),
                           const SizedBox(height: 3),
-                          Text(
-                            waveState.isCallingReady && !_roundCompleted
-                                ? 'Auto-draw 3.5s'
-                                : (_roundCompleted
-                                      ? 'Final Time'
-                                      : 'Get Ready'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF94A3B8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              _formatClockBottomCaption(waveState),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
                           ),
                         ],
@@ -713,6 +733,16 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
 
               // 5. 3x9 Interactive Matrix (Rock-solid fixed height)
               _buildSoloTicketMatrix(spec, waveState, isFrozen),
+              const SizedBox(height: 10),
+              const Text(
+                '© 2026 DabHousie™ • FlashHousie™ & NeuroWave™ Anti-Camera Column Spotlight are proprietary game formats & copyrighted visual expressions of Digital App Studio.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF64748B),
+                  height: 1.3,
+                ),
+              ),
             ],
           ),
         ),
