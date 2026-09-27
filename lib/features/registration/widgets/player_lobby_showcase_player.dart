@@ -628,9 +628,9 @@ class _PlayerLobbyShowcasePlayerState extends State<PlayerLobbyShowcasePlayer>
 
   // --- Visual 2: Animated 3x9 Mini Ticket Dabbing ---
   Widget _buildAnimatedTicketDabVisual() {
-    final step = (_sceneProgress * 4).floor().clamp(0, 3);
-    final cells = <int?>[4, null, 23, 35, null, 58, null, 72, 88];
-    final dabbedUpTo = step + 1; // progressively dabs cells
+    final step = (_sceneProgress * 5).floor().clamp(0, 4);
+    final cells = <int?>[4, null, 23, null, 45, 58, null, null, 88];
+    final dabbedUpTo = step + 1; // progressively dabs 1..5 cells
     int nonNullCount = 0;
 
     return Container(
