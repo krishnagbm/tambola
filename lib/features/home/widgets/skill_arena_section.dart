@@ -17,21 +17,19 @@ class TwoPartDashboardArena extends StatelessWidget {
       builder: (context, constraints) {
         final isSideBySide = constraints.maxWidth >= 860;
         if (isSideBySide) {
-          return const IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: DashboardHeroSection(),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  flex: 1,
-                  child: SkillArenaSection(),
-                ),
-              ],
-            ),
+          return const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 1,
+                child: DashboardHeroSection(),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                flex: 1,
+                child: SkillArenaSection(),
+              ),
+            ],
           );
         }
 
@@ -224,16 +222,16 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Eyebrow badges (No "Part 2" — just Skill)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+              // Eyebrow badges (No "Part 2" — just Skill)
+              SizedBox(
+                height: 26,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -254,6 +252,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -281,48 +280,62 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                ),
+              ),
+              const SizedBox(height: 10),
 
-                  // 2-Line Headline matching Left Card
-                  Text(
-                    'Memorize, Reason & Win',
-                    style: TextStyle(
-                      fontSize: isWide ? 24 : 20,
-                      fontWeight: FontWeight.w900,
-                      color: AppTheme.secondaryColor,
-                      height: 1.18,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'FlashHousie™ 5 • 10 • 15',
-                    style: TextStyle(
-                      fontSize: isWide ? 22 : 18,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      height: 1.2,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
+              // 2-Line Headline matching Left Card
+              Text(
+                'Memorize, Reason & Win',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: isWide ? 24 : 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.secondaryColor,
+                  height: 1.2,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'FlashHousie™ 5 • 10 • 15',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: isWide ? 22 : 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  height: 1.2,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 8),
 
-                  // Concise Subhead matching Left Card length
-                  Text(
-                    'Spot your 3×3 quadrant during the live NeuroWave™ sweep, then combine memory, column logic & speed to recall called balls across 1–3 rounds.',
-                    style: TextStyle(
-                      fontSize: isWide ? 13 : 12.5,
-                      color: const Color(0xFFCBD5E1),
-                      height: 1.4,
-                    ),
+              // Concise Subhead matching Left Card (exact 2 lines on desktop)
+              SizedBox(
+                height: isWide ? 38 : null,
+                child: Text(
+                  'Spot your 3×3 quadrant during the live NeuroWave™ sweep, then combine memory, column logic & speed to recall called balls across 1–3 rounds.',
+                  maxLines: isWide ? 2 : 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isWide ? 13 : 12.5,
+                    color: const Color(0xFFCBD5E1),
+                    height: 1.4,
                   ),
-                  const SizedBox(height: 14),
+                ),
+              ),
+              const SizedBox(height: 14),
 
-                  // CTAs: Play Solo + Join + Host
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+              // CTAs: Play Solo + Join + Host (exact 40px single row)
+              SizedBox(
+                height: 40,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       ElevatedButton.icon(
                         onPressed: () => FlashHousieSoloDialog.show(
@@ -338,8 +351,8 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 18,
+                            vertical: 10,
+                            horizontal: 16,
                           ),
                           textStyle: const TextStyle(
                             fontSize: 13.5,
@@ -347,16 +360,17 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 10),
                       ElevatedButton.icon(
                         onPressed: () => context.push('/join'),
-                        icon: const Text('🔑', style: TextStyle(fontSize: 15)),
+                        icon: const Icon(Icons.vpn_key_rounded, size: 17),
                         label: const Text('Join a Game'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.secondaryColor,
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 18,
+                            vertical: 10,
+                            horizontal: 16,
                           ),
                           textStyle: const TextStyle(
                             fontSize: 13.5,
@@ -364,6 +378,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 10),
                       ElevatedButton.icon(
                         onPressed: () => context.push('/create-game'),
                         icon: const Icon(Icons.add_circle_outline, size: 18),
@@ -372,8 +387,8 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           backgroundColor: AppTheme.primaryLight,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 18,
+                            vertical: 10,
+                            horizontal: 16,
                           ),
                           textStyle: const TextStyle(
                             fontSize: 13.5,
@@ -383,69 +398,68 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Levels open one after another • Solo, Multiplayer & Team modes',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: Color(0xFF94A3B8),
-                      fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Levels open one after another • Solo, Multiplayer & Team modes',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Upcoming Sequential Levels Popup Trigger (explicit line break before RowHousie™)
+              InkWell(
+                onTap: () => _showUpcomingLevelsPopup(context),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.4),
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-                  // Upcoming Sequential Levels Popup Trigger (matches Enterprise bar on Left Card)
-                  InkWell(
-                    onTap: () => _showUpcomingLevelsPopup(context),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.lock_open_rounded,
+                        color: AppTheme.secondaryColor,
+                        size: 16,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkSurface,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Upcoming Sequential Levels (Lvl 2–5):\nRowHousie™ • FastTap™ • Blast™ • Swap™ • Stick™ →',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.secondaryColor,
+                            height: 1.35,
+                          ),
                         ),
                       ),
-                      child: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.lock_open_rounded,
-                            color: AppTheme.secondaryColor,
-                            size: 15,
-                          ),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Upcoming Sequential Levels (Lvl 2–5): RowHousie™ • FastTap™ • Blast™ • Swap™ • Stick™ →',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.secondaryColor,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 12),
-                  const Divider(color: Color(0xFF2E334D), height: 1),
-                  const SizedBox(height: 10),
-                  _buildSkillTrustStrip(),
-                ],
-              ),
+
+              const SizedBox(height: 12),
+              const Divider(color: Color(0xFF2E334D), height: 1),
+              const SizedBox(height: 10),
+              _buildSkillTrustStrip(),
             ],
           ),
         );
@@ -464,31 +478,38 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ];
 
     Widget buildLine(List<String> items) {
-      return Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 8,
-        runSpacing: 4,
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            Text(
-              items[i],
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFFA0AEC0),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (i < items.length - 1)
-              const Text(
-                '•',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF718096),
+      return SizedBox(
+        height: 16,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (int i = 0; i < items.length; i++) ...[
+                Text(
+                  items[i],
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFA0AEC0),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-              ),
-          ],
-        ],
+                if (i < items.length - 1)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      '•',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF718096),
+                      ),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
       );
     }
 
