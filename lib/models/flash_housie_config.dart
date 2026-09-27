@@ -507,7 +507,18 @@ class FlashHousieConfig {
     );
   }
 
-  /// Generates a 3x9 matrix where EVERY 3x3 quadrant has exactly [cellsPerQuadrant] numbers (5 or 9),
+  /// Generates a 3x9 canonical Tambola/DabHousie matrix where:
+  /// - Every 3x3 quadrant (Q1, Q2, Q3) has 5 numbers
+  /// - Every horizontal row (R1, R2, R3) has 5 numbers (15 total)
+  /// - Every column (1..9) has 1 or 2 numbers in its valid decade, sorted ascending
+  static List<List<int>> generateBalancedTicketMatrix([Random? random]) {
+    return _generateBaseMatrix(
+      cellsPerQuadrant: 5,
+      rng: random ?? Random(),
+    );
+  }
+
+  /// Generates a 3x9 matrix where EVERY 3x3 quadrant has [cellsPerQuadrant] numbers (5 or 9),
   /// strictly sorted vertically within each column's decade range.
   static List<List<int>> _generateBaseMatrix({
     required int cellsPerQuadrant,
@@ -530,30 +541,32 @@ class FlashHousieConfig {
     }
 
     // Standard 5-numbers-per-quadrant mode (15 total across 3 quadrants: 5 in Q1, 5 in Q2, 5 in Q3)
+    // By assigning one of the 3 complementary row-sum templates [(2,1,2), (2,2,1), (1,2,2)]
+    // to each quadrant, every horizontal row also gets 2 + 2 + 1 = 5 numbers!
     final matrix = List.generate(3, (_) => List.filled(9, 0));
+    final quadrantTemplates = <List<List<int>>>[
+      [
+        [0, 2],
+        [0, 1],
+        [2],
+      ],
+      [
+        [0, 1],
+        [1, 2],
+        [0],
+      ],
+      [
+        [0, 2],
+        [1, 2],
+        [1],
+      ],
+    ]..shuffle(rng);
+
     for (int q = 0; q < 3; q++) {
       final startCol = q * 3;
       // In a 3x3 quadrant with 5 numbers: two columns have 2 numbers, one column has 1 number
       final colCounts = [2, 2, 1]..shuffle(rng);
-      // Ensure each of the 3 rows gets 1 or 2 numbers (sum = 5)
-      final rowTemplates = <List<List<int>>>[
-        [
-          [0, 2],
-          [0, 1],
-          [2],
-        ],
-        [
-          [0, 1],
-          [1, 2],
-          [0],
-        ],
-        [
-          [0, 2],
-          [1, 2],
-          [1],
-        ],
-      ]..shuffle(rng);
-      final chosenTemplate = rowTemplates.first;
+      final chosenTemplate = quadrantTemplates[q];
 
       // Map columns with count=2 to the first two template slots, and count=1 to the third
       int twoIdx = 0;

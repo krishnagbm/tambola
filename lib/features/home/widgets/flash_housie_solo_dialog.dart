@@ -5,21 +5,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/flash_housie_config.dart';
+import 'level_zero_solo_view.dart';
 
 class FlashHousieSoloDialog extends StatefulWidget {
   final VoidCallback? onLevelCompleted;
+  final String initialGameId;
 
-  const FlashHousieSoloDialog({super.key, this.onLevelCompleted});
+  const FlashHousieSoloDialog({
+    super.key,
+    this.onLevelCompleted,
+    this.initialGameId = 'level_0a_make',
+  });
 
   static Future<void> show(
     BuildContext context, {
     VoidCallback? onLevelCompleted,
+    String initialGameId = 'level_0a_make',
   }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => FlashHousieSoloDialog(
         onLevelCompleted: onLevelCompleted,
+        initialGameId: initialGameId,
       ),
     );
   }
@@ -29,6 +37,9 @@ class FlashHousieSoloDialog extends StatefulWidget {
 }
 
 class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
+  late String _activeGameId;
+  final Set<String> _completedGameIds = <String>{};
+
   String _selectedMode = FlashHousieConfig.modeFlash5;
   late FlashHousieConfig _config;
   Timer? _uiTickTimer;
@@ -44,10 +55,81 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   bool _roundCompleted = false;
   bool _voiceEnabled = true;
 
+  static const List<(String, String, String, String)> _release1Games = [
+    (
+      'level_0a_make',
+      '🎓 0A: Make™',
+      '🎓 LEVEL 0A • SOLO',
+      'MakeHousie™ Solo Arena',
+    ),
+    (
+      'level_0b_fix',
+      '🔍 0B: Fix™',
+      '🔍 LEVEL 0B • SOLO',
+      'FixHousie™ Solo Arena',
+    ),
+    (
+      'level_0c_math',
+      '➕ 0C: Math™',
+      '➕ LEVEL 0C • SOLO',
+      'MathHousie™ Solo Arena',
+    ),
+    (
+      'level_0d_sum',
+      '🧮 0D: Sum™',
+      '🧮 LEVEL 0D • SOLO',
+      'SumHousie™ Solo Arena',
+    ),
+    (
+      'level_1_flash',
+      '⚡ Lvl 1: Flash™',
+      '⚡ LEVEL 1 • SOLO',
+      'FlashHousie™ Solo Arena',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
+    _activeGameId = widget.initialGameId;
     _startNewSoloRound(_selectedMode, autoStart: false);
+    _loadCompletedGames();
+  }
+
+  Future<void> _loadCompletedGames() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final done = <String>{};
+      for (final g in _release1Games) {
+        final id = g.$1;
+        final key = id == 'level_1_flash'
+            ? 'dabhousie_skill_level_1_completed'
+            : 'dabhousie_skill_${id}_completed';
+        if (prefs.getBool(key) == true) {
+          done.add(id);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _completedGameIds
+          ..clear()
+          ..addAll(done);
+      });
+    } catch (_) {}
+  }
+
+  void _selectGameTab(String gameId) {
+    if (_activeGameId == gameId) return;
+    _uiTickTimer?.cancel();
+    _uiTickTimer = null;
+    _autoCallTimer?.cancel();
+    _autoCallTimer = null;
+    if (gameId == 'level_1_flash') {
+      _startNewSoloRound(_selectedMode, autoStart: false);
+    }
+    setState(() {
+      _activeGameId = gameId;
+    });
   }
 
   @override
@@ -196,6 +278,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
           await prefs.setInt('dabhousie_skill_level_1_best_score', _netScore);
         }
       } catch (_) {}
+      _loadCompletedGames();
       widget.onLevelCompleted?.call();
     }
   }
@@ -292,6 +375,15 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     return 'Get Ready';
   }
 
+  (String, String) _activeBadgeAndTitle() {
+    for (final g in _release1Games) {
+      if (g.$1 == _activeGameId) {
+        return (g.$3, g.$4);
+      }
+    }
+    return ('⚡ LEVEL 1 • SOLO', 'FlashHousie™ Solo Arena');
+  }
+
   @override
   Widget build(BuildContext context) {
     final spec = _config.activeCycleSpec;
@@ -305,6 +397,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     final latestBall = spec.latestCalledNumber;
     final wonAll = _recalledNumbers.length >= spec.trueNumbers.length;
     final activeQuadLabel = spec.activeQuadrants.map((q) => 'Q$q').join(' + ');
+    final (badgeText, titleText) = _activeBadgeAndTitle();
 
     return Dialog(
       backgroundColor: AppTheme.darkSurface,
@@ -336,9 +429,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                       color: AppTheme.secondaryColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      '⚡ LEVEL 1 • SOLO',
-                      style: TextStyle(
+                    child: Text(
+                      badgeText,
+                      style: const TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w900,
                         color: Colors.black,
@@ -347,10 +440,10 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'FlashHousie™ Solo Arena',
-                      style: TextStyle(
+                      titleText,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
@@ -358,20 +451,24 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(
-                      _voiceEnabled ? Icons.volume_up : Icons.volume_off,
-                      color: _voiceEnabled
-                          ? AppTheme.secondaryColor
-                          : Colors.white54,
-                      size: 20,
+                  if (_activeGameId == 'level_1_flash')
+                    IconButton(
+                      icon: Icon(
+                        _voiceEnabled ? Icons.volume_up : Icons.volume_off,
+                        color: _voiceEnabled
+                            ? AppTheme.secondaryColor
+                            : Colors.white54,
+                        size: 20,
+                      ),
+                      tooltip: 'Toggle Voice Caller',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 34,
+                        minHeight: 34,
+                      ),
+                      onPressed: () =>
+                          setState(() => _voiceEnabled = !_voiceEnabled),
                     ),
-                    tooltip: 'Toggle Voice Caller',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                    onPressed: () =>
-                        setState(() => _voiceEnabled = !_voiceEnabled),
-                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
                     tooltip: 'Close Solo Arena',
@@ -383,458 +480,538 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               ),
               const SizedBox(height: 8),
 
-              // 2. Mode Selector & New Card / Reset Row
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                alignment: WrapAlignment.spaceBetween,
-                children: [
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _buildModeChip(
-                        FlashHousieConfig.modeFlash5,
-                        'Flash 5 (1 Quad)',
+              // 1B. Release 1 Skill Game Switcher Bar (Natural Order: 0A Make -> 0B Fix -> 0C Math -> 0D Sum -> Lvl 1 Flash)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _release1Games.map((g) {
+                    final id = g.$1;
+                    final label = g.$2;
+                    final isSelected = _activeGameId == id;
+                    final isDone = _completedGameIds.contains(id);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: InkWell(
+                        onTap: () => _selectGameTab(id),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF10B981).withValues(alpha: 0.22)
+                                : const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? const Color(0xFF10B981)
+                                  : (isDone
+                                        ? const Color(0xFF10B981).withValues(
+                                            alpha: 0.45,
+                                          )
+                                        : const Color(0xFF2E3A59)),
+                              width: isSelected ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w900
+                                      : FontWeight.w700,
+                                  color: isSelected
+                                      ? const Color(0xFF34D399)
+                                      : Colors.white70,
+                                ),
+                              ),
+                              if (isDone) ...[
+                                const SizedBox(width: 4),
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  size: 13,
+                                  color: Color(0xFF34D399),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                      _buildModeChip(
-                        FlashHousieConfig.modeFlash10,
-                        'Flash 10 (2 Quads)',
-                      ),
-                      _buildModeChip(
-                        FlashHousieConfig.modeFlash15,
-                        'Flash 15 (3 Quads)',
-                      ),
-                    ],
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () =>
-                        _startNewSoloRound(_selectedMode, autoStart: false),
-                    icon: const Icon(Icons.refresh_rounded, size: 16),
-                    label: Text(
-                      isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.secondaryColor,
-                      side: BorderSide(
-                        color: AppTheme.secondaryColor.withValues(alpha: 0.6),
-                      ),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                ],
+                    );
+                  }).toList(),
+                ),
               ),
               const SizedBox(height: 10),
 
-              // 3. Fixed-Height Status Banner (handles Pre-Game Ready, Wave, Calling, Freeze & Completion without vertical layout shift)
-              Container(
-                constraints: const BoxConstraints(minHeight: 58),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
+              if (_activeGameId != 'level_1_flash') ...[
+                LevelZeroSoloView(
+                  gameId: _activeGameId,
+                  onLevelCompleted: () {
+                    _loadCompletedGames();
+                    widget.onLevelCompleted?.call();
+                  },
+                  onSelectGameId: _selectGameTab,
                 ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: isFrozen
-                        ? const [Color(0xFF450A0A), Color(0xFF0F172A)]
-                        : (waveState.isCallingReady || _roundCompleted
-                              ? const [Color(0xFF064E3B), Color(0xFF0F172A)]
-                              : const [Color(0xFF311042), Color(0xFF0F172A)]),
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isFrozen
-                        ? AppTheme.accentDanger
-                        : (waveState.isCallingReady || _roundCompleted
-                              ? const Color(0xFF10B981)
-                              : AppTheme.secondaryColor),
-                    width: 1.4,
-                  ),
-                ),
-                child: Row(
+              ] else ...[
+                // 2. Mode Selector & New Card / Reset Row
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  alignment: WrapAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      isFrozen
-                          ? Icons.ac_unit_rounded
-                          : (_roundCompleted
-                                ? Icons.emoji_events_rounded
-                                : (isWaitingToStart
-                                      ? Icons.play_circle_fill_rounded
-                                      : (waveState.isCallingReady
-                                            ? Icons.touch_app_rounded
-                                            : Icons.visibility_rounded))),
-                      color: isFrozen
-                          ? const Color(0xFFF87171)
-                          : (_roundCompleted
-                                ? AppTheme.secondaryColor
-                                : (isWaitingToStart || waveState.isCallingReady
-                                      ? const Color(0xFF34D399)
-                                      : AppTheme.secondaryColor)),
-                      size: 22,
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        _buildModeChip(
+                          FlashHousieConfig.modeFlash5,
+                          'Flash 5 (1 Quad)',
+                        ),
+                        _buildModeChip(
+                          FlashHousieConfig.modeFlash10,
+                          'Flash 10 (2 Quads)',
+                        ),
+                        _buildModeChip(
+                          FlashHousieConfig.modeFlash15,
+                          'Flash 15 (3 Quads)',
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            isFrozen
-                                ? '❄️ WRONG GUESS PENALTY (-3 PTS) — FROZEN FOR ${freezeRemSec}s'
-                                : (_roundCompleted
-                                      ? (wonAll
-                                            ? '🏆 LEVEL 1 CLEARED! ALL ${spec.trueNumbers.length} NUMBERS RECALLED!'
-                                            : '⏱️ ROUND OVER — ${_recalledNumbers.length}/${spec.trueNumbers.length} NUMBERS RECALLED')
-                                      : (isWaitingToStart
-                                            ? '🎯 ${_modeShortName(_selectedMode)} Ready • Active: $activeQuadLabel (${spec.trueNumbers.length} Target Numbers)'
-                                            : waveState.statusLabel)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _roundCompleted
-                                ? 'Great session! Tap "Play Again" below or pick Flash 10 / Flash 15.'
-                                : (isWaitingToStart
-                                      ? '1️⃣ Pick Flash 5/10/15 above  •  2️⃣ See [•] slots on grid  •  3️⃣ Tap "▶ Start" when ready!'
-                                      : (waveState.isCallingReady
-                                            ? 'Tap called numbers using memory & column logic! Wrong guess = -3 pts & 3s freeze.'
-                                            : 'Memorize active column numbers before they lock into [?] mystery cells!')),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFFCBD5E1),
-                            ),
-                          ),
-                        ],
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          _startNewSoloRound(_selectedMode, autoStart: false),
+                      icon: const Icon(Icons.refresh_rounded, size: 16),
+                      label: Text(
+                        isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.secondaryColor,
+                        side: BorderSide(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                        ),
+                        visualDensity: VisualDensity.compact,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-              // 4. 3-Column HUD Card:
-              //    - Col 1 (Left): Start Button (when ready) OR Current Ball (active) OR Play Again (when over)
-              //    - Col 2 (Middle): Prominent Large SCORE
-              //    - Col 3 (Right Edge): Prominent Large CLOCK / TIME
-              Container(
-                constraints: const BoxConstraints(minHeight: 88),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkCard,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFF2E334D), width: 1.5),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // LEFT COLUMN: Start Play (when waiting) OR Drawn Ball (active) OR Play Again (when over)
-                    Expanded(
-                      flex: 4,
-                      child: isWaitingToStart
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Active: $activeQuadLabel',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFFCBD5E1),
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                ElevatedButton.icon(
-                                  onPressed: _launchActiveRound,
-                                  icon: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    size: 18,
-                                  ),
-                                  label: Text(
-                                    'Start ${_modeShortName(_selectedMode)}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF10B981),
-                                    foregroundColor: Colors.black,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : (_roundCompleted
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        wonAll
-                                            ? '🎉 Round Won!'
-                                            : 'Round Ended',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF34D399),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      ElevatedButton.icon(
-                                        onPressed: () => _startNewSoloRound(
-                                          _selectedMode,
-                                          autoStart: true,
-                                        ),
-                                        icon: const Icon(
-                                          Icons.replay_rounded,
-                                          size: 16,
-                                        ),
-                                        label: const Text(
-                                          'Play Again',
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              AppTheme.secondaryColor,
-                                          foregroundColor: Colors.black,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                          visualDensity: VisualDensity.compact,
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : Row(
-                                    children: [
-                                      Container(
-                                        width: 46,
-                                        height: 46,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color: latestBall != null
-                                              ? AppTheme.secondaryColor
-                                              : const Color(0xFF1E293B),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: latestBall != null
-                                                ? Colors.white
-                                                : const Color(0xFF334155),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          latestBall != null
-                                              ? '$latestBall'
-                                              : '—',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            color: latestBall != null
-                                                ? Colors.black
-                                                : Colors.white54,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures(),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              latestBall != null
-                                                  ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
-                                                  : 'Spot Numbers',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.w800,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              spec.calledNumbers.isNotEmpty
-                                                  ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
-                                                  : 'NeuroWave™ active',
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 11,
-                                                color: Color(0xFF94A3B8),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  )),
+                // 3. Fixed-Height Status Banner
+                Container(
+                  constraints: const BoxConstraints(minHeight: 58),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isFrozen
+                          ? const [Color(0xFF450A0A), Color(0xFF0F172A)]
+                          : (waveState.isCallingReady || _roundCompleted
+                                ? const [Color(0xFF064E3B), Color(0xFF0F172A)]
+                                : const [Color(0xFF311042), Color(0xFF0F172A)]),
                     ),
-
-                    Container(
-                      width: 1,
-                      height: 54,
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      color: const Color(0xFF2E334D),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isFrozen
+                          ? AppTheme.accentDanger
+                          : (waveState.isCallingReady || _roundCompleted
+                                ? const Color(0xFF10B981)
+                                : AppTheme.secondaryColor),
+                      width: 1.4,
                     ),
-
-                    // MIDDLE COLUMN: Prominent Large SCORE
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'SCORE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF94A3B8),
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '$_netScore pts',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: AppTheme.secondaryColor,
-                                height: 1.1,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '✓ ${_recalledNumbers.length}/${spec.trueNumbers.length}  •  ✖ $_wrongTapCount',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFFCBD5E1),
-                            ),
-                          ),
-                        ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isFrozen
+                            ? Icons.ac_unit_rounded
+                            : (_roundCompleted
+                                  ? Icons.emoji_events_rounded
+                                  : (isWaitingToStart
+                                        ? Icons.play_circle_fill_rounded
+                                        : (waveState.isCallingReady
+                                              ? Icons.touch_app_rounded
+                                              : Icons.visibility_rounded))),
+                        color: isFrozen
+                            ? const Color(0xFFF87171)
+                            : (_roundCompleted
+                                  ? AppTheme.secondaryColor
+                                  : (isWaitingToStart || waveState.isCallingReady
+                                        ? const Color(0xFF34D399)
+                                        : AppTheme.secondaryColor)),
+                        size: 22,
                       ),
-                    ),
-
-                    Container(
-                      width: 1,
-                      height: 54,
-                      margin: const EdgeInsets.symmetric(horizontal: 6),
-                      color: const Color(0xFF2E334D),
-                    ),
-
-                    // RIGHT COLUMN (Right Edge): Prominent Large CLOCK / TIME
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              const Icon(
-                                Icons.timer_outlined,
-                                size: 12,
-                                color: Color(0xFFFFD54F),
-                              ),
-                              const SizedBox(width: 3),
-                              Flexible(
-                                child: Text(
-                                  _formatClockSubtitle(waveState).toUpperCase(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF94A3B8),
-                                    letterSpacing: 0.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _formatClockDisplay(waveState, nowMs),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFFFFF59D),
-                                height: 1.1,
-                                fontFeatures: [FontFeature.tabularFigures()],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              _formatClockBottomCaption(waveState),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isFrozen
+                                  ? '❄️ WRONG GUESS PENALTY (-3 PTS) — FROZEN FOR ${freezeRemSec}s'
+                                  : (_roundCompleted
+                                        ? (wonAll
+                                              ? '🏆 LEVEL 1 CLEARED! ALL ${spec.trueNumbers.length} NUMBERS RECALLED!'
+                                              : '⏱️ ROUND OVER — ${_recalledNumbers.length}/${spec.trueNumbers.length} NUMBERS RECALLED')
+                                        : (isWaitingToStart
+                                              ? '🎯 ${_modeShortName(_selectedMode)} Ready • Active: $activeQuadLabel (${spec.trueNumbers.length} Target Numbers)'
+                                              : waveState.statusLabel)),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF94A3B8),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              _roundCompleted
+                                  ? 'Great session! Tap "Play Again" below or pick Flash 10 / Flash 15.'
+                                  : (isWaitingToStart
+                                        ? '1️⃣ Pick Flash 5/10/15 above  •  2️⃣ See [•] slots on grid  •  3️⃣ Tap "▶ Start" when ready!'
+                                        : (waveState.isCallingReady
+                                              ? 'Tap called numbers using memory & column logic! Wrong guess = -3 pts & 3s freeze.'
+                                              : 'Memorize active column numbers before they lock into [?] mystery cells!')),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
-              // 5. 3x9 Interactive Matrix (Rock-solid fixed height)
-              _buildSoloTicketMatrix(spec, waveState, isFrozen),
+                // 4. 3-Column HUD Card
+                Container(
+                  constraints: const BoxConstraints(minHeight: 88),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCard,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFF2E334D),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: isWaitingToStart
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Active: $activeQuadLabel',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFCBD5E1),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  ElevatedButton.icon(
+                                    onPressed: _launchActiveRound,
+                                    icon: const Icon(
+                                      Icons.play_arrow_rounded,
+                                      size: 18,
+                                    ),
+                                    label: Text(
+                                      'Start ${_modeShortName(_selectedMode)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF10B981),
+                                      foregroundColor: Colors.black,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : (_roundCompleted
+                                  ? Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          wonAll
+                                              ? '🎉 Round Won!'
+                                              : 'Round Ended',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF34D399),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _startNewSoloRound(
+                                            _selectedMode,
+                                            autoStart: true,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.replay_rounded,
+                                            size: 16,
+                                          ),
+                                          label: const Text(
+                                            'Play Again',
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppTheme.secondaryColor,
+                                            foregroundColor: Colors.black,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Row(
+                                      children: [
+                                        Container(
+                                          width: 46,
+                                          height: 46,
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            color: latestBall != null
+                                                ? AppTheme.secondaryColor
+                                                : const Color(0xFF1E293B),
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: latestBall != null
+                                                  ? Colors.white
+                                                  : const Color(0xFF334155),
+                                              width: 1.5,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            latestBall != null
+                                                ? '$latestBall'
+                                                : '—',
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w900,
+                                              color: latestBall != null
+                                                  ? Colors.black
+                                                  : Colors.white54,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                latestBall != null
+                                                    ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
+                                                    : 'Spot Numbers',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                spec.calledNumbers.isNotEmpty
+                                                    ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
+                                                    : 'NeuroWave™ active',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Color(0xFF94A3B8),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    )),
+                      ),
+
+                      Container(
+                        width: 1,
+                        height: 54,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        color: const Color(0xFF2E334D),
+                      ),
+
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'SCORE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF94A3B8),
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$_netScore pts',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppTheme.secondaryColor,
+                                  height: 1.1,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '✓ ${_recalledNumbers.length}/${spec.trueNumbers.length}  •  ✖ $_wrongTapCount',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFCBD5E1),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Container(
+                        width: 1,
+                        height: 54,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        color: const Color(0xFF2E334D),
+                      ),
+
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                const Icon(
+                                  Icons.timer_outlined,
+                                  size: 12,
+                                  color: Color(0xFFFFD54F),
+                                ),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    _formatClockSubtitle(
+                                      waveState,
+                                    ).toUpperCase(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF94A3B8),
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                _formatClockDisplay(waveState, nowMs),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFFFF59D),
+                                  height: 1.1,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                _formatClockBottomCaption(waveState),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 5. 3x9 Interactive Matrix
+                _buildSoloTicketMatrix(spec, waveState, isFrozen),
+              ],
               const SizedBox(height: 10),
               const Text(
                 '© 2026 DabHousie™ • MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™, RowHousie™, FastTap™, SwapHousie™, BlastHousie™, StickHousie™ & NeuroWave™ are proprietary game formats & copyrighted visual expressions of Digital App Studio.',

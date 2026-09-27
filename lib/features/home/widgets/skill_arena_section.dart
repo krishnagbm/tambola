@@ -80,61 +80,63 @@ class SkillArenaSection extends StatefulWidget {
 }
 
 class _SkillArenaSectionState extends State<SkillArenaSection> {
+  int _level0ClearedCount = 0;
   bool _level1Completed = false;
   int _level1BestScore = 0;
 
   static const List<_SkillLevelItem> _levels = [
     _SkillLevelItem(
       id: 'level_0a_make',
-      levelBadge: 'LEVEL 0A • NEXT UP',
+      levelBadge: 'LEVEL 0A • OPEN NOW',
       title: '🎓 Level 0A: MakeHousie™ (Ticket Rule Builder)',
       subtitle:
-          'Natural Step 1 — Master the 3×9 grid rules! Place 15 generated numbers into their valid column decades (1–9, 10–19 … 80–90), vertical ascending order, and 5-per-row balance. Easy (guided) & Complex (random pool) modes.',
+          'Natural Step 1 — Master the 3×9 grid rules! Place generated numbers into their valid column decades (1–9, 10–19 … 80–90), vertical ascending order, and 5-per-row balance. Includes Make 5 (1 Quad), Guided 15 & Master 15.',
       category: 'foundation',
       categoryLabel: '🎓 Rules & Sorting',
       playModes: '👤 Solo • 👥 Multi Race',
-      controls: '👆 Drag-Drop • 🖱️ Mouse • ⌨️ Keys',
-      unlockRequirement: 'Natural Foundation Step 1 (In Build for Release 1)',
-      isUnlocked: false,
+      controls: '👆 Tap-to-Place • 🖱️ Mouse',
+      unlockRequirement: 'Open Now for Solo Play — Natural Foundation Step 1',
+      isUnlocked: true,
     ),
     _SkillLevelItem(
       id: 'level_0b_fix',
-      levelBadge: 'LEVEL 0B • NEXT UP',
+      levelBadge: 'LEVEL 0B • OPEN NOW',
       title: '🔍 Level 0B: FixHousie™ (Spot the Mistake)',
       subtitle:
           'Natural Step 2 — Inspect a pre-filled 3×9 ticket and spot 1, 3, or 5 intentional rule bugs: wrong column decade, flipped vertical sequence, duplicate numbers, or >90 balls! Scored on speed & accuracy.',
       category: 'foundation',
       categoryLabel: '🔍 Audit & Logic',
       playModes: '👤 Solo • 👥 Multi Race',
-      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
-      unlockRequirement: 'Natural Foundation Step 2 (Unlocks after MakeHousie™)',
-      isUnlocked: false,
+      controls: '👆 Touch • 🖱️ Mouse',
+      unlockRequirement: 'Open Now for Solo Play — Natural Foundation Step 2',
+      isUnlocked: true,
     ),
     _SkillLevelItem(
       id: 'level_0c_math',
-      levelBadge: 'LEVEL 0C • NEXT UP',
+      levelBadge: 'LEVEL 0C • OPEN NOW',
       title: '➕ Level 0C: MathHousie™ (Formula-to-Grid Hunt)',
       subtitle:
           'Natural Step 3 — Mental math meets 3×9 column logic! Solve the live formula above the board (e.g. 67 + 3 = ??, 14 × 5 = ??), jump straight to the right decade column, and tap the answer on the grid.',
       category: 'math',
       categoryLabel: '➕ Mental Math & Hunt',
       playModes: '👤 Solo • 👥 Multi Race',
-      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
-      unlockRequirement: 'Natural Foundation Step 3 (Unlocks after FixHousie™)',
-      isUnlocked: false,
+      controls: '👆 Touch • 🖱️ Mouse',
+      unlockRequirement: 'Open Now for Solo Play — Natural Foundation Step 3',
+      isUnlocked: true,
     ),
     _SkillLevelItem(
       id: 'level_0d_sum',
-      levelBadge: 'LEVEL 0D • NEXT UP',
+      levelBadge: 'LEVEL 0D • OPEN NOW',
       title: '🧮 Level 0D: SumHousie™ (Quadrant Rapid Sum)',
       subtitle:
           'Natural Step 4 — Add all 5 numbers inside an active 3×3 quadrant (Q1, Q2, or Q3) before the timer runs out and pick the exact total from 4 smart multiple-choice options (with same-last-digit decoys)!',
       category: 'math',
       categoryLabel: '🧮 Rapid Addition MCQ',
       playModes: '👤 Solo • 👥 Fastest Finger',
-      controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
-      unlockRequirement: 'Natural Foundation Step 4 (Leads into Level 1 FlashHousie™)',
-      isUnlocked: false,
+      controls: '👆 Touch • 🖱️ Mouse',
+      unlockRequirement:
+          'Open Now for Solo Play — Natural Foundation Step 4 (Leads into Level 1 FlashHousie™)',
+      isUnlocked: true,
     ),
     _SkillLevelItem(
       id: 'level_1_flash',
@@ -221,7 +223,19 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
+      int l0Count = 0;
+      for (final id in const [
+        'level_0a_make',
+        'level_0b_fix',
+        'level_0c_math',
+        'level_0d_sum',
+      ]) {
+        if (prefs.getBool('dabhousie_skill_${id}_completed') ?? false) {
+          l0Count++;
+        }
+      }
       setState(() {
+        _level0ClearedCount = l0Count;
         _level1Completed =
             prefs.getBool('dabhousie_skill_level_1_completed') ?? false;
         _level1BestScore =
@@ -235,10 +249,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
       context: context,
       builder: (ctx) => _UpcomingLevelsDialog(
         levels: _levels,
-        onPlayLevel1Solo: () {
+        onPlayLevelSolo: (gameId) {
           Navigator.of(ctx).pop();
           FlashHousieSoloDialog.show(
             context,
+            initialGameId: gameId,
             onLevelCompleted: _loadSoloProgress,
           );
         },
@@ -509,9 +524,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               SizedBox(
                 height: isWide ? 16 : null,
                 child: Text(
-                  _level1Completed
-                      ? '🎓 Lvl 0: Make & Fix (Soon) • 🏆 Lvl 1: Flash™ Cleared ($_level1BestScore pts) • 🔒 Lvl 2–5'
-                      : '🎓 Lvl 0: Make & Fix (Soon) • 🔓 Lvl 1: FlashHousie™ Open Now • 🔒 Lvl 2–5',
+                  '🔓 Lvl 0 (Make • Fix • Math • Sum${_level0ClearedCount > 0 ? " $_level0ClearedCount/4✓" : ""}) & Lvl 1 Flash™${_level1Completed ? " ($_level1BestScore pts)" : " Open Now"} • 🔒 Lvl 2–5',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -668,11 +681,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
 /// Popup Dialog showing only level headings at a glance, with click-to-toggle descriptions.
 class _UpcomingLevelsDialog extends StatefulWidget {
   final List<_SkillLevelItem> levels;
-  final VoidCallback onPlayLevel1Solo;
+  final void Function(String gameId) onPlayLevelSolo;
 
   const _UpcomingLevelsDialog({
     required this.levels,
-    required this.onPlayLevel1Solo,
+    required this.onPlayLevelSolo,
   });
 
   @override
@@ -680,10 +693,16 @@ class _UpcomingLevelsDialog extends StatefulWidget {
 }
 
 class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
-  String? _expandedId = 'level_1_flash';
+  String? _expandedId = 'level_0a_make';
 
   @override
   Widget build(BuildContext context) {
+    final selectedUnlockedId =
+        (_expandedId != null &&
+            widget.levels.any((l) => l.id == _expandedId && l.isUnlocked))
+        ? _expandedId!
+        : 'level_1_flash';
+
     return Dialog(
       backgroundColor: AppTheme.darkCard,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -730,7 +749,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
               ),
               const SizedBox(height: 6),
               const Text(
-                '🎓 Natural Path: Level 0 (Make & Fix) → Level 1 (Memory & Reason, Open Now) → Levels 2–5. Tap any level to toggle.',
+                '🎓 Natural Path: Level 0 (Make • Fix • Math • Sum, Open Now) → Level 1 (FlashHousie™, Open Now) → Levels 2–5. Tap any level to toggle.',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppTheme.secondaryColor,
@@ -857,13 +876,50 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 4,
+                                  Row(
                                     children: [
-                                      _buildTag(item.categoryLabel),
-                                      _buildTag(item.playModes),
-                                      _buildTag(item.controls),
+                                      Expanded(
+                                        child: Wrap(
+                                          spacing: 6,
+                                          runSpacing: 4,
+                                          children: [
+                                            _buildTag(item.categoryLabel),
+                                            _buildTag(item.playModes),
+                                            _buildTag(item.controls),
+                                          ],
+                                        ),
+                                      ),
+                                      if (item.isUnlocked) ...[
+                                        const SizedBox(width: 8),
+                                        ElevatedButton.icon(
+                                          onPressed: () =>
+                                              widget.onPlayLevelSolo(item.id),
+                                          icon: const Icon(
+                                            Icons.play_arrow_rounded,
+                                            size: 16,
+                                          ),
+                                          label: const Text(
+                                            'Play Solo',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFF10B981,
+                                            ),
+                                            foregroundColor: Colors.black,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize:
+                                                MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ],
@@ -895,10 +951,11 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
-                    onPressed: widget.onPlayLevel1Solo,
+                    onPressed: () =>
+                        widget.onPlayLevelSolo(selectedUnlockedId),
                     icon: const Icon(Icons.play_arrow_rounded, size: 18),
                     label: const Text(
-                      'Play Level 1 Solo',
+                      'Play Selected Level Solo',
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     style: ElevatedButton.styleFrom(
