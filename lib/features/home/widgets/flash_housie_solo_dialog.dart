@@ -228,7 +228,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       return 'Reaction Time';
     }
     if (!waveState.isCallingReady) {
-      return 'Wave Countdown';
+      return 'Countdown';
     }
     return 'Play Clock';
   }
@@ -457,7 +457,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               Container(
                 constraints: const BoxConstraints(minHeight: 88),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
+                  horizontal: 12,
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
@@ -465,147 +465,151 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: const Color(0xFF2E334D), width: 1.5),
                 ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // LEFT COLUMN: Drawn Ball (active) OR Round Complete / Play Again (when over)
-                      Expanded(
-                        flex: 4,
-                        child: _roundCompleted
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    wonAll ? '🎉 Round Won!' : 'Round Ended',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF34D399),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // LEFT COLUMN: Drawn Ball (active) OR Round Complete / Play Again (when over)
+                    Expanded(
+                      flex: 4,
+                      child: _roundCompleted
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  wonAll ? '🎉 Round Won!' : 'Round Ended',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF34D399),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _startNewSoloRound(_selectedMode),
+                                  icon: const Icon(
+                                    Icons.replay_rounded,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    'Play Again',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  ElevatedButton.icon(
-                                    onPressed: () =>
-                                        _startNewSoloRound(_selectedMode),
-                                    icon: const Icon(
-                                      Icons.replay_rounded,
-                                      size: 16,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.secondaryColor,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
                                     ),
-                                    label: const Text(
-                                      'Play Again',
-                                      style: TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.secondaryColor,
-                                      foregroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 8,
-                                      ),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
+                                    visualDensity: VisualDensity.compact,
                                   ),
-                                ],
-                              )
-                            : Row(
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 50,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: latestBall != null
+                                        ? AppTheme.secondaryColor
+                                        : const Color(0xFF1E293B),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
                                       color: latestBall != null
-                                          ? AppTheme.secondaryColor
-                                          : const Color(0xFF1E293B),
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: latestBall != null
-                                            ? Colors.white
-                                            : const Color(0xFF334155),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      latestBall != null ? '$latestBall' : '—',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w900,
-                                        color: latestBall != null
-                                            ? Colors.black
-                                            : Colors.white54,
-                                        fontFeatures: const [
-                                          FontFeature.tabularFigures(),
-                                        ],
-                                      ),
+                                          ? Colors.white
+                                          : const Color(0xFF334155),
+                                      width: 1.5,
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          latestBall != null
-                                              ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
-                                              : 'Spot Numbers',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          spec.calledNumbers.isNotEmpty
-                                              ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
-                                              : 'NeuroWave™ active',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Color(0xFF94A3B8),
-                                          ),
-                                        ),
+                                  child: Text(
+                                    latestBall != null ? '$latestBall' : '—',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w900,
+                                      color: latestBall != null
+                                          ? Colors.black
+                                          : Colors.white54,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                      ),
-
-                      Container(
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        color: const Color(0xFF2E334D),
-                      ),
-
-                      // MIDDLE COLUMN: Prominent Large SCORE
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'SCORE',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF94A3B8),
-                                letterSpacing: 0.8,
-                              ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        latestBall != null
+                                            ? 'Ball #$latestBall (${spec.calledNumbers.length}/${spec.drawPool.length})'
+                                            : 'Spot Numbers',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        spec.calledNumbers.isNotEmpty
+                                            ? 'Recent: ${spec.calledNumbers.reversed.take(5).join(', ')}'
+                                            : 'NeuroWave™ active',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 2),
-                            Text(
+                    ),
+
+                    Container(
+                      width: 1,
+                      height: 54,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      color: const Color(0xFF2E334D),
+                    ),
+
+                    // MIDDLE COLUMN: Prominent Large SCORE
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'SCORE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF94A3B8),
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
                               '$_netScore pts',
                               style: const TextStyle(
                                 fontSize: 24,
@@ -615,56 +619,65 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '✓ ${_recalledNumbers.length}/${spec.trueNumbers.length}  •  ✖ $_wrongTapCount',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFCBD5E1),
-                              ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '✓ ${_recalledNumbers.length}/${spec.trueNumbers.length}  •  ✖ $_wrongTapCount',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFCBD5E1),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
 
-                      Container(
-                        width: 1,
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        color: const Color(0xFF2E334D),
-                      ),
+                    Container(
+                      width: 1,
+                      height: 54,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      color: const Color(0xFF2E334D),
+                    ),
 
-                      // RIGHT COLUMN (Right Edge): Prominent Large CLOCK / TIME
-                      Expanded(
-                        flex: 3,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.timer_outlined,
-                                  size: 13,
-                                  color: Color(0xFFFFD54F),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
+                    // RIGHT COLUMN (Right Edge): Prominent Large CLOCK / TIME
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const Icon(
+                                Icons.timer_outlined,
+                                size: 12,
+                                color: Color(0xFFFFD54F),
+                              ),
+                              const SizedBox(width: 3),
+                              Flexible(
+                                child: Text(
                                   _formatClockSubtitle(waveState).toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 9.5,
                                     fontWeight: FontWeight.w900,
                                     color: Color(0xFF94A3B8),
-                                    letterSpacing: 0.6,
+                                    letterSpacing: 0.4,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
                               _formatClockDisplay(waveState, nowMs),
                               style: const TextStyle(
                                 fontSize: 24,
@@ -674,24 +687,26 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                 fontFeatures: [FontFeature.tabularFigures()],
                               ),
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              waveState.isCallingReady && !_roundCompleted
-                                  ? 'Auto-draw 3.5s'
-                                  : (_roundCompleted
-                                        ? 'Final Time'
-                                        : 'Get Ready'),
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF94A3B8),
-                              ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            waveState.isCallingReady && !_roundCompleted
+                                ? 'Auto-draw 3.5s'
+                                : (_roundCompleted
+                                      ? 'Final Time'
+                                      : 'Get Ready'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF94A3B8),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 12),

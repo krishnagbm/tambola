@@ -198,15 +198,13 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (ctx, constraints) {
-        final isWide = constraints.maxWidth > 480;
+    final isWide = MediaQuery.sizeOf(context).width > 600;
 
-        return Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isWide ? 20 : 16,
-            vertical: isWide ? 18 : 16,
-          ),
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isWide ? 20 : 16,
+        vertical: isWide ? 18 : 16,
+      ),
           decoration: BoxDecoration(
             color: AppTheme.darkCard,
             borderRadius: BorderRadius.circular(18),
@@ -451,8 +449,6 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
             ],
           ),
         );
-      },
-    );
   }
 
   Widget _buildSkillTrustStrip() {
