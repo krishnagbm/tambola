@@ -14,6 +14,7 @@ import '../../../providers/app_providers.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../auth/widgets/profile_edit_dialog.dart';
 import '../widgets/dashboard_footer.dart';
+import '../widgets/flash_housie_solo_dialog.dart';
 import '../widgets/gameplay_showcase_section.dart';
 import '../widgets/how_it_works_section.dart';
 import '../widgets/opening_screen.dart';
@@ -444,10 +445,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Part 2: DabHousie™ Skill Arena (Sequential Levels & Unlocks)
-          const SkillArenaSection(),
-          const SizedBox(height: 14),
-
           // Card 1: Got an Invite Code?
           Container(
             decoration: BoxDecoration(
@@ -498,7 +495,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Card 2: Free Family Play
+          // Card 2: Play Solo
           Container(
             decoration: BoxDecoration(
               color: AppTheme.darkCard,
@@ -511,19 +508,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 const Row(
                   children: [
-                    Text('🎲', style: TextStyle(fontSize: 24)),
+                    Text('⚡', style: TextStyle(fontSize: 24)),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Free Family Play',
+                            'Play Solo',
                             style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Free for 1–5 players* (0 credits)',
+                            'Instant 1-player FlashHousie™ skill game (0 credits)',
                             style: TextStyle(fontSize: 12, color: Color(0xFF10B981)),
                           ),
                         ],
@@ -533,12 +530,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 const SizedBox(height: 14),
                 ElevatedButton.icon(
-                  onPressed: () => context.push('/create-game'),
-                  icon: const Icon(Icons.add_circle_outline, size: 18),
-                  label: const Text('Start Free Game', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                  onPressed: () => FlashHousieSoloDialog.show(context),
+                  icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
+                  label: const Text('Play Solo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
-                    foregroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
