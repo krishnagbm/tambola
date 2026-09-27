@@ -23,6 +23,30 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'aspectRatio': 1.08,
     },
     {
+      'title': 'FlashHousie™ Solo Arena — Perfect 5/5 Recall (50 pts)',
+      'tabLabel': '👤 Solo Q1 Perfect (50 pts)',
+      'badge': 'INSTANT SOLO SKILL PRACTICE • FLASH 5 / 10 / 15 SELECTOR',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_win.png',
+      'desc': 'Practice anytime on mobile or desktop! Choose Flash 5 (1 Quad), Flash 10 (2 Quads), or Flash 15 (3 Quads), memorize the NeuroWave™ sweep, and track your score & reaction time.',
+      'aspectRatio': 0.90,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Live Ball Call & Score Tracker',
+      'tabLabel': '⚡ Solo Live Call & Score',
+      'badge': 'REAL-TIME BALL CALLER • +10 PTS RECALL • -3 PTS FREEZE PENALTY',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_live.png',
+      'desc': 'Live solo practice HUD showing drawn ball history, active quadrant (Q1 Cols 1–29), recalled count (5/5), penalty tracker, and net score in real time.',
+      'aspectRatio': 0.81,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Quadrant Q3 Spatial Deduction',
+      'tabLabel': '🎯 Solo Q3 (Cols 7–9)',
+      'badge': '3×3 QUADRANT ROTATION • COLUMN DECADE LOGIC (60–90)',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_q3.png',
+      'desc': 'Every solo card rotates across Q1 (1–29), Q2 (30–59), or Q3 (60–90) so players master all 9 decade columns and vertical ascending sequences.',
+      'aspectRatio': 0.90,
+    },
+    {
       'title': 'FlashHousie™ 5 / 10 / 15 Live Recall & Round Prizes',
       'tabLabel': '⚡ FlashHousie™ Recall',
       'badge': 'DABHOUSIE™ PROPRIETARY SPECIAL • MEMORY + REASONING + SPEED',
@@ -184,10 +208,14 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   @override
   Widget build(BuildContext context) {
     final current = _slides[_selectedIndex];
-    final isSkillCategory = _selectedIndex >= 1 && _selectedIndex <= 3;
-    final visibleIndices = isSkillCategory
+    final isSoloCategory = _selectedIndex >= 1 && _selectedIndex <= 3;
+    final isSkillMultiplayerCategory = _selectedIndex >= 4 && _selectedIndex <= 6;
+    final isClassicCategory = !isSoloCategory && !isSkillMultiplayerCategory;
+    final visibleIndices = isSoloCategory
         ? const <int>[1, 2, 3]
-        : const <int>[0, 4, 5, 6, 7, 8];
+        : (isSkillMultiplayerCategory
+              ? const <int>[4, 5, 6]
+              : const <int>[0, 7, 8, 9, 10, 11]);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -229,7 +257,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Real multiplayer screens • Automated calling • Server-side claim verification',
+                      'Solo Skill Arena • Live Multiplayer • Automated Calling • Server Claim Verification',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFFA0AEC0),
@@ -295,7 +323,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
           ),
           const SizedBox(height: 12),
 
-          // Category Tabs (1. Classic 90-Ball & Live Hosting | 2. FlashHousie™ & Skill Arena)
+          // Category Tabs (1. Classic 90-Ball | 2. FlashHousie™ Solo Arena | 3. FlashHousie™ Live Multiplayer)
           Wrap(
             spacing: 10,
             runSpacing: 8,
@@ -309,15 +337,15 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: !isSkillCategory
+                    color: isClassicCategory
                         ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
                         : const Color(0xFF13192E),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: !isSkillCategory
+                      color: isClassicCategory
                           ? const Color(0xFF38BDF8)
                           : const Color(0xFF2E334D),
-                      width: !isSkillCategory ? 1.5 : 1,
+                      width: isClassicCategory ? 1.5 : 1,
                     ),
                   ),
                   child: Row(
@@ -326,7 +354,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                       Icon(
                         Icons.casino_rounded,
                         size: 15,
-                        color: !isSkillCategory
+                        color: isClassicCategory
                             ? const Color(0xFF38BDF8)
                             : const Color(0xFF94A3B8),
                       ),
@@ -335,10 +363,10 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                         '🎲 Classic 90-Ball & Live Host (6)',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: !isSkillCategory
+                          fontWeight: isClassicCategory
                               ? FontWeight.w900
                               : FontWeight.w600,
-                          color: !isSkillCategory
+                          color: isClassicCategory
                               ? Colors.white
                               : const Color(0xFF94A3B8),
                         ),
@@ -356,15 +384,62 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSkillCategory
+                    color: isSoloCategory
+                        ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSoloCategory
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF2E334D),
+                      width: isSoloCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: isSoloCategory
+                            ? const Color(0xFF34D399)
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '👤 FlashHousie™ Solo Play (3)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSoloCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isSoloCategory
+                              ? const Color(0xFF34D399)
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _onUserSelect(4),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSkillMultiplayerCategory
                         ? AppTheme.secondaryColor.withValues(alpha: 0.2)
                         : const Color(0xFF13192E),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isSkillCategory
+                      color: isSkillMultiplayerCategory
                           ? AppTheme.secondaryColor
                           : const Color(0xFF2E334D),
-                      width: isSkillCategory ? 1.5 : 1,
+                      width: isSkillMultiplayerCategory ? 1.5 : 1,
                     ),
                   ),
                   child: Row(
@@ -373,19 +448,19 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                       Icon(
                         Icons.bolt_rounded,
                         size: 16,
-                        color: isSkillCategory
+                        color: isSkillMultiplayerCategory
                             ? AppTheme.secondaryColor
                             : const Color(0xFF94A3B8),
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        '🧠⚡ FlashHousie™ Skill Arena (3)',
+                        '🧠⚡ FlashHousie™ Live Multiplayer (3)',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: isSkillCategory
+                          fontWeight: isSkillMultiplayerCategory
                               ? FontWeight.w900
                               : FontWeight.w600,
-                          color: isSkillCategory
+                          color: isSkillMultiplayerCategory
                               ? AppTheme.secondaryColor
                               : const Color(0xFF94A3B8),
                         ),

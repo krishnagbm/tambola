@@ -27,6 +27,88 @@
     crossorigin="anonymous"></script>
 
   <link rel="stylesheet" href="/css/site.css">
+
+  <!-- JSON-LD Structured Data: DefinedTermSet + FAQPage for DabHousie Skill Terminology -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "DefinedTermSet",
+        "@id": "https://www.dabhousie.com/skill-games-guide.html#terminology",
+        "name": "DabHousie™ Skill Games Terminology & Glossary",
+        "description": "Official glossary of proprietary DabHousie™ 3×9 skill-based bingo mechanics, spatial memory quadrants, and Levels 0–5 game formats.",
+        "hasDefinedTerm": [
+          {
+            "@type": "DefinedTerm",
+            "name": "NeuroWave™ Column Spotlight",
+            "description": "A proprietary visual memory sweep mechanic in DabHousie™ where active 3×9 ticket columns illuminate sequentially (1.8s per column) before masking numbers as [?] mystery tiles."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "3×3 Spatial Quadrants (Q1, Q2, Q3)",
+            "description": "The three 3×3 sub-grids of a standard 3×9 DabHousie™ ticket: Q1 (Columns 1–3, numbers 1–29), Q2 (Columns 4–6, numbers 30–59), and Q3 (Columns 7–9, numbers 60–90), each containing exactly 5 numbers and 4 blanks."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "Column Decade Logic",
+            "description": "Mathematical deduction using 90-ball column ranges (Col 1: 1–9, Col 2: 10–19 ... Col 9: 80–90) and strict top-to-bottom ascending order to pinpoint hidden numbers."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "MakeHousie™ (Level 0A)",
+            "description": "Foundation puzzle where players place 15 generated numbers into valid 3×9 column decades, ascending vertical order, and 5-per-row balance."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "FixHousie™ (Level 0B)",
+            "description": "Diagnostic skill game where players inspect a pre-filled 3×9 ticket to spot and fix intentional column decade, vertical order, or row-count bugs."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "MathHousie™ (Level 0C)",
+            "description": "Mental arithmetic and column-hunting skill game where players solve live formulas (e.g., 14 × 5 = ??) and tap the matching number in its decade column."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "SumHousie™ (Level 0D)",
+            "description": "Rapid addition challenge where players sum all 5 numbers inside an active 3×3 quadrant (Q1, Q2, or Q3) before the timer expires."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "FlashHousie™ 5 • 10 • 15 (Level 1)",
+            "description": "Spatial memory and logical deduction game played across 1 Quadrant (Flash 5), 2 Quadrants (Flash 10), or all 3 Quadrants (Flash 15) after a NeuroWave™ Column Spotlight sweep."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "RowHousie™ 1 • 2 • 3 (Level 2)",
+            "description": "Horizontal 9-column row memory and deduction across 1, 2, or all 3 rows of the 3×9 grid."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "FastTap™ Housie (Level 3A)",
+            "description": "High-speed reflex competition where all players share an identical visible 3×9 ticket and race to tap called numbers in milliseconds."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "SwapHousie™ (Level 3B)",
+            "description": "Spatial sliding/swapping puzzle where all 15 numbers and 12 blanks are scrambled and must be restored to valid 3×9 rules in minimum moves."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "BlastHousie™ (Level 4)",
+            "description": "45-degree arcade turret shooter on the 3×9 grid where larger bottom-row numbers block smaller upper numbers."
+          },
+          {
+            "@type": "DefinedTerm",
+            "name": "StickHousie™ (Level 5)",
+            "description": "Physics and gravity stacking game supporting Solo, Multiplayer, and 3–6 player Team Co-Op where heavier numbers cannot crush smaller numbers below."
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 
 <body>
@@ -89,12 +171,12 @@
   <!-- Hero Section -->
   <section class="page-hero">
     <span class="eyebrow">🧠⚡ SKILL • DABHOUSIE™ SPECIALS (SOLO • MULTIPLAYER • TEAM)</span>
-    <h1>DabHousie™ Skill Games Guide</h1>
+    <h1>DabHousie™ Skill Games &amp; Terminology Guide</h1>
     <p class="subtitle">
       While Classic Tambola, Housie &amp; 90-Ball Bingo are multiplayer luck games where you can join as an individual
       or with friends,<br>
-      <strong>DabHousie™ Skill Specials</strong> transform the 3×9 grid into a true test of spatial memory, column
-      logic, mental math, and reflex speed — supporting <strong>Solo Practice</strong>, <strong>Live
+      <strong>DabHousie™ Skill Specials</strong> transform the 3×9 grid into a progressive curriculum of rules, spatial
+      memory, column logic, mental math, and reflex speed — supporting <strong>Solo Practice</strong>, <strong>Live
         Multiplayer</strong>, and <strong>Team Co-Op</strong>.
     </p>
   </section>
@@ -125,48 +207,59 @@
       </div>
     </div>
 
-    <!-- Level 1: FlashHousie -->
-    <div class="content-card">
-      <h2>⚡ Level 1 (Open Now): FlashHousie™ 5 • 10 • 15 &amp; NeuroWave™ Spotlight</h2>
+    <!-- Official Skill Terminology & Core Mechanics Glossary -->
+    <div class="content-card" id="terminology">
+      <h2>📖 Official DabHousie™ Skill Terminology &amp; Core Mechanics</h2>
       <p>
-        <strong>FlashHousie™</strong> splits the standard 3×9 ticket into three 3×3 spatial quadrants:
-        <strong>Q1</strong> (Cols 1–3: 1–29), <strong>Q2</strong> (Cols 4–6: 30–59), and <strong>Q3</strong> (Cols 7–9:
-        60–90).
+        Every DabHousie™ Skill Special is built on the mathematical invariants of a balanced 3×9 ticket. Understanding
+        these core terms gives you a decisive edge across all levels:
       </p>
-      <div class="grid-3">
+      <div class="grid-2">
         <div class="feature-box">
-          <h4>1. NeuroWave™ Column Sweep</h4>
+          <h4>⚡ NeuroWave™ Column Spotlight</h4>
           <p>
-            Before calling begins, the proprietary <strong>NeuroWave™ Column Spotlight</strong> sweeps across the active
-            quadrant one column at a time for 1.8 seconds per column, then masks all numbers as <code>[?]</code> mystery
-            tiles.
+            Our signature pre-round memory sweep. Before calling begins, a golden spotlight illuminates the active
+            quadrant one column at a time (<code>1.8 seconds</code> per column), giving your brain a structured visual
+            snapshot before cells flip into hidden <code>[?]</code> mystery tiles.
           </p>
         </div>
         <div class="feature-box">
-          <h4>2. Memory + Column Decade Logic</h4>
+          <h4>🔲 3×3 Spatial Quadrants (Q1 • Q2 • Q3)</h4>
           <p>
-            Choose <strong>Flash 5</strong> (1 Quadrant • 5 balls), <strong>Flash 10</strong> (2 Quadrants • 10 balls
-            with a 5s memory lock-in pause), or <strong>Flash 15</strong> (All 3 Quadrants • 15 balls). Use column
-            decade ranges and vertical ascending order to deduce and recall positions!
+            To make spatial memory ergonomic, DabHousie™ partitions the 3×9 ticket into three balanced 3×3 quadrants,
+            each guaranteed to hold <strong>5 numbers and 4 blanks</strong>:
+            <br>• <strong>Q1 (Left 3×3):</strong> Cols 1–3 (Numbers <code>1–29</code>)
+            <br>• <strong>Q2 (Middle 3×3):</strong> Cols 4–6 (Numbers <code>30–59</code>)
+            <br>• <strong>Q3 (Right 3×3):</strong> Cols 7–9 (Numbers <code>60–90</code>)
           </p>
         </div>
         <div class="feature-box">
-          <h4>3. Precision Scoring &amp; Tie-Breakers</h4>
+          <h4>📐 Column Decade &amp; Ascending Logic</h4>
           <p>
-            Each correct recall awards <strong>+10 pts</strong>. Tapping an uncalled or decoy cell triggers a
-            <strong>-3 pt penalty</strong> and a <strong>3-second board freeze</strong>. Ties are broken by cumulative
-            millisecond reaction time.
+            Every column on a 3×9 ticket is strictly bound to its decade (Col 1 = <code>1–9</code>, Col 2 =
+            <code>10–19</code> … Col 9 = <code>80–90</code>), and numbers within any column always ascend from top row
+            to bottom row. Even if you only remember <em>which</em> cells had numbers, you can logically deduce where a
+            called number belongs!
+          </p>
+        </div>
+        <div class="feature-box">
+          <h4>🎯 Decoy-Weighted Draw Pool &amp; Freeze Penalty</h4>
+          <p>
+            In FlashHousie™, the caller draws from a pool combining your true quadrant numbers with smart same-decade
+            decoys (e.g., 7 balls for Flash 5, 14 for Flash 10, 20 for Flash 15). Correct hits score
+            <strong>+10 pts</strong>; tapping a blank or wrong cell deducts <strong>-3 pts</strong> and freezes your
+            board for <strong>3 seconds</strong>.
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Level 0 Foundation Suite -->
+    <!-- Natural Educational Order: Level 0 Foundation Suite -->
     <div class="content-card">
-      <h2>🎓 Level 0 Foundation &amp; Math Suite (Release 1 Roadmap)</h2>
+      <h2>🎓 Step 1 — Level 0 Foundation &amp; Math Suite (Natural Learning Path)</h2>
       <p>
-        Designed for newcomers, students, and puzzle lovers to master the mathematical structure of the 3×9 ticket
-        before or alongside Level 1:
+        In the natural educational order (<strong>Make &amp; Fix → Memory &amp; Reason</strong>), Level 0 teaches
+        players how the 3×9 grid is constructed before they play blindfolded memory rounds in Level 1:
       </p>
       <div class="grid-2">
         <div class="feature-box">
@@ -200,9 +293,44 @@
       </div>
     </div>
 
+    <!-- Step 2: Level 1 FlashHousie -->
+    <div class="content-card">
+      <h2>⚡ Step 2 — Level 1 (Open Now): FlashHousie™ 5 • 10 • 15</h2>
+      <p>
+        Once you know the 3×9 column rules, put your spatial memory and logical reasoning to the test in
+        <strong>FlashHousie™</strong> — playable right now in Solo Practice or Live Multiplayer:
+      </p>
+      <div class="grid-3">
+        <div class="feature-box">
+          <h4>1. NeuroWave™ Column Sweep</h4>
+          <p>
+            Before calling begins, the proprietary <strong>NeuroWave™ Column Spotlight</strong> sweeps across the active
+            quadrant one column at a time for 1.8 seconds per column, then masks all numbers as <code>[?]</code> mystery
+            tiles.
+          </p>
+        </div>
+        <div class="feature-box">
+          <h4>2. Flash 5 • Flash 10 • Flash 15</h4>
+          <p>
+            Choose <strong>Flash 5</strong> (1 Quadrant • 5 balls), <strong>Flash 10</strong> (2 Quadrants • 10 balls
+            with a 5s memory lock-in pause between quadrants), or <strong>Flash 15</strong> (All 3 Quadrants • 15
+            balls).
+          </p>
+        </div>
+        <div class="feature-box">
+          <h4>3. Precision Scoring &amp; Reaction Speed</h4>
+          <p>
+            Each correct recall awards <strong>+10 pts</strong>. Tapping an uncalled or decoy cell triggers a
+            <strong>-3 pt penalty</strong> and a <strong>3-second board freeze</strong>. Ties are broken by average
+            reaction time and total round time.
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- Levels 2 to 5 Advanced Roadmap -->
     <div class="content-card">
-      <h2>🚀 Levels 2–5 Progressive Skill Roadmap</h2>
+      <h2>🚀 Step 3 — Levels 2–5 Progressive Skill Roadmap</h2>
       <p>
         Levels unlock sequentially as players master each skill tier across Solo, Multiplayer, and Team Co-Op modes:
       </p>
