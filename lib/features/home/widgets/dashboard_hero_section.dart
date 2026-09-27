@@ -36,9 +36,9 @@ class DashboardHeroSection extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Eyebrow badges (No "Part 1" — just Luck)
+              // Eyebrow badges (Luck • Live Multiplayer • No Team Needed)
               Wrap(
-                spacing: 8,
+                spacing: 6,
                 runSpacing: 6,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
@@ -63,7 +63,7 @@ class DashboardHeroSection extends ConsumerWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 9,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
@@ -78,9 +78,32 @@ class DashboardHeroSection extends ConsumerWidget {
                     child: const Text(
                       '🎉 Live Multiplayer',
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF38BDF8).withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF38BDF8).withValues(
+                          alpha: 0.45,
+                        ),
+                      ),
+                    ),
+                    child: const Text(
+                      '👤 No Team Needed',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7DD3FC),
                       ),
                     ),
                   ),
@@ -128,9 +151,21 @@ class DashboardHeroSection extends ConsumerWidget {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 6),
+              const Text(
+                'Join as an individual, with friends, or bring your whole team — the more the merrier.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF7DD3FC),
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
 
-              // CTAs: Join vs Host
+              // CTAs: Join vs Host (No Play Solo button on Classic Luck card)
               Wrap(
                 spacing: 10,
                 runSpacing: 8,
@@ -173,7 +208,7 @@ class DashboardHeroSection extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Free for 1–5 players • Paid hosting for larger groups',
+                'Free for up to 5 players • Paid hosting for larger groups',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(

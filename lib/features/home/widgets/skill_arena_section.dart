@@ -276,9 +276,9 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Eyebrow badges (No "Part 2" — just Skill)
+              // Eyebrow badges (Skill • Solo · Multiplayer · Team)
               Wrap(
-                spacing: 8,
+                spacing: 6,
                 runSpacing: 6,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
@@ -303,26 +303,64 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
+                      horizontal: 8,
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF10B981).withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: const Color(0xFF10B981).withValues(
-                          alpha: 0.5,
-                        ),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
                       ),
                     ),
-                    child: Text(
-                      _level1Completed
-                          ? '🏆 Lvl 1 Cleared ($_level1BestScore pts)'
-                          : '🔓 Level 1 Open Now',
-                      style: const TextStyle(
-                        fontSize: 11,
+                    child: const Text(
+                      '👤 Solo',
+                      style: TextStyle(
+                        fontSize: 10.5,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF34D399),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: const Text(
+                      '👥 Multiplayer',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA855F7).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFA855F7).withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: const Text(
+                      '🤝 Team',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD8B4FE),
                       ),
                     ),
                   ),
@@ -369,11 +407,23 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 6),
+              const Text(
+                'Practice solo anytime, compete live in multiplayer, or team up in co-op arenas.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF34D399),
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
 
-              // CTAs: Play Solo + Join + Host
+              // CTAs: Play Solo + Join a Game + Host a Game
               Wrap(
-                spacing: 8,
+                spacing: 10,
                 runSpacing: 8,
                 children: [
                   ElevatedButton.icon(
@@ -391,7 +441,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(
                         vertical: 10,
-                        horizontal: 14,
+                        horizontal: 16,
                       ),
                       textStyle: const TextStyle(
                         fontSize: 13,
@@ -408,7 +458,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       foregroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(
                         vertical: 10,
-                        horizontal: 14,
+                        horizontal: 16,
                       ),
                       textStyle: const TextStyle(
                         fontSize: 13,
@@ -425,7 +475,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         vertical: 10,
-                        horizontal: 14,
+                        horizontal: 16,
                       ),
                       textStyle: const TextStyle(
                         fontSize: 13,
@@ -436,11 +486,13 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Levels open one after another • Solo, Multiplayer & Team modes',
+              Text(
+                _level1Completed
+                    ? '🏆 Level 1 Cleared ($_level1BestScore pts) • Levels unlock sequentially (0–5)'
+                    : '🔓 Level 1 Open Now • Complete levels one after another to unlock Levels 2–5',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11.5,
                   color: Color(0xFF94A3B8),
                   fontWeight: FontWeight.w500,
