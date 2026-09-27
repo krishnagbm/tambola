@@ -50,9 +50,10 @@ class TwoPartDashboardArena extends StatelessWidget {
 
 class _SkillLevelItem {
   final String id;
-  final String levelTag;
-  final String heading;
-  final String description;
+  final String levelBadge;
+  final String title;
+  final String subtitle;
+  final String category;
   final String categoryLabel;
   final String playModes;
   final String controls;
@@ -61,9 +62,10 @@ class _SkillLevelItem {
 
   const _SkillLevelItem({
     required this.id,
-    required this.levelTag,
-    required this.heading,
-    required this.description,
+    required this.levelBadge,
+    required this.title,
+    required this.subtitle,
+    required this.category,
     required this.categoryLabel,
     required this.playModes,
     required this.controls,
@@ -86,10 +88,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
   static const List<_SkillLevelItem> _levels = [
     _SkillLevelItem(
       id: 'level_1_flash',
-      levelTag: 'LEVEL 1 • OPEN NOW',
-      heading: '⚡ Level 1: FlashHousie™ 5 • 10 • 15',
-      description:
+      levelBadge: 'LEVEL 1 • OPEN NOW',
+      title: '⚡ Level 1: FlashHousie™ 5 • 10 • 15',
+      subtitle:
           'Memorize your 3×3 quadrant during the live NeuroWave™ Spotlight sweep, then combine spatial memory, logical column reasoning & speed to recall called balls! Wrong guesses deduct score.',
+      category: 'memory',
       categoryLabel: '🧠 Memory & Logic',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
@@ -98,10 +101,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ),
     _SkillLevelItem(
       id: 'level_2_row',
-      levelTag: 'LEVEL 2 • LOCKED',
-      heading: '📏 Level 2: RowHousie™ 1 • 2 • 3',
-      description:
+      levelBadge: 'LEVEL 2 • LOCKED',
+      title: '📏 Level 2: RowHousie™ 1 • 2 • 3',
+      subtitle:
           'Horizontal 1–90 Row Memory & Reasoning! Memorize 5 numbers and 4 blanks across full 9-column rows (R1, R2, R3, pairs, or all 3 rows) on the same 3×9 grid.',
+      category: 'memory',
       categoryLabel: '🧠 Memory & Logic',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
@@ -109,10 +113,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ),
     _SkillLevelItem(
       id: 'level_3a_fasttap',
-      levelTag: 'LEVEL 3A • LOCKED',
-      heading: '⚡ Level 3A: FastTap™ Housie (Fastest Finger)',
-      description:
+      levelBadge: 'LEVEL 3A • LOCKED',
+      title: '⚡ Level 3A: FastTap™ Housie (Fastest Finger)',
+      subtitle:
           'High-speed reflex showdown! All players receive the exact same visible 3×9 ticket and race to tap called numbers first for Fastest 5, 10, 15 & Full House.',
+      category: 'speed',
       categoryLabel: '⚡ Speed & Reflex',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '👆 Touch • 🖱️ Mouse • ⌨️ Keys',
@@ -120,10 +125,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ),
     _SkillLevelItem(
       id: 'level_3b_blast',
-      levelTag: 'LEVEL 3B • LOCKED',
-      heading: '🎯 Level 3B: BlastHousie™ (45° Arcade Shooter)',
-      description:
+      levelBadge: 'LEVEL 3B • LOCKED',
+      title: '🎯 Level 3B: BlastHousie™ (45° Arcade Shooter)',
+      subtitle:
           'Slide your horizontal turret & tilt ±45° to blast called numbers! Bigger numbers in bottom rows block smaller top numbers — snipe through blank lanes or clear blockers first.',
+      category: 'speed',
       categoryLabel: '🎯 Speed & Arcade',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '⌨️ Keys • 🎮 Controller • 👆 Touch',
@@ -131,10 +137,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ),
     _SkillLevelItem(
       id: 'level_4_swap',
-      levelTag: 'LEVEL 4 • LOCKED',
-      heading: '🧩 Level 4: SwapHousie™ (Shuffle & Swap)',
-      description:
+      levelBadge: 'LEVEL 4 • LOCKED',
+      title: '🧩 Level 4: SwapHousie™ (Shuffle & Swap)',
+      subtitle:
           'All 15 balls and 12 empty spaces are scrambled across the 3×9 grid. Drag & swap balls or blanks to restore valid column decades, ascending order & 5-per-row balance.',
+      category: 'puzzle',
       categoryLabel: '🧩 Logic & Puzzle',
       playModes: '👤 Solo • 👥 Multiplayer',
       controls: '👆 Drag-Drop • 🖱️ Mouse • ⌨️ Keys',
@@ -142,10 +149,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ),
     _SkillLevelItem(
       id: 'level_5_stick',
-      levelTag: 'LEVEL 5 • LOCKED',
-      heading: '🏗️ Level 5: StickHousie™ (Gravity & Team Co-Op)',
-      description:
+      levelBadge: 'LEVEL 5 • LOCKED',
+      title: '🏗️ Level 5: StickHousie™ (Gravity & Team Co-Op)',
+      subtitle:
           'Balls roll into the pool! Stack 15 number balls + 12 structural dummy boxes without letting bigger balls pluck smaller ones. Supports 3–6 player Team Play (2 per quadrant)!',
+      category: 'puzzle',
       categoryLabel: '🏗️ Physics & Team Co-Op',
       playModes: '👤 Solo • 👥 Multi • 🤝 3–6 Team',
       controls: '👆 Drag-Drop • 🎮 Controller',
@@ -623,7 +631,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        item.heading,
+                                        item.title,
                                         style: const TextStyle(
                                           fontSize: 13.5,
                                           fontWeight: FontWeight.w800,
@@ -645,7 +653,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                         borderRadius: BorderRadius.circular(5),
                                       ),
                                       child: Text(
-                                        item.levelTag,
+                                        item.levelBadge,
                                         style: TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.w900,
@@ -674,7 +682,7 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    item.description,
+                                    item.subtitle,
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFFCBD5E1),

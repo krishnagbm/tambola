@@ -67,7 +67,6 @@ class TambolaAudioCaller {
     }
 
     try {
-      await _flutterTts.stop();
       await _flutterTts.speak(speechText);
     } catch (_) {}
   }

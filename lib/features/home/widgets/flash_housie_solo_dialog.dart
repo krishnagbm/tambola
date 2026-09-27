@@ -131,7 +131,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     });
 
     if (_voiceEnabled) {
-      TambolaAudioCaller().announceNumber(nextBall);
+      TambolaAudioCaller().announceNumber(nextBall, useNicknames: false);
     }
 
     if (updatedCalled.length >= spec.drawPool.length) {
