@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/flash_housie_config.dart';
 import 'level_zero_solo_view.dart';
+import 'skill_friend_squad_controller.dart';
 
 class FlashHousieSoloDialog extends StatefulWidget {
   final VoidCallback? onLevelCompleted;
@@ -39,6 +41,13 @@ class FlashHousieSoloDialog extends StatefulWidget {
 class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   late String _activeGameId;
   final Set<String> _completedGameIds = <String>{};
+
+  late final SkillFriendSquadController _squadController;
+  final TextEditingController _joinCodeController = TextEditingController();
+  final TextEditingController _nicknameController = TextEditingController();
+  bool _showJoinCodeInput = false;
+  int _sharedSeed = 1001;
+  String _sharedSubMode = 'make_5_quad';
 
   String _selectedMode = FlashHousieConfig.modeFlash5;
   late FlashHousieConfig _config;
@@ -92,8 +101,43 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   void initState() {
     super.initState();
     _activeGameId = widget.initialGameId;
-    _startNewSoloRound(_selectedMode, autoStart: false);
+    _sharedSeed = 1000 + Random().nextInt(899999);
+    _squadController = SkillFriendSquadController();
+    _squadController.addListener(_onSquadChanged);
+    _squadController.onRemoteRoundSync = (gameId, subMode, seed, autoStart) {
+      if (!mounted) return;
+      setState(() {
+        _activeGameId = gameId;
+        _sharedSubMode = subMode;
+        _sharedSeed = seed;
+      });
+      if (gameId == 'level_1_flash') {
+        _startNewSoloRound(
+          subMode,
+          autoStart: autoStart,
+          explicitSeed: seed,
+          broadcastToSquad: false,
+        );
+      }
+    };
+    _squadController.initIdentity().then((_) {
+      if (mounted) {
+        _nicknameController.text = _squadController.localName;
+      }
+    });
+    _startNewSoloRound(
+      _selectedMode,
+      autoStart: false,
+      explicitSeed: _sharedSeed,
+      broadcastToSquad: false,
+    );
     _loadCompletedGames();
+  }
+
+  void _onSquadChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadCompletedGames() async {
@@ -112,8 +156,8 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       if (!mounted) return;
       setState(() {
         _completedGameIds
-          ..clear()
-          ..addAll(done);
+            ..clear()
+            ..addAll(done);
       });
     } catch (_) {}
   }
@@ -124,8 +168,26 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     _uiTickTimer = null;
     _autoCallTimer?.cancel();
     _autoCallTimer = null;
+    final nextSeed = 1000 + Random().nextInt(899999);
     if (gameId == 'level_1_flash') {
-      _startNewSoloRound(_selectedMode, autoStart: false);
+      _sharedSubMode = _selectedMode;
+      _sharedSeed = nextSeed;
+      _startNewSoloRound(
+        _selectedMode,
+        autoStart: false,
+        explicitSeed: nextSeed,
+        broadcastToSquad: true,
+      );
+    } else {
+      _sharedSeed = nextSeed;
+      if (_squadController.isInSquad) {
+        _squadController.broadcastRoundSync(
+          gameId: gameId,
+          subMode: _sharedSubMode,
+          roundSeed: nextSeed,
+          autoStart: false,
+        );
+      }
     }
     setState(() {
       _activeGameId = gameId;
@@ -136,6 +198,10 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   void dispose() {
     _uiTickTimer?.cancel();
     _autoCallTimer?.cancel();
+    _squadController.removeListener(_onSquadChanged);
+    _squadController.dispose();
+    _joinCodeController.dispose();
+    _nicknameController.dispose();
     super.dispose();
   }
 
@@ -148,17 +214,25 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     });
   }
 
-  void _startNewSoloRound(String mode, {bool autoStart = false}) {
+  void _startNewSoloRound(
+    String mode, {
+    bool autoStart = false,
+    int? explicitSeed,
+    bool broadcastToSquad = true,
+  }) {
     _uiTickTimer?.cancel();
     _uiTickTimer = null;
     _autoCallTimer?.cancel();
     _autoCallTimer = null;
+    final seed = explicitSeed ?? (1000 + Random().nextInt(899999));
+    _sharedSeed = seed;
+    _sharedSubMode = mode;
     final baseConfig = FlashHousieConfig.generate(
       mode: mode,
       totalCycles: 1,
       cellsPerQuadrant: 5,
       decoysPerColumn: 2,
-      random: Random(),
+      random: Random(seed),
     );
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     final cycleSpec = baseConfig.activeCycleSpec.copyWith(
@@ -178,6 +252,26 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       _lastBallCalledAtMs = null;
       _roundCompleted = false;
     });
+    if (broadcastToSquad &&
+        _activeGameId == 'level_1_flash' &&
+        _squadController.isInSquad) {
+      _squadController.broadcastRoundSync(
+        gameId: 'level_1_flash',
+        subMode: mode,
+        roundSeed: seed,
+        autoStart: autoStart,
+      );
+    }
+    if (_activeGameId == 'level_1_flash') {
+      _squadController.reportLocalProgress(
+        score: 0,
+        progress: 0,
+        target: cycleSpec.trueNumbers.length,
+        wrongCount: 0,
+        reactionMs: 0,
+        completed: false,
+      );
+    }
     if (autoStart) {
       _startUiTicker();
     }
@@ -268,6 +362,17 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       _freezeUntilMs = 0;
       _lastBallCalledAtMs = DateTime.now().millisecondsSinceEpoch;
     });
+    _squadController.reportLocalProgress(
+      score: _netScore,
+      progress: _recalledNumbers.length,
+      target: spec.trueNumbers.length,
+      wrongCount: _wrongTapCount,
+      reactionMs: _totalReactionMs,
+      completed: true,
+      eventText: wonAll
+          ? '🏆 Cleared ${_modeShortName(_selectedMode)} ($_netScore pts)!'
+          : 'Round ended ($_netScore pts)',
+    );
     if (wonAll) {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -307,6 +412,15 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       });
       if (_recalledNumbers.length >= spec.trueNumbers.length) {
         _finishRound();
+      } else {
+        _squadController.reportLocalProgress(
+          score: _netScore,
+          progress: _recalledNumbers.length,
+          target: spec.trueNumbers.length,
+          wrongCount: _wrongTapCount,
+          reactionMs: _totalReactionMs,
+          completed: false,
+        );
       }
     } else {
       final cellKey = '${row}_$col';
@@ -316,6 +430,15 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
         _freezeUntilMs = nowMs + 3000;
         _wrongFlashingCells.add(cellKey);
       });
+      _squadController.reportLocalProgress(
+        score: _netScore,
+        progress: _recalledNumbers.length,
+        target: spec.trueNumbers.length,
+        wrongCount: _wrongTapCount,
+        reactionMs: _totalReactionMs,
+        completed: false,
+        eventText: '❄️ Bogey tap (-3 pts, 3s freeze)!',
+      );
       Future.delayed(const Duration(milliseconds: 900), () {
         if (mounted && !_roundCompleted) {
           setState(() => _wrongFlashingCells.remove(cellKey));
@@ -376,12 +499,431 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   }
 
   (String, String) _activeBadgeAndTitle() {
+    final modeSuffix = _squadController.isInSquad ? 'SQUAD' : 'SOLO';
     for (final g in _release1Games) {
       if (g.$1 == _activeGameId) {
-        return (g.$3, g.$4);
+        return (
+          g.$3.replaceAll('SOLO', modeSuffix),
+          _squadController.isInSquad
+              ? g.$4.replaceAll('Solo Arena', 'Friend Squad Arena')
+              : g.$4,
+        );
       }
     }
-    return ('⚡ LEVEL 1 • SOLO', 'FlashHousie™ Solo Arena');
+    return ('⚡ LEVEL 1 • $modeSuffix', 'FlashHousie™ Arena');
+  }
+
+  Widget _buildFriendSquadBar() {
+    final inSquad = _squadController.isInSquad;
+    final members = _squadController.sortedMembers;
+    final code = _squadController.squadCode ?? '';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: inSquad ? const Color(0xFF064E3B).withValues(alpha: 0.35) : const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: inSquad
+              ? const Color(0xFF10B981)
+              : AppTheme.secondaryColor.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!inSquad) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.group_add_rounded,
+                      size: 16,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Play with Friends (No Hosting Needed • Free up to 5 Players: You + Max 4 Friends)',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFE2E8F0),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final newCode = await _squadController.createSquad(
+                          gameId: _activeGameId,
+                          subMode: _sharedSubMode,
+                          roundSeed: _sharedSeed,
+                          customNickname: _nicknameController.text.trim(),
+                        );
+                        await Clipboard.setData(
+                          ClipboardData(
+                            text:
+                                'Join my DabHousie Skill Game! Open the Skill Arena and enter Friend Code: $newCode (Max 5 players free)',
+                          ),
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '🎉 Friend Code #$newCode copied! Share with up to 4 friends to play together.',
+                              ),
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.share_rounded, size: 14),
+                      label: const Text(
+                        '👥 Share Code (Max 4 Friends)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        minimumSize: const Size(0, 30),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _showJoinCodeInput = !_showJoinCodeInput;
+                        });
+                      },
+                      icon: const Icon(Icons.vpn_key_rounded, size: 14),
+                      label: Text(
+                        _showJoinCodeInput ? 'Cancel' : '🔑 Join Friend Code',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF34D399),
+                        side: const BorderSide(color: Color(0xFF10B981)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        minimumSize: const Size(0, 30),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (_showJoinCodeInput) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    height: 34,
+                    child: TextField(
+                      controller: _nicknameController,
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Your Name',
+                        hintStyle: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white38,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E293B),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 140,
+                    height: 34,
+                    child: TextField(
+                      controller: _joinCodeController,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.secondaryColor,
+                        letterSpacing: 1.2,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '4-Digit Code',
+                        hintStyle: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white38,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFF1E293B),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final entered = _joinCodeController.text.trim();
+                      final ok = await _squadController.joinSquad(
+                        code: entered,
+                        customNickname: _nicknameController.text.trim(),
+                        currentGameId: _activeGameId,
+                        currentSubMode: _sharedSubMode,
+                        currentSeed: _sharedSeed,
+                      );
+                      if (ok && mounted) {
+                        setState(() {
+                          _showJoinCodeInput = false;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.login_rounded, size: 14),
+                    label: const Text(
+                      'Join Squad',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (_squadController.errorMessage != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                _squadController.errorMessage!,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFF87171),
+                ),
+              ),
+            ],
+          ] else ...[
+            // Active 5-Player Friend Squad View
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '🔑 CODE: $code',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '👥 ${members.length}/${SkillFriendSquadController.maxPlayers} Players (You + Max 4 Friends Free)',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF34D399),
+                      ),
+                    ),
+                  ],
+                ),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(
+                            text:
+                                'Join my DabHousie Skill Game! Open Skill Arena & enter Friend Code: $code',
+                          ),
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '📋 Copied Friend Code #$code to clipboard!',
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 13),
+                      label: const Text(
+                        'Copy Code',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.secondaryColor,
+                        side: const BorderSide(color: AppTheme.secondaryColor),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 28),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _squadController.leaveSquad(),
+                      icon: const Icon(Icons.logout_rounded, size: 13),
+                      label: const Text(
+                        'Leave Squad',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFFF87171),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 28),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            // Up to 5 Player Live Standings Chips
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(members.length, (idx) {
+                final m = members[idx];
+                final isMe = m.playerId == _squadController.localPlayerId;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: m.completed
+                        ? const Color(0xFF064E3B)
+                        : const Color(0xFF1E293B),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: m.completed
+                          ? const Color(0xFF34D399)
+                          : (isMe
+                                ? AppTheme.secondaryColor
+                                : const Color(0xFF334155)),
+                      width: isMe || m.completed ? 1.4 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '#${idx + 1} ${m.avatar} ${isMe ? "${m.name} (You)" : m.name}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${m.score} pts • ${m.progress}/${m.target}${m.wrongCount > 0 ? " • ✖${m.wrongCount}" : ""}${m.completed ? " 🏆" : ""}',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                          color: m.completed
+                              ? const Color(0xFF34D399)
+                              : AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+            if (_squadController.liveFeedMessage != null) ...[
+              const SizedBox(height: 5),
+              Text(
+                _squadController.liveFeedMessage!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFA7F3D0),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -471,7 +1013,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                     ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white70),
-                    tooltip: 'Close Solo Arena',
+                    tooltip: 'Close Arena',
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                     onPressed: () => Navigator.of(context).pop(),
@@ -546,11 +1088,22 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                   }).toList(),
                 ),
               ),
+              const SizedBox(height: 8),
+
+              // 1C. Hostless 5-Player Friend Squad Bar (Share Code with up to 4 friends without hosting!)
+              _buildFriendSquadBar(),
               const SizedBox(height: 10),
 
               if (_activeGameId != 'level_1_flash') ...[
                 LevelZeroSoloView(
                   gameId: _activeGameId,
+                  squadController: _squadController,
+                  sharedSeed: _sharedSeed,
+                  sharedSubMode: _sharedSubMode,
+                  onLocalStateChanged: (subMode, seed) {
+                    _sharedSubMode = subMode;
+                    _sharedSeed = seed;
+                  },
                   onLevelCompleted: () {
                     _loadCompletedGames();
                     widget.onLevelCompleted?.call();

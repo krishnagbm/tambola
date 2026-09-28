@@ -436,7 +436,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               SizedBox(
                 height: isWide ? 18 : null,
                 child: const Text(
-                  'Practice solo anytime, compete live in multiplayer, or team up in co-op arenas.',
+                  'Play solo, share a code with up to 4 friends free (no host needed), or host a skill playlist.',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -449,7 +449,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
               ),
               const SizedBox(height: 12),
 
-              // CTAs: Play Solo + Join a Game + Host a Game (exact 40px single row)
+              // CTAs: Play Solo / Friends + Join a Game + Host a Game (exact 40px single row)
               SizedBox(
                 height: 40,
                 child: SingleChildScrollView(
@@ -466,7 +466,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                           Icons.play_circle_fill_rounded,
                           size: 18,
                         ),
-                        label: const Text('Play Solo'),
+                        label: const Text('Play Solo / Friends'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF10B981),
                           foregroundColor: Colors.black,

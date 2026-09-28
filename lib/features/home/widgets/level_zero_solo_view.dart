@@ -4,17 +4,26 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../models/level_zero_skill_engine.dart';
+import 'skill_friend_squad_controller.dart';
 
 class LevelZeroSoloView extends StatefulWidget {
   final String gameId; // 'level_0a_make', 'level_0b_fix', 'level_0c_math', 'level_0d_sum'
   final VoidCallback? onLevelCompleted;
   final ValueChanged<String>? onSelectGameId;
+  final SkillFriendSquadController? squadController;
+  final int? sharedSeed;
+  final String? sharedSubMode;
+  final void Function(String subMode, int seed)? onLocalStateChanged;
 
   const LevelZeroSoloView({
     super.key,
     required this.gameId,
     this.onLevelCompleted,
     this.onSelectGameId,
+    this.squadController,
+    this.sharedSeed,
+    this.sharedSubMode,
+    this.onLocalStateChanged,
   });
 
   @override
@@ -23,6 +32,7 @@ class LevelZeroSoloView extends StatefulWidget {
 
 class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   Timer? _uiTimer;
+  int _currentSeed = 1001;
   int? _startedAtMs;
   int? _stepStartedAtMs;
   int? _finishedAtMs;
@@ -63,17 +73,75 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   final Set<int> _solvedSumQuadrants = <int>{};
   final Set<int> _wrongSumOptions = <int>{};
 
+  String get _activeSubModeForGame {
+    switch (widget.gameId) {
+      case 'level_0a_make':
+        return _makeMode;
+      case 'level_0b_fix':
+        return _fixMode;
+      case 'level_0c_math':
+        return _mathMode;
+      default:
+        return _sumMode;
+    }
+  }
+
+  void _applySubModeIfMatching(String? subMode) {
+    if (subMode == null || subMode.isEmpty) return;
+    if (widget.gameId == 'level_0a_make' &&
+        (subMode == MakeHousieRoundSpec.modeMake5Quad ||
+            subMode == MakeHousieRoundSpec.modeMake15Guided ||
+            subMode == MakeHousieRoundSpec.modeMake15Master)) {
+      _makeMode = subMode;
+    } else if (widget.gameId == 'level_0b_fix' &&
+        (subMode == FixHousieRoundSpec.modeFix1 ||
+            subMode == FixHousieRoundSpec.modeFix3 ||
+            subMode == FixHousieRoundSpec.modeFix5)) {
+      _fixMode = subMode;
+    } else if (widget.gameId == 'level_0c_math' &&
+        (subMode == MathHousieRoundSpec.modeAddSub5 ||
+            subMode == MathHousieRoundSpec.modeMulDiv5 ||
+            subMode == MathHousieRoundSpec.modeMixed10)) {
+      _mathMode = subMode;
+    } else if (widget.gameId == 'level_0d_sum' &&
+        (subMode == SumHousieRoundSpec.modeSumQ1 ||
+            subMode == SumHousieRoundSpec.modeSumQ2 ||
+            subMode == SumHousieRoundSpec.modeSumAll3)) {
+      _sumMode = subMode;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _initCurrentGame(autoStart: false);
+    _applySubModeIfMatching(widget.sharedSubMode);
+    _initCurrentGame(
+      autoStart: false,
+      explicitSeed: widget.sharedSeed,
+      broadcastToSquad: false,
+    );
   }
 
   @override
   void didUpdateWidget(covariant LevelZeroSoloView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.gameId != widget.gameId) {
-      _initCurrentGame(autoStart: false);
+      _applySubModeIfMatching(widget.sharedSubMode);
+      _initCurrentGame(
+        autoStart: false,
+        explicitSeed: widget.sharedSeed,
+        broadcastToSquad: false,
+      );
+    } else if ((widget.sharedSeed != null &&
+            widget.sharedSeed != _currentSeed) ||
+        (widget.sharedSubMode != null &&
+            widget.sharedSubMode != _activeSubModeForGame)) {
+      _applySubModeIfMatching(widget.sharedSubMode);
+      _initCurrentGame(
+        autoStart: false,
+        explicitSeed: widget.sharedSeed,
+        broadcastToSquad: false,
+      );
     }
   }
 
@@ -91,10 +159,15 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     });
   }
 
-  void _initCurrentGame({required bool autoStart}) {
+  void _initCurrentGame({
+    required bool autoStart,
+    int? explicitSeed,
+    bool broadcastToSquad = true,
+  }) {
     _uiTimer?.cancel();
     _uiTimer = null;
-    final rng = Random();
+    _currentSeed = explicitSeed ?? (1000 + Random().nextInt(899999));
+    final rng = Random(_currentSeed);
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     _makeSpec = MakeHousieRoundSpec.generate(mode: _makeMode, random: rng);
@@ -131,9 +204,40 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _wrongSumOptions.clear();
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      widget.onLocalStateChanged?.call(_activeSubModeForGame, _currentSeed);
+      if (broadcastToSquad && (widget.squadController?.isInSquad ?? false)) {
+        widget.squadController!.broadcastRoundSync(
+          gameId: widget.gameId,
+          subMode: _activeSubModeForGame,
+          roundSeed: _currentSeed,
+          autoStart: autoStart,
+        );
+      }
+      _reportSquadProgress();
+    });
+
     if (autoStart) {
       _startClockTicker();
     }
+  }
+
+  void _reportSquadProgress({String? eventText}) {
+    final sq = widget.squadController;
+    if (sq == null) return;
+    final progressVal = widget.gameId == 'level_0a_make' && !_roundCompleted
+        ? _onBoardMakeBalls.length
+        : _correctCount;
+    sq.reportLocalProgress(
+      score: _netScore,
+      progress: progressVal,
+      target: _targetStepCount,
+      wrongCount: _wrongCount,
+      reactionMs: _totalReactionMs,
+      completed: _roundCompleted,
+      eventText: eventText,
+    );
   }
 
   void _launchRound() {
@@ -194,6 +298,13 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _roundCompleted = true;
       _finishedAtMs = nowMs;
     });
+
+    final elapsedSec = _startedAtMs != null
+        ? ((nowMs - _startedAtMs!) / 1000).clamp(0.1, 999.0).toStringAsFixed(1)
+        : '0.0';
+    _reportSquadProgress(
+      eventText: '🏆 VALID DAB! Cleared in ${elapsedSec}s ($_netScore pts)!',
+    );
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -381,6 +492,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         _feedbackIsError = false;
       }
     });
+    _reportSquadProgress();
   }
 
   /// Triggered when the player clicks the "✋ DAB TO VALIDATE!" button once all balls are placed.
@@ -438,6 +550,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             '🚨 BOGEY DAB (-3 pts)! $firstIssue';
         _feedbackIsError = true;
       });
+      _reportSquadProgress(eventText: '🚨 Bogey Dab (-3 pts)! Fixing board...');
     }
   }
 
@@ -476,6 +589,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       });
       if (_repairedCellKeys.length >= _fixSpec.totalBugs) {
         _completeRound();
+      } else {
+        _reportSquadProgress();
       }
     } else {
       final val = _fixSpec.bugMatrix[row][col];
@@ -488,6 +603,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             '✖ Valid Cell (-5 pts): Ball $val is already valid in Col ${col + 1} (${columnDecadeLabel(col)})!';
         _feedbackIsError = true;
       });
+      _reportSquadProgress(eventText: '✖ Wrong tap (-5 pts)');
     }
   }
 
@@ -516,6 +632,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       });
       if (_solvedMathTargets.length >= _mathSpec.prompts.length) {
         _completeRound();
+      } else {
+        _reportSquadProgress();
       }
     } else {
       _flashWrongCell(row, col);
@@ -527,6 +645,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             '✖ Not $cellVal (-3 pts)! Hint: "${prompt.expression}" is in Col ${expectedCol + 1} (${columnDecadeLabel(expectedCol)}).';
         _feedbackIsError = true;
       });
+      _reportSquadProgress(eventText: '✖ Wrong formula tap (-3 pts)');
     }
   }
 
@@ -556,6 +675,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       });
       if (_solvedSumQuadrants.length >= _sumSpec.waves.length) {
         _completeRound();
+      } else {
+        _reportSquadProgress();
       }
     } else {
       setState(() {
@@ -566,6 +687,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             '✖ $chosenSum is a decoy (-5 pts)! Add all 5 numbers in Q${wave.quadrant} carefully.';
         _feedbackIsError = true;
       });
+      _reportSquadProgress(eventText: '✖ Decoy sum (-5 pts)');
     }
   }
 
