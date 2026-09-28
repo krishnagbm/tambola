@@ -98,6 +98,21 @@ class SkillSquadMember {
   }
 }
 
+/// Tracks a ball that a squad mate has claimed/placed on the 3×9 grid.
+class RemotePlacement {
+  final int row;
+  final int col;
+  final String playerName;
+  final String playerAvatar;
+
+  const RemotePlacement({
+    required this.row,
+    required this.col,
+    required this.playerName,
+    required this.playerAvatar,
+  });
+}
+
 /// Manages a Hostless 5-Player Friend Squad (Creator + max 4 Friends = 5 Players Free Plan)
 /// using Supabase Realtime Broadcast channels so friends can join by code while you play.
 class SkillFriendSquadController extends ChangeNotifier {
@@ -132,6 +147,10 @@ class SkillFriendSquadController extends ChangeNotifier {
   final Map<String, SkillSquadMember> _members = {};
   RealtimeChannel? _channel;
 
+  /// Remote ball placements from squad mates: ball → {row, col, playerName, avatar}.
+  /// Used to show "claimed" badges on the deal pool and block re-picking.
+  final Map<int, RemotePlacement> remotePlacements = {};
+
   /// Callback triggered when the squad switches game, subMode, seed, or starts a round.
   void Function(
     String gameId,
@@ -140,6 +159,16 @@ class SkillFriendSquadController extends ChangeNotifier {
     bool autoStart,
   )?
   onRemoteRoundSync;
+
+  /// Callback triggered when a squad mate drops a ball onto a cell.
+  /// [ball] is the ball number, [row]/[col] are 0-based grid indices,
+  /// [playerName] and [playerAvatar] are the claimer's display info.
+  void Function(int ball, int row, int col, String playerName, String playerAvatar)?
+  onRemoteBallPlaced;
+
+  /// Callback triggered when a squad mate lifts a ball they previously placed
+  /// (moved it off a cell). [ball] is the ball number freed.
+  void Function(int ball)? onRemoteBallLifted;
 
   String get localPlayerId => _localPlayerId;
   String get localName => _localName;
@@ -357,6 +386,18 @@ class SkillFriendSquadController extends ChangeNotifier {
               _handleMemberLeft(payload);
             },
           )
+          .onBroadcast(
+            event: 'ball_placed',
+            callback: (payload) {
+              _handleRemoteBallPlaced(payload);
+            },
+          )
+          .onBroadcast(
+            event: 'ball_lifted',
+            callback: (payload) {
+              _handleRemoteBallLifted(payload);
+            },
+          )
           .subscribe();
 
       _channel = channel;
@@ -458,6 +499,7 @@ class SkillFriendSquadController extends ChangeNotifier {
     _syncedGameId = remoteGameId;
     _syncedSubMode = remoteSubMode;
     _syncedRoundSeed = remoteSeed;
+    remotePlacements.clear(); // new round from squad mate → reset all ball claims
 
     // Reset all members' round progress for the new card
     for (final key in _members.keys.toList()) {
@@ -506,6 +548,66 @@ class SkillFriendSquadController extends ChangeNotifier {
     }
   }
 
+  void _handleRemoteBallPlaced(Map<String, dynamic> payload) {
+    final ball = (payload['ball'] as num?)?.toInt();
+    final row = (payload['row'] as num?)?.toInt();
+    final col = (payload['col'] as num?)?.toInt();
+    final senderId = payload['sender_id']?.toString() ?? '';
+    final playerName = payload['player_name']?.toString() ?? 'Friend';
+    final playerAvatar = payload['player_avatar']?.toString() ?? '🎲';
+    if (ball == null || row == null || col == null) return;
+    if (senderId == _localPlayerId) return; // ignore own echoes (shouldn't happen since self:false)
+
+    // If the same ball was placed elsewhere before, free the previous claim
+    if (remotePlacements.containsKey(ball)) {
+      remotePlacements.remove(ball);
+    }
+    remotePlacements[ball] = RemotePlacement(
+      row: row,
+      col: col,
+      playerName: playerName,
+      playerAvatar: playerAvatar,
+    );
+    onRemoteBallPlaced?.call(ball, row, col, playerName, playerAvatar);
+    notifyListeners();
+  }
+
+  void _handleRemoteBallLifted(Map<String, dynamic> payload) {
+    final ball = (payload['ball'] as num?)?.toInt();
+    final senderId = payload['sender_id']?.toString() ?? '';
+    if (ball == null) return;
+    if (senderId == _localPlayerId) return;
+    remotePlacements.remove(ball);
+    onRemoteBallLifted?.call(ball);
+    notifyListeners();
+  }
+
+  /// Broadcast that we placed [ball] at ([row], [col]) so squad mates can see it's claimed.
+  void broadcastBallPlaced({
+    required int ball,
+    required int row,
+    required int col,
+  }) {
+    if (!isInSquad) return;
+    _sendBroadcast('ball_placed', {
+      'ball': ball,
+      'row': row,
+      'col': col,
+      'sender_id': _localPlayerId,
+      'player_name': _localName,
+      'player_avatar': _localAvatar,
+    });
+  }
+
+  /// Broadcast that we lifted (moved) [ball] off its previous cell so squad mates free the claim.
+  void broadcastBallLifted({required int ball}) {
+    if (!isInSquad) return;
+    _sendBroadcast('ball_lifted', {
+      'ball': ball,
+      'sender_id': _localPlayerId,
+    });
+  }
+
   /// Broadcasts a new round / game / subMode / start event to all friends in the squad.
   void broadcastRoundSync({
     required String gameId,
@@ -516,6 +618,7 @@ class SkillFriendSquadController extends ChangeNotifier {
     _syncedGameId = gameId;
     _syncedSubMode = subMode;
     _syncedRoundSeed = roundSeed;
+    remotePlacements.clear(); // new round → no stale squad claims
 
     for (final key in _members.keys.toList()) {
       final m = _members[key]!;

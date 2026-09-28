@@ -120,11 +120,17 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       explicitSeed: widget.sharedSeed,
       broadcastToSquad: false,
     );
+    // Rebuild when squad mate claims/releases a ball
+    widget.squadController?.addListener(_onSquadChanged);
   }
 
   @override
   void didUpdateWidget(covariant LevelZeroSoloView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.squadController != widget.squadController) {
+      oldWidget.squadController?.removeListener(_onSquadChanged);
+      widget.squadController?.addListener(_onSquadChanged);
+    }
     if (oldWidget.gameId != widget.gameId) {
       _applySubModeIfMatching(widget.sharedSubMode);
       _initCurrentGame(
@@ -145,9 +151,14 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     }
   }
 
+  void _onSquadChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
     _uiTimer?.cancel();
+    widget.squadController?.removeListener(_onSquadChanged);
     super.dispose();
   }
 
@@ -444,10 +455,20 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       }
     }
 
+    // Broadcast ball_lifted for the ball's old cell if it was already on the board
+    if (fromR != null && fromC != null) {
+      widget.squadController?.broadcastBallLifted(ball: ball);
+    }
+
     _makeLiveBoard[row][col] = ball;
     _onBoardMakeBalls.add(ball);
     _revealedMakeBalls.add(ball);
     _dabFlaggedCells.remove('${row}_$col');
+
+    // Broadcast ball_placed so squad mates can see this cell is claimed
+    widget.squadController?.broadcastBallPlaced(ball: ball, row: row, col: col);
+    // Also remove this ball from remote claims (we own it now)
+    widget.squadController?.remotePlacements.remove(ball);
 
     // If the player is actively fixing cells after a Bogey Dab, refresh _dabFlaggedCells
     // so once a row overflow (e.g. 7 balls -> 5 balls) is resolved, the remaining 5 balls in that row unflag!
@@ -1687,61 +1708,110 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               final isRevealed = _revealedMakeBalls.contains(ball);
               final isSelected = !isOnBoard && _selectedDealBall == ball;
 
-              final chipWidget = Container(
-                width: 40,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isOnBoard
-                      ? (_roundCompleted
-                            ? const Color(0xFF064E3B)
-                            : (isFlagged
-                                  ? const Color(0xFF7F1D1D)
-                                  : const Color(0xFF1E293B)))
-                      : (isSelected
-                            ? AppTheme.secondaryColor
-                            : (isRevealed
-                                  ? const Color(0xFF312E81)
-                                  : const Color(0xFF1E293B))),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isOnBoard
-                        ? (_roundCompleted
-                              ? const Color(0xFF10B981)
-                              : (isFlagged
-                                    ? const Color(0xFFFBBF24)
-                                    : const Color(0xFF475569)))
-                        : (isSelected
-                              ? Colors.white
-                              : (isRevealed
-                                    ? AppTheme.secondaryColor
-                                    : const Color(0xFF475569))),
-                    width: isSelected || isRevealed ? 1.6 : 1.0,
+              // Squad mate claimed this ball (placed it on their grid)
+              final remotePlacement =
+                  !isOnBoard ? widget.squadController?.remotePlacements[ball] : null;
+              final isClaimed = remotePlacement != null;
+
+              final chipWidget = Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isOnBoard
+                          ? (_roundCompleted
+                                ? const Color(0xFF064E3B)
+                                : (isFlagged
+                                      ? const Color(0xFF7F1D1D)
+                                      : const Color(0xFF1E293B)))
+                          : (isClaimed
+                                ? const Color(0xFF422006) // amber-dark for claimed
+                                : (isSelected
+                                      ? AppTheme.secondaryColor
+                                      : (isRevealed
+                                            ? const Color(0xFF312E81)
+                                            : const Color(0xFF1E293B)))),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isOnBoard
+                            ? (_roundCompleted
+                                  ? const Color(0xFF10B981)
+                                  : (isFlagged
+                                        ? const Color(0xFFFBBF24)
+                                        : const Color(0xFF475569)))
+                            : (isClaimed
+                                  ? const Color(0xFFF59E0B) // amber border
+                                  : (isSelected
+                                        ? Colors.white
+                                        : (isRevealed
+                                              ? AppTheme.secondaryColor
+                                              : const Color(0xFF475569)))),
+                        width: (isSelected || isRevealed || isClaimed) ? 1.6 : 1.0,
+                      ),
+                    ),
+                    child: Text(
+                      isOnBoard
+                          ? (_roundCompleted ? '✓' : (isFlagged ? '⚠️' : '📥'))
+                          : (isClaimed
+                                ? '🔒'
+                                : (isRevealed ? '$ball' : '?')),
+                      style: TextStyle(
+                        fontSize: isClaimed ? 15 : 13.5,
+                        fontWeight: FontWeight.w900,
+                        color: isOnBoard
+                            ? (_roundCompleted
+                                  ? const Color(0xFF34D399)
+                                  : (isFlagged
+                                        ? const Color(0xFFFBBF24)
+                                        : const Color(0xFF94A3B8)))
+                            : (isClaimed
+                                  ? const Color(0xFFF59E0B)
+                                  : (isSelected
+                                        ? Colors.black
+                                        : (isRevealed
+                                              ? Colors.white
+                                              : AppTheme.secondaryColor))),
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  isOnBoard
-                      ? (_roundCompleted ? '✓' : (isFlagged ? '⚠️' : '📥'))
-                      : (isRevealed ? '$ball' : '?'),
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w900,
-                    color: isOnBoard
-                        ? (_roundCompleted
-                              ? const Color(0xFF34D399)
-                              : (isFlagged
-                                    ? const Color(0xFFFBBF24)
-                                    : const Color(0xFF94A3B8)))
-                        : (isSelected
-                              ? Colors.black
-                              : (isRevealed
-                                    ? Colors.white
-                                    : AppTheme.secondaryColor)),
-                  ),
-                ),
+                  // Claimer avatar badge (top-right corner)
+                  if (isClaimed)
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B),
+                            width: 1.2,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          remotePlacement.playerAvatar,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      ),
+                    ),
+                ],
               );
 
-              if (isOnBoard || _roundCompleted) {
+              if (isOnBoard || _roundCompleted || isClaimed) {
+                // Claimed balls: show tooltip with claimer name, but not draggable
+                if (isClaimed) {
+                  return Tooltip(
+                    message: '${remotePlacement.playerAvatar} ${remotePlacement.playerName} placed this ball',
+                    preferBelow: false,
+                    child: chipWidget,
+                  );
+                }
                 return chipWidget;
               }
 
