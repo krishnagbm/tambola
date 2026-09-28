@@ -48,6 +48,49 @@ void main() {
       expect(spec.evaluateCellIssue(board, 1, trueCol), isNull);
       expect(spec.countValidPlacements(board), equals(1));
     });
+
+    test('detects Rule 3 row overflow (e.g. 7 balls in middle row) and solves once balanced to 5 per row', () {
+      const trueMatrix = [
+        [2, 0, 23, 32, 46, 0, 0, 0, 83],
+        [0, 14, 0, 0, 0, 56, 67, 74, 87],
+        [8, 15, 0, 39, 0, 57, 0, 77, 0],
+      ];
+      const spec = MakeHousieRoundSpec(
+        mode: MakeHousieRoundSpec.modeMake15Master,
+        trueMatrix: trueMatrix,
+        activeQuadrants: [1, 2, 3],
+        dealPool: [2, 8, 14, 15, 23, 32, 39, 46, 56, 57, 67, 74, 77, 83, 87],
+      );
+
+      // Reproduce the exact board from screenshot:
+      // Row 1 has 3 numbers, Row 2 (Middle) has 7 numbers (overflowed!), Row 3 has 5 numbers
+      final overflowBoard = [
+        [2, 0, 0, 32, 0, 0, 0, 0, 83],
+        [0, 14, 23, 0, 46, 56, 67, 74, 87],
+        [8, 15, 0, 39, 0, 57, 0, 77, 0],
+      ];
+
+      expect(spec.isBoardSolved(overflowBoard), isFalse);
+      expect(spec.countValidPlacements(overflowBoard), equals(13));
+      expect(
+        spec.evaluateRowOverflowIssue(overflowBoard),
+        contains('Rule 3 (Row Overflow): Middle Row (Row 2) has 7 numbers'),
+      );
+      final overflowCells = spec.findRowOverflowCells(overflowBoard);
+      expect(overflowCells, contains('1_2')); // 23 in Row 2, Col 3
+      expect(overflowCells, contains('1_4')); // 46 in Row 2, Col 5
+      expect(overflowCells, isNot(contains('1_8'))); // 87 cannot move up to Row 1 because 83 is at 0_8
+
+      // Player drags 23 (Col 3) and 46 (Col 5) from Middle Row (Row 2) up to Top Row (Row 1)
+      overflowBoard[1][2] = 0;
+      overflowBoard[0][2] = 23;
+      overflowBoard[1][4] = 0;
+      overflowBoard[0][4] = 46;
+
+      expect(spec.evaluateRowOverflowIssue(overflowBoard), isNull);
+      expect(spec.countValidPlacements(overflowBoard), equals(15));
+      expect(spec.isBoardSolved(overflowBoard), isTrue);
+    });
   });
 
   group('Level 0B — FixHousieRoundSpec', () {

@@ -260,9 +260,29 @@ class MakeHousieRoundSpec {
     }
   }
 
-  /// Evaluates a placed ball at ([row], [col]) on [liveBoard].
-  /// Returns `null` if the ball is in its valid column decade and ascending order,
-  /// or a human-readable rule violation string if misplaced.
+  /// Counts how many numbers (> 0) are currently placed in horizontal [row] (0..2) across all 9 columns.
+  int countRowNumbers(List<List<int>> liveBoard, int row) {
+    int count = 0;
+    for (int c = 0; c < 9; c++) {
+      if (liveBoard[row][c] > 0) count++;
+    }
+    return count;
+  }
+
+  static String _rowTitle(int row) {
+    switch (row) {
+      case 0:
+        return 'Top Row (Row 1)';
+      case 1:
+        return 'Middle Row (Row 2)';
+      default:
+        return 'Bottom Row (Row 3)';
+    }
+  }
+
+  /// Evaluates a placed ball at ([row], [col]) on [liveBoard] for column-level rules:
+  /// - Rule 1: Column Decade (1–9 .. 80–90)
+  /// - Rule 2: Vertical Ascending Order within the column
   String? evaluateCellIssue(List<List<int>> liveBoard, int row, int col) {
     if (!isColumnActive(col)) return null;
     final val = liveBoard[row][col];
@@ -288,7 +308,82 @@ class MakeHousieRoundSpec {
     return null;
   }
 
-  /// Counts how many balls from [dealPool] are currently placed in valid cells on [liveBoard].
+  /// Checks Rule 3 (Horizontal Row Balance: max/exact 5 numbers per row across the 9 columns).
+  /// Returns a human-readable warning if any row is overflowed (> 5 numbers).
+  String? evaluateRowOverflowIssue(List<List<int>> liveBoard) {
+    for (int r = 0; r < 3; r++) {
+      final count = countRowNumbers(liveBoard, r);
+      if (count > 5) {
+        final excess = count - 5;
+        final underflowRows = <String>[];
+        for (int u = 0; u < 3; u++) {
+          final uCount = countRowNumbers(liveBoard, u);
+          if (uCount < 5) {
+            underflowRows.add('Row ${u + 1} ($uCount/5)');
+          }
+        }
+        final targetText = underflowRows.isNotEmpty
+            ? underflowRows.join(' or ')
+            : 'an open row';
+        return 'Rule 3 (Row Overflow): ${_rowTitle(r)} has $count numbers (must be 5 per row) — drag $excess ball(s) to $targetText!';
+      }
+    }
+    return null;
+  }
+
+  /// Returns the cell keys (`"${r}_$c"`) in any overflowed row (> 5 numbers) that can be
+  /// dragged to another row in the same column to resolve the row overflow.
+  Set<String> findRowOverflowCells(List<List<int>> liveBoard) {
+    final flagged = <String>{};
+    final rowCounts = List<int>.generate(
+      3,
+      (r) => countRowNumbers(liveBoard, r),
+    );
+
+    for (int r = 0; r < 3; r++) {
+      if (rowCounts[r] <= 5) continue;
+
+      final movableToUnderflow = <String>{};
+      final allActiveInRow = <String>{};
+
+      for (int c = 0; c < 9; c++) {
+        if (!isColumnActive(c)) continue;
+        final val = liveBoard[r][c];
+        if (val <= 0) continue;
+        allActiveInRow.add('${r}_$c');
+
+        // Check if this ball can move to an underflowed row `u` in the same column `c`
+        // while preserving vertical ascending order in column `c`.
+        for (int u = 0; u < 3; u++) {
+          if (u == r || rowCounts[u] >= 5) continue;
+          if (liveBoard[u][c] != 0) continue;
+
+          bool orderOk = true;
+          for (int otherR = 0; otherR < 3; otherR++) {
+            if (otherR == r || otherR == u) continue;
+            final otherVal = liveBoard[otherR][c];
+            if (otherVal <= 0) continue;
+            if (u < otherR && val > otherVal) orderOk = false;
+            if (u > otherR && val < otherVal) orderOk = false;
+          }
+          if (orderOk) {
+            movableToUnderflow.add('${r}_$c');
+            break;
+          }
+        }
+      }
+
+      if (movableToUnderflow.isNotEmpty) {
+        flagged.addAll(movableToUnderflow);
+      } else {
+        flagged.addAll(allActiveInRow);
+      }
+    }
+    return flagged;
+  }
+
+  /// Counts how many balls from [dealPool] are currently placed in valid cells on [liveBoard],
+  /// accounting for Rule 1 (Column Decade), Rule 2 (Vertical Ascending Order), and Rule 3 (Row Overflow > 5).
   int countValidPlacements(List<List<int>> liveBoard) {
     int count = 0;
     for (int r = 0; r < 3; r++) {
@@ -299,12 +394,26 @@ class MakeHousieRoundSpec {
         }
       }
     }
-    return count;
+    int rowOverflowExcess = 0;
+    for (int r = 0; r < 3; r++) {
+      final rCount = countRowNumbers(liveBoard, r);
+      if (rCount > 5) {
+        rowOverflowExcess += (rCount - 5);
+      }
+    }
+    return max(0, count - rowOverflowExcess);
   }
 
-  /// True when all balls in [dealPool] are placed on [liveBoard] with zero rule issues.
+  /// True when all balls in [dealPool] are placed on [liveBoard] with:
+  /// - Zero Rule 1 (Column Decade) or Rule 2 (Vertical Ascending Order) issues
+  /// - Every horizontal row (Row 1, Row 2, Row 3) having exactly 5 numbers (Rule 3)
   bool isBoardSolved(List<List<int>> liveBoard) {
-    return countValidPlacements(liveBoard) == dealPool.length;
+    if (countValidPlacements(liveBoard) != dealPool.length) return false;
+    if (evaluateRowOverflowIssue(liveBoard) != null) return false;
+    for (int r = 0; r < 3; r++) {
+      if (countRowNumbers(liveBoard, r) != 5) return false;
+    }
+    return true;
   }
 }
 

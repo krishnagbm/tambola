@@ -338,6 +338,23 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     _revealedMakeBalls.add(ball);
     _dabFlaggedCells.remove('${row}_$col');
 
+    // If the player is actively fixing cells after a Bogey Dab, refresh _dabFlaggedCells
+    // so once a row overflow (e.g. 7 balls -> 5 balls) is resolved, the remaining 5 balls in that row unflag!
+    final wasFixingBogeyDab = _dabFlaggedCells.isNotEmpty;
+    if (wasFixingBogeyDab) {
+      final stillOverflowCells = _makeSpec.findRowOverflowCells(_makeLiveBoard);
+      _dabFlaggedCells.retainWhere((cellKey) {
+        final parts = cellKey.split('_');
+        final r = int.parse(parts[0]);
+        final c = int.parse(parts[1]);
+        if (_makeLiveBoard[r][c] <= 0) return false;
+        if (_makeSpec.evaluateCellIssue(_makeLiveBoard, r, c) != null) {
+          return true;
+        }
+        return stillOverflowCells.contains(cellKey);
+      });
+    }
+
     final allPlaced = _onBoardMakeBalls.length >= _makeSpec.dealPool.length;
 
     setState(() {
@@ -347,9 +364,17 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _stepStartedAtMs = nowMs;
 
       if (allPlaced) {
-        _feedbackBannerText =
-            '✋ All ${_makeSpec.dealPool.length} balls filled in! Check your columns & order, then press "✋ DAB TO VALIDATE!"';
-        _feedbackIsError = false;
+        if (wasFixingBogeyDab && _dabFlaggedCells.isNotEmpty) {
+          final rowIssue = _makeSpec.evaluateRowOverflowIssue(_makeLiveBoard);
+          _feedbackBannerText =
+              rowIssue ??
+              '⚠️ Moved Ball #$ball to Col ${col + 1}, Row ${row + 1} • Fix remaining red cell(s), then press "✋ DAB TO VALIDATE!"';
+          _feedbackIsError = true;
+        } else {
+          _feedbackBannerText =
+              '✋ All ${_makeSpec.dealPool.length} balls filled in! Check Col Decades, Order & 5-per-Row, then press "✋ DAB TO VALIDATE!"';
+          _feedbackIsError = false;
+        }
       } else {
         _feedbackBannerText =
             'Dropped Ball #$ball into Col ${col + 1}, Row ${row + 1} (${_onBoardMakeBalls.length}/${_makeSpec.dealPool.length} placed — grab next ? ball!)';
@@ -385,12 +410,19 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       }
     }
 
+    // Check Rule 3: Horizontal Row Balance (Every row must have 5 numbers — no row overflow!)
+    final rowOverflowIssue = _makeSpec.evaluateRowOverflowIssue(_makeLiveBoard);
+    if (rowOverflowIssue != null) {
+      flagged.addAll(_makeSpec.findRowOverflowCells(_makeLiveBoard));
+      firstIssue ??= rowOverflowIssue;
+    }
+
     if (flagged.isEmpty && _makeSpec.isBoardSolved(_makeLiveBoard)) {
       setState(() {
         _dabFlaggedCells.clear();
         _correctCount = _makeSpec.dealPool.length;
         _feedbackBannerText =
-            '🏆 VALID DAB! All ${_makeSpec.dealPool.length} balls verified in right Column Decades & Ascending Order!';
+            '🏆 VALID DAB! All ${_makeSpec.dealPool.length} balls verified in right Column Decades, Ascending Order & 5 per Row!';
         _feedbackIsError = false;
       });
       _completeRound();
@@ -403,7 +435,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
           ..addAll(flagged);
         _correctCount = _makeSpec.countValidPlacements(_makeLiveBoard);
         _feedbackBannerText =
-            '🚨 BOGEY DAB (-3 pts)! ${flagged.length} cell(s) failed validation — $firstIssue Drag red cells to fix & DAB again!';
+            '🚨 BOGEY DAB (-3 pts)! $firstIssue';
         _feedbackIsError = true;
       });
     }
@@ -733,7 +765,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
           headline =
               '🏆 LEVEL 0A CLEARED! ALL ${_makeSpec.dealPool.length} MYSTERY BALLS PLACED VALIDLY!';
           subline =
-              'You mastered 3×9 column decades & ascending order! Try Make 10/15 or advance to 0B FixHousie™.';
+              'You mastered 3×9 column decades, ascending order & 5-per-row balance! Try Make 10/15 or advance to 0B FixHousie™.';
           break;
         case 'level_0b_fix':
           headline =
@@ -760,7 +792,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
           headline =
               '🎓 MakeHousie™ Ready • Drag & Drop ${_makeSpec.dealPool.length} Mystery (?) Balls onto the 3×9 Grid';
           subline =
-              'Pick any (?) ball to reveal its number, then spontaneously drop it into its valid Column Decade & Ascending Row!';
+              'Pick any (?) ball to reveal its number, drop into its Column Decade & Ascending Row (5 balls per row), then press ✋ DAB!';
           break;
         case 'level_0b_fix':
           headline =
@@ -809,7 +841,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         }
       }
       subline =
-          'Rule 1: Col Decades (1–9, 10–19 … 80–90) • Rule 2: Ascending Vertical Order • Misplaced balls can be re-dragged anytime!';
+          'Rule 1: Col Decades (1–9 … 80–90) • Rule 2: Ascending Col Order • Rule 3: 5 Numbers per Row • Press ✋ DAB to validate!';
     }
 
     return Container(
