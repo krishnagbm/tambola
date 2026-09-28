@@ -12,17 +12,20 @@ import 'skill_friend_squad_controller.dart';
 class FlashHousieSoloDialog extends StatefulWidget {
   final VoidCallback? onLevelCompleted;
   final String initialGameId;
+  final bool initialFriendMode;
 
   const FlashHousieSoloDialog({
     super.key,
     this.onLevelCompleted,
     this.initialGameId = 'level_0a_make',
+    this.initialFriendMode = false,
   });
 
   static Future<void> show(
     BuildContext context, {
     VoidCallback? onLevelCompleted,
     String initialGameId = 'level_0a_make',
+    bool initialFriendMode = false,
   }) {
     return showDialog<void>(
       context: context,
@@ -30,6 +33,7 @@ class FlashHousieSoloDialog extends StatefulWidget {
       builder: (ctx) => FlashHousieSoloDialog(
         onLevelCompleted: onLevelCompleted,
         initialGameId: initialGameId,
+        initialFriendMode: initialFriendMode,
       ),
     );
   }
@@ -101,6 +105,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   void initState() {
     super.initState();
     _activeGameId = widget.initialGameId;
+    _showJoinCodeInput = widget.initialFriendMode;
     _sharedSeed = 1000 + Random().nextInt(899999);
     _squadController = SkillFriendSquadController();
     _squadController.addListener(_onSquadChanged);

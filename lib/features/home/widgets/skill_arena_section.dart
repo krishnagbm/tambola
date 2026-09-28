@@ -17,19 +17,21 @@ class TwoPartDashboardArena extends StatelessWidget {
       builder: (context, constraints) {
         final isSideBySide = constraints.maxWidth >= 860;
         if (isSideBySide) {
-          return const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 1,
-                child: DashboardHeroSection(),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                flex: 1,
-                child: SkillArenaSection(),
-              ),
-            ],
+          return const IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: DashboardHeroSection(),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: SkillArenaSection(),
+                ),
+              ],
+            ),
           );
         }
 
@@ -249,11 +251,12 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
       context: context,
       builder: (ctx) => _UpcomingLevelsDialog(
         levels: _levels,
-        onPlayLevelSolo: (gameId) {
+        onPlayLevel: (gameId, {bool withFriends = false}) {
           Navigator.of(ctx).pop();
           FlashHousieSoloDialog.show(
             context,
             initialGameId: gameId,
+            initialFriendMode: withFriends,
             onLevelCompleted: _loadSoloProgress,
           );
         },
@@ -270,325 +273,336 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
         horizontal: isWide ? 20 : 16,
         vertical: isWide ? 18 : 16,
       ),
-          decoration: BoxDecoration(
-            color: AppTheme.darkCard,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.55),
-              width: 1.5,
-            ),
-            gradient: RadialGradient(
-              center: Alignment.topRight,
-              radius: 1.4,
-              colors: [
-                AppTheme.secondaryColor.withValues(alpha: 0.16),
-                AppTheme.primaryColor.withValues(alpha: 0.28),
-                AppTheme.darkCard,
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Eyebrow badges (Skill • Solo · Multiplayer · Team)
-              SizedBox(
-                height: 26,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '🧠⚡ SKILL • DABHOUSIE™',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.55),
+          width: 1.5,
+        ),
+        gradient: RadialGradient(
+          center: Alignment.topRight,
+          radius: 1.4,
+          colors: [
+            AppTheme.secondaryColor.withValues(alpha: 0.16),
+            AppTheme.primaryColor.withValues(alpha: 0.28),
+            AppTheme.darkCard,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Eyebrow badges (Skill • Solo · Multiplayer · Team)
+          SizedBox(
+            height: 26,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '🧠⚡ SKILL • DABHOUSIE™',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                        letterSpacing: 0.3,
                       ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: const Text(
-                          '👤 Solo',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF34D399),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppTheme.secondaryColor.withValues(alpha: 0.45),
-                          ),
-                        ),
-                        child: const Text(
-                          '👥 Multiplayer',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.secondaryColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFA855F7).withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: const Color(0xFFA855F7).withValues(alpha: 0.5),
-                          ),
-                        ),
-                        child: const Text(
-                          '🤝 Team',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFD8B4FE),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // 2-Line Headline matching Left Card
-              Text(
-                'Memorize, Reason & Win',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: isWide ? 24 : 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.secondaryColor,
-                  height: 1.2,
-                  letterSpacing: -0.3,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'FlashHousie™ & Skill Specials',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: isWide ? 22 : 18,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  height: 1.2,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // Concise Subhead matching Left Card (exact 38px 2-line slot on desktop)
-              SizedBox(
-                height: isWide ? 38 : null,
-                child: Text(
-                  'Playable 3×9 skill games — MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™ (5•10•15) & upcoming Levels 2–5.',
-                  maxLines: isWide ? 2 : 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: isWide ? 13 : 12.5,
-                    color: const Color(0xFFCBD5E1),
-                    height: 1.4,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              SizedBox(
-                height: isWide ? 18 : null,
-                child: const Text(
-                  'Play solo, share a code with up to 4 friends free (no host needed), or host a skill playlist.',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF34D399),
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // CTAs: Play Solo / Friends + Join a Game + Host a Game (exact 40px single row)
-              SizedBox(
-                height: 40,
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () => FlashHousieSoloDialog.show(
-                          context,
-                          onLevelCompleted: _loadSoloProgress,
-                        ),
-                        icon: const Icon(
-                          Icons.play_circle_fill_rounded,
-                          size: 18,
-                        ),
-                        label: const Text('Play Solo / Friends'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/join'),
-                        icon: const Icon(Icons.vpn_key_rounded, size: 17),
-                        label: const Text('Join a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.secondaryColor,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton.icon(
-                        onPressed: () => context.push('/create-game'),
-                        icon: const Icon(Icons.add_circle_outline, size: 18),
-                        label: const Text('Host a Game'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryLight,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 16,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: isWide ? 16 : null,
-                child: Text(
-                  '🔓 Lvl 0 (Make • Fix • Math • Sum${_level0ClearedCount > 0 ? " $_level0ClearedCount/4✓" : ""}) & Lvl 1 Flash™${_level1Completed ? " ($_level1BestScore pts)" : " Open Now"} • 🔒 Lvl 2–5',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFF94A3B8),
-                    fontWeight: FontWeight.w500,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Upcoming Sequential Levels Popup Trigger (exact 52px 2-line box on desktop)
-              InkWell(
-                onTap: () => _showUpcomingLevelsPopup(context),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  width: double.infinity,
-                  height: isWide ? 52 : null,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.4),
                     ),
                   ),
-                  child: const Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.lock_open_rounded,
-                        color: AppTheme.secondaryColor,
-                        size: 16,
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
                       ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Skill Levels (0→5): Make™ • Fix™ • Math™ • Sum™ → Flash™\nRowHousie™ • FastTap™ • Swap™ • Blast™ • Stick™ →',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.secondaryColor,
-                            height: 1.35,
-                          ),
-                        ),
+                    ),
+                    child: const Text(
+                      '👤 Solo',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF34D399),
                       ),
-                    ],
+                    ),
                   ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    child: const Text(
+                      '👥 Multiplayer',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA855F7).withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFA855F7).withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: const Text(
+                      '🤝 Team',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD8B4FE),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 2-Line Headline matching Left Card (locked height)
+          SizedBox(
+            height: isWide ? 29 : 24,
+            child: Text(
+              'Memorize, Reason & Win',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: isWide ? 24 : 20,
+                fontWeight: FontWeight.w900,
+                color: AppTheme.secondaryColor,
+                height: 1.2,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          SizedBox(
+            height: isWide ? 27 : 22,
+            child: Text(
+              'FlashHousie™ & Skill Specials',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: isWide ? 22 : 18,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.2,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Concise Subhead matching Left Card (exact 38px 2-line slot on desktop, 54px 3-line slot on mobile)
+          SizedBox(
+            height: isWide ? 38 : 54,
+            child: Text(
+              'Playable 3×9 skill games — MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™ (5•10•15) & upcoming Levels 2–5.',
+              maxLines: isWide ? 2 : 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: isWide ? 13 : 12.5,
+                color: const Color(0xFFCBD5E1),
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const SizedBox(
+            height: 18,
+            child: Text(
+              'Play solo, share a code with up to 4 friends free (no host needed), or host a skill playlist.',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF34D399),
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // CTAs: Play Solo + Play with Friends + Host a Game (exact 40px single row)
+          SizedBox(
+            height: 40,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => FlashHousieSoloDialog.show(
+                      context,
+                      initialFriendMode: false,
+                      onLevelCompleted: _loadSoloProgress,
+                    ),
+                    icon: const Icon(
+                      Icons.play_circle_fill_rounded,
+                      size: 17,
+                    ),
+                    label: const Text('Play Solo'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => FlashHousieSoloDialog.show(
+                      context,
+                      initialFriendMode: true,
+                      onLevelCompleted: _loadSoloProgress,
+                    ),
+                    icon: const Icon(Icons.groups_rounded, size: 18),
+                    label: const Text('Play with Friends'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => context.push('/create-game'),
+                    icon: const Icon(Icons.add_circle_outline, size: 17),
+                    label: const Text('Host a Game'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 16,
+            child: Text(
+              '🔓 Lvl 0 (Make • Fix • Math • Sum${_level0ClearedCount > 0 ? " $_level0ClearedCount/4✓" : ""}) & Lvl 1 Flash™${_level1Completed ? " ($_level1BestScore pts)" : " Open Now"} • 🔒 Lvl 2–5',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFF94A3B8),
+                fontWeight: FontWeight.w500,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Upcoming Sequential Levels Popup Trigger (exact 52px 2-line box)
+          InkWell(
+            onTap: () => _showUpcomingLevelsPopup(context),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: double.infinity,
+              height: 52,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.4),
                 ),
               ),
-
-              const SizedBox(height: 12),
-              const Divider(color: Color(0xFF2E334D), height: 1),
-              const SizedBox(height: 10),
-              _buildSkillTrustStrip(isWide),
-            ],
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lock_open_rounded,
+                    color: AppTheme.secondaryColor,
+                    size: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Skill Levels (0→5): Make™ • Fix™ • Math™ • Sum™ → Flash™\nRowHousie™ • FastTap™ • Swap™ • Blast™ • Stick™ →',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.secondaryColor,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
+
+          const SizedBox(height: 12),
+          const Divider(color: Color(0xFF2E334D), height: 1),
+          const SizedBox(height: 10),
+          _buildSkillTrustStrip(isWide),
+        ],
+      ),
+    );
   }
 
   Widget _buildSkillTrustStrip(bool isWide) {
@@ -599,71 +613,43 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
     ];
     const line2 = [
       '🔓 Lvl 0→5 Progression',
-      '👤 Instant Solo Practice',
+      '👥 Free 5-Player Friend Code',
       '⌨️ Touch, Mouse & Keys',
     ];
 
     Widget buildLine(List<String> items) {
-      if (isWide) {
-        return SizedBox(
-          height: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Flexible(
+      return SizedBox(
+        height: 16,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              Flexible(
+                child: Text(
+                  items[i],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFA0AEC0),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (i < items.length - 1)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
-                    items[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFFA0AEC0),
-                      fontWeight: FontWeight.w500,
+                    '•',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF718096),
                     ),
                   ),
                 ),
-                if (i < items.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      '•',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF718096),
-                      ),
-                    ),
-                  ),
-              ],
             ],
-          ),
-        );
-      }
-      return Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 6,
-        runSpacing: 4,
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            Text(
-              items[i],
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFFA0AEC0),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (i < items.length - 1)
-              const Text(
-                '•',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF718096),
-                ),
-              ),
           ],
-        ],
+        ),
       );
     }
 
@@ -681,11 +667,11 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
 /// Popup Dialog showing only level headings at a glance, with click-to-toggle descriptions.
 class _UpcomingLevelsDialog extends StatefulWidget {
   final List<_SkillLevelItem> levels;
-  final void Function(String gameId) onPlayLevelSolo;
+  final void Function(String gameId, {bool withFriends}) onPlayLevel;
 
   const _UpcomingLevelsDialog({
     required this.levels,
-    required this.onPlayLevelSolo,
+    required this.onPlayLevel,
   });
 
   @override
@@ -892,8 +878,10 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                       if (item.isUnlocked) ...[
                                         const SizedBox(width: 8),
                                         ElevatedButton.icon(
-                                          onPressed: () =>
-                                              widget.onPlayLevelSolo(item.id),
+                                          onPressed: () => widget.onPlayLevel(
+                                            item.id,
+                                            withFriends: false,
+                                          ),
                                           icon: const Icon(
                                             Icons.play_arrow_rounded,
                                             size: 16,
@@ -909,6 +897,36 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                                             backgroundColor: const Color(
                                               0xFF10B981,
                                             ),
+                                            foregroundColor: Colors.black,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 6,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize:
+                                                MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        ElevatedButton.icon(
+                                          onPressed: () => widget.onPlayLevel(
+                                            item.id,
+                                            withFriends: true,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.groups_rounded,
+                                            size: 15,
+                                          ),
+                                          label: const Text(
+                                            'Friends',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppTheme.secondaryColor,
                                             foregroundColor: Colors.black,
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 10,
@@ -942,24 +960,43 @@ class _UpcomingLevelsDialogState extends State<_UpcomingLevelsDialog> {
                 ),
               ),
               const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Close'),
                   ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
-                    onPressed: () =>
-                        widget.onPlayLevelSolo(selectedUnlockedId),
+                    onPressed: () => widget.onPlayLevel(
+                      selectedUnlockedId,
+                      withFriends: false,
+                    ),
                     icon: const Icon(Icons.play_arrow_rounded, size: 18),
                     label: const Text(
-                      'Play Selected Level Solo',
+                      'Play Solo',
                       style: TextStyle(fontWeight: FontWeight.w900),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.black,
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => widget.onPlayLevel(
+                      selectedUnlockedId,
+                      withFriends: true,
+                    ),
+                    icon: const Icon(Icons.groups_rounded, size: 18),
+                    label: const Text(
+                      'Play with Friends',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
                       foregroundColor: Colors.black,
                     ),
                   ),

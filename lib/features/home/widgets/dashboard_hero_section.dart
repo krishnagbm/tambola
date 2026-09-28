@@ -119,36 +119,42 @@ class DashboardHeroSection extends ConsumerWidget {
 
               // Line 1: Tagline ("Play, Connect & Win")
               // Line 2: "Tambola, Housie & 90-Ball Bingo"
-              Text(
-                'Play, Connect & Win',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: isWide ? 24 : 20,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.secondaryColor,
-                  height: 1.2,
-                  letterSpacing: -0.3,
+              SizedBox(
+                height: isWide ? 29 : 24,
+                child: Text(
+                  'Play, Connect & Win',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isWide ? 24 : 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.secondaryColor,
+                    height: 1.2,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
               const SizedBox(height: 2),
-              Text(
-                'Tambola, Housie & 90-Ball Bingo',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: isWide ? 22 : 18,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  height: 1.2,
-                  letterSpacing: -0.2,
+              SizedBox(
+                height: isWide ? 27 : 22,
+                child: Text(
+                  'Tambola, Housie & 90-Ball Bingo',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isWide ? 22 : 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    height: 1.2,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
 
-              // Subhead (exact 38px 2-line slot on desktop)
+              // Subhead (exact 38px 2-line slot on desktop, 54px 3-line slot on mobile)
               SizedBox(
-                height: isWide ? 38 : null,
+                height: isWide ? 38 : 54,
                 child: Text(
                   'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.',
                   maxLines: isWide ? 2 : 3,
@@ -161,9 +167,9 @@ class DashboardHeroSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              SizedBox(
-                height: isWide ? 18 : null,
-                child: const Text(
+              const SizedBox(
+                height: 18,
+                child: Text(
                   'Join as an individual, with friends, or bring your whole team — the more the merrier.',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -225,9 +231,9 @@ class DashboardHeroSection extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                height: isWide ? 16 : null,
-                child: const Text(
+              const SizedBox(
+                height: 16,
+                child: Text(
                   'Free for up to 5 players • Paid hosting for larger groups',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -241,13 +247,13 @@ class DashboardHeroSection extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Corporate & Mega-X Callout Button (exact 52px 2-line box on desktop)
+              // Corporate & Mega-X Callout Button (exact 52px 2-line box)
               InkWell(
                 onTap: () => CorporateInquiryDialog.show(context),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   width: double.infinity,
-                  height: isWide ? 52 : null,
+                  height: 52,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
                     vertical: 8,
@@ -308,66 +314,38 @@ class DashboardHeroSection extends ConsumerWidget {
     ];
 
     Widget buildLine(List<String> items) {
-      if (isWide) {
-        return SizedBox(
-          height: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Flexible(
+      return SizedBox(
+        height: 16,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < items.length; i++) ...[
+              Flexible(
+                child: Text(
+                  items[i],
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFFA0AEC0),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (i < items.length - 1)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
-                    items[i],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFFA0AEC0),
-                      fontWeight: FontWeight.w500,
+                    '•',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF718096),
                     ),
                   ),
                 ),
-                if (i < items.length - 1)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      '•',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF718096),
-                      ),
-                    ),
-                  ),
-              ],
             ],
-          ),
-        );
-      }
-      return Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 6,
-        runSpacing: 4,
-        children: [
-          for (int i = 0; i < items.length; i++) ...[
-            Text(
-              items[i],
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFFA0AEC0),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (i < items.length - 1)
-              const Text(
-                '•',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Color(0xFF718096),
-                ),
-              ),
           ],
-        ],
+        ),
       );
     }
 
