@@ -35,12 +35,13 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   bool _feedbackIsError = false;
   final Set<String> _wrongFlashingCells = <String>{};
 
-  // Level 0A: MakeHousie state (Mystery ? balls + Drag & Drop + Unlimited re-drag)
+  // Level 0A: MakeHousie state (Mystery ? balls + Drag & Drop + DAB to Validate)
   String _makeMode = MakeHousieRoundSpec.modeMake5Quad;
   late MakeHousieRoundSpec _makeSpec;
   late List<List<int>> _makeLiveBoard;
   final Set<int> _revealedMakeBalls = <int>{};
   final Set<int> _onBoardMakeBalls = <int>{};
+  final Set<String> _dabFlaggedCells = <String>{};
   int? _selectedDealBall;
   bool _isDraggingMakeBall = false;
 
@@ -116,6 +117,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
 
       _revealedMakeBalls.clear();
       _onBoardMakeBalls.clear();
+      _dabFlaggedCells.clear();
       _selectedDealBall = null;
       _isDraggingMakeBall = false;
 
@@ -236,7 +238,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         _isDraggingMakeBall = true;
       }
       _feedbackBannerText =
-          '🎯 Ball #$ball revealed! Spontaneously drop it into its valid Decade Column (1–9 … 80–90) & Ascending Row!';
+          '🎯 Ball #$ball revealed! Drop it onto its Decade Column & Row — then hit ✋ DAB when all balls are placed!';
       _feedbackIsError = false;
     });
   }
@@ -249,8 +251,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   }
 
   /// Handles dropping [ball] onto cell ([row], [col]) on the 3×9 grid.
-  /// If placed in a wrong column or wrong vertical order, the ball still lands on
-  /// that cell with a warning border so the player has unlimited chances to drag it to the right place!
+  /// Does NOT validate until all balls are placed and the player presses "✋ DAB TO VALIDATE!"
   void _handleMakeBallDrop(int ball, int row, int col) {
     if (_roundCompleted) return;
     if (_startedAtMs == null) {
@@ -294,6 +295,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
 
     if (fromR != null && fromC != null) {
       _makeLiveBoard[fromR][fromC] = 0;
+      _dabFlaggedCells.remove('${fromR}_$fromC');
     }
 
     final occupant = _makeLiveBoard[row][col];
@@ -305,14 +307,12 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         // Came from Deal Pool onto an occupied cell -> shift occupant to an open row in this column if available
         int? openRow;
         if (ball < occupant && row == 0) {
-          // Prefer shifting larger occupant downward
           if (_makeLiveBoard[1][col] == 0) {
             openRow = 1;
           } else if (_makeLiveBoard[2][col] == 0) {
             openRow = 2;
           }
         } else if (ball > occupant && row == 2) {
-          // Prefer shifting smaller occupant upward
           if (_makeLiveBoard[1][col] == 0) {
             openRow = 1;
           } else if (_makeLiveBoard[0][col] == 0) {
@@ -325,6 +325,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         );
         if (openRow != null) {
           _makeLiveBoard[openRow][col] = occupant;
+          _dabFlaggedCells.remove('${openRow}_$col');
         } else {
           // All 3 rows in this column were full -> return occupant to Deal Pool (already revealed)
           _onBoardMakeBalls.remove(occupant);
@@ -335,47 +336,76 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     _makeLiveBoard[row][col] = ball;
     _onBoardMakeBalls.add(ball);
     _revealedMakeBalls.add(ball);
+    _dabFlaggedCells.remove('${row}_$col');
 
-    final cellIssue = _makeSpec.evaluateCellIssue(_makeLiveBoard, row, col);
-    // Also check if any other cell on the board still has an issue
-    String? anyOtherIssue;
-    for (int r = 0; r < 3; r++) {
-      for (int c = 0; c < 9; c++) {
-        if (!_makeSpec.isColumnActive(c)) continue;
-        final iss = _makeSpec.evaluateCellIssue(_makeLiveBoard, r, c);
-        if (iss != null) {
-          anyOtherIssue = iss;
-          break;
-        }
-      }
-      if (anyOtherIssue != null) break;
-    }
+    final allPlaced = _onBoardMakeBalls.length >= _makeSpec.dealPool.length;
 
     setState(() {
       _isDraggingMakeBall = false;
       _selectedDealBall = null;
-      _correctCount = _makeSpec.countValidPlacements(_makeLiveBoard);
       _totalReactionMs += stepMs;
       _stepStartedAtMs = nowMs;
 
-      if (cellIssue != null) {
-        _wrongCount++;
+      if (allPlaced) {
         _feedbackBannerText =
-            '⚠️ $cellIssue (Unlimited retries — drag Ball #$ball to the right cell!)';
-        _feedbackIsError = true;
-      } else if (anyOtherIssue != null) {
-        _feedbackBannerText =
-            '✓ Ball #$ball placed in Col ${col + 1}! Next, drag to fix: $anyOtherIssue';
-        _feedbackIsError = true;
+            '✋ All ${_makeSpec.dealPool.length} balls filled in! Check your columns & order, then press "✋ DAB TO VALIDATE!"';
+        _feedbackIsError = false;
       } else {
         _feedbackBannerText =
-            '✓ Dropped Ball #$ball into Col ${col + 1} (${columnDecadeLabel(col)}), Row ${row + 1}! ($_correctCount/${_makeSpec.dealPool.length} valid)';
+            'Dropped Ball #$ball into Col ${col + 1}, Row ${row + 1} (${_onBoardMakeBalls.length}/${_makeSpec.dealPool.length} placed — grab next ? ball!)';
         _feedbackIsError = false;
       }
     });
+  }
 
-    if (_makeSpec.isBoardSolved(_makeLiveBoard)) {
+  /// Triggered when the player clicks the "✋ DAB TO VALIDATE!" button once all balls are placed.
+  void _handleMakeDabValidate() {
+    if (_roundCompleted) return;
+    if (_onBoardMakeBalls.length < _makeSpec.dealPool.length) {
+      setState(() {
+        _feedbackBannerText =
+            '⚠️ Place all ${_makeSpec.dealPool.length} balls onto the grid before pressing ✋ DAB!';
+        _feedbackIsError = true;
+      });
+      return;
+    }
+
+    final flagged = <String>{};
+    String? firstIssue;
+    for (int r = 0; r < 3; r++) {
+      for (int c = 0; c < 9; c++) {
+        if (!_makeSpec.isColumnActive(c)) continue;
+        if (_makeLiveBoard[r][c] > 0) {
+          final iss = _makeSpec.evaluateCellIssue(_makeLiveBoard, r, c);
+          if (iss != null) {
+            flagged.add('${r}_$c');
+            firstIssue ??= iss;
+          }
+        }
+      }
+    }
+
+    if (flagged.isEmpty && _makeSpec.isBoardSolved(_makeLiveBoard)) {
+      setState(() {
+        _dabFlaggedCells.clear();
+        _correctCount = _makeSpec.dealPool.length;
+        _feedbackBannerText =
+            '🏆 VALID DAB! All ${_makeSpec.dealPool.length} balls verified in right Column Decades & Ascending Order!';
+        _feedbackIsError = false;
+      });
       _completeRound();
+    } else {
+      setState(() {
+        _wrongCount++;
+        _totalReactionMs += 2000;
+        _dabFlaggedCells
+          ..clear()
+          ..addAll(flagged);
+        _correctCount = _makeSpec.countValidPlacements(_makeLiveBoard);
+        _feedbackBannerText =
+            '🚨 BOGEY DAB (-3 pts)! ${flagged.length} cell(s) failed validation — $firstIssue Drag red cells to fix & DAB again!';
+        _feedbackIsError = true;
+      });
     }
   }
 
@@ -1011,7 +1041,9 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '✓ $_correctCount/$_targetStepCount  •  ✖ $_wrongCount',
+                  widget.gameId == 'level_0a_make' && !_roundCompleted
+                      ? '📥 ${_onBoardMakeBalls.length}/$_targetStepCount  •  ✖ $_wrongCount'
+                      : '✓ $_correctCount/$_targetStepCount  •  ✖ $_wrongCount',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1132,6 +1164,58 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     switch (widget.gameId) {
       case 'level_0a_make':
         final ball = _selectedDealBall;
+        final allPlaced = _onBoardMakeBalls.length >= _makeSpec.dealPool.length;
+        if (allPlaced && ball == null) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _handleMakeDabValidate,
+                icon: const Icon(Icons.pan_tool_alt_rounded, size: 16),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '✋ DAB TO VALIDATE!',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF10B981),
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Colors.white, width: 1.5),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                _dabFlaggedCells.isNotEmpty
+                    ? '${_dabFlaggedCells.length} cell(s) flagged • Fix & DAB!'
+                    : 'All ${_makeSpec.dealPool.length} placed • Lock in claim!',
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: _dabFlaggedCells.isNotEmpty
+                      ? const Color(0xFFFBBF24)
+                      : const Color(0xFF34D399),
+                ),
+              ),
+            ],
+          );
+        }
         return Row(
           children: [
             Container(
@@ -1349,11 +1433,11 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     );
   }
 
-  bool _isBallMisplacedOnBoard(int ball) {
+  bool _isBallFlaggedByDab(int ball) {
     for (int r = 0; r < 3; r++) {
       for (int c = 0; c < 9; c++) {
         if (_makeLiveBoard[r][c] == ball) {
-          return _makeSpec.evaluateCellIssue(_makeLiveBoard, r, c) != null;
+          return _dabFlaggedCells.contains('${r}_$c');
         }
       }
     }
@@ -1361,12 +1445,18 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   }
 
   Widget _buildMakeDealPoolStrip(bool isWaiting) {
+    final allPlaced = _onBoardMakeBalls.length >= _makeSpec.dealPool.length;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF2E334D)),
+        border: Border.all(
+          color: allPlaced && !_roundCompleted
+              ? const Color(0xFF10B981)
+              : const Color(0xFF2E334D),
+          width: allPlaced && !_roundCompleted ? 1.5 : 1.0,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1378,25 +1468,59 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                 child: Text(
                   isWaiting
                       ? '🎱 Mystery Ball Pool (${_makeSpec.dealPool.length} random ? balls — click "▶ Start" or drag any ? ball!)'
-                      : '🎱 Mystery Ball Pool (Drag any ? ball to reveal its number & drop onto the 3×9 grid)',
+                      : (allPlaced
+                            ? '✋ All ${_makeSpec.dealPool.length} balls placed on grid! Press "✋ DAB TO VALIDATE!" when ready'
+                            : '🎱 Mystery Ball Pool (Drag any ? ball to reveal its number & drop onto the 3×9 grid)'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF94A3B8),
+                    color: allPlaced && !_roundCompleted
+                        ? const Color(0xFF34D399)
+                        : const Color(0xFF94A3B8),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '$_correctCount/${_makeSpec.dealPool.length} Valid',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF34D399),
+              if (!_roundCompleted)
+                ElevatedButton.icon(
+                  onPressed: allPlaced ? _handleMakeDabValidate : null,
+                  icon: const Icon(Icons.pan_tool_alt_rounded, size: 14),
+                  label: Text(
+                    allPlaced
+                        ? '✋ DAB TO VALIDATE!'
+                        : 'DAB (${_onBoardMakeBalls.length}/${_makeSpec.dealPool.length})',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.black,
+                    disabledBackgroundColor: const Color(0xFF1E293B),
+                    disabledForegroundColor: const Color(0xFF64748B),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    minimumSize: const Size(0, 30),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '✓ ${_makeSpec.dealPool.length}/${_makeSpec.dealPool.length} Validated!',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF34D399),
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -1405,7 +1529,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             runSpacing: 6,
             children: _makeSpec.dealPool.map((ball) {
               final isOnBoard = _onBoardMakeBalls.contains(ball);
-              final isMisplaced = isOnBoard && _isBallMisplacedOnBoard(ball);
+              final isFlagged = isOnBoard && _isBallFlaggedByDab(ball);
               final isRevealed = _revealedMakeBalls.contains(ball);
               final isSelected = !isOnBoard && _selectedDealBall == ball;
 
@@ -1415,9 +1539,11 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isOnBoard
-                      ? (isMisplaced
-                            ? const Color(0xFF7F1D1D)
-                            : const Color(0xFF064E3B))
+                      ? (_roundCompleted
+                            ? const Color(0xFF064E3B)
+                            : (isFlagged
+                                  ? const Color(0xFF7F1D1D)
+                                  : const Color(0xFF1E293B)))
                       : (isSelected
                             ? AppTheme.secondaryColor
                             : (isRevealed
@@ -1426,9 +1552,11 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: isOnBoard
-                        ? (isMisplaced
-                              ? const Color(0xFFFBBF24)
-                              : const Color(0xFF10B981))
+                        ? (_roundCompleted
+                              ? const Color(0xFF10B981)
+                              : (isFlagged
+                                    ? const Color(0xFFFBBF24)
+                                    : const Color(0xFF475569)))
                         : (isSelected
                               ? Colors.white
                               : (isRevealed
@@ -1439,15 +1567,17 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
                 ),
                 child: Text(
                   isOnBoard
-                      ? (isMisplaced ? '⚠️' : '✓')
+                      ? (_roundCompleted ? '✓' : (isFlagged ? '⚠️' : '📥'))
                       : (isRevealed ? '$ball' : '?'),
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w900,
                     color: isOnBoard
-                        ? (isMisplaced
-                              ? const Color(0xFFFBBF24)
-                              : const Color(0xFF34D399))
+                        ? (_roundCompleted
+                              ? const Color(0xFF34D399)
+                              : (isFlagged
+                                    ? const Color(0xFFFBBF24)
+                                    : const Color(0xFF94A3B8)))
                         : (isSelected
                               ? Colors.black
                               : (isRevealed
@@ -1772,10 +1902,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             _handleMakeBallDrop(details.data, row, col),
         builder: (context, candidateData, rejectedData) {
           final isHovered = candidateData.isNotEmpty;
-          final issue = cellVal > 0
-              ? _makeSpec.evaluateCellIssue(_makeLiveBoard, row, col)
-              : null;
-          final isMisplaced = issue != null;
+          final isMisplaced = _dabFlaggedCells.contains('${row}_$col');
 
           String label = '';
           Color bg = const Color(0xFF0B1120);
@@ -1784,7 +1911,15 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
           double borderWidth = 1.0;
 
           if (cellVal > 0) {
-            if (isMisplaced) {
+            if (_roundCompleted) {
+              // Validated & Solved!
+              label = '$cellVal';
+              bg = const Color(0xFF059669);
+              border = const Color(0xFF34D399);
+              textColor = Colors.white;
+              borderWidth = 1.6;
+            } else if (isMisplaced) {
+              // Flagged by a Bogey Dab — drag to fix!
               label = '$cellVal ⇄';
               bg = isHovered
                   ? const Color(0xFFB91C1C)
@@ -1793,11 +1928,12 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               textColor = const Color(0xFFFDE68A);
               borderWidth = 1.8;
             } else {
+              // Placed on board, awaiting "✋ DAB TO VALIDATE!" (neutral, unspoiled)
               label = '$cellVal';
               bg = isHovered
-                  ? const Color(0xFF10B981)
-                  : const Color(0xFF059669);
-              border = const Color(0xFF34D399);
+                  ? const Color(0xFF4338CA)
+                  : const Color(0xFF312E81);
+              border = AppTheme.secondaryColor;
               textColor = Colors.white;
               borderWidth = 1.6;
             }
