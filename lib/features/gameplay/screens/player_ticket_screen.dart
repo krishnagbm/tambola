@@ -986,6 +986,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       .any((c) => c.status == 'APPROVED') ||
                   (flashConfig != null &&
                       flashConfig.cycles.any((c) => c.winnerUserId != null));
+                  calledNumbers.length >= 90;
+              final hasApprovedWinners =
+                  (claimsStream.value ?? const <MptClaim>[])
+                      .any((c) => c.status == 'APPROVED');
               final isCancelledOrNoWinners =
                   currentGame?.status == 'CANCELLED' ||
                   (isGameEnded && !hasApprovedWinners);
@@ -1555,6 +1559,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               isCancelledOrNoWinners
                   ? 'This game was cancelled or ended early without any prize winners.'
                   : 'Game concluded across $totalPlayers players! Check your rewards below.',
+                  : (totalCalled >= 90
+                        ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
+                        : 'Game concluded across $totalPlayers players! Check your rewards below.'),
               style: TextStyle(
                 fontSize: isCompact ? 11.5 : 13,
                 color: Colors.white,
