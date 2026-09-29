@@ -26,28 +26,43 @@ class GameRepository {
     // Validate UUID format; pass null if not a valid UUID string
     String? effectiveTierId = plannedCapacityTierId;
     if (effectiveTierId != null &&
-        !RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-            .hasMatch(effectiveTierId)) {
+        !RegExp(
+          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+        ).hasMatch(effectiveTierId)) {
       effectiveTierId = null;
     }
 
     try {
-      final res = await _supabase.rpc('MPT_create_game', params: {
-        'p_name': name,
-        'p_planned_capacity': plannedCapacity,
-        'p_scheduled_at': scheduledAt?.toIso8601String(),
-        'p_prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
-        'p_is_private': isPrivate,
-        'p_total_prize_budget': totalPrizeBudget,
-        'p_prize_gifts_config': prizeGiftsConfig,
-        'p_minor_prize_policy': minorPrizePolicy,
-      });
+      final res = await _supabase.rpc(
+        'MPT_create_game',
+        params: {
+          'p_name': name,
+          'p_planned_capacity': plannedCapacity,
+          'p_scheduled_at': scheduledAt?.toIso8601String(),
+          'p_prizes_config':
+              prizesConfig ??
+              [
+                'EARLY_FIVE',
+                'TOP_LINE',
+                'MIDDLE_LINE',
+                'BOTTOM_LINE',
+                'FOUR_CORNERS',
+                'FULL_HOUSE',
+              ],
+          'p_is_private': isPrivate,
+          'p_total_prize_budget': totalPrizeBudget,
+          'p_prize_gifts_config': prizeGiftsConfig,
+          'p_minor_prize_policy': minorPrizePolicy,
+        },
+      );
 
       if (res is Map<String, dynamic>) {
         final game = MptGame.fromJson(res);
         // If private, trigger organizer email in background
         if (isPrivate) {
-          sendPrivatePartyEmail(gameId: game.id).catchError((_) => <String, dynamic>{'success': false});
+          sendPrivatePartyEmail(
+            gameId: game.id,
+          ).catchError((_) => <String, dynamic>{'success': false});
         }
         return game;
       }
@@ -55,22 +70,36 @@ class GameRepository {
     } catch (e) {
       // Fallback direct table insert if RPC is missing
       final uid = _supabase.auth.currentUser?.id;
-      final inviteCode = 'TAMB${(DateTime.now().millisecondsSinceEpoch % 90000) + 10000}';
-      final row = await _supabase.from('MPT_games').insert({
-        'admin_user_id': uid,
-        'name': name,
-        'invite_code': inviteCode,
-        'status': 'OPEN',
-        'planned_capacity_tier_id': effectiveTierId,
-        'initial_funded_capacity': plannedCapacity,
-        'funded_capacity': plannedCapacity,
-        'scheduled_at': scheduledAt?.toIso8601String(),
-        'is_private': isPrivate,
-        'prizes_config': prizesConfig ?? ['EARLY_FIVE', 'TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE', 'FOUR_CORNERS', 'FULL_HOUSE'],
-        'total_prize_budget': totalPrizeBudget,
-        'prize_gifts_config': prizeGiftsConfig,
-        'minor_prize_policy': minorPrizePolicy,
-      }).select().single();
+      final inviteCode =
+          'TAMB${(DateTime.now().millisecondsSinceEpoch % 90000) + 10000}';
+      final row = await _supabase
+          .from('MPT_games')
+          .insert({
+            'admin_user_id': uid,
+            'name': name,
+            'invite_code': inviteCode,
+            'status': 'OPEN',
+            'planned_capacity_tier_id': effectiveTierId,
+            'initial_funded_capacity': plannedCapacity,
+            'funded_capacity': plannedCapacity,
+            'scheduled_at': scheduledAt?.toIso8601String(),
+            'is_private': isPrivate,
+            'prizes_config':
+                prizesConfig ??
+                [
+                  'EARLY_FIVE',
+                  'TOP_LINE',
+                  'MIDDLE_LINE',
+                  'BOTTOM_LINE',
+                  'FOUR_CORNERS',
+                  'FULL_HOUSE',
+                ],
+            'total_prize_budget': totalPrizeBudget,
+            'prize_gifts_config': prizeGiftsConfig,
+            'minor_prize_policy': minorPrizePolicy,
+          })
+          .select()
+          .single();
       return MptGame.fromJson(row);
     }
   }
@@ -114,6 +143,7 @@ class GameRepository {
         .from('MPT_games')
         .update({
           'status': 'CANCELLED',
+          'is_publicly_visible': false,
           'completed_at': DateTime.now().toIso8601String(),
         })
         .eq('id', gameId);
@@ -134,14 +164,19 @@ class GameRepository {
     }
 
     try {
-      final res = await _supabase.rpc('MPT_register_player', params: {
-        'p_game_id': gameId,
-        'p_display_name': displayName,
-        'p_avatar': avatar,
-      });
+      final res = await _supabase.rpc(
+        'MPT_register_player',
+        params: {
+          'p_game_id': gameId,
+          'p_display_name': displayName,
+          'p_avatar': avatar,
+        },
+      );
 
       if (res is Map<String, dynamic> && res['registration'] != null) {
-        return MptRegistration.fromJson(res['registration'] as Map<String, dynamic>);
+        return MptRegistration.fromJson(
+          res['registration'] as Map<String, dynamic>,
+        );
       }
       throw Exception('Failed to register player');
     } catch (e) {
@@ -162,19 +197,23 @@ class GameRepository {
           .from('MPT_game_registrations')
           .select('registration_seq')
           .eq('game_id', gameId);
-      
+
       final nextSeq = (countRes as List).length + 1;
       final game = await getGame(gameId);
       final status = nextSeq <= game.fundedCapacity ? 'CONFIRMED' : 'WAITING';
 
-      final row = await _supabase.from('MPT_game_registrations').insert({
-        'game_id': gameId,
-        'user_id': uid,
-        'display_name': displayName,
-        'avatar': avatar,
-        'registration_seq': nextSeq,
-        'seat_status': status,
-      }).select().single();
+      final row = await _supabase
+          .from('MPT_game_registrations')
+          .insert({
+            'game_id': gameId,
+            'user_id': uid,
+            'display_name': displayName,
+            'avatar': avatar,
+            'registration_seq': nextSeq,
+            'seat_status': status,
+          })
+          .select()
+          .single();
 
       return MptRegistration.fromJson(row);
     }
@@ -185,9 +224,7 @@ class GameRepository {
     final uid = _supabase.auth.currentUser?.id;
     if (uid == null) return;
     try {
-      await _supabase.rpc('MPT_leave_game', params: {
-        'p_game_id': gameId,
-      });
+      await _supabase.rpc('MPT_leave_game', params: {'p_game_id': gameId});
     } catch (_) {
       await _supabase
           .from('MPT_game_registrations')
@@ -203,15 +240,19 @@ class GameRepository {
     required int additionalCapacity,
   }) async {
     try {
-      await _supabase.rpc('MPT_increase_game_capacity', params: {
-        'p_game_id': gameId,
-        'p_additional_capacity': additionalCapacity,
-      });
+      await _supabase.rpc(
+        'MPT_increase_game_capacity',
+        params: {
+          'p_game_id': gameId,
+          'p_additional_capacity': additionalCapacity,
+        },
+      );
     } catch (e) {
       final game = await getGame(gameId);
-      await _supabase.from('MPT_games').update({
-        'funded_capacity': game.fundedCapacity + additionalCapacity,
-      }).eq('id', gameId);
+      await _supabase
+          .from('MPT_games')
+          .update({'funded_capacity': game.fundedCapacity + additionalCapacity})
+          .eq('id', gameId);
     }
   }
 
@@ -328,10 +369,10 @@ class GameRepository {
     required String gameId,
     required String otpCode,
   }) async {
-    final res = await _supabase.rpc('MPT_claim_seat_otp', params: {
-      'p_game_id': gameId,
-      'p_otp_code': otpCode.trim().toUpperCase(),
-    });
+    final res = await _supabase.rpc(
+      'MPT_claim_seat_otp',
+      params: {'p_game_id': gameId, 'p_otp_code': otpCode.trim().toUpperCase()},
+    );
     if (res is Map<String, dynamic>) {
       return res;
     }
@@ -369,10 +410,10 @@ class GameRepository {
     required String gameId,
     required String seatId,
   }) async {
-    await _supabase.rpc('MPT_reissue_seat_otp', params: {
-      'p_game_id': gameId,
-      'p_seat_id': seatId,
-    });
+    await _supabase.rpc(
+      'MPT_reissue_seat_otp',
+      params: {'p_game_id': gameId, 'p_seat_id': seatId},
+    );
   }
 
   /// Adds additional seat OTPs to a private party
@@ -380,10 +421,10 @@ class GameRepository {
     required String gameId,
     required int additionalSeats,
   }) async {
-    await _supabase.rpc('MPT_add_seat_otps', params: {
-      'p_game_id': gameId,
-      'p_additional_seats': additionalSeats,
-    });
+    await _supabase.rpc(
+      'MPT_add_seat_otps',
+      params: {'p_game_id': gameId, 'p_additional_seats': additionalSeats},
+    );
   }
 
   /// Revokes a seat OTP
@@ -391,18 +432,21 @@ class GameRepository {
     required String gameId,
     required String seatId,
   }) async {
-    await _supabase.rpc('MPT_revoke_seat_otp', params: {
-      'p_game_id': gameId,
-      'p_seat_id': seatId,
-    });
+    await _supabase.rpc(
+      'MPT_revoke_seat_otp',
+      params: {'p_game_id': gameId, 'p_seat_id': seatId},
+    );
   }
 
   /// Triggers email delivery of OTP passcodes to the organizer
-  Future<Map<String, dynamic>> sendPrivatePartyEmail({required String gameId, String? targetEmail}) async {
+  Future<Map<String, dynamic>> sendPrivatePartyEmail({
+    required String gameId,
+    String? targetEmail,
+  }) async {
     try {
       final game = await getGame(gameId);
       final otps = await getGameSeatOtps(gameId);
-      
+
       String? email = targetEmail;
       if (email == null || email.isEmpty) {
         final adminProfile = await _supabase
@@ -411,7 +455,9 @@ class GameRepository {
             .eq('user_id', game.adminUserId)
             .maybeSingle();
 
-        email = adminProfile?['email'] as String? ?? _supabase.auth.currentUser?.email;
+        email =
+            adminProfile?['email'] as String? ??
+            _supabase.auth.currentUser?.email;
       }
 
       if (email == null || email.isEmpty) {
@@ -426,13 +472,17 @@ class GameRepository {
         'to_email': email,
         'game_name': game.name,
         'invite_code': game.inviteCode,
-        'otps': otps.map((o) => {'seat_number': o.seatNumber, 'otp_code': o.otpCode}).toList(),
+        'otps': otps
+            .map((o) => {'seat_number': o.seatNumber, 'otp_code': o.otpCode})
+            .toList(),
         'scheduled_at': game.scheduledAt?.toIso8601String(),
       };
 
       // 1. Try AWS API Gateway Lambda endpoint
       try {
-        final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+        final uri = Uri.parse(
+          'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+        );
         final response = await http.post(
           uri,
           headers: {'Content-Type': 'application/json'},
@@ -451,7 +501,10 @@ class GameRepository {
 
       // 2. Try Supabase Edge function invocation
       try {
-        final res = await _supabase.functions.invoke('send-private-party-email', body: payload);
+        final res = await _supabase.functions.invoke(
+          'send-private-party-email',
+          body: payload,
+        );
         if (res.status == 200) {
           return {
             'success': true,
@@ -464,14 +517,11 @@ class GameRepository {
       return {
         'success': false,
         'email': email,
-        'message': 'Sent request to $email. (Note: In AWS SES Sandbox mode, the destination email must be verified in AWS SES Console).',
+        'message':
+            'Sent request to $email. (Note: In AWS SES Sandbox mode, the destination email must be verified in AWS SES Console).',
       };
     } catch (e) {
-      return {
-        'success': false,
-        'email': null,
-        'message': e.toString(),
-      };
+      return {'success': false, 'email': null, 'message': e.toString()};
     }
   }
 
@@ -486,12 +536,15 @@ class GameRepository {
     String? inviteCode,
   }) async {
     try {
-      final res = await _supabase.rpc('MPT_submit_brand_approval', params: {
-        'p_game_id': gameId,
-        'p_organization_name': organizationName,
-        'p_organization_logo_url': organizationLogoUrl,
-        'p_approver_email': approverEmail,
-      });
+      final res = await _supabase.rpc(
+        'MPT_submit_brand_approval',
+        params: {
+          'p_game_id': gameId,
+          'p_organization_name': organizationName,
+          'p_organization_logo_url': organizationLogoUrl,
+          'p_approver_email': approverEmail,
+        },
+      );
 
       if (res is Map<String, dynamic>) {
         if (res['success'] == true) {
@@ -554,7 +607,8 @@ class GameRepository {
 
       final currentProfile = _supabase.auth.currentUser;
       final hostEmail = currentProfile?.email ?? '';
-      final organizerName = currentProfile?.userMetadata?['name'] as String? ??
+      final organizerName =
+          currentProfile?.userMetadata?['name'] as String? ??
           currentProfile?.userMetadata?['display_name'] as String? ??
           'Event Organizer';
 
@@ -571,7 +625,9 @@ class GameRepository {
         'invite_code': resolvedInviteCode,
       };
 
-      final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+      );
       await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -606,7 +662,8 @@ class GameRepository {
 
       final currentProfile = _supabase.auth.currentUser;
       final hostEmail = currentProfile?.email ?? '';
-      final organizerName = currentProfile?.userMetadata?['name'] as String? ??
+      final organizerName =
+          currentProfile?.userMetadata?['name'] as String? ??
           currentProfile?.userMetadata?['display_name'] as String? ??
           'Event Organizer';
 
@@ -624,7 +681,9 @@ class GameRepository {
         'invite_code': resolvedInviteCode,
       };
 
-      final uri = Uri.parse('https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party');
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+      );
       await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -641,7 +700,9 @@ class GameRepository {
       final res = await _supabase.rpc('MPT_get_active_brand_offers');
       if (res is List) {
         return res
-            .map((e) => BrandOffer.fromJson(Map<String, dynamic>.from(e as Map)))
+            .map(
+              (e) => BrandOffer.fromJson(Map<String, dynamic>.from(e as Map)),
+            )
             .toList();
       }
     } catch (_) {}
@@ -664,11 +725,10 @@ class GameRepository {
   Future<void> trackBrandOfferClick(String? offerId) async {
     if (offerId == null || offerId.trim().isEmpty) return;
     try {
-      await _supabase.rpc('MPT_track_brand_offer_click', params: {
-        'p_offer_id': offerId.trim(),
-      });
+      await _supabase.rpc(
+        'MPT_track_brand_offer_click',
+        params: {'p_offer_id': offerId.trim()},
+      );
     } catch (_) {}
   }
 }
-
-

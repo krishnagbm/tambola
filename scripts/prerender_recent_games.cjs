@@ -116,9 +116,14 @@ async function fetchArchives() {
     });
     if (pRes.ok) {
       const payload = await pRes.json();
-      if (payload && Array.isArray(payload.games) && payload.games.length > 0) {
-        return payload.games;
-      }
+      const games = Array.isArray(payload && payload.games) ? payload.games : [];
+      return games.filter((g) => {
+        if (!g || g.is_private === true) return false;
+        if (g.is_publicly_visible === false || g.public_visible === false) return false;
+        const status = String(g.status || '').toUpperCase();
+        if (['CANCELLED', 'DRAFT', 'OPEN', 'READY_TO_START', 'STARTING', 'IN_PROGRESS'].includes(status)) return false;
+        return true;
+      });
     }
   } catch (e) {
     console.warn('Could not fetch via public proxy, trying env fallback:', e.message);

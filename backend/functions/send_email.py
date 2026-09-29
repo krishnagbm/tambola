@@ -47,6 +47,33 @@ def _supabase_rest(endpoint_path: str, method: str = "GET", payload: dict = None
             return he.code, {"error": err_raw or str(he)}
 
 
+def _is_public_game_visible(game: dict) -> bool:
+    """True only for public, non-cancelled games that are allowed to appear on recent-games.html."""
+    if not isinstance(game, dict):
+        return False
+
+    if bool(game.get("is_private")):
+        return False
+
+    if game.get("is_publicly_visible") is False:
+        return False
+
+    if game.get("public_visible") is False:
+        return False
+
+    status = str(game.get("status") or "").upper()
+    if status in {"CANCELLED", "DRAFT", "OPEN", "READY_TO_START", "STARTING", "IN_PROGRESS"}:
+        return False
+
+    return True
+
+
+def _filter_public_games(games):
+    if not isinstance(games, list):
+        return []
+    return [game for game in games if _is_public_game_visible(game)]
+
+
 def handler(event, context):
     """
     AWS Lambda handler triggered via API Gateway.
@@ -87,22 +114,25 @@ def handler(event, context):
             select_cols = (
                 "name,invite_code,player_count,numbers_called_count,duration_seconds,"
                 "completed_at,organization_name,organization_logo_url,organization_logo_alt,"
-                "organization_logo_approved,winners_roster"
+                "organization_logo_approved,winners_roster,status,is_private,is_publicly_visible"
             )
             status_code, data = _supabase_rest(
                 f"/rest/v1/MPT_game_archives?select={select_cols}&order=completed_at.desc.nullslast&limit=100",
                 method="GET",
             )
-            if status_code == 200 and isinstance(data, list) and len(data) > 0:
-                return _r(200, {"success": True, "games": data})
+            if status_code == 200 and isinstance(data, list):
+                public_games = _filter_public_games(data)
+                if len(public_games) > 0:
+                    return _r(200, {"success": True, "games": public_games})
 
             # Fallback to completed games
             fb_cols = (
                 "name,invite_code,funded_capacity,updated_at,created_at,"
-                "organization_name,organization_logo_url,organization_logo_alt,organization_logo_approved"
+                "organization_name,organization_logo_url,organization_logo_alt,organization_logo_approved,"
+                "status,is_private,is_publicly_visible"
             )
             status_code, raw_games = _supabase_rest(
-                f"/rest/v1/MPT_games?status=eq.COMPLETED&select={fb_cols}&order=updated_at.desc&limit=50",
+                f"/rest/v1/MPT_games?status=not.eq.CANCELLED&select={fb_cols}&order=updated_at.desc&limit=50",
                 method="GET",
             )
             if status_code == 200 and isinstance(raw_games, list):
@@ -118,11 +148,16 @@ def handler(event, context):
                         "organization_logo_url": g.get("organization_logo_url"),
                         "organization_logo_alt": g.get("organization_logo_alt"),
                         "organization_logo_approved": bool(g.get("organization_logo_approved")),
+                        "status": g.get("status") or "COMPLETED",
+                        "is_private": bool(g.get("is_private")),
+                        "is_publicly_visible": g.get("is_publicly_visible") if g.get("is_publicly_visible") is not None else True,
                         "winners_roster": [],
                     }
                     for g in raw_games
+                    if _is_public_game_visible(g)
                 ]
-                return _r(200, {"success": True, "games": mapped})
+                if len(mapped) > 0:
+                    return _r(200, {"success": True, "games": mapped})
 
             return _r(200, {"success": True, "games": []})
 
