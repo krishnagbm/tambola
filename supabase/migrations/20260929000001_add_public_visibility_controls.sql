@@ -8,6 +8,20 @@ ALTER TABLE public."MPT_game_archives"
     ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'COMPLETED',
     ADD COLUMN IF NOT EXISTS is_publicly_visible BOOLEAN NOT NULL DEFAULT TRUE;
 
+UPDATE public."MPT_game_archives" a
+SET status = 'CANCELLED', is_publicly_visible = FALSE
+WHERE a.game_id IN (
+    SELECT g.id FROM public."MPT_games" g
+    WHERE g.status = 'CANCELLED'
+);
+
+UPDATE public."MPT_game_archives" a
+SET is_publicly_visible = FALSE
+WHERE a.game_id IN (
+    SELECT g.id FROM public."MPT_games" g
+    WHERE g.is_private = TRUE OR g.is_publicly_visible = FALSE
+);
+
 UPDATE public."MPT_game_archives"
 SET status = 'COMPLETED', is_publicly_visible = TRUE
 WHERE status IS NULL OR is_publicly_visible IS NULL;
