@@ -1011,43 +1011,20 @@
         <!-- Filter Buttons -->
         <div class="filter-bar">
           <div class="filter-group">
-            <button class="filter-btn active" onclick="setFilter('ALL')">All Events</button>
+            <button class="filter-btn active" onclick="setFilter('OVERVIEW')">📖 Overview &amp; Guide</button>
             <button class="filter-btn" onclick="setFilter('GALA')">👑 Galas (100+ Players)</button>
             <button class="filter-btn" onclick="setFilter('CLUB')">🎉 Clubs (20–99)</button>
             <button class="filter-btn" onclick="setFilter('FAMILY')">🏡 Family (1–19)</button>
+            <button class="filter-btn" onclick="setFilter('ALL')">All Events</button>
           </div>
 
           <div id="showing-count-container" style="display: block; font-size: 13px; color: #94A3B8;">
-            Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">8</span> completed events
+            Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">Overview</span>
           </div>
         </div>
 
         <!-- Games Card Grid -->
         <div class="games-grid" id="games-grid">
-
-          <div class="game-card">
-            <div class="game-card-header">
-              <div class="game-title">Super Sunday DabHousie Party 🌟</div>
-              <div class="game-code-badge">6DDDAF</div>
-            </div>
-            
-
-            <div class="game-meta-row">
-              <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>20/90 Calls</strong></div>
-              <div class="game-meta-item">⏱️ <strong>2m 46s</strong></div>
-              <div class="game-meta-item">📅 Sep 26, 2026</div>
-            </div>
-
-            <div class="winners-section-title">Event Status</div>
-            <div class="winners-list">
-              
-        <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
-          🚫 Game cancelled / ended early without winners.
-        </div>
-      
-            </div>
-          </div>
     
           <div class="game-card">
             <div class="game-card-header">
@@ -1736,12 +1713,14 @@
   <script src="/js/nav.js"></script>
 
   <script>
-    const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
+    const DEDICATED_RECENT_GAMES_API = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/public/recent-games';
+    const LEGACY_PROXY_API = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
+    const PUBLIC_API_ENDPOINT = DEDICATED_RECENT_GAMES_API;
     const LOGO_DEV_PK = 'pk_ALfnmL3AQTqaatAQSzQxvQ';
 
     let allGames = [];
     let filteredGames = [];
-    let currentFilter = 'ALL';
+    let currentFilter = 'OVERVIEW';
     let currentPage = 1;
     const PAGE_SIZE = 9;
 
@@ -1838,13 +1817,30 @@
       if (countContainer && !hasPrerenderedCards) countContainer.style.display = 'none';
 
       try {
-        const res = await fetch(PUBLIC_API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'get_recent_games' })
-        });
+        let res;
+        try {
+          res = await fetch(PUBLIC_API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_recent_games' })
+          });
+          if (!res.ok && res.status === 404) {
+            // Fallback during rollout until SAM stack publishes /public/recent-games
+            res = await fetch(LEGACY_PROXY_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'get_recent_games' })
+            });
+          }
+        } catch (netErr) {
+          res = await fetch(LEGACY_PROXY_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_recent_games' })
+          });
+        }
 
-        if (res.ok) {
+        if (res && res.ok) {
           const payload = await res.json();
           if (payload && Array.isArray(payload.games)) {
             allGames = payload.games;
@@ -1895,7 +1891,9 @@
     }
 
     function applyFilter() {
-      if (currentFilter === 'ALL') {
+      if (currentFilter === 'OVERVIEW') {
+        filteredGames = [];
+      } else if (currentFilter === 'ALL') {
         filteredGames = [...allGames];
       } else if (currentFilter === 'GALA') {
         filteredGames = allGames.filter(g => (g.player_count || g.funded_capacity || 0) >= 100);
@@ -1910,15 +1908,93 @@
 
       const countEl = document.getElementById('showing-count');
       const countContainer = document.getElementById('showing-count-container');
-      if (countEl) countEl.textContent = filteredGames.length;
+      if (countEl) {
+        countEl.textContent = currentFilter === 'OVERVIEW' ? 'Game Guide & Hub' : filteredGames.length;
+      }
       if (countContainer) countContainer.style.display = 'block';
 
       renderPage();
     }
 
+    function renderOverviewGuide() {
+      const grid = document.getElementById('games-grid');
+      const pagBar = document.getElementById('pagination-bar');
+      if (pagBar) pagBar.style.display = 'none';
+
+      grid.innerHTML = `
+        <article class="game-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(59, 130, 246, 0.4); padding: 32px 28px; border-radius: 20px;">
+          <header style="margin-bottom: 24px;">
+            <span style="display: inline-block; background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+              🌟 Transparency &amp; Verified Integrity
+            </span>
+            <h2 style="font-size: 26px; font-weight: 900; color: #FFFFFF; margin: 0 0 10px; line-height: 1.25;">
+              Welcome to the DabHousie™ Live Games &amp; Hall of Fame
+            </h2>
+            <p style="font-size: 14.5px; color: #CBD5E1; line-height: 1.6; margin: 0; max-width: 900px;">
+              This public ledger records completed multiplayer Tambola, Indian Housie, 90-Ball Bingo, and FlashHousie™ skill events. Every ticket generation, ball call, and prize claim is cryptographically stamped and server-verified to ensure zero foul play.
+            </p>
+          </header>
+
+          <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 26px;">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">👑</div>
+              <h3 style="font-size: 17px; font-weight: 800; color: #FCD34D; margin: 0 0 6px;">100+ Player Galas</h3>
+              <p style="font-size: 13px; color: #94A3B8; line-height: 1.5; margin: 0 0 12px;">
+                Large-scale society, corporate, and campus fundraisers with high-stakes prize pools, corporate logos, and verified multiple Full House winners.
+              </p>
+              <button onclick="setFilter('GALA')" class="filter-btn" style="background: rgba(245, 158, 11, 0.15); border-color: #F59E0B; color: #FCD34D; font-size: 12px; padding: 6px 14px;">
+                View Galas (100+) →
+              </button>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">🎉</div>
+              <h3 style="font-size: 17px; font-weight: 800; color: #38BDF8; margin: 0 0 6px;">Club &amp; Kitty Events (20–99)</h3>
+              <p style="font-size: 13px; color: #94A3B8; line-height: 1.5; margin: 0 0 12px;">
+                Community clubs, office happy hours, and weekend leagues with Early 5, Four Corners, Line Prizes, and sponsored partner gift vouchers.
+              </p>
+              <button onclick="setFilter('CLUB')" class="filter-btn" style="background: rgba(56, 189, 248, 0.15); border-color: #38BDF8; color: #38BDF8; font-size: 12px; padding: 6px 14px;">
+                View Clubs (20–99) →
+              </button>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">🏡</div>
+              <h3 style="font-size: 17px; font-weight: 800; color: #34D399; margin: 0 0 6px;">Family &amp; Friend Rooms (1–19)</h3>
+              <p style="font-size: 13px; color: #94A3B8; line-height: 1.5; margin: 0 0 12px;">
+                Intimate living-room parties and 5-player skill friend squads. Free hosting for up to 5 players with zero signup required for guests!
+              </p>
+              <button onclick="setFilter('FAMILY')" class="filter-btn" style="background: rgba(16, 185, 129, 0.15); border-color: #10B981; color: #34D399; font-size: 12px; padding: 6px 14px;">
+                View Family Games →
+              </button>
+            </div>
+          </section>
+
+          <footer style="background: rgba(15, 23, 42, 0.5); border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+            <div style="font-size: 13px; color: #CBD5E1;">
+              💡 <strong>Host an event today:</strong> Automated voice caller, instant bogey-free ticket verification, and brand gifts.
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <a href="/#/create-game" class="btn-register-brand" style="text-decoration: none; padding: 10px 18px; font-size: 13px;">
+                🎟️ Host a Game
+              </a>
+              <button onclick="setFilter('ALL')" class="filter-btn" style="padding: 10px 18px; font-size: 13px;">
+                📋 Browse All Events (${allGames.length || 8})
+              </button>
+            </div>
+          </footer>
+        </article>
+      `;
+    }
+
     function renderPage() {
       const grid = document.getElementById('games-grid');
       const pagBar = document.getElementById('pagination-bar');
+
+      if (currentFilter === 'OVERVIEW') {
+        renderOverviewGuide();
+        return;
+      }
 
       if (!filteredGames || filteredGames.length === 0) {
         showEmptyState(allGames.length === 0 ? 'No completed events recorded yet.' : 'No completed events found in this category.');
@@ -2002,11 +2078,18 @@
             `;
           });
         } else {
-          winnersHtml = `
-            <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
-              🚫 Game cancelled / ended early without winners.
-            </div>
-          `;
+          const isCancelled = String(g.status || '').toUpperCase() === 'CANCELLED';
+          winnersHtml = isCancelled
+            ? `
+              <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
+                🚫 Game cancelled by host / ended early.
+              </div>
+            `
+            : `
+              <div style="font-size: 13px; color: #94A3B8; background: rgba(148, 163, 184, 0.08); border: 1px dashed rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 12px; text-align: center;">
+                🏁 Completed • No verified prize claims.
+              </div>
+            `;
         }
 
         // Optional organization/corporate identity badge

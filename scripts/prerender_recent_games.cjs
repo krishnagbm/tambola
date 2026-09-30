@@ -12,7 +12,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const PUBLIC_API_ENDPOINT = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
+const DEDICATED_API = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/public/recent-games';
+const LEGACY_API = 'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party';
+const PUBLIC_API_ENDPOINT = DEDICATED_API;
 
 let SUPABASE_URL = process.env.SUPABASE_URL || '';
 let SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -212,9 +214,16 @@ function generateCardsHtml(games) {
         `;
       });
     } else {
-      winnersHtml = `
+      const isCancelled = String(g.status || '').toUpperCase() === 'CANCELLED';
+      winnersHtml = isCancelled
+        ? `
         <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
-          🚫 Game cancelled / ended early without winners.
+          🚫 Game cancelled by host / ended early.
+        </div>
+      `
+        : `
+        <div style="font-size: 13px; color: #94A3B8; background: rgba(148, 163, 184, 0.08); border: 1px dashed rgba(148, 163, 184, 0.3); border-radius: 8px; padding: 12px; text-align: center;">
+          🏁 Completed • No verified prize claims.
         </div>
       `;
     }

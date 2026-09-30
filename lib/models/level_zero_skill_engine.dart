@@ -752,6 +752,7 @@ class SumWaveSpec {
 class SumHousieRoundSpec {
   static const String modeSumQ1 = 'sum_q1';
   static const String modeSumQ2 = 'sum_q2';
+  static const String modeSumQ3 = 'sum_q3';
   static const String modeSumAll3 = 'sum_all_3';
 
   final String mode;
@@ -773,7 +774,9 @@ class SumHousieRoundSpec {
 
     final targetQuads = mode == modeSumQ1
         ? const [1]
-        : (mode == modeSumQ2 ? const [2] : const [1, 2, 3]);
+        : (mode == modeSumQ2
+            ? const [2]
+            : (mode == modeSumQ3 ? const [3] : const [1, 2, 3]));
 
     final waves = <SumWaveSpec>[];
     for (final q in targetQuads) {

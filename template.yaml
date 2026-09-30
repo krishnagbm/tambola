@@ -109,13 +109,13 @@ Resources:
             Path: /credits/webhook
             Method: post
 
-  # ── 3. Email Dispatch Function ─────────────────────────────────────
+  # ── 3. Email & Brand Approval Function ─────────────────────────────
   SendEmailFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: backend/
       Handler: functions.send_email.handler
-      Description: Dispatches Private Party passcodes and notifications via AWS SES
+      Description: Dispatches Private Party passcodes, DVAA Brand approvals, and notifications via AWS SES
       Policies:
         - SESCrudPolicy:
             IdentityName: '*'
@@ -141,6 +141,30 @@ Resources:
             Path: /email/brand-approval
             Method: options
 
+  # ── 4. Public Recent Games / Hall of Fame Function ─────────────────
+  RecentGamesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: functions.recent_games.handler
+      Description: Serves public recent games and Hall of Fame feed from Supabase
+      Events:
+        RecentGamesPost:
+          Type: Api
+          Properties:
+            Path: /public/recent-games
+            Method: post
+        RecentGamesGet:
+          Type: Api
+          Properties:
+            Path: /public/recent-games
+            Method: get
+        RecentGamesOptions:
+          Type: Api
+          Properties:
+            Path: /public/recent-games
+            Method: options
+
 Outputs:
   CheckoutApiEndpoint:
     Description: 'API Gateway endpoint URL for Checkout'
@@ -154,3 +178,6 @@ Outputs:
   BrandApprovalApiEndpoint:
     Description: 'API Gateway endpoint URL for Brand Approval Email Dispatch'
     Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/email/brand-approval'
+  RecentGamesApiEndpoint:
+    Description: 'API Gateway endpoint URL for Public Recent Games'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/public/recent-games'

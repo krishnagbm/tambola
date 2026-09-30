@@ -52,11 +52,14 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
   bool _showJoinCodeInput = false;
   int _sharedSeed = 1001;
   String _sharedSubMode = 'make_5_quad';
+  bool _sharedAutoStart = false;
 
   String _selectedMode = FlashHousieConfig.modeFlash5;
   late FlashHousieConfig _config;
   Timer? _uiTickTimer;
   Timer? _autoCallTimer;
+  String? _squadCopiedNotice;
+  Timer? _squadNoticeTimer;
 
   final Set<int> _recalledNumbers = <int>{};
   final Set<String> _wrongFlashingCells = <String>{};
@@ -115,12 +118,25 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
         _activeGameId = gameId;
         _sharedSubMode = subMode;
         _sharedSeed = seed;
+        _sharedAutoStart = autoStart;
       });
       if (gameId == 'level_1_flash') {
         _startNewSoloRound(
           subMode,
           autoStart: autoStart,
           explicitSeed: seed,
+          broadcastToSquad: false,
+        );
+      }
+    };
+    _squadController.onRemoteCancelGame = (playerName) {
+      if (!mounted) return;
+      _showInDialogNotice('🛑 $playerName cancelled the active game round.');
+      if (_activeGameId == 'level_1_flash') {
+        _startNewSoloRound(
+          _selectedMode,
+          autoStart: false,
+          explicitSeed: _sharedSeed,
           broadcastToSquad: false,
         );
       }
@@ -199,8 +215,24 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     });
   }
 
+  void _showInDialogNotice(String msg) {
+    if (!mounted) return;
+    _squadNoticeTimer?.cancel();
+    setState(() {
+      _squadCopiedNotice = msg;
+    });
+    _squadNoticeTimer = Timer(const Duration(seconds: 4), () {
+      if (mounted) {
+        setState(() {
+          _squadCopiedNotice = null;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _squadNoticeTimer?.cancel();
     _uiTickTimer?.cancel();
     _autoCallTimer?.cancel();
     _squadController.removeListener(_onSquadChanged);
@@ -537,6 +569,33 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (_squadCopiedNotice != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF047857),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF34D399), width: 1.2),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, size: 14, color: Colors.white),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _squadCopiedNotice!,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (!inSquad) ...[
             Wrap(
               spacing: 8,
@@ -583,16 +642,9 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                 'Join my DabHousie Skill Game! Open the Skill Arena and enter Friend Code: $newCode (Max 5 players free)',
                           ),
                         );
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '🎉 Friend Code #$newCode copied! Share with up to 4 friends to play together.',
-                              ),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
+                        _showInDialogNotice(
+                          '🎉 Friend Code #$newCode copied! Share with up to 4 friends to play together.',
+                        );
                       },
                       icon: const Icon(Icons.share_rounded, size: 14),
                       label: const Text(
@@ -804,16 +856,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                 'Join my DabHousie Skill Game! Open Skill Arena & enter Friend Code: $code',
                           ),
                         );
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '📋 Copied Friend Code #$code to clipboard!',
-                              ),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
+                        _showInDialogNotice('📋 Copied Friend Code #$code to clipboard!');
                       },
                       icon: const Icon(Icons.copy_rounded, size: 13),
                       label: const Text(
@@ -826,6 +869,43 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppTheme.secondaryColor,
                         side: const BorderSide(color: AppTheme.secondaryColor),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 28),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _squadController.broadcastCancelGame();
+                        if (_activeGameId == 'level_1_flash') {
+                          _startNewSoloRound(
+                            _selectedMode,
+                            autoStart: false,
+                            explicitSeed: _sharedSeed,
+                            broadcastToSquad: true,
+                          );
+                        } else {
+                          // Signal LevelZeroSoloView by updating seed
+                          setState(() {
+                            _sharedSeed = 1000 + Random().nextInt(899999);
+                          });
+                        }
+                        _showInDialogNotice('🛑 Cancelled the active squad round.');
+                      },
+                      icon: const Icon(Icons.stop_circle_outlined, size: 13),
+                      label: const Text(
+                        'Cancel Game',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFBBF24),
+                        side: const BorderSide(color: Color(0xFFFBBF24)),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
@@ -1105,6 +1185,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                   squadController: _squadController,
                   sharedSeed: _sharedSeed,
                   sharedSubMode: _sharedSubMode,
+                  autoStart: _sharedAutoStart,
                   onLocalStateChanged: (subMode, seed) {
                     _sharedSubMode = subMode;
                     _sharedSeed = seed;
@@ -1141,20 +1222,48 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                         ),
                       ],
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          _startNewSoloRound(_selectedMode, autoStart: false),
-                      icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: Text(
-                        isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.secondaryColor,
-                        side: BorderSide(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        if (!isWaitingToStart && !_roundCompleted)
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              if (_squadController.isInSquad) {
+                                _squadController.broadcastCancelGame();
+                              }
+                              _startNewSoloRound(
+                                _selectedMode,
+                                autoStart: false,
+                                explicitSeed: _sharedSeed,
+                                broadcastToSquad: true,
+                              );
+                              _showInDialogNotice('🛑 Round cancelled.');
+                            },
+                            icon: const Icon(Icons.cancel_outlined, size: 15),
+                            label: const Text('Cancel Game'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFFF87171),
+                              side: const BorderSide(color: Color(0xFFF87171)),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: () =>
+                              _startNewSoloRound(_selectedMode, autoStart: false),
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: Text(
+                            isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.secondaryColor,
+                            side: BorderSide(
+                              color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          ),
                         ),
-                        visualDensity: VisualDensity.compact,
-                      ),
+                      ],
                     ),
                   ],
                 ),

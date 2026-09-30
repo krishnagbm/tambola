@@ -1,0 +1,16 @@
+BrainHousie: Inspired by Sequence board game. Housie has only 90 numbers all are single colored numbers, we cannot make triplicates, and we dont have special cards and wild cards.  So we will make our own rules here, while game pattern is similar to sequence. 
+
+1. The game start with one 3x9 grid is open game canvas for all (min 2 and max 5 players, No solo in this case, but we can think play with DabBot), and number of grids extends as many as required, as we have to provision for 90 balls and spaces.
+2. Each player will have 10 initial random balls with in the pool of 90. Naturally every player will get different set
+3. Players need to make three numbers in to playgrid minimum. 
+4. They can make their own pattern with their balls or with squad balls which are there on play grid.
+5. example patterns are:
+	a) Natural sequence (1-2-3, 9-10-11, 73-74-75-76-77 etc)
+	b) Even number sequence (4-6-8-10, 20-22-24 etc)
+	c) Odd number sequence (9-11-13, 71-73-75 etc)
+	d) Same gap sequence (7-10-13, 22-25-28)
+6. If player cannot pull any ball from their lot to make any pattern in the play grid, they need to draw a new random ball from lot. When they draw a ball, they cannot play immediately, turn goes to next player
+7. Who ever player finish of their lot empty win the game
+8. Player will get 1 minute turn. If they cannot make any adjustment using their lot ball, they need to pick new ball from pool
+9. If player break any pattern rule in the play-grid, they need to take 3 balls from pool, and play-grid will automatically set back to before his turn state snapshot.
+10. If all 90 balls completed in the pool, whoever is having less number of balls in their bucket is winner

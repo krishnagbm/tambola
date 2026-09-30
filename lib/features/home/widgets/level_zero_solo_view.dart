@@ -13,6 +13,7 @@ class LevelZeroSoloView extends StatefulWidget {
   final SkillFriendSquadController? squadController;
   final int? sharedSeed;
   final String? sharedSubMode;
+  final bool autoStart;
   final void Function(String subMode, int seed)? onLocalStateChanged;
 
   const LevelZeroSoloView({
@@ -23,6 +24,7 @@ class LevelZeroSoloView extends StatefulWidget {
     this.squadController,
     this.sharedSeed,
     this.sharedSubMode,
+    this.autoStart = false,
     this.onLocalStateChanged,
   });
 
@@ -59,6 +61,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   String _fixMode = FixHousieRoundSpec.modeFix3;
   late FixHousieRoundSpec _fixSpec;
   final Set<String> _repairedCellKeys = <String>{};
+  int? _fixSelectedBall;
+  bool _isDraggingFixBall = false;
 
   // Level 0C: MathHousie state
   String _mathMode = MathHousieRoundSpec.modeAddSub5;
@@ -106,6 +110,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     } else if (widget.gameId == 'level_0d_sum' &&
         (subMode == SumHousieRoundSpec.modeSumQ1 ||
             subMode == SumHousieRoundSpec.modeSumQ2 ||
+            subMode == SumHousieRoundSpec.modeSumQ3 ||
             subMode == SumHousieRoundSpec.modeSumAll3)) {
       _sumMode = subMode;
     }
@@ -116,12 +121,36 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     super.initState();
     _applySubModeIfMatching(widget.sharedSubMode);
     _initCurrentGame(
-      autoStart: false,
+      autoStart: widget.autoStart,
       explicitSeed: widget.sharedSeed,
       broadcastToSquad: false,
     );
     // Rebuild when squad mate claims/releases a ball
     widget.squadController?.addListener(_onSquadChanged);
+    _attachSquadGameCallbacks();
+  }
+
+  void _attachSquadGameCallbacks() {
+    final sq = widget.squadController;
+    if (sq == null) return;
+    sq.onRemoteBogeyDab = (flaggedCells, issue, playerName) {
+      if (!mounted) return;
+      setState(() {
+        _dabFlaggedCells
+          ..clear()
+          ..addAll(flaggedCells);
+        _feedbackBannerText = '🚨 $playerName pressed Bogey Dab! $issue';
+        _feedbackIsError = true;
+      });
+    };
+    sq.onRemoteCancelGame = (playerName) {
+      if (!mounted) return;
+      setState(() {
+        _feedbackBannerText = '🛑 $playerName cancelled the active game round.';
+        _feedbackIsError = true;
+      });
+      _initCurrentGame(autoStart: false, broadcastToSquad: false);
+    };
   }
 
   @override
@@ -130,21 +159,23 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     if (oldWidget.squadController != widget.squadController) {
       oldWidget.squadController?.removeListener(_onSquadChanged);
       widget.squadController?.addListener(_onSquadChanged);
+      _attachSquadGameCallbacks();
     }
     if (oldWidget.gameId != widget.gameId) {
       _applySubModeIfMatching(widget.sharedSubMode);
       _initCurrentGame(
-        autoStart: false,
+        autoStart: widget.autoStart,
         explicitSeed: widget.sharedSeed,
         broadcastToSquad: false,
       );
     } else if ((widget.sharedSeed != null &&
             widget.sharedSeed != _currentSeed) ||
         (widget.sharedSubMode != null &&
-            widget.sharedSubMode != _activeSubModeForGame)) {
+            widget.sharedSubMode != _activeSubModeForGame) ||
+        (widget.autoStart && _startedAtMs == null)) {
       _applySubModeIfMatching(widget.sharedSubMode);
       _initCurrentGame(
-        autoStart: false,
+        autoStart: widget.autoStart,
         explicitSeed: widget.sharedSeed,
         broadcastToSquad: false,
       );
@@ -206,6 +237,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _isDraggingMakeBall = false;
 
       _repairedCellKeys.clear();
+      _fixSelectedBall = null;
+      _isDraggingFixBall = false;
 
       _mathPromptIndex = 0;
       _solvedMathTargets.clear();
@@ -251,7 +284,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     );
   }
 
-  void _launchRound() {
+  void _launchRound({bool broadcastToSquad = true}) {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
     setState(() {
       _startedAtMs = nowMs;
@@ -260,6 +293,14 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
       _feedbackBannerText = null;
       _feedbackIsError = false;
     });
+    if (broadcastToSquad && (widget.squadController?.isInSquad ?? false)) {
+      widget.squadController!.broadcastRoundSync(
+        gameId: widget.gameId,
+        subMode: _activeSubModeForGame,
+        roundSeed: _currentSeed,
+        autoStart: true,
+      );
+    }
     _startClockTicker();
   }
 
@@ -571,6 +612,10 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             '🚨 BOGEY DAB (-3 pts)! $firstIssue';
         _feedbackIsError = true;
       });
+      widget.squadController?.broadcastBogeyDab(
+        flaggedCells: flagged.toList(),
+        issue: firstIssue ?? 'Ticket has column decade, order, or row overflow issues!',
+      );
       _reportSquadProgress(eventText: '🚨 Bogey Dab (-3 pts)! Fixing board...');
     }
   }
@@ -589,30 +634,113 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     }
   }
 
+  void _onFixBallPicked(int ball, {required bool isDrag}) {
+    if (_roundCompleted) return;
+    if (_startedAtMs == null) {
+      _launchRound();
+    }
+    setState(() {
+      _fixSelectedBall = ball;
+      if (isDrag) {
+        _isDraggingFixBall = true;
+      }
+      _feedbackBannerText =
+          '🎯 Ball #$ball grabbed! Drop it into its correct column decade & order or tap the buggy cell.';
+      _feedbackIsError = false;
+    });
+  }
+
+  void _onFixDragEnded() {
+    if (!mounted) return;
+    setState(() {
+      _isDraggingFixBall = false;
+    });
+  }
+
+  void _handleFixBallDrop(int ball, int targetRow, int targetCol) {
+    if (_startedAtMs == null) {
+      _launchRound();
+    }
+    if (_roundCompleted) return;
+    setState(() {
+      _isDraggingFixBall = false;
+      _fixSelectedBall = null;
+    });
+
+    final targetKey = '${targetRow}_$targetCol';
+    if (_repairedCellKeys.contains(targetKey)) return;
+
+    // Check if target cell has a bug
+    final bug = _fixSpec.bugsByCellKey[targetKey];
+    if (bug != null) {
+      // Repaired! Either dragging the bug ball to its target or dropping correct ball
+      _repairFixBug(targetRow, targetCol, bug);
+      return;
+    }
+
+    // Check if the dragged ball originated from a buggy cell
+    for (final entry in _fixSpec.bugsByCellKey.entries) {
+      if (_repairedCellKeys.contains(entry.key)) continue;
+      if (entry.value.bugValue == ball) {
+        // Dragged a buggy ball! If dropped into correct column or cell, repair it
+        final expectedCol = expectedColumnForBall(ball);
+        if (targetCol == expectedCol || targetCol == entry.value.col) {
+          _repairFixBug(entry.value.row, entry.value.col, entry.value);
+          return;
+        }
+      }
+    }
+
+    // Otherwise, dropping onto a valid cell that had no bug
+    _flashWrongCell(targetRow, targetCol);
+    setState(() {
+      _wrongCount++;
+      _totalReactionMs += 2000;
+      _feedbackBannerText =
+          '✖ Misplaced Drop (-5 pts): Col ${targetCol + 1} (${columnDecadeLabel(targetCol)}) is not the bug location!';
+      _feedbackIsError = true;
+    });
+    _reportSquadProgress(eventText: '✖ Wrong drop (-5 pts)');
+  }
+
+  void _repairFixBug(int row, int col, FixBugSpec bug) {
+    final cellKey = '${row}_$col';
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final stepMs = _stepStartedAtMs != null
+        ? (nowMs - _stepStartedAtMs!).clamp(150, 30000)
+        : 1000;
+    setState(() {
+      _repairedCellKeys.add(cellKey);
+      _correctCount = _repairedCellKeys.length;
+      _totalReactionMs += stepMs;
+      _stepStartedAtMs = nowMs;
+      _feedbackBannerText = bug.explanation;
+      _feedbackIsError = false;
+    });
+    if (_repairedCellKeys.length >= _fixSpec.totalBugs) {
+      _completeRound();
+    } else {
+      _reportSquadProgress();
+    }
+  }
+
   void _handleFixCellTap(int row, int col) {
-    if (_startedAtMs == null || _roundCompleted) return;
+    if (_startedAtMs == null) {
+      _launchRound();
+    }
+    if (_roundCompleted) return;
     final cellKey = '${row}_$col';
     if (_repairedCellKeys.contains(cellKey)) return;
 
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    // If a ball was selected/picked, tapping a cell drops it
+    if (_fixSelectedBall != null) {
+      _handleFixBallDrop(_fixSelectedBall!, row, col);
+      return;
+    }
+
     final bug = _fixSpec.bugsByCellKey[cellKey];
     if (bug != null) {
-      final stepMs = _stepStartedAtMs != null
-          ? (nowMs - _stepStartedAtMs!).clamp(150, 30000)
-          : 1000;
-      setState(() {
-        _repairedCellKeys.add(cellKey);
-        _correctCount = _repairedCellKeys.length;
-        _totalReactionMs += stepMs;
-        _stepStartedAtMs = nowMs;
-        _feedbackBannerText = bug.explanation;
-        _feedbackIsError = false;
-      });
-      if (_repairedCellKeys.length >= _fixSpec.totalBugs) {
-        _completeRound();
-      } else {
-        _reportSquadProgress();
-      }
+      _repairFixBug(row, col, bug);
     } else {
       final val = _fixSpec.bugMatrix[row][col];
       if (val == 0) return;
@@ -784,9 +912,12 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         _buildThreeColumnHud(isWaiting),
         const SizedBox(height: 10),
 
-        // 4. Game-Specific Interactive Strip (Deal Pool for MakeHousie, MCQ Bar for SumHousie)
+        // 4. Game-Specific Interactive Strip (Deal Pool for MakeHousie, Fix Strip for FixHousie, MCQ Bar for SumHousie)
         if (widget.gameId == 'level_0a_make') ...[
           _buildMakeDealPoolStrip(isWaiting),
+          const SizedBox(height: 10),
+        ] else if (widget.gameId == 'level_0b_fix') ...[
+          _buildFixHelperStrip(isWaiting),
           const SizedBox(height: 10),
         ] else if (widget.gameId == 'level_0d_sum') ...[
           _buildSumMcqStrip(isWaiting),
@@ -846,7 +977,8 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         chips = const [
           (SumHousieRoundSpec.modeSumQ1, 'Sum Q1 (Easy 1–29)'),
           (SumHousieRoundSpec.modeSumQ2, 'Sum Q2 (Med 30–59)'),
-          (SumHousieRoundSpec.modeSumAll3, 'Sum All 3 (Q1→Q3)'),
+          (SumHousieRoundSpec.modeSumQ3, 'Sum Q3 (Hard 60–90)'),
+          (SumHousieRoundSpec.modeSumAll3, 'Sum All 3 (Hardest Q1→Q3)'),
         ];
         onSelect = (m) {
           _sumMode = m;
@@ -882,17 +1014,44 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               ),
           ],
         ),
-        OutlinedButton.icon(
-          onPressed: () => _initCurrentGame(autoStart: false),
-          icon: const Icon(Icons.refresh_rounded, size: 16),
-          label: Text(isWaiting ? 'Shuffle Card' : 'New Card / Reset'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppTheme.secondaryColor,
-            side: BorderSide(
-              color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () => _initCurrentGame(autoStart: false),
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: Text(isWaiting ? 'Shuffle Card' : 'New Card / Reset'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.secondaryColor,
+                side: BorderSide(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                ),
+                visualDensity: VisualDensity.compact,
+              ),
             ),
-            visualDensity: VisualDensity.compact,
-          ),
+            if (!isWaiting && !_roundCompleted) ...[
+              const SizedBox(width: 6),
+              OutlinedButton.icon(
+                onPressed: () {
+                  widget.squadController?.broadcastCancelGame();
+                  setState(() {
+                    _feedbackBannerText = '🛑 Game round cancelled.';
+                    _feedbackIsError = true;
+                  });
+                  _initCurrentGame(autoStart: false, broadcastToSquad: false);
+                },
+                icon: const Icon(Icons.cancel_outlined, size: 15),
+                label: const Text('Cancel Game'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFF87171),
+                  side: const BorderSide(
+                    color: Color(0xFFEF4444),
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -1838,6 +1997,68 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     );
   }
 
+  Widget _buildFixHelperStrip(bool isWaiting) {
+    final remBugs = _fixSpec.totalBugs - _repairedCellKeys.length;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: remBugs == 0 ? const Color(0xFF10B981) : const Color(0xFF2E334D),
+          width: remBugs == 0 ? 1.5 : 1.0,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              isWaiting
+                  ? '🔍 FixHousie™ • Spot & fix $_remBugText (tap or drag balls to swap/fix!)'
+                  : (remBugs == 0
+                        ? '🎉 All $_remBugText repaired! Mastered 3×9 ticket audit!'
+                        : '🔍 Spot $_remBugText: Drag any buggy ball into its correct column, or tap the cell!'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: remBugs == 0 ? const Color(0xFF34D399) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: remBugs == 0
+                  ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                  : const Color(0xFFF59E0B).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: remBugs == 0 ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+              ),
+            ),
+            child: Text(
+              remBugs == 0 ? '✓ ALL FIXED' : '$remBugs LEFT',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: remBugs == 0 ? const Color(0xFF34D399) : const Color(0xFFFBBF24),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _remBugText {
+    final count = _fixSpec.totalBugs;
+    return '$count bug${count == 1 ? '' : 's'}';
+  }
+
   Widget _buildSumMcqStrip(bool isWaiting) {
     final wave = _sumSpec.waves[_sumWaveIndex];
     final labels = ['A', 'B', 'C', 'D'];
@@ -2182,37 +2403,74 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             borderWidth = 1.0;
           }
 
+          final remotePlacement = widget.squadController?.remotePlacements[cellVal];
+          final isClaimed = remotePlacement != null &&
+              remotePlacement.playerName != widget.squadController?.localName;
+
           final cellBox = InkWell(
             onTap: !_roundCompleted
                 ? () => _handleMakeCellTap(row, col)
                 : null,
             borderRadius: BorderRadius.circular(8),
-            child: Container(
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: border, width: borderWidth),
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: isMisplaced ? 13.5 : 15,
-                      fontWeight: FontWeight.w900,
-                      color: textColor,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isClaimed ? const Color(0xFFF59E0B) : border,
+                      width: isClaimed ? 1.8 : borderWidth,
+                    ),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: isMisplaced ? 13.5 : 15,
+                          fontWeight: FontWeight.w900,
+                          color: textColor,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                if (isClaimed)
+                  Positioned(
+                    top: -5,
+                    right: -5,
+                    child: Tooltip(
+                      message: '${remotePlacement.playerAvatar} ${remotePlacement.playerName} dropped this ball (Drag to rearrange!)',
+                      child: Container(
+                        width: 17,
+                        height: 17,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFF59E0B),
+                            width: 1.2,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          remotePlacement.playerAvatar,
+                          style: const TextStyle(fontSize: 9.5),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           );
 
-          // Any placed ball on the grid can be dragged unlimited times to another cell!
+          // Any placed ball on the grid (including squad mates' placed balls) can be dragged to another cell!
           if (cellVal > 0 && !_roundCompleted) {
             return Draggable<int>(
               data: cellVal,
@@ -2243,62 +2501,104 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     final cellKey = '${row}_$col';
     final isRepaired = _repairedCellKeys.contains(cellKey);
 
-    String label = '';
-    Color bg = const Color(0xFF0B1120);
-    Color border = const Color(0xFF1E293B);
-    Color textColor = Colors.white;
-
-    if (isEmpty) {
-      bg = const Color(0xFF0B1120);
-      border = const Color(0xFF1E293B);
-    } else if (isWrongFlash) {
-      label = '$bugVal';
-      bg = const Color(0xFFDC2626);
-      border = const Color(0xFFF87171);
-    } else if (isWaiting) {
-      label = '•';
-      bg = const Color(0xFF1E1B4B);
-      border = const Color(0xFF3730A3);
-      textColor = Colors.white38;
-    } else if (isRepaired) {
-      label = '$trueVal';
-      bg = const Color(0xFF059669);
-      border = const Color(0xFF34D399);
-      textColor = Colors.white;
-    } else {
-      label = '$bugVal';
-      bg = const Color(0xFF1E293B);
-      border = const Color(0xFF475569);
-      textColor = Colors.white;
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: InkWell(
-        onTap: (!isWaiting && !_roundCompleted && !isEmpty && !isRepaired)
-            ? () => _handleFixCellTap(row, col)
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 44,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: bg,
+      child: DragTarget<int>(
+        onWillAcceptWithDetails: (details) =>
+            !isWaiting && !_roundCompleted && !isRepaired,
+        onAcceptWithDetails: (details) =>
+            _handleFixBallDrop(details.data, row, col),
+        builder: (context, candidateData, rejectedData) {
+          final isHovered = candidateData.isNotEmpty;
+
+          String label = '';
+          Color bg = const Color(0xFF0B1120);
+          Color border = const Color(0xFF1E293B);
+          Color textColor = Colors.white;
+
+          if (isEmpty) {
+            if (isHovered) {
+              label = '⬇';
+              bg = AppTheme.secondaryColor.withValues(alpha: 0.25);
+              border = AppTheme.secondaryColor;
+              textColor = AppTheme.secondaryColor;
+            } else if (_isDraggingFixBall || _fixSelectedBall != null) {
+              label = '⬇';
+              bg = const Color(0xFF172554);
+              border = AppTheme.secondaryColor.withValues(alpha: 0.45);
+              textColor = AppTheme.secondaryColor.withValues(alpha: 0.75);
+            } else {
+              bg = const Color(0xFF0B1120);
+              border = const Color(0xFF1E293B);
+            }
+          } else if (isWrongFlash) {
+            label = '$bugVal';
+            bg = const Color(0xFFDC2626);
+            border = const Color(0xFFF87171);
+          } else if (isWaiting) {
+            label = '•';
+            bg = const Color(0xFF1E1B4B);
+            border = const Color(0xFF3730A3);
+            textColor = Colors.white38;
+          } else if (isRepaired) {
+            label = '$trueVal';
+            bg = const Color(0xFF059669);
+            border = const Color(0xFF34D399);
+            textColor = Colors.white;
+          } else if (isHovered) {
+            label = '$bugVal';
+            bg = const Color(0xFF4338CA);
+            border = AppTheme.secondaryColor;
+            textColor = Colors.white;
+          } else {
+            label = '$bugVal';
+            bg = const Color(0xFF1E293B);
+            border = const Color(0xFF475569);
+            textColor = Colors.white;
+          }
+
+          final cellBox = InkWell(
+            onTap: (!isWaiting && !_roundCompleted && !isEmpty && !isRepaired)
+                ? () => _handleFixCellTap(row, col)
+                : null,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: border,
-              width: isRepaired ? 2.0 : 1.2,
+            child: Container(
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: border,
+                  width: isRepaired ? 2.0 : 1.2,
+                ),
+              ),
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
+              ),
             ),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 15.5,
-              fontWeight: FontWeight.w900,
-              color: textColor,
-            ),
-          ),
-        ),
+          );
+
+          // Allow dragging buggy or unrepaired numbers to drop onto target cells!
+          if (!isWaiting && !_roundCompleted && !isEmpty && !isRepaired) {
+            return Draggable<int>(
+              data: bugVal,
+              feedback: _buildDragFeedbackBadge(bugVal),
+              childWhenDragging: Opacity(opacity: 0.35, child: cellBox),
+              onDragStarted: () => _onFixBallPicked(bugVal, isDrag: true),
+              onDragEnd: (_) => _onFixDragEnded(),
+              onDraggableCanceled: (_, _) => _onFixDragEnded(),
+              child: cellBox,
+            );
+          }
+
+          return cellBox;
+        },
       ),
     );
   }

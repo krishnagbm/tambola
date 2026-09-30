@@ -170,6 +170,14 @@ class SkillFriendSquadController extends ChangeNotifier {
   /// (moved it off a cell). [ball] is the ball number freed.
   void Function(int ball)? onRemoteBallLifted;
 
+  /// Callback triggered when any squad mate makes a Bogey Dab (validates invalid card).
+  /// [flaggedCells] are cell keys (e.g. "0_3"), [issue] is the explanation.
+  void Function(List<String> flaggedCells, String issue, String playerName)?
+  onRemoteBogeyDab;
+
+  /// Callback triggered when any squad mate cancels or leaves the active game round.
+  void Function(String playerName)? onRemoteCancelGame;
+
   String get localPlayerId => _localPlayerId;
   String get localName => _localName;
   String get localAvatar => _localAvatar;
@@ -398,6 +406,18 @@ class SkillFriendSquadController extends ChangeNotifier {
               _handleRemoteBallLifted(payload);
             },
           )
+          .onBroadcast(
+            event: 'bogey_dab',
+            callback: (payload) {
+              _handleRemoteBogeyDab(payload);
+            },
+          )
+          .onBroadcast(
+            event: 'cancel_game',
+            callback: (payload) {
+              _handleRemoteCancelGame(payload);
+            },
+          )
           .subscribe();
 
       _channel = channel;
@@ -582,6 +602,32 @@ class SkillFriendSquadController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _handleRemoteBogeyDab(Map<String, dynamic> payload) {
+    final senderId = payload['sender_id']?.toString() ?? '';
+    if (senderId == _localPlayerId) return;
+    final playerName = payload['player_name']?.toString() ?? 'Squad mate';
+    final issue = payload['issue']?.toString() ?? 'Bogey Dab detected!';
+    final rawFlagged = payload['flagged_cells'];
+    final flaggedCells = <String>[];
+    if (rawFlagged is List) {
+      for (final f in rawFlagged) {
+        if (f != null) flaggedCells.add(f.toString());
+      }
+    }
+    _liveFeedMessage = '🚨 $playerName pressed Bogey Dab! Squad: rearrange flagged cells!';
+    onRemoteBogeyDab?.call(flaggedCells, issue, playerName);
+    notifyListeners();
+  }
+
+  void _handleRemoteCancelGame(Map<String, dynamic> payload) {
+    final senderId = payload['sender_id']?.toString() ?? '';
+    if (senderId == _localPlayerId) return;
+    final playerName = payload['player_name']?.toString() ?? 'Squad mate';
+    _liveFeedMessage = '🛑 $playerName cancelled the current round.';
+    onRemoteCancelGame?.call(playerName);
+    notifyListeners();
+  }
+
   /// Broadcast that we placed [ball] at ([row], [col]) so squad mates can see it's claimed.
   void broadcastBallPlaced({
     required int ball,
@@ -605,6 +651,30 @@ class SkillFriendSquadController extends ChangeNotifier {
     _sendBroadcast('ball_lifted', {
       'ball': ball,
       'sender_id': _localPlayerId,
+    });
+  }
+
+  /// Broadcast a Bogey Dab event across the entire squad so all screens show flagged cells
+  /// and work together to rearrange.
+  void broadcastBogeyDab({
+    required List<String> flaggedCells,
+    required String issue,
+  }) {
+    if (!isInSquad) return;
+    _sendBroadcast('bogey_dab', {
+      'flagged_cells': flaggedCells,
+      'issue': issue,
+      'sender_id': _localPlayerId,
+      'player_name': _localName,
+    });
+  }
+
+  /// Broadcast round cancel / leave active game to all squad members.
+  void broadcastCancelGame() {
+    if (!isInSquad) return;
+    _sendBroadcast('cancel_game', {
+      'sender_id': _localPlayerId,
+      'player_name': _localName,
     });
   }
 

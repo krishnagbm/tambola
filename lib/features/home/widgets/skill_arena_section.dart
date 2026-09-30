@@ -427,12 +427,12 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
           ),
           const SizedBox(height: 8),
 
-          // Concise Subhead matching Left Card (exact 38px 2-line slot on desktop, 54px 3-line slot on mobile)
+          // Concise Subhead with stable 54px 3-line slot so card height never jumps or jerks
           SizedBox(
-            height: isWide ? 38 : 54,
+            height: 54,
             child: Text(
               'Playable 3×9 skill games — MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™ (5•10•15) & upcoming Levels 2–5.',
-              maxLines: isWide ? 2 : 3,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: isWide ? 13 : 12.5,

@@ -180,5 +180,18 @@ void main() {
         expect(matchingLastDigitCount, greaterThanOrEqualTo(3));
       }
     });
+
+    test('modeSumQ3 targets quadrant 3 (Cols 7–9)', () {
+      final spec = SumHousieRoundSpec.generate(
+        mode: SumHousieRoundSpec.modeSumQ3,
+        random: Random(606),
+      );
+      expect(spec.waves.length, 1);
+      expect(spec.waves.first.quadrant, 3);
+      for (final n in spec.waves.first.quadrantNumbers) {
+        expect(n, greaterThanOrEqualTo(60));
+        expect(n, lessThanOrEqualTo(90));
+      }
+    });
   });
 }
