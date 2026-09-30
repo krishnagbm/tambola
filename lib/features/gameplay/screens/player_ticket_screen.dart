@@ -82,18 +82,17 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           MptMemoryRoundScore.pointsPerCorrectRecall) -
       (_wrongTapsForCycle(cycleIndex) * MptMemoryRoundScore.penaltyPerWrongTap);
 
-  int get _cumulativeFlashCorrect => _flashRecalledByCycle.values
-      .fold(0, (sum, set) => sum + set.length);
+  int get _cumulativeFlashCorrect =>
+      _flashRecalledByCycle.values.fold(0, (sum, set) => sum + set.length);
 
-  int get _cumulativeFlashWrong => _flashWrongTapsByCycle.values
-      .fold(0, (sum, count) => sum + count);
+  int get _cumulativeFlashWrong =>
+      _flashWrongTapsByCycle.values.fold(0, (sum, count) => sum + count);
 
   int get _cumulativeFlashNetScore =>
       (_cumulativeFlashCorrect * MptMemoryRoundScore.pointsPerCorrectRecall) -
       (_cumulativeFlashWrong * MptMemoryRoundScore.penaltyPerWrongTap);
 
-  bool get _isFrozen =>
-      DateTime.now().millisecondsSinceEpoch < _freezeUntilMs;
+  bool get _isFrozen => DateTime.now().millisecondsSinceEpoch < _freezeUntilMs;
 
   int get _freezeRemainingSeconds =>
       ((_freezeUntilMs - DateTime.now().millisecondsSinceEpoch) / 1000)
@@ -152,7 +151,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       setState(() => _isClaiming = true);
     }
     try {
-      final res = await ref.read(gameplayRepositoryProvider).submitClaim(
+      final res = await ref
+          .read(gameplayRepositoryProvider)
+          .submitClaim(
             gameId: widget.gameId,
             prizeType: prizeType,
             markedNumbers: markedNumbers,
@@ -275,7 +276,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       });
       _saveMarks();
 
-      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+      await ref
+          .read(gameplayRepositoryProvider)
+          .upsertMemoryRoundScore(
             gameId: widget.gameId,
             cycleIndex: cycleIdx,
             quadrantLabel: effectiveCycleSpec.label,
@@ -324,7 +327,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         _flashTapFeedbackIsError = true;
       });
 
-      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+      await ref
+          .read(gameplayRepositoryProvider)
+          .upsertMemoryRoundScore(
             gameId: widget.gameId,
             cycleIndex: cycleIdx,
             quadrantLabel: effectiveCycleSpec.label,
@@ -441,8 +446,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         final confirmedCount = regList.where((r) => r.isConfirmed).length;
         final totalPlayers = confirmedCount > 0
             ? confirmedCount
-            : (ref.read(gameStreamProvider(widget.gameId)).value?.fundedCapacity ??
-                1);
+            : (ref
+                      .read(gameStreamProvider(widget.gameId))
+                      .value
+                      ?.fundedCapacity ??
+                  1);
         _showWinnerDialog(prizeType, refCode, totalPlayers);
         if (prizeType == 'FULL_HOUSE') {
           try {
@@ -486,7 +494,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.emoji_events, color: AppTheme.secondaryColor, size: 28),
+            const Icon(
+              Icons.emoji_events,
+              color: AppTheme.secondaryColor,
+              size: 28,
+            ),
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
@@ -758,14 +770,13 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     final calledStream = ref.watch(calledNumbersStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
-    final registrationsStream =
-        ref.watch(registrationsStreamProvider(widget.gameId));
+    final registrationsStream = ref.watch(
+      registrationsStreamProvider(widget.gameId),
+    );
     final currentUserId = ref.watch(currentUserProvider).value?.id;
 
-    final confirmedPlayers = registrationsStream.value
-            ?.where((r) => r.isConfirmed)
-            .toList() ??
-        [];
+    final confirmedPlayers =
+        registrationsStream.value?.where((r) => r.isConfirmed).toList() ?? [];
     final totalPlayers = confirmedPlayers.isNotEmpty
         ? confirmedPlayers.length
         : (gameStream.value?.fundedCapacity ?? 1);
@@ -964,8 +975,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final latestCalled = activeCycleSpec != null
                   ? activeCycleSpec.latestCalledNumber
                   : (calledNumbers.isNotEmpty
-                      ? calledNumbers.last.number
-                      : null);
+                        ? calledNumbers.last.number
+                        : null);
               final calledSet = activeCycleSpec != null
                   ? activeCycleSpec.calledNumbers.toSet()
                   : calledNumbers.map((e) => e.number).toSet();
@@ -982,23 +993,20 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   currentGame?.status == 'CANCELLED' ||
                   (flashConfig == null && calledNumbers.length >= 90);
               final hasApprovedWinners =
-                  (claimsStream.value ?? const <MptClaim>[])
-                      .any((c) => c.status == 'APPROVED') ||
+                  (claimsStream.value ?? const <MptClaim>[]).any(
+                    (c) => c.status == 'APPROVED',
+                  ) ||
                   (flashConfig != null &&
                       flashConfig.cycles.any((c) => c.winnerUserId != null));
-                  calledNumbers.length >= 90;
-              final hasApprovedWinners =
-                  (claimsStream.value ?? const <MptClaim>[])
-                      .any((c) => c.status == 'APPROVED');
               final isCancelledOrNoWinners =
                   currentGame?.status == 'CANCELLED' ||
                   (isGameEnded && !hasApprovedWinners);
               final isGameActive =
                   (currentGame?.status == 'IN_PROGRESS' ||
-                          calledNumbers.isNotEmpty ||
-                          activeCycleSpec?.startedAtMs != null) &&
-                      !isGameEnded &&
-                      currentGame?.status != 'CANCELLED';
+                      calledNumbers.isNotEmpty ||
+                      activeCycleSpec?.startedAtMs != null) &&
+                  !isGameEnded &&
+                  currentGame?.status != 'CANCELLED';
               final activePrizes =
                   currentGame?.prizesConfig ??
                   [
@@ -1019,7 +1027,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     final isLandscape =
                         orientation == Orientation.landscape ||
                         (constraints.maxWidth > 560 &&
-                            constraints.maxWidth > constraints.maxHeight * 1.15);
+                            constraints.maxWidth >
+                                constraints.maxHeight * 1.15);
 
                     if (isLandscape) {
                       // ========================================================
@@ -1101,7 +1110,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     if (activeCycleSpec != null &&
-                                        activeCycleSpec.calledNumbers.isNotEmpty) ...[
+                                        activeCycleSpec
+                                            .calledNumbers
+                                            .isNotEmpty) ...[
                                       _buildRecentCallsFromInts(
                                         activeCycleSpec.calledNumbers,
                                       ),
@@ -1558,7 +1569,6 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Text(
               isCancelledOrNoWinners
                   ? 'This game was cancelled or ended early without any prize winners.'
-                  : 'Game concluded across $totalPlayers players! Check your rewards below.',
                   : (totalCalled >= 90
                         ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
                         : 'Game concluded across $totalPlayers players! Check your rewards below.'),
@@ -1797,10 +1807,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: (isFrozen
-                                ? AppTheme.accentDanger
-                                : AppTheme.secondaryColor)
-                            .withValues(alpha: 0.35),
+                        color:
+                            (isFrozen
+                                    ? AppTheme.accentDanger
+                                    : AppTheme.secondaryColor)
+                                .withValues(alpha: 0.35),
                         blurRadius: 10,
                       ),
                     ],
@@ -1809,9 +1820,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isFrozen
-                            ? Icons.ac_unit_rounded
-                            : Icons.timer_outlined,
+                        isFrozen ? Icons.ac_unit_rounded : Icons.timer_outlined,
                         size: isCompact ? 18 : 20,
                         color: isFrozen
                             ? const Color(0xFFFCA5A5)
@@ -1924,8 +1933,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               itemBuilder: (ctx, idx) {
                 final numVal = recent[idx];
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: idx == 0
                         ? AppTheme.secondaryColor
@@ -2032,8 +2043,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   activeSpec != null
                       ? '${_recalledForCycle(activeSpec.cycleIndex).length} / ${activeSpec.trueNumbers.length} Recalled • ⭐ ${_netScoreForCycle(activeSpec.cycleIndex)} pts'
                       : (isGameEnded
-                          ? '${_markedNumbers.length} / 15 Marked (Final)'
-                          : '${_markedNumbers.length} / 15 Marked'),
+                            ? '${_markedNumbers.length} / 15 Marked (Final)'
+                            : '${_markedNumbers.length} / 15 Marked'),
                   style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -2057,7 +2068,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 5),
                           decoration: BoxDecoration(
                             color: activeSpec.activeQuadrants.contains(q)
-                                ? AppTheme.secondaryColor.withValues(alpha: 0.18)
+                                ? AppTheme.secondaryColor.withValues(
+                                    alpha: 0.18,
+                                  )
                                 : const Color(0xFF1E2235),
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
@@ -2220,11 +2233,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
       enabled: canTap,
       onTap: canTap
           ? () => _handleFlashCellTap(
-                numVal: numVal,
-                cycleSpec: cycleSpec,
-                config: config,
-                user: currentUser,
-              )
+              numVal: numVal,
+              cycleSpec: cycleSpec,
+              config: config,
+              user: currentUser,
+            )
           : null,
       child: Material(
         color: Colors.transparent,
@@ -2232,11 +2245,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           borderRadius: BorderRadius.circular(6),
           onTap: canTap
               ? () => _handleFlashCellTap(
-                    numVal: numVal,
-                    cycleSpec: cycleSpec,
-                    config: config,
-                    user: currentUser,
-                  )
+                  numVal: numVal,
+                  cycleSpec: cycleSpec,
+                  config: config,
+                  user: currentUser,
+                )
               : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -2346,11 +2359,12 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     if (raw is Map) {
       final title = (raw['title'] ?? raw['brand_name'] ?? '').toString().trim();
       final val = (raw['prize_value'] as num?)?.toDouble() ?? 0.0;
-      final sym = (raw['currency_symbol'] ??
-              game.prizeGiftsConfig['_currency_symbol'] ??
-              '₹')
-          .toString()
-          .trim();
+      final sym =
+          (raw['currency_symbol'] ??
+                  game.prizeGiftsConfig['_currency_symbol'] ??
+                  '₹')
+              .toString()
+              .trim();
       final valStr = val > 0
           ? '$sym${val == val.roundToDouble() ? val.toInt() : val.toStringAsFixed(2)}'
           : '';
@@ -2405,7 +2419,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         final prizeKey = c.prizeKey;
         final recalledSet = _recalledForCycle(c.cycleIndex);
         final isFullRecall =
-            c.trueNumbers.isNotEmpty && recalledSet.length >= c.trueNumbers.length;
+            c.trueNumbers.isNotEmpty &&
+            recalledSet.length >= c.trueNumbers.length;
         final isRoundPoolDone =
             c.isCompleted &&
             recalledSet.isNotEmpty &&
@@ -2494,8 +2509,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           isGameEnded
               ? 'Game is over. Final prize winners and scores are shown below.'
               : (flashConfig != null
-                  ? 'Winners are crowned automatically by highest memory recall & fastest reaction speed!'
-                  : 'Tap when completed. Server will validate your ticket.'),
+                    ? 'Winners are crowned automatically by highest memory recall & fastest reaction speed!'
+                    : 'Tap when completed. Server will validate your ticket.'),
           style: TextStyle(
             fontSize: isCompact ? 11 : 12.5,
             color: const Color(0xFFCBD5E1),
@@ -2540,8 +2555,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       '✓ ${cSpec.winnerCorrectCount}/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
                 } else if (isWonByMe && cSpec != null) {
                   final myRecalled = _recalledForCycle(rNum).length;
-                  final sec =
-                      (_reactionMsForCycle(rNum) / 1000).toStringAsFixed(1);
+                  final sec = (_reactionMsForCycle(rNum) / 1000)
+                      .toStringAsFixed(1);
                   if (myRecalled > 0) {
                     scoreSummary =
                         '✓ $myRecalled/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
@@ -2555,11 +2570,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               final displayName = (playerReg?.displayName.isNotEmpty == true)
                   ? playerReg!.displayName
                   : (flashWinnerName != null && flashWinnerName.isNotEmpty)
-                      ? flashWinnerName
-                      : (approvedClaim?.userName != null &&
-                              approvedClaim!.userName != 'Player')
-                          ? approvedClaim.userName!
-                          : 'Player';
+                  ? flashWinnerName
+                  : (approvedClaim?.userName != null &&
+                        approvedClaim!.userName != 'Player')
+                  ? approvedClaim.userName!
+                  : 'Player';
 
               return ElevatedButton(
                 onPressed: null, // Disabled
@@ -2602,8 +2617,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       isWonByMe
                           ? (registrations.length > 1
-                              ? '🏆 Won by You! (1 of ${registrations.length})'
-                              : '🏆 Won by You!')
+                                ? '🏆 Won by You! (1 of ${registrations.length})'
+                                : '🏆 Won by You!')
                           : '👑 Winner: $displayName',
                       style: TextStyle(
                         fontSize: isCompact ? 11.5 : 13,
@@ -2708,7 +2723,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               List<int> claimNums = _markedNumbers.toList();
 
               if (prize.startsWith('ROUND_')) {
-                final rNum = int.tryParse(prize.replaceFirst('ROUND_', '')) ?? 1;
+                final rNum =
+                    int.tryParse(prize.replaceFirst('ROUND_', '')) ?? 1;
                 final cSpec = flashConfig.cycleAt(rNum);
                 final recalledInRound = _recalledForCycle(rNum);
                 claimNums = recalledInRound.toList();
@@ -2725,8 +2741,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     flashSubtitle = '⏳ Unlocks in Round $rNum';
                   }
                 }
-              } else if (prize == 'FULL_HOUSE' || prize == 'SECOND_FULL_HOUSE') {
-                final totalTargets = flashConfig.totalTargetNumbersAcrossAllCycles;
+              } else if (prize == 'FULL_HOUSE' ||
+                  prize == 'SECOND_FULL_HOUSE') {
+                final totalTargets =
+                    flashConfig.totalTargetNumbersAcrossAllCycles;
                 final isLastDone =
                     flashConfig.cycles.isNotEmpty &&
                     flashConfig.cycles.last.isCompleted;
@@ -2744,10 +2762,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               return ElevatedButton(
                 onPressed: (canClaimNow && !_isClaiming)
                     ? () => _triggerFlashPrizeClaim(
-                          prizeType: prize,
-                          markedNumbers: claimNums,
-                          isAuto: false,
-                        )
+                        prizeType: prize,
+                        markedNumbers: claimNums,
+                        isAuto: false,
+                      )
                     : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: canClaimNow
@@ -2817,14 +2835,17 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               onPressed: _isClaiming
                   ? null
                   : () => _handleClaimPrize(
-                        prizeType: prize,
-                        ticket: ticket,
-                        calledSet: calledSet,
-                      ),
+                      prizeType: prize,
+                      ticket: ticket,
+                      calledSet: calledSet,
+                    ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.darkSurface,
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: AppTheme.primaryColor, width: 1.3),
+                side: const BorderSide(
+                  color: AppTheme.primaryColor,
+                  width: 1.3,
+                ),
                 padding: EdgeInsets.symmetric(
                   horizontal: isCompact ? 6 : 10,
                   vertical: isCompact ? 4 : 6,
