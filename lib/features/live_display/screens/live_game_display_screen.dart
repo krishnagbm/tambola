@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
+import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
 import '../../../providers/app_providers.dart';
@@ -27,11 +28,25 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
   int _lastAnnouncedSeq = 0;
   bool _isMuted = false;
   Timer? _autoReconnectTimer;
+  Timer? _neuroWaveTvTimer;
 
   @override
   void initState() {
     super.initState();
     _isMuted = TambolaAudioCaller().isMuted;
+
+    _neuroWaveTvTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
+      if (!mounted) return;
+      final game = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (game?.isFlashHousie == true) {
+        final neuro = game!.flashHousieConfig?.computeNeuroWaveState(
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        if (neuro != null && neuro.isRevealing) {
+          setState(() {});
+        }
+      }
+    });
 
     // Automatic periodic reconnect watchdog for TV displays
     _autoReconnectTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -46,6 +61,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
 
   @override
   void dispose() {
+    _neuroWaveTvTimer?.cancel();
     _autoReconnectTimer?.cancel();
     super.dispose();
   }
@@ -54,6 +70,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     ref.invalidate(gameStreamProvider(widget.gameId));
     ref.invalidate(calledNumbersStreamProvider(widget.gameId));
     ref.invalidate(claimsStreamProvider(widget.gameId));
+    ref.invalidate(memoryRoundScoresStreamProvider(widget.gameId));
   }
 
   void _showCastDialog() {
@@ -336,6 +353,7 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                 child: _buildBoardGrid(
                                   calledSet,
                                   calledNumbers,
+                                  game,
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -350,8 +368,11 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                     ),
                                     const SizedBox(height: 14),
                                     Expanded(
-                                      child: _buildLiveWinnersPanel(
-                                        claimsStream,
+                                      child: SingleChildScrollView(
+                                        child: _buildLiveWinnersPanel(
+                                          claimsStream,
+                                          game,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -368,9 +389,9 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                                   calledNumbers.length,
                                 ),
                                 const SizedBox(height: 16),
-                                _buildBoardGrid(calledSet, calledNumbers),
+                                _buildBoardGrid(calledSet, calledNumbers, game),
                                 const SizedBox(height: 16),
-                                _buildLiveWinnersPanel(claimsStream),
+                                _buildLiveWinnersPanel(claimsStream, game),
                               ],
                             ),
                           ),
@@ -645,8 +666,24 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildBoardGrid(Set<int> calledSet, List<dynamic> calledList) {
+  Widget _buildBoardGrid(
+    Set<int> calledSet,
+    List<dynamic> calledList, [
+    MptGame? game,
+  ]) {
     final recentCalls = calledList.reversed.skip(1).take(5).toList();
+    final flashCfg = game?.flashHousieConfig;
+    final activeCycle = flashCfg?.activeCycleSpec;
+    final activeQuadrants = activeCycle?.activeQuadrants ?? const <int>[];
+    final neuroState = flashCfg?.computeNeuroWaveState(
+      DateTime.now().millisecondsSinceEpoch,
+    );
+
+    bool isNumberInActiveQuadrant(int num) {
+      if (flashCfg == null || activeQuadrants.isEmpty) return true;
+      final q = num <= 30 ? 1 : (num <= 60 ? 2 : 3);
+      return activeQuadrants.contains(q);
+    }
 
     return Card(
       child: Padding(
@@ -654,6 +691,75 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (flashCfg != null && activeCycle != null && neuroState != null) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141829),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.bolt_rounded,
+                            color: AppTheme.secondaryColor,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              '${flashCfg.displayTitle} • Round ${flashCfg.currentCycle} of ${flashCfg.totalCycles} (${activeCycle.roundBadgeLabel})',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: neuroState.isRevealing
+                            ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
+                            : AppTheme.accentSuccess.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        neuroState.isRevealing
+                            ? '⚡ NeuroWave™ Spotlight (${(neuroState.remainingMsInPhase / 1000).ceil()}s)'
+                            : '🎱 Round Pool: ${activeCycle.calledCount}/${activeCycle.drawPool.length}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: neuroState.isRevealing
+                              ? const Color(0xFF38BDF8)
+                              : AppTheme.accentSuccess,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -756,27 +862,33 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
               itemBuilder: (ctx, idx) {
                 final num = idx + 1;
                 final isCalled = calledSet.contains(num);
-                return Container(
-                  decoration: BoxDecoration(
-                    color: isCalled
-                        ? AppTheme.accentSuccess
-                        : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
+                final inActiveQuad = isNumberInActiveQuadrant(num);
+                return Opacity(
+                  opacity: inActiveQuad ? 1.0 : 0.32,
+                  child: Container(
+                    decoration: BoxDecoration(
                       color: isCalled
                           ? AppTheme.accentSuccess
-                          : const Color(0xFF2E334D),
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$num',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                          : AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
                         color: isCalled
-                            ? Colors.white
-                            : const Color(0xFFA0AEC0),
+                            ? AppTheme.accentSuccess
+                            : (flashCfg != null && inActiveQuad
+                                ? AppTheme.secondaryColor.withValues(alpha: 0.45)
+                                : const Color(0xFF2E334D)),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$num',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isCalled
+                              ? Colors.white
+                              : const Color(0xFFA0AEC0),
+                        ),
                       ),
                     ),
                   ),
@@ -789,7 +901,252 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
     );
   }
 
-  Widget _buildLiveWinnersPanel(AsyncValue<List<MptClaim>> claimsStream) {
+  Widget _buildFlashHousieLiveTvStandings(MptGame game) {
+    final flashCfg = game.flashHousieConfig;
+    if (flashCfg == null) return const SizedBox.shrink();
+    final cycle = flashCfg.activeCycleSpec;
+    final scoresAsync = ref.watch(memoryRoundScoresStreamProvider(widget.gameId));
+    final allScores = scoresAsync.value ?? const <MptMemoryRoundScore>[];
+
+    final currentCycleScores = allScores
+        .where((s) => s.cycleNumber == flashCfg.currentCycle)
+        .toList()
+      ..sort(MptMemoryRoundScore.compareStandings);
+
+    // Fastest / latest recall ticker
+    MptMemoryRoundScore? latestRecall;
+    for (final s in currentCycleScores) {
+      if (s.lastRecalledNumber != null && s.lastReactionMs != null) {
+        if (latestRecall == null || s.updatedAt.isAfter(latestRecall.updatedAt)) {
+          latestRecall = s;
+        }
+      }
+    }
+
+    // Aggregate cumulative Full House standings across all cycles
+    final Map<String, MptMemoryRoundScore> cumulativeByUser = {};
+    for (final s in allScores) {
+      final existing = cumulativeByUser[s.userId];
+      if (existing == null) {
+        cumulativeByUser[s.userId] = s;
+      } else {
+        final combinedNums = <int>{
+          ...existing.correctNumbers,
+          ...s.correctNumbers,
+        }.toList();
+        cumulativeByUser[s.userId] = MptMemoryRoundScore(
+          id: existing.id,
+          gameId: existing.gameId,
+          userId: existing.userId,
+          displayName: s.displayName.isNotEmpty
+              ? s.displayName
+              : existing.displayName,
+          avatar: s.avatar.isNotEmpty ? s.avatar : existing.avatar,
+          cycleIndex: flashCfg.currentCycle,
+          quadrantLabel: 'CUMULATIVE',
+          correctNumbers: combinedNums,
+          correctCount: existing.correctCount + s.correctCount,
+          wrongTapCount: existing.wrongTapCount + s.wrongTapCount,
+          totalReactionMs: existing.totalReactionMs + s.totalReactionMs,
+          updatedAt: s.updatedAt,
+        );
+      }
+    }
+    final cumulativeStandings = cumulativeByUser.values.toList()
+      ..sort(MptMemoryRoundScore.compareStandings);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF141829),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.55),
+          width: 1.2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.psychology_rounded,
+                    color: AppTheme.secondaryColor,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'LIVE ${cycle.roundBadgeLabel} MEMORY STANDINGS',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Text(
+                  'Round ${flashCfg.currentCycle}/${flashCfg.totalCycles}',
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (latestRecall != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.bolt_rounded,
+                    color: Color(0xFF38BDF8),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Fastest Recall: ${latestRecall.displayName} locked #${latestRecall.lastRecalledNumber} in ${(latestRecall.lastReactionMs! / 1000).toStringAsFixed(2)}s!',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF38BDF8),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          if (currentCycleScores.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text(
+                'Waiting for players to lock in recalled numbers...',
+                style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+              ),
+            )
+          else
+            ...currentCycleScores.take(4).toList().asMap().entries.map((entry) {
+              final rank = entry.key + 1;
+              final s = entry.value;
+              final medal = rank == 1
+                  ? '🥇'
+                  : (rank == 2 ? '🥈' : (rank == 3 ? '🥉' : '#$rank'));
+              return Container(
+                margin: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$medal ${s.displayName}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '✓ ${s.correctCount}  •  ✗ ${s.wrongTapCount}  •  ⚡ ${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          if (cumulativeStandings.isNotEmpty && flashCfg.totalCycles > 1) ...[
+            const SizedBox(height: 8),
+            const Divider(color: Color(0xFF2E334D), height: 1),
+            const SizedBox(height: 6),
+            const Text(
+              '🏆 CUMULATIVE FULL HOUSE RACE (ALL ROUNDS)',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFA78BFA),
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: 4),
+            ...cumulativeStandings.take(3).toList().asMap().entries.map((entry) {
+              final rank = entry.key + 1;
+              final s = entry.value;
+              final badge = rank == 1 ? '👑 1st FH' : (rank == 2 ? '🥈 2nd FH' : '3rd');
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$badge • ${s.displayName}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFCBD5E1),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      'Total ✓ ${s.correctCount} (${(s.cumulativeReactionMs / 1000).toStringAsFixed(1)}s)',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFA78BFA),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveWinnersPanel(
+    AsyncValue<List<MptClaim>> claimsStream, [
+    MptGame? game,
+  ]) {
     return Card(
       color: AppTheme.darkSurface,
       child: Padding(
@@ -797,6 +1154,8 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (game?.isFlashHousie == true)
+              _buildFlashHousieLiveTvStandings(game!),
             const Row(
               children: [
                 Icon(
@@ -819,7 +1178,10 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 final winners = claims
                     .where((c) => c.status == 'APPROVED')
                     .toList();
-                if (winners.isEmpty) {
+                final flashWinnerNames =
+                    game?.flashHousieConfig?.awardedWinnerNames ??
+                    const <String, String>{};
+                if (winners.isEmpty && flashWinnerNames.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Text(
@@ -836,81 +1198,139 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                     [];
                 final regMap = {for (final r in regList) r.userId: r};
 
-                return Column(
-                  children: winners.map((w) {
-                    final playerReg = regMap[w.userId];
-                    final displayName =
-                        (playerReg?.displayName.isNotEmpty == true)
-                        ? playerReg!.displayName
-                        : (w.userName != null && w.userName != 'Player')
-                        ? w.userName!
-                        : 'Player';
-                    final avatar =
-                        playerReg?.avatar ?? w.userAvatar ?? 'avatar_1';
+                final claimedPrizeTypes = winners.map((w) => w.prizeType).toSet();
+                final fallbackFlashEntries = flashWinnerNames.entries
+                    .where((e) => !claimedPrizeTypes.contains(e.key))
+                    .toList();
 
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.secondaryColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppTheme.secondaryColor.withOpacity(0.4),
+                return Column(
+                  children: [
+                    ...winners.map((w) {
+                      final playerReg = regMap[w.userId];
+                      final displayName =
+                          (playerReg?.displayName.isNotEmpty == true)
+                          ? playerReg!.displayName
+                          : (w.userName != null && w.userName != 'Player')
+                          ? w.userName!
+                          : 'Player';
+                      final avatar =
+                          playerReg?.avatar ?? w.userAvatar ?? 'avatar_1';
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor.withOpacity(0.2),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              Formatters.getAvatarEmoji(avatar),
-                              style: const TextStyle(fontSize: 16),
-                            ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.4),
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  Formatters.formatPrizeName(w.prizeType),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: Colors.white,
-                                  ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppTheme.secondaryColor.withValues(
+                                  alpha: 0.2,
                                 ),
-                                Text(
-                                  'Won by: $displayName',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.secondaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                Formatters.getAvatarEmoji(avatar),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    Formatters.formatPrizeName(w.prizeType),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  Text(
+                                    'Won by: $displayName',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.secondaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Text(
-                            Formatters.formatShortDate(w.submittedAt),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Color(0xFFA0AEC0),
+                            Text(
+                              Formatters.formatShortDate(w.submittedAt),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFFA0AEC0),
+                              ),
                             ),
+                          ],
+                        ),
+                      );
+                    }),
+                    ...fallbackFlashEntries.map((entry) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.4),
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.emoji_events_rounded,
+                              color: AppTheme.secondaryColor,
+                              size: 22,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    Formatters.formatPrizeName(entry.key),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Won by: ${entry.value}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.secondaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
                 );
               },
             ),

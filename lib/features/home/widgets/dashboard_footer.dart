@@ -116,6 +116,20 @@ class DashboardFooter extends StatelessWidget {
                 ),
                 const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                 InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/skill-games-guide.html'),
+                  child: const Text(
+                    'Skill Games Guide',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF34D399),
+                      fontWeight: FontWeight.w600,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFF34D399),
+                    ),
+                  ),
+                ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
                   onTap: () => _launchURL('${AppConfig.appBaseUrl}/pricing.html'),
                   child: const Text(
                     'Pricing',
@@ -157,13 +171,29 @@ class DashboardFooter extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             InkWell(
-              onTap: () => _launchURL(AppConfig.appBaseUrl),
-              child: const Text(
-                '© 2026 DabHousie by Digital App Studio. All rights reserved.',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFA0AEC0),
-                ),
+              onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html#intellectual-property'),
+              child: const Column(
+                children: [
+                  Text(
+                    '© 2026 DabHousie™ by Digital App Studio. All rights reserved.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFA0AEC0),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'MakeHousie™, FixHousie™, MathHousie™, SumHousie™, FlashHousie™, RowHousie™, FastTap™, SwapHousie™, BlastHousie™, StickHousie™ & NeuroWave™ Column Spotlight are proprietary game formats, copyrighted visual expressions, and trademarks of Digital App Studio.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFF64748B),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

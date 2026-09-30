@@ -14,6 +14,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   Timer? _autoSlideTimer;
 
   static const _slides = [
+    // Tab 1: Classic 90-Ball & Live Host (Slides 1–6, indices 0–5)
     {
       'title': 'Player Ticket & Instant Play',
       'tabLabel': '📱 Player Tickets',
@@ -61,6 +62,56 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       'image': 'assets/screenshots/screenshot_private_passcodes.png',
       'desc': 'Generate single-use seat OTPs for private kitty parties, society clubs, and corporate galas to ensure only invited guests can join.',
       'aspectRatio': 1.01,
+    },
+    // Tab 2: FlashHousie™ Solo Play (Slides 7–9, indices 6–8)
+    {
+      'title': 'FlashHousie™ Solo Arena — Perfect 5/5 Recall (50 pts)',
+      'tabLabel': '👤 Solo Q1 Perfect (50 pts)',
+      'badge': 'INSTANT SOLO SKILL PRACTICE • FLASH 5 / 10 / 15 SELECTOR',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_win.png',
+      'desc': 'Practice anytime on mobile or desktop! Choose Flash 5 (1 Quad), Flash 10 (2 Quads), or Flash 15 (3 Quads), memorize the NeuroWave™ sweep, and track your score & reaction time.',
+      'aspectRatio': 0.90,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Live Ball Call & Score Tracker',
+      'tabLabel': '⚡ Solo Live Call & Score',
+      'badge': 'REAL-TIME BALL CALLER • +10 PTS RECALL • -3 PTS FREEZE PENALTY',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_live.png',
+      'desc': 'Live solo practice HUD showing drawn ball history, active quadrant (Q1 Cols 1–29), recalled count (5/5), penalty tracker, and net score in real time.',
+      'aspectRatio': 0.81,
+    },
+    {
+      'title': 'FlashHousie™ Solo Arena — Quadrant Q3 Spatial Deduction',
+      'tabLabel': '🎯 Solo Q3 (Cols 7–9)',
+      'badge': '3×3 QUADRANT ROTATION • COLUMN DECADE LOGIC (60–90)',
+      'image': 'assets/screenshots/screenshot_flash_housie_solo_q3.png',
+      'desc': 'Every solo card rotates across Q1 (1–29), Q2 (30–59), or Q3 (60–90) so players master all 9 decade columns and vertical ascending sequences.',
+      'aspectRatio': 0.90,
+    },
+    // Tab 3: FlashHousie™ Live Multiplayer (Slides 10–12, indices 9–11)
+    {
+      'title': 'FlashHousie™ 5 / 10 / 15 Live Recall & Round Prizes',
+      'tabLabel': '⚡ FlashHousie™ Recall',
+      'badge': 'DABHOUSIE™ PROPRIETARY SPECIAL • MEMORY + REASONING + SPEED',
+      'image': 'assets/screenshots/screenshot_flash_housie_player.png',
+      'desc': 'Memorize active 3×3 quadrants during the NeuroWave™ Spotlight sweep, then combine spatial memory & logical column reasoning to recall called balls and win Round & Full House prizes.',
+      'aspectRatio': 3.35,
+    },
+    {
+      'title': 'NeuroWave™ Spotlight & Mystery [?] Quadrant Grid',
+      'tabLabel': '🧠 NeuroWave™ [?] Grid',
+      'badge': 'COLUMN-BY-COLUMN SPOTLIGHT REVEAL • SYMMETRIC SKILL PLAY',
+      'image': 'assets/screenshots/screenshot_flash_housie_locked.png',
+      'desc': 'After the NeuroWave™ Spotlight sweeps each active column, numbers lock into [?] tiles while inactive quadrants stay locked for future rounds.',
+      'aspectRatio': 3.22,
+    },
+    {
+      'title': 'FlashHousie™ Host Control & Live Recall Leaderboard',
+      'tabLabel': '🏆 FlashHousie™ Host',
+      'badge': 'AUTO-SCORED ROUND WINNERS & CUMULATIVE FULL HOUSE',
+      'image': 'assets/screenshots/screenshot_flash_housie_host.png',
+      'desc': 'Hosts track real-time player recall accuracy, reaction speed, and live round leaderboards with automatic Round (Rx-Qx) and Full House winner crowning.',
+      'aspectRatio': 2.22,
     },
   ];
 
@@ -160,6 +211,14 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
   @override
   Widget build(BuildContext context) {
     final current = _slides[_selectedIndex];
+    final isClassicCategory = _selectedIndex >= 0 && _selectedIndex <= 5;
+    final isSoloCategory = _selectedIndex >= 6 && _selectedIndex <= 8;
+    final isSkillMultiplayerCategory = _selectedIndex >= 9 && _selectedIndex <= 11;
+    final visibleIndices = isClassicCategory
+        ? const <int>[0, 1, 2, 3, 4, 5]
+        : (isSoloCategory
+              ? const <int>[6, 7, 8]
+              : const <int>[9, 10, 11]);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -171,7 +230,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Section Header
+          // Section Header + Prev/Next Controls
           Row(
             children: [
               Container(
@@ -180,7 +239,11 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                   color: AppTheme.secondaryColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.videogame_asset_outlined, color: AppTheme.secondaryColor, size: 20),
+                child: const Icon(
+                  Icons.videogame_asset_outlined,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               const Expanded(
@@ -197,7 +260,7 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Real multiplayer screens • Automated calling • Server-side claim verification',
+                      'Solo Skill Arena • Live Multiplayer • Automated Calling • Server Claim Verification',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFFA0AEC0),
@@ -206,47 +269,254 @@ class _GameplayShowcaseSectionState extends State<GameplayShowcaseSection> {
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Interactive Tab Selector
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (int i = 0; i < _slides.length; i++) ...[
-                  InkWell(
-                    onTap: () => _onUserSelect(i),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: i == _selectedIndex
-                            ? AppTheme.primaryLight
-                            : const Color(0xFF1B223C),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: i == _selectedIndex
-                              ? AppTheme.secondaryColor
-                              : const Color(0xFF2E334D),
-                          width: i == _selectedIndex ? 1.5 : 1,
-                        ),
+              // Slide Counter & Prev / Next buttons
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF151C35),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      onTap: () => _onUserSelect(
+                        (_selectedIndex - 1 + _slides.length) % _slides.length,
                       ),
-                      child: Text(
-                        _slides[i]['tabLabel'] as String,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: i == _selectedIndex ? FontWeight.w800 : FontWeight.w500,
-                          color: i == _selectedIndex ? Colors.white : const Color(0xFF94A3B8),
+                      borderRadius: BorderRadius.circular(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.chevron_left_rounded,
+                          size: 18,
+                          color: Colors.white,
                         ),
                       ),
                     ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        '${_selectedIndex + 1} / ${_slides.length}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _onUserSelect(
+                        (_selectedIndex + 1) % _slides.length,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.chevron_right_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Category Tabs (1. Classic 90-Ball [0..5] | 2. FlashHousie™ Solo Arena [6..8] | 3. FlashHousie™ Live Multiplayer [9..11])
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              InkWell(
+                onTap: () => _onUserSelect(0),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                  if (i < _slides.length - 1) const SizedBox(width: 8),
-                ],
-              ],
-            ),
+                  decoration: BoxDecoration(
+                    color: isClassicCategory
+                        ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isClassicCategory
+                          ? const Color(0xFF38BDF8)
+                          : const Color(0xFF2E334D),
+                      width: isClassicCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.casino_rounded,
+                        size: 15,
+                        color: isClassicCategory
+                            ? const Color(0xFF38BDF8)
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '🎲 Classic 90-Ball & Live Host (6)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isClassicCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isClassicCategory
+                              ? Colors.white
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _onUserSelect(6),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSoloCategory
+                        ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSoloCategory
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFF2E334D),
+                      width: isSoloCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: isSoloCategory
+                            ? const Color(0xFF34D399)
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '👤 FlashHousie™ Solo Play (3)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSoloCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isSoloCategory
+                              ? const Color(0xFF34D399)
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () => _onUserSelect(9),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSkillMultiplayerCategory
+                        ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                        : const Color(0xFF13192E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSkillMultiplayerCategory
+                          ? AppTheme.secondaryColor
+                          : const Color(0xFF2E334D),
+                      width: isSkillMultiplayerCategory ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 16,
+                        color: isSkillMultiplayerCategory
+                            ? AppTheme.secondaryColor
+                            : const Color(0xFF94A3B8),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '🧠⚡ FlashHousie™ Live Multiplayer (3)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSkillMultiplayerCategory
+                              ? FontWeight.w900
+                              : FontWeight.w600,
+                          color: isSkillMultiplayerCategory
+                              ? AppTheme.secondaryColor
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Wrapped Screen Selector Buttons (Never cuts off at right edge)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final i in visibleIndices)
+                InkWell(
+                  onTap: () => _onUserSelect(i),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: i == _selectedIndex
+                          ? AppTheme.primaryLight
+                          : const Color(0xFF1B223C),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: i == _selectedIndex
+                            ? AppTheme.secondaryColor
+                            : const Color(0xFF2E334D),
+                        width: i == _selectedIndex ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      _slides[i]['tabLabel'] as String,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: i == _selectedIndex
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                        color: i == _selectedIndex
+                            ? Colors.white
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 14),
 

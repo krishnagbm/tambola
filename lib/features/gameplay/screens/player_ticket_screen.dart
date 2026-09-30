@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../core/utils/tambola_ticket.dart';
 import '../../../core/utils/wake_lock_helper.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/celebration_overlay.dart';
+import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
@@ -33,17 +35,307 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   int _lastAnnouncedSeq = 0;
   bool _showCelebration = false;
 
+  // FlashHousie™ 5 / 10 / 15 & NeuroWave™ Spotlight State
+  Timer? _neuroWaveUiTimer;
+  final Map<int, Set<int>> _flashRecalledByCycle = {};
+  final Map<int, int> _flashWrongTapsByCycle = {};
+  final Map<int, int> _flashReactionMsByCycle = {};
+  final Set<String> _autoClaimedFlashPrizes = {};
+  int _freezeUntilMs = 0;
+  int? _lastSeenFlashBall;
+  int _lastFlashBallShownAtMs = 0;
+  String? _flashTapFeedback;
+  bool _flashTapFeedbackIsError = false;
+
   @override
   void initState() {
     super.initState();
     WakeLockHelper.keepScreenOn();
     _loadSavedMarks();
+    _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+      if (!mounted) return;
+      final game = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (game?.isFlashHousie == true) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
+    _neuroWaveUiTimer?.cancel();
     WakeLockHelper.release();
     super.dispose();
+  }
+
+  Set<int> _recalledForCycle(int cycleIndex) =>
+      _flashRecalledByCycle.putIfAbsent(cycleIndex, () => <int>{});
+
+  int _wrongTapsForCycle(int cycleIndex) =>
+      _flashWrongTapsByCycle[cycleIndex] ?? 0;
+
+  int _reactionMsForCycle(int cycleIndex) =>
+      _flashReactionMsByCycle[cycleIndex] ?? 0;
+
+  int _netScoreForCycle(int cycleIndex) =>
+      (_recalledForCycle(cycleIndex).length *
+          MptMemoryRoundScore.pointsPerCorrectRecall) -
+      (_wrongTapsForCycle(cycleIndex) * MptMemoryRoundScore.penaltyPerWrongTap);
+
+  int get _cumulativeFlashCorrect => _flashRecalledByCycle.values
+      .fold(0, (sum, set) => sum + set.length);
+
+  int get _cumulativeFlashWrong => _flashWrongTapsByCycle.values
+      .fold(0, (sum, count) => sum + count);
+
+  int get _cumulativeFlashNetScore =>
+      (_cumulativeFlashCorrect * MptMemoryRoundScore.pointsPerCorrectRecall) -
+      (_cumulativeFlashWrong * MptMemoryRoundScore.penaltyPerWrongTap);
+
+  bool get _isFrozen =>
+      DateTime.now().millisecondsSinceEpoch < _freezeUntilMs;
+
+  int get _freezeRemainingSeconds =>
+      ((_freezeUntilMs - DateTime.now().millisecondsSinceEpoch) / 1000)
+          .ceil()
+          .clamp(1, 5);
+
+  /// Returns true as soon as the round is declared won, all target cells are recalled,
+  /// or all balls in the round pool have been drawn and the final ball window has closed.
+  bool _isFlashRoundLocked(
+    FlashHousieConfig config,
+    FlashHousieCycleSpec cycleSpec,
+  ) {
+    final game = ref.read(gameStreamProvider(widget.gameId)).value;
+    if (game?.isCompleted == true) return true;
+    if (config.awardedWinners.containsKey(cycleSpec.prizeKey) ||
+        config.awardedWinners.containsKey('FULL_HOUSE')) {
+      return true;
+    }
+    if (cycleSpec.winnerUserId != null && cycleSpec.winnerUserId!.isNotEmpty) {
+      return true;
+    }
+    if (_autoClaimedFlashPrizes.contains(cycleSpec.prizeKey) ||
+        _autoClaimedFlashPrizes.contains('FULL_HOUSE')) {
+      return true;
+    }
+    final claims = ref.read(claimsStreamProvider(widget.gameId)).value ?? [];
+    final hasApprovedRoundOrFullHouse = claims.any(
+      (c) =>
+          c.status == 'APPROVED' &&
+          (c.prizeType == cycleSpec.prizeKey || c.prizeType == 'FULL_HOUSE'),
+    );
+    if (hasApprovedRoundOrFullHouse) return true;
+
+    final recalledSet = _recalledForCycle(cycleSpec.cycleIndex);
+    if (cycleSpec.trueNumbers.isNotEmpty &&
+        recalledSet.length >= cycleSpec.trueNumbers.length) {
+      return true;
+    }
+
+    if (cycleSpec.isCompleted &&
+        _lastFlashBallShownAtMs > 0 &&
+        DateTime.now().millisecondsSinceEpoch - _lastFlashBallShownAtMs >=
+            2200) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _triggerFlashPrizeClaim({
+    required String prizeType,
+    required List<int> markedNumbers,
+    bool isAuto = true,
+  }) async {
+    if (markedNumbers.isEmpty) return;
+    if (!isAuto) {
+      setState(() => _isClaiming = true);
+    }
+    try {
+      final res = await ref.read(gameplayRepositoryProvider).submitClaim(
+            gameId: widget.gameId,
+            prizeType: prizeType,
+            markedNumbers: markedNumbers,
+          );
+      if (!mounted) return;
+      final status = res['status'] as String? ?? 'UNKNOWN';
+      if (status == 'APPROVED') {
+        _autoClaimedFlashPrizes.add(prizeType);
+        ref.invalidate(claimsStreamProvider(widget.gameId));
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        ref.invalidate(myRewardsProvider);
+        final refCode = res['claim_reference'] as String? ?? 'FLASH-WIN';
+        final regList =
+            ref.read(registrationsStreamProvider(widget.gameId)).value ?? [];
+        final confirmedCount = regList.where((r) => r.isConfirmed).length;
+        final totalPlayers = confirmedCount > 0 ? confirmedCount : 1;
+        _showWinnerDialog(prizeType, refCode, totalPlayers);
+      } else if (!isAuto) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              res['reason'] as String? ?? 'Unable to claim prize yet.',
+            ),
+            backgroundColor: AppTheme.accentWarning,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!isAuto && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Claim error: $e'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+      }
+    } finally {
+      if (!isAuto && mounted) {
+        setState(() => _isClaiming = false);
+      }
+    }
+  }
+
+  Future<void> _handleFlashCellTap({
+    required int numVal,
+    required FlashHousieCycleSpec cycleSpec,
+    required FlashHousieConfig config,
+    required MptUser? user,
+  }) async {
+    if (numVal <= 0) return;
+    if (_isFlashRoundLocked(config, cycleSpec)) {
+      setState(() {
+        _flashTapFeedback =
+            '🔒 Round ${cycleSpec.cycleIndex} is already won & locked!';
+        _flashTapFeedbackIsError = true;
+      });
+      return;
+    }
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (nowMs < _freezeUntilMs) return;
+
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    if (!neuroState.isCallingReady) return;
+
+    final cycleIdx = cycleSpec.cycleIndex;
+    final recalledSet = _recalledForCycle(cycleIdx);
+    if (recalledSet.contains(numVal)) return;
+
+    final displayName = (user?.displayName.trim().isNotEmpty == true)
+        ? user!.displayName.trim()
+        : 'Player';
+    final avatar = Formatters.getAvatarEmoji(user?.avatar);
+
+    // Check if the tapped cell matches a number called in this cycle.
+    // Re-fetch latest game snapshot if not yet in cached cycleSpec.calledNumbers
+    // so 2-second polling latency never causes a false wrong-tap penalty.
+    var effectiveCycleSpec = cycleSpec;
+    var effectiveCalled = effectiveCycleSpec.calledNumbers.contains(numVal);
+    if (!effectiveCalled) {
+      try {
+        final freshGame = await ref
+            .read(gameRepositoryProvider)
+            .getGame(widget.gameId);
+        final freshCfg = freshGame.flashHousieConfig;
+        if (freshGame.isCompleted ||
+            freshCfg?.awardedWinners.containsKey(cycleSpec.prizeKey) == true ||
+            freshCfg?.awardedWinners.containsKey('FULL_HOUSE') == true) {
+          ref.invalidate(gameStreamProvider(widget.gameId));
+          if (mounted) {
+            setState(() {
+              _flashTapFeedback =
+                  '🔒 Round ${cycleSpec.cycleIndex} is already won & locked!';
+              _flashTapFeedbackIsError = true;
+            });
+          }
+          return;
+        }
+        final freshSpec = freshCfg?.cycleAt(cycleIdx);
+        if (freshSpec != null) {
+          effectiveCycleSpec = freshSpec;
+          effectiveCalled = freshSpec.calledNumbers.contains(numVal);
+        }
+      } catch (_) {}
+    }
+
+    if (effectiveCalled) {
+      final isLatest = effectiveCycleSpec.latestCalledNumber == numVal;
+      final deltaMs = (isLatest && _lastFlashBallShownAtMs > 0)
+          ? (nowMs - _lastFlashBallShownAtMs).clamp(150, 10000)
+          : 3500;
+
+      setState(() {
+        recalledSet.add(numVal);
+        _markedNumbers.add(numVal);
+        _flashReactionMsByCycle[cycleIdx] =
+            _reactionMsForCycle(cycleIdx) + deltaMs;
+        _flashTapFeedback =
+            '✅ Recalled $numVal (+${MptMemoryRoundScore.pointsPerCorrectRecall} pts) in ${(deltaMs / 1000).toStringAsFixed(1)}s! (${recalledSet.length}/${effectiveCycleSpec.trueNumbers.length})';
+        _flashTapFeedbackIsError = false;
+      });
+      _saveMarks();
+
+      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+            gameId: widget.gameId,
+            cycleIndex: cycleIdx,
+            quadrantLabel: effectiveCycleSpec.label,
+            displayName: displayName,
+            avatar: avatar,
+            correctNumbers: recalledSet.toList(),
+            wrongTapCount: _wrongTapsForCycle(cycleIdx),
+            totalReactionMs: _reactionMsForCycle(cycleIdx),
+            lastRecalledNumber: numVal,
+            lastReactionMs: deltaMs,
+          );
+      ref.invalidate(gameStreamProvider(widget.gameId));
+
+      // Instant auto-crown if player recalled all target numbers in this round!
+      if (recalledSet.length >= effectiveCycleSpec.trueNumbers.length &&
+          !_autoClaimedFlashPrizes.contains(effectiveCycleSpec.prizeKey)) {
+        _autoClaimedFlashPrizes.add(effectiveCycleSpec.prizeKey);
+        await _triggerFlashPrizeClaim(
+          prizeType: effectiveCycleSpec.prizeKey,
+          markedNumbers: recalledSet.toList(),
+          isAuto: true,
+        );
+      }
+
+      // Instant auto-crown Full House if player recalled all target numbers across all rounds!
+      if (_cumulativeFlashCorrect >= config.totalTargetNumbersAcrossAllCycles &&
+          !_autoClaimedFlashPrizes.contains('FULL_HOUSE')) {
+        _autoClaimedFlashPrizes.add('FULL_HOUSE');
+        await _triggerFlashPrizeClaim(
+          prizeType: 'FULL_HOUSE',
+          markedNumbers: _markedNumbers.toList(),
+          isAuto: true,
+        );
+      }
+    } else {
+      // Wrong cell or tapped during a Challenge (Decoy) Ball -> -3 pts score deduction + 3-second cooldown freeze + +3.0s reaction penalty!
+      final newWrongCount = _wrongTapsForCycle(cycleIdx) + 1;
+      final penaltyMs = config.freezePenaltySec * 1000;
+      setState(() {
+        _flashWrongTapsByCycle[cycleIdx] = newWrongCount;
+        _flashReactionMsByCycle[cycleIdx] =
+            _reactionMsForCycle(cycleIdx) + penaltyMs;
+        _freezeUntilMs = nowMs + penaltyMs;
+        _flashTapFeedback =
+            '❄️ Wrong guess! -${MptMemoryRoundScore.penaltyPerWrongTap} pts & ${config.freezePenaltySec}s Cooldown';
+        _flashTapFeedbackIsError = true;
+      });
+
+      await ref.read(gameplayRepositoryProvider).upsertMemoryRoundScore(
+            gameId: widget.gameId,
+            cycleIndex: cycleIdx,
+            quadrantLabel: effectiveCycleSpec.label,
+            displayName: displayName,
+            avatar: avatar,
+            correctNumbers: recalledSet.toList(),
+            wrongTapCount: newWrongCount,
+            totalReactionMs: _reactionMsForCycle(cycleIdx),
+          );
+      ref.invalidate(gameStreamProvider(widget.gameId));
+    }
   }
 
   Future<void> _loadSavedMarks() async {
@@ -637,14 +929,63 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Center(child: Text('Error: $err')),
             data: (calledNumbers) {
-              final latestCalled = calledNumbers.isNotEmpty
-                  ? calledNumbers.last.number
-                  : null;
-              final calledSet = calledNumbers.map((e) => e.number).toSet();
               final currentGame = gameStream.value;
+              final flashConfig = currentGame?.flashHousieConfig;
+              final activeCycleSpec = flashConfig?.activeCycleSpec;
+
+              // Hydrate per-round recall sets from saved _markedNumbers across reloads
+              if (flashConfig != null && _markedNumbers.isNotEmpty) {
+                for (final c in flashConfig.cycles) {
+                  final recalledSet = _recalledForCycle(c.cycleIndex);
+                  final calledInCycle = c.calledNumbers.toSet();
+                  for (final numVal in c.trueNumbers) {
+                    if (_markedNumbers.contains(numVal) &&
+                        calledInCycle.contains(numVal)) {
+                      recalledSet.add(numVal);
+                    }
+                  }
+                }
+              }
+
+              // Track reaction timer & voice caller when a new FlashHousie™ ball is drawn
+              if (activeCycleSpec != null) {
+                final latestFlashBall = activeCycleSpec.latestCalledNumber;
+                if (latestFlashBall != null &&
+                    latestFlashBall != _lastSeenFlashBall) {
+                  _lastSeenFlashBall = latestFlashBall;
+                  _lastFlashBallShownAtMs =
+                      DateTime.now().millisecondsSinceEpoch;
+                  if (_voiceEnabled) {
+                    TambolaAudioCaller().announceNumber(latestFlashBall);
+                  }
+                }
+              }
+
+              final latestCalled = activeCycleSpec != null
+                  ? activeCycleSpec.latestCalledNumber
+                  : (calledNumbers.isNotEmpty
+                      ? calledNumbers.last.number
+                      : null);
+              final calledSet = activeCycleSpec != null
+                  ? activeCycleSpec.calledNumbers.toSet()
+                  : calledNumbers.map((e) => e.number).toSet();
+              final totalCalledCount = activeCycleSpec != null
+                  ? activeCycleSpec.calledNumbers.length
+                  : calledNumbers.length;
+              final poolTotalCount = activeCycleSpec != null
+                  ? activeCycleSpec.drawPool.length
+                  : 90;
+
               final isGameEnded =
+                  currentGame?.isCompleted == true ||
                   currentGame?.status == 'COMPLETED' ||
                   currentGame?.status == 'CANCELLED' ||
+                  (flashConfig == null && calledNumbers.length >= 90);
+              final hasApprovedWinners =
+                  (claimsStream.value ?? const <MptClaim>[])
+                      .any((c) => c.status == 'APPROVED') ||
+                  (flashConfig != null &&
+                      flashConfig.cycles.any((c) => c.winnerUserId != null));
                   calledNumbers.length >= 90;
               final hasApprovedWinners =
                   (claimsStream.value ?? const <MptClaim>[])
@@ -654,7 +995,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   (isGameEnded && !hasApprovedWinners);
               final isGameActive =
                   (currentGame?.status == 'IN_PROGRESS' ||
-                          calledNumbers.isNotEmpty) &&
+                          calledNumbers.isNotEmpty ||
+                          activeCycleSpec?.startedAtMs != null) &&
                       !isGameEnded &&
                       currentGame?.status != 'CANCELLED';
               final activePrizes =
@@ -715,7 +1057,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                     const SizedBox(height: 8),
                                     _buildLatestNumberBanner(
                                       latestCalled,
-                                      calledNumbers.length,
+                                      totalCalledCount,
+                                      poolTotalCount: poolTotalCount,
+                                      cycleLabel: activeCycleSpec?.label,
                                       totalPlayers: totalPlayers,
                                       isGameEnded: isGameEnded,
                                       isCancelledOrNoWinners:
@@ -723,12 +1067,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       context: context,
                                       isCompact: true,
                                     ),
+                                    if (flashConfig != null &&
+                                        activeCycleSpec != null) ...[
+                                      const SizedBox(height: 8),
+                                      _buildNeuroWaveStatusBanner(
+                                        flashConfig,
+                                        activeCycleSpec,
+                                        isCompact: true,
+                                      ),
+                                    ],
                                     const SizedBox(height: 8),
                                     _buildTicketMatrix(
                                       ticket,
                                       calledSet,
                                       isGameEnded: isGameEnded,
                                       cellHeight: 52,
+                                      flashConfig: flashConfig,
+                                      currentUser: currentUser,
                                     ),
                                     const SizedBox(height: 12),
                                   ],
@@ -745,7 +1100,13 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    if (calledNumbers.isNotEmpty) ...[
+                                    if (activeCycleSpec != null &&
+                                        activeCycleSpec.calledNumbers.isNotEmpty) ...[
+                                      _buildRecentCallsFromInts(
+                                        activeCycleSpec.calledNumbers,
+                                      ),
+                                      const SizedBox(height: 10),
+                                    ] else if (calledNumbers.isNotEmpty) ...[
                                       _buildRecentCallsBar(calledNumbers),
                                       const SizedBox(height: 10),
                                     ],
@@ -758,6 +1119,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         calledSet,
                                         isGameEnded: isGameEnded,
                                         isCompact: true,
+                                        flashConfig: flashConfig,
                                       ),
                                       error: (_, __) =>
                                           _buildPrizeClaimsSection(
@@ -768,6 +1130,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                             calledSet,
                                             isGameEnded: isGameEnded,
                                             isCompact: true,
+                                            flashConfig: flashConfig,
                                           ),
                                       data: (claims) {
                                         final approvedClaims =
@@ -785,6 +1148,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                           calledSet,
                                           isGameEnded: isGameEnded,
                                           isCompact: true,
+                                          flashConfig: flashConfig,
                                         );
                                       },
                                     ),
@@ -852,25 +1216,46 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           // Latest Called Ball / Game Concluded Banner
                           _buildLatestNumberBanner(
                             latestCalled,
-                            calledNumbers.length,
+                            totalCalledCount,
+                            poolTotalCount: poolTotalCount,
+                            cycleLabel: activeCycleSpec?.label,
                             totalPlayers: totalPlayers,
                             isGameEnded: isGameEnded,
                             isCancelledOrNoWinners: isCancelledOrNoWinners,
                             context: context,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
+
+                          if (flashConfig != null &&
+                              activeCycleSpec != null) ...[
+                            _buildNeuroWaveStatusBanner(
+                              flashConfig,
+                              activeCycleSpec,
+                            ),
+                            const SizedBox(height: 10),
+                          ],
 
                           // Recent Calls List
-                          if (calledNumbers.isNotEmpty && !isGameEnded) ...[
+                          if (activeCycleSpec != null &&
+                              activeCycleSpec.calledNumbers.isNotEmpty &&
+                              !isGameEnded) ...[
+                            _buildRecentCallsFromInts(
+                              activeCycleSpec.calledNumbers,
+                            ),
+                            const SizedBox(height: 12),
+                          ] else if (calledNumbers.isNotEmpty &&
+                              !isGameEnded) ...[
                             _buildRecentCallsBar(calledNumbers),
                             const SizedBox(height: 14),
                           ],
 
-                          // Interactive 3x9 Ticket (Manual marking, no auto-yellow)
+                          // Interactive 3x9 Ticket (Preserved 3x9 layout for both Classic & FlashHousie)
                           _buildTicketMatrix(
                             ticket,
                             calledSet,
                             isGameEnded: isGameEnded,
+                            flashConfig: flashConfig,
+                            currentUser: currentUser,
                           ),
                           const SizedBox(height: 20),
 
@@ -883,6 +1268,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               ticket,
                               calledSet,
                               isGameEnded: isGameEnded,
+                              flashConfig: flashConfig,
                             ),
                             error: (_, __) => _buildPrizeClaimsSection(
                               activePrizes,
@@ -891,6 +1277,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                               ticket,
                               calledSet,
                               isGameEnded: isGameEnded,
+                              flashConfig: flashConfig,
                             ),
                             data: (claims) {
                               final approvedClaims = <String, MptClaim>{};
@@ -906,6 +1293,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                 ticket,
                                 calledSet,
                                 isGameEnded: isGameEnded,
+                                flashConfig: flashConfig,
                               );
                             },
                           ),
@@ -1043,7 +1431,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
             ),
             child: Text(
-              'Ticket #${ticket.ticketNumber}',
+              game?.isFlashHousie == true
+                  ? '⚡ ${game!.flashHousieConfig!.activeCycleSpec.label}'
+                  : 'Ticket #${ticket.ticketNumber}',
               style: TextStyle(
                 fontSize: isCompact ? 11 : 12,
                 fontWeight: FontWeight.bold,
@@ -1103,6 +1493,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   Widget _buildLatestNumberBanner(
     int? latestNumber,
     int totalCalled, {
+    int poolTotalCount = 90,
+    String? cycleLabel,
     int totalPlayers = 1,
     bool isGameEnded = false,
     bool isCancelledOrNoWinners = false,
@@ -1166,6 +1558,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Text(
               isCancelledOrNoWinners
                   ? 'This game was cancelled or ended early without any prize winners.'
+                  : 'Game concluded across $totalPlayers players! Check your rewards below.',
                   : (totalCalled >= 90
                         ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
                         : 'Game concluded across $totalPlayers players! Check your rewards below.'),
@@ -1244,9 +1637,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'CURRENT CALL',
-                style: TextStyle(
+              Text(
+                cycleLabel != null
+                    ? '⚡ $cycleLabel • CURRENT CALL'
+                    : 'CURRENT CALL',
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1,
@@ -1282,18 +1677,272 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             child: Column(
               children: [
                 Text(
-                  '$totalCalled / 90',
+                  '$totalCalled / $poolTotalCount',
                   style: TextStyle(
                     fontSize: isCompact ? 14 : 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const Text(
-                  'Called',
-                  style: TextStyle(fontSize: 11, color: Colors.white70),
+                Text(
+                  cycleLabel != null ? 'Round Pool' : 'Called',
+                  style: const TextStyle(fontSize: 11, color: Colors.white70),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Renders the NeuroWave™ Spotlight digital countdown timer, column wave indicator, 3s cooldown freeze,
+  /// and live player memory recall telemetry without a vertical progress bar.
+  Widget _buildNeuroWaveStatusBanner(
+    FlashHousieConfig config,
+    FlashHousieCycleSpec cycleSpec, {
+    bool isCompact = false,
+  }) {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    final isFrozen = nowMs < _freezeUntilMs;
+    final isRoundLocked = _isFlashRoundLocked(config, cycleSpec);
+    final recalledCount = _recalledForCycle(cycleSpec.cycleIndex).length;
+    final targetCount = cycleSpec.trueNumbers.length;
+    final wrongCount = _wrongTapsForCycle(cycleSpec.cycleIndex);
+    final roundNetScore = _netScoreForCycle(cycleSpec.cycleIndex);
+    final totalNetScore = _cumulativeFlashNetScore;
+    final neuroSecsLeft = (neuroState.remainingMsInPhase / 1000).ceil();
+    final digitalSecs = isFrozen ? _freezeRemainingSeconds : neuroSecsLeft;
+    final formattedDigital =
+        '00:${digitalSecs.clamp(0, 99).toString().padLeft(2, '0')}';
+
+    Color borderColor = AppTheme.secondaryColor.withValues(alpha: 0.65);
+    Color bgColor = AppTheme.darkCard;
+    if (isFrozen) {
+      borderColor = AppTheme.accentDanger;
+      bgColor = AppTheme.accentDanger.withValues(alpha: 0.14);
+    } else if (neuroState.phase == NeuroWavePhase.columnWave) {
+      borderColor = AppTheme.secondaryColor;
+      bgColor = AppTheme.secondaryColor.withValues(alpha: 0.12);
+    } else if (neuroState.phase == NeuroWavePhase.callingActive) {
+      borderColor = AppTheme.accentSuccess.withValues(alpha: 0.7);
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 10 : 14,
+        vertical: isCompact ? 8 : 10,
+      ),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Round ${config.currentCycle}/${config.totalCycles} • ${cycleSpec.label}',
+                  style: TextStyle(
+                    fontSize: isCompact ? 12 : 13,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isFrozen
+                      ? '❄️ Cooldown Freeze — Wait before tapping!'
+                      : isRoundLocked
+                      ? '🏆 Round ${config.currentCycle} Won & Locked!'
+                      : neuroState.statusLabel,
+                  style: TextStyle(
+                    fontSize: isCompact ? 13 : 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: isFrozen
+                        ? const Color(0xFFFCA5A5)
+                        : isRoundLocked
+                        ? AppTheme.secondaryColor
+                        : Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (isFrozen || neuroState.isRevealing) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF090D16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isFrozen
+                          ? AppTheme.accentDanger
+                          : AppTheme.secondaryColor,
+                      width: 2.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isFrozen
+                                ? AppTheme.accentDanger
+                                : AppTheme.secondaryColor)
+                            .withValues(alpha: 0.35),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isFrozen
+                            ? Icons.ac_unit_rounded
+                            : Icons.timer_outlined,
+                        size: isCompact ? 18 : 20,
+                        color: isFrozen
+                            ? const Color(0xFFFCA5A5)
+                            : AppTheme.secondaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        formattedDigital,
+                        style: TextStyle(
+                          fontSize: isCompact ? 20 : 24,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.5,
+                          color: isFrozen
+                              ? const Color(0xFFFCA5A5)
+                              : AppTheme.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              _buildTelemetryPill(
+                '⭐ Score: $roundNetScore pts (Total: $totalNetScore pts)',
+                AppTheme.secondaryColor,
+              ),
+              _buildTelemetryPill(
+                '🎯 Recalls: $recalledCount/$targetCount (+${recalledCount * MptMemoryRoundScore.pointsPerCorrectRecall})',
+                AppTheme.accentSuccess,
+              ),
+              _buildTelemetryPill(
+                '❄️ Wrong Taps: $wrongCount (${wrongCount > 0 ? "-${wrongCount * MptMemoryRoundScore.penaltyPerWrongTap} pts" : "0 pts"})',
+                wrongCount > 0
+                    ? AppTheme.accentWarning
+                    : const Color(0xFF94A3B8),
+              ),
+              if (_flashTapFeedback != null)
+                Text(
+                  _flashTapFeedback!,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: _flashTapFeedbackIsError
+                        ? const Color(0xFFFCA5A5)
+                        : AppTheme.accentSuccess,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTelemetryPill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentCallsFromInts(List<int> called) {
+    final recent = called.reversed.toList();
+    return SizedBox(
+      height: 40,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2235),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Text(
+              'ROUND BALLS (${called.length}):',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFCBD5E1),
+              ),
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: recent.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (ctx, idx) {
+                final numVal = recent[idx];
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: idx == 0
+                        ? AppTheme.secondaryColor
+                        : AppTheme.darkSurface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF2E334D)),
+                  ),
+                  child: Text(
+                    '$numVal',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: idx == 0 ? Colors.black : Colors.white,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -1322,7 +1971,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               '${item.number}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 16,
                 color: idx == 0 ? Colors.black : Colors.white,
               ),
             ),
@@ -1336,13 +1985,25 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     MptTicket ticket,
     Set<int> calledSet, {
     bool isGameEnded = false,
-    double cellHeight = 48,
+    double cellHeight = 52,
+    FlashHousieConfig? flashConfig,
+    MptUser? currentUser,
   }) {
+    final activeSpec = flashConfig?.activeCycleSpec;
+    final matrixToRender = activeSpec != null
+        ? activeSpec.ticketMatrix
+        : ticket.matrix;
+
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.primaryLight, width: 1.5),
+        side: BorderSide(
+          color: activeSpec != null
+              ? AppTheme.secondaryColor
+              : AppTheme.primaryLight,
+          width: 1.5,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -1351,26 +2012,79 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'DABHOUSIE TICKET #${ticket.ticketNumber}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryLight,
+                Expanded(
+                  child: Text(
+                    activeSpec != null
+                        ? '⚡ ${flashConfig!.modeDisplayName.toUpperCase()} • ${activeSpec.label}'
+                        : 'DABHOUSIE TICKET #${ticket.ticketNumber}',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w900,
+                      color: activeSpec != null
+                          ? AppTheme.secondaryColor
+                          : AppTheme.primaryLight,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
-                  isGameEnded
-                      ? '${_markedNumbers.length} / 15 Marked (Final)'
-                      : '${_markedNumbers.length} / 15 Marked',
+                  activeSpec != null
+                      ? '${_recalledForCycle(activeSpec.cycleIndex).length} / ${activeSpec.trueNumbers.length} Recalled • ⭐ ${_netScoreForCycle(activeSpec.cycleIndex)} pts'
+                      : (isGameEnded
+                          ? '${_markedNumbers.length} / 15 Marked (Final)'
+                          : '${_markedNumbers.length} / 15 Marked'),
                   style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFA0AEC0),
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
               ],
             ),
             const Divider(color: Color(0xFF2E334D), height: 14),
+            if (activeSpec != null) ...[
+              // Quadrant Header Bar (Q1: Cols 1-3 | Q2: Cols 4-6 | Q3: Cols 7-9)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    for (int q = 1; q <= 3; q++)
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          decoration: BoxDecoration(
+                            color: activeSpec.activeQuadrants.contains(q)
+                                ? AppTheme.secondaryColor.withValues(alpha: 0.18)
+                                : const Color(0xFF1E2235),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: activeSpec.activeQuadrants.contains(q)
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF2E334D),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            activeSpec.activeQuadrants.contains(q)
+                                ? '⚡ Q$q (${(q - 1) * 30 + 1}–${q * 30}) ACTIVE'
+                                : '🔒 Q$q (${(q - 1) * 30 + 1}–${q * 30})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: activeSpec.activeQuadrants.contains(q)
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             for (int r = 0; r < 3; r++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 5),
@@ -1378,12 +2092,22 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   children: [
                     for (int c = 0; c < 9; c++)
                       Expanded(
-                        child: _buildTicketCell(
-                          ticket.matrix[r][c],
-                          calledSet,
-                          isGameEnded: isGameEnded,
-                          height: cellHeight,
-                        ),
+                        child: activeSpec != null
+                            ? _buildFlashTicketCell(
+                                numVal: matrixToRender[r][c],
+                                col: c,
+                                cycleSpec: activeSpec,
+                                config: flashConfig!,
+                                currentUser: currentUser,
+                                isGameEnded: isGameEnded,
+                                height: cellHeight,
+                              )
+                            : _buildTicketCell(
+                                matrixToRender[r][c],
+                                calledSet,
+                                isGameEnded: isGameEnded,
+                                height: cellHeight,
+                              ),
                       ),
                   ],
                 ),
@@ -1394,11 +2118,167 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  /// Renders a cell on the preserved 3x9 ticket grid during FlashHousie™ 5/10/15:
+  /// - Inactive quadrants are dimmed (`opacity: 0.30`) and locked.
+  /// - Active quadrant cells unmask ONLY when `neuroState.visibleColumn == col` during `NeuroWavePhase.columnWave`,
+  ///   or after the player recalls them during `NeuroWavePhase.callingActive`.
+  Widget _buildFlashTicketCell({
+    required int numVal,
+    required int col,
+    required FlashHousieCycleSpec cycleSpec,
+    required FlashHousieConfig config,
+    required MptUser? currentUser,
+    required bool isGameEnded,
+    required double height,
+  }) {
+    final quadrant = (col ~/ 3) + 1;
+    final isActiveQuad = cycleSpec.activeQuadrants.contains(quadrant);
+
+    if (numVal == 0) {
+      return Opacity(
+        opacity: isActiveQuad ? 1.0 : 0.30,
+        child: Container(
+          height: height,
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: AppTheme.darkBackground.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isActiveQuad
+                  ? const Color(0xFF2E334D)
+                  : Colors.transparent,
+              width: 0.6,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!isActiveQuad) {
+      // Inactive quadrant cell: dimmed & locked to preserve 3x9 spatial memory
+      return Opacity(
+        opacity: 0.28,
+        child: Container(
+          height: height,
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161929),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFF252A40)),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.lock_outline_rounded,
+              size: 14,
+              color: Color(0xFF64748B),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    final neuroState = cycleSpec.computeNeuroWaveState(nowMs);
+    final isRecalled = _recalledForCycle(cycleSpec.cycleIndex).contains(numVal);
+    final isRoundLocked = _isFlashRoundLocked(config, cycleSpec);
+    final isSpotlightVisible =
+        neuroState.phase == NeuroWavePhase.columnWave &&
+        neuroState.visibleColumn == col;
+    final showTrueNumber = isRecalled || isSpotlightVisible;
+    final canTap =
+        neuroState.isCallingReady &&
+        !isRecalled &&
+        !isGameEnded &&
+        !isRoundLocked &&
+        !_isFrozen;
+
+    Color bgColor = AppTheme.darkSurface;
+    Color borderColor = const Color(0xFF3B4163);
+    Color textColor = Colors.white;
+
+    if (isRecalled) {
+      bgColor = AppTheme.accentSuccess;
+      borderColor = AppTheme.accentSuccess;
+      textColor = Colors.white;
+    } else if (isSpotlightVisible) {
+      bgColor = AppTheme.secondaryColor.withValues(alpha: 0.26);
+      borderColor = AppTheme.secondaryColor;
+      textColor = AppTheme.secondaryColor;
+    } else if (isRoundLocked || isGameEnded) {
+      bgColor = const Color(0xFF161929);
+      borderColor = const Color(0xFF2E334D);
+      textColor = const Color(0xFF64748B);
+    } else if (neuroState.isCallingReady) {
+      bgColor = const Color(0xFF1E243B);
+      borderColor = AppTheme.primaryLight.withValues(alpha: 0.75);
+      textColor = const Color(0xFF93C5FD);
+    }
+
+    return Semantics(
+      label: showTrueNumber ? 'Ticket number $numVal' : 'Masked memory cell',
+      button: true,
+      enabled: canTap,
+      onTap: canTap
+          ? () => _handleFlashCellTap(
+                numVal: numVal,
+                cycleSpec: cycleSpec,
+                config: config,
+                user: currentUser,
+              )
+          : null,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: canTap
+              ? () => _handleFlashCellTap(
+                    numVal: numVal,
+                    cycleSpec: cycleSpec,
+                    config: config,
+                    user: currentUser,
+                  )
+              : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            height: height,
+            margin: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: borderColor,
+                width: (isRecalled || isSpotlightVisible) ? 2.0 : 1.2,
+              ),
+              boxShadow: isSpotlightVisible
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: Text(
+                showTrueNumber ? '$numVal' : '?',
+                style: TextStyle(
+                  fontSize: height >= 52 ? 20 : 18,
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTicketCell(
     int numVal,
     Set<int> calledSet, {
     bool isGameEnded = false,
-    double height = 48,
+    double height = 52,
   }) {
     if (numVal == 0) {
       return Container(
@@ -1443,7 +2323,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               child: Text(
                 '$numVal',
                 style: TextStyle(
-                  fontSize: height >= 52 ? 18 : 16,
+                  fontSize: height >= 52 ? 20 : 18,
                   fontWeight: FontWeight.bold,
                   color: textColor,
                 ),
@@ -1455,6 +2335,34 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  String? _formatPrizeGiftDetail(MptGame? game, String prizeKey) {
+    if (game == null) return null;
+    final raw = game.prizeGiftsConfig[prizeKey];
+    if (raw == null) return null;
+    if (raw is String) {
+      final s = raw.trim();
+      return s.isNotEmpty ? s : null;
+    }
+    if (raw is Map) {
+      final title = (raw['title'] ?? raw['brand_name'] ?? '').toString().trim();
+      final val = (raw['prize_value'] as num?)?.toDouble() ?? 0.0;
+      final sym = (raw['currency_symbol'] ??
+              game.prizeGiftsConfig['_currency_symbol'] ??
+              '₹')
+          .toString()
+          .trim();
+      final valStr = val > 0
+          ? '$sym${val == val.roundToDouble() ? val.toInt() : val.toStringAsFixed(2)}'
+          : '';
+      if (title.isNotEmpty && valStr.isNotEmpty) {
+        return '$title ($valStr)';
+      }
+      if (title.isNotEmpty) return title;
+      if (valStr.isNotEmpty) return 'Prize Value: $valStr';
+    }
+    return null;
+  }
+
   Widget _buildPrizeClaimsSection(
     List<String> activePrizes,
     Map<String, MptClaim> approvedClaims,
@@ -1463,10 +2371,85 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     Set<int> calledSet, {
     bool isGameEnded = false,
     bool isCompact = false,
+    FlashHousieConfig? flashConfig,
   }) {
+    final currentGame = ref.watch(gameStreamProvider(widget.gameId)).value;
     final registrations =
         ref.watch(registrationsStreamProvider(widget.gameId)).value ?? [];
     final regMap = {for (final r in registrations) r.userId: r};
+
+    // Auto-claim for FlashHousie™ 5 / 10 / 15:
+    // 1. If host crowned this player in FlashHousieConfig.awardedWinners, OR
+    // 2. If player recalled all target numbers in a round (5/5), OR
+    // 3. If all 8/8 balls of a round have been called and player has recalled numbers in that round!
+    if (flashConfig != null && currentUserId != null && !isGameEnded) {
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      for (final entry in flashConfig.awardedWinners.entries) {
+        final prizeKey = entry.key;
+        final winnerUid = entry.value;
+        if (winnerUid == currentUserId &&
+            approvedClaims[prizeKey] == null &&
+            !_autoClaimedFlashPrizes.contains(prizeKey)) {
+          _autoClaimedFlashPrizes.add(prizeKey);
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: prizeKey,
+              markedNumbers: _markedNumbers.toList(),
+              isAuto: true,
+            ),
+          );
+        }
+      }
+
+      for (final c in flashConfig.cycles) {
+        final prizeKey = c.prizeKey;
+        final recalledSet = _recalledForCycle(c.cycleIndex);
+        final isFullRecall =
+            c.trueNumbers.isNotEmpty && recalledSet.length >= c.trueNumbers.length;
+        final isRoundPoolDone =
+            c.isCompleted &&
+            recalledSet.isNotEmpty &&
+            (_lastFlashBallShownAtMs == 0 ||
+                nowMs - _lastFlashBallShownAtMs >= 2000);
+        if ((isFullRecall || isRoundPoolDone) &&
+            approvedClaims[prizeKey] == null &&
+            flashConfig.awardedWinners[prizeKey] == null &&
+            !_autoClaimedFlashPrizes.contains(prizeKey)) {
+          _autoClaimedFlashPrizes.add(prizeKey);
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: prizeKey,
+              markedNumbers: recalledSet.toList(),
+              isAuto: true,
+            ),
+          );
+        }
+      }
+
+      if (activePrizes.contains('FULL_HOUSE') &&
+          approvedClaims['FULL_HOUSE'] == null &&
+          flashConfig.awardedWinners['FULL_HOUSE'] == null &&
+          !_autoClaimedFlashPrizes.contains('FULL_HOUSE') &&
+          _cumulativeFlashCorrect > 0) {
+        final totalTargets = flashConfig.totalTargetNumbersAcrossAllCycles;
+        final isAllRecalled = _cumulativeFlashCorrect >= totalTargets;
+        final isFinalRoundDone =
+            flashConfig.cycles.isNotEmpty &&
+            flashConfig.cycles.last.isCompleted &&
+            (_lastFlashBallShownAtMs == 0 ||
+                nowMs - _lastFlashBallShownAtMs >= 2200);
+        if (isAllRecalled || isFinalRoundDone) {
+          _autoClaimedFlashPrizes.add('FULL_HOUSE');
+          Future.microtask(
+            () => _triggerFlashPrizeClaim(
+              prizeType: 'FULL_HOUSE',
+              markedNumbers: _markedNumbers.toList(),
+              isAuto: true,
+            ),
+          );
+        }
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1474,26 +2457,31 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Claim Winning Prize',
-              style: TextStyle(
-                fontSize: isCompact ? 12 : 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            Expanded(
+              child: Text(
+                flashConfig != null
+                    ? '🏆 Prizes & Winners (Round & Full House)'
+                    : '🏆 Prizes & Winners',
+                style: TextStyle(
+                  fontSize: isCompact ? 14 : 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             if (isGameEnded)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.black38,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: const Color(0xFF3B4163)),
                 ),
                 child: const Text(
                   'CONCLUDED',
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFA0AEC0),
                   ),
@@ -1501,59 +2489,99 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
           ],
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           isGameEnded
-              ? 'Game is over. Prize claiming is closed.'
-              : 'Tap when completed. Server will validate your ticket.',
+              ? 'Game is over. Final prize winners and scores are shown below.'
+              : (flashConfig != null
+                  ? 'Winners are crowned automatically by highest memory recall & fastest reaction speed!'
+                  : 'Tap when completed. Server will validate your ticket.'),
           style: TextStyle(
-            fontSize: isCompact ? 9.5 : 11,
-            color: const Color(0xFFA0AEC0),
+            fontSize: isCompact ? 11 : 12.5,
+            color: const Color(0xFFCBD5E1),
           ),
         ),
-        SizedBox(height: isCompact ? 6 : 10),
+        SizedBox(height: isCompact ? 8 : 12),
         GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: isCompact ? 4 : 8,
-          mainAxisSpacing: isCompact ? 4 : 8,
-          childAspectRatio: isCompact ? 3.5 : 3.2,
+          crossAxisSpacing: isCompact ? 6 : 10,
+          mainAxisSpacing: isCompact ? 6 : 10,
+          childAspectRatio: isCompact ? 2.35 : 2.05,
           children: activePrizes.map((prize) {
             final approvedClaim = approvedClaims[prize];
-            final isApproved = approvedClaim != null;
+            final flashWinnerUid = flashConfig?.awardedWinners[prize];
+            final flashWinnerName = flashConfig?.awardedWinnerNames[prize];
+            final isApproved = approvedClaim != null || flashWinnerUid != null;
+            final winnerUid = approvedClaim?.userId ?? flashWinnerUid;
             final isWonByMe =
-                isApproved && approvedClaim.userId == currentUserId;
+                isApproved && winnerUid != null && winnerUid == currentUserId;
+            final giftDetail = _formatPrizeGiftDetail(currentGame, prize);
+
+            // Build score summary if FlashHousie prize
+            String? scoreSummary =
+                flashConfig?.awardedWinnerScoreSummaries[prize];
+            if ((scoreSummary == null || scoreSummary.isEmpty) &&
+                approvedClaim?.rejectionReason != null &&
+                approvedClaim!.rejectionReason!.trim().startsWith('✓')) {
+              scoreSummary = approvedClaim.rejectionReason!.trim();
+            }
+            if ((scoreSummary == null || scoreSummary.isEmpty) &&
+                flashConfig != null &&
+                prize.startsWith('ROUND_')) {
+              final rNum = int.tryParse(prize.replaceFirst('ROUND_', ''));
+              if (rNum != null) {
+                final cSpec = flashConfig.cycleAt(rNum);
+                if (cSpec != null && cSpec.winnerCorrectCount != null) {
+                  final sec = ((cSpec.winnerReactionMs ?? 0) / 1000)
+                      .toStringAsFixed(1);
+                  scoreSummary =
+                      '✓ ${cSpec.winnerCorrectCount}/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
+                } else if (isWonByMe && cSpec != null) {
+                  final myRecalled = _recalledForCycle(rNum).length;
+                  final sec =
+                      (_reactionMsForCycle(rNum) / 1000).toStringAsFixed(1);
+                  if (myRecalled > 0) {
+                    scoreSummary =
+                        '✓ $myRecalled/${cSpec.trueNumbers.length} Recalled • ⚡ ${sec}s';
+                  }
+                }
+              }
+            }
 
             if (isApproved) {
-              final playerReg = regMap[approvedClaim.userId];
+              final playerReg = winnerUid != null ? regMap[winnerUid] : null;
               final displayName = (playerReg?.displayName.isNotEmpty == true)
                   ? playerReg!.displayName
-                  : (approvedClaim.userName != null &&
-                          approvedClaim.userName != 'Player')
-                      ? approvedClaim.userName!
-                      : 'Player';
+                  : (flashWinnerName != null && flashWinnerName.isNotEmpty)
+                      ? flashWinnerName
+                      : (approvedClaim?.userName != null &&
+                              approvedClaim!.userName != 'Player')
+                          ? approvedClaim.userName!
+                          : 'Player';
 
               return ElevatedButton(
                 onPressed: null, // Disabled
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isWonByMe
-                      ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.22)
                       : Colors.black26,
                   disabledBackgroundColor: isWonByMe
                       ? AppTheme.accentSuccess.withValues(alpha: 0.25)
                       : const Color(0xFF222639),
                   disabledForegroundColor: isWonByMe
                       ? AppTheme.accentSuccess
-                      : const Color(0xFF718096),
+                      : Colors.white,
                   side: BorderSide(
                     color: isWonByMe
                         ? AppTheme.accentSuccess
-                        : const Color(0xFF2E334D),
+                        : AppTheme.secondaryColor.withValues(alpha: 0.55),
+                    width: 1.4,
                   ),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 4 : 6,
-                    vertical: isCompact ? 2 : 4,
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
                   ),
                 ),
                 child: Column(
@@ -1562,29 +2590,59 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 10 : 11.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 12.5 : 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       isWonByMe
                           ? (registrations.length > 1
-                              ? '🏆 Won (1 of ${registrations.length})'
+                              ? '🏆 Won by You! (1 of ${registrations.length})'
                               : '🏆 Won by You!')
-                          : '✓ $displayName',
+                          : '👑 Winner: $displayName',
                       style: TextStyle(
-                        fontSize: isCompact ? 8 : 9.5,
-                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 11.5 : 13,
+                        fontWeight: FontWeight.w800,
                         color: isWonByMe
                             ? AppTheme.accentSuccess
-                            : const Color(0xFFA0AEC0),
+                            : AppTheme.secondaryColor,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (scoreSummary != null && scoreSummary.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          scoreSummary,
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF38BDF8),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -1595,11 +2653,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 onPressed: null, // Disabled when game ended
                 style: ElevatedButton.styleFrom(
                   disabledBackgroundColor: const Color(0xFF1E2235),
-                  disabledForegroundColor: const Color(0xFF64748B),
+                  disabledForegroundColor: const Color(0xFF94A3B8),
                   side: const BorderSide(color: Color(0xFF2E334D)),
                   padding: EdgeInsets.symmetric(
-                    horizontal: isCompact ? 4 : 6,
-                    vertical: isCompact ? 2 : 4,
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
                   ),
                 ),
                 child: Column(
@@ -1608,22 +2666,148 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     Text(
                       Formatters.formatPrizeName(prize),
                       style: TextStyle(
-                        fontSize: isCompact ? 10 : 11.5,
+                        fontSize: isCompact ? 12.5 : 14.5,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       'Unclaimed',
                       style: TextStyle(
-                        fontSize: isCompact ? 7.5 : 8.5,
-                        color: const Color(0xFF64748B),
+                        fontSize: isCompact ? 10.5 : 12,
+                        color: const Color(0xFF94A3B8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }
+
+            if (flashConfig != null) {
+              bool canClaimNow = false;
+              String flashSubtitle = '⚡ Live Memory Leaderboard';
+              List<int> claimNums = _markedNumbers.toList();
+
+              if (prize.startsWith('ROUND_')) {
+                final rNum = int.tryParse(prize.replaceFirst('ROUND_', '')) ?? 1;
+                final cSpec = flashConfig.cycleAt(rNum);
+                final recalledInRound = _recalledForCycle(rNum);
+                claimNums = recalledInRound.toList();
+                if (cSpec != null) {
+                  if (recalledInRound.length >= cSpec.trueNumbers.length ||
+                      (cSpec.isCompleted && recalledInRound.isNotEmpty)) {
+                    canClaimNow = true;
+                    flashSubtitle =
+                        '🏆 ${recalledInRound.length}/${cSpec.trueNumbers.length} Recalled • Tap to Claim!';
+                  } else if (rNum == flashConfig.currentCycle) {
+                    flashSubtitle =
+                        '🎯 ${recalledInRound.length}/${cSpec.trueNumbers.length} Recalled • Auto-Crowns';
+                  } else if (rNum > flashConfig.currentCycle) {
+                    flashSubtitle = '⏳ Unlocks in Round $rNum';
+                  }
+                }
+              } else if (prize == 'FULL_HOUSE' || prize == 'SECOND_FULL_HOUSE') {
+                final totalTargets = flashConfig.totalTargetNumbersAcrossAllCycles;
+                final isLastDone =
+                    flashConfig.cycles.isNotEmpty &&
+                    flashConfig.cycles.last.isCompleted;
+                if (_cumulativeFlashCorrect >= totalTargets ||
+                    (isLastDone && _cumulativeFlashCorrect > 0)) {
+                  canClaimNow = true;
+                  flashSubtitle =
+                      '🏆 $_cumulativeFlashCorrect/$totalTargets Recalled • Tap to Claim!';
+                } else {
+                  flashSubtitle =
+                      '🎯 $_cumulativeFlashCorrect/$totalTargets Total Recalls';
+                }
+              }
+
+              return ElevatedButton(
+                onPressed: (canClaimNow && !_isClaiming)
+                    ? () => _triggerFlashPrizeClaim(
+                          prizeType: prize,
+                          markedNumbers: claimNums,
+                          isAuto: false,
+                        )
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: canClaimNow
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.22)
+                      : AppTheme.darkSurface,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppTheme.darkSurface,
+                  disabledForegroundColor: Colors.white,
+                  side: BorderSide(
+                    color: canClaimNow
+                        ? AppTheme.accentSuccess
+                        : AppTheme.secondaryColor.withValues(alpha: 0.55),
+                    width: canClaimNow ? 1.6 : 1.3,
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isCompact ? 6 : 10,
+                    vertical: isCompact ? 4 : 6,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      Formatters.formatPrizeName(prize),
+                      style: TextStyle(
+                        fontSize: isCompact ? 12.5 : 14.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      flashSubtitle,
+                      style: TextStyle(
+                        fontSize: isCompact ? 10.5 : 12,
+                        color: canClaimNow
+                            ? AppTheme.accentSuccess
+                            : AppTheme.secondaryColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (giftDetail != null && giftDetail.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '🎁 $giftDetail',
+                          style: TextStyle(
+                            fontSize: isCompact ? 10 : 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFFFBBF24),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               );
@@ -1640,21 +2824,39 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.darkSurface,
                 foregroundColor: Colors.white,
-                side: const BorderSide(color: AppTheme.primaryColor),
+                side: const BorderSide(color: AppTheme.primaryColor, width: 1.3),
                 padding: EdgeInsets.symmetric(
-                  horizontal: isCompact ? 4 : 6,
-                  vertical: isCompact ? 2 : 4,
+                  horizontal: isCompact ? 6 : 10,
+                  vertical: isCompact ? 4 : 6,
                 ),
               ),
-              child: Text(
-                Formatters.formatPrizeName(prize),
-                style: TextStyle(
-                  fontSize: isCompact ? 10.5 : 12,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    Formatters.formatPrizeName(prize),
+                    style: TextStyle(
+                      fontSize: isCompact ? 12.5 : 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (giftDetail != null && giftDetail.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '🎁 $giftDetail',
+                      style: TextStyle(
+                        fontSize: isCompact ? 10 : 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFFBBF24),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             );
           }).toList(),

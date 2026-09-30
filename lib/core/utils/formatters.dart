@@ -13,8 +13,16 @@ class Formatters {
     return NumberFormat('#,###').format(credits);
   }
 
-  static String formatPrizeName(String prizeType) {
-    switch (prizeType.toUpperCase()) {
+  static String formatPrizeName(String prizeType, {int? cellsPerQuadrant}) {
+    final upper = prizeType.toUpperCase();
+    if (upper.startsWith('ROUND_')) {
+      final numPart = upper.replaceFirst('ROUND_', '');
+      if (cellsPerQuadrant != null) {
+        return 'Round $numPart (Early $cellsPerQuadrant)';
+      }
+      return 'Round $numPart Winner';
+    }
+    switch (upper) {
       case 'EARLY_FIVE':
         return 'Early 5 (Jaldi 5)';
       case 'TOP_LINE':

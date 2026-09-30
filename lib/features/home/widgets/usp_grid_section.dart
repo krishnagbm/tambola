@@ -37,8 +37,8 @@ class UspGridSection extends StatelessWidget {
     },
     {
       'icon': Icons.auto_awesome_rounded,
-      'title': 'Custom Winning Patterns',
-      'desc': 'Standard Jaldi 5, Lines, Full House, or bespoke corporate patterns on demand.',
+      'title': 'FlashHousie™ & Custom Modes',
+      'desc': 'DabHousie™ Proprietary Specials (FlashHousie™ 5/10/15 + NeuroWave™) or Classic 90-Ball patterns.',
       'color': AppTheme.secondaryColor, // Yellow
       'actionTopic': 'Custom Winning Patterns',
     },

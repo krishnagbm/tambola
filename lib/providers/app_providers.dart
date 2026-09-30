@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/brand_offer.dart';
+import '../models/flash_housie_config.dart';
 import '../models/mpt_called_number.dart';
 import '../models/mpt_capacity_tier.dart';
 import '../models/mpt_claim.dart';
@@ -167,6 +168,12 @@ final calledNumbersStreamProvider = StreamProvider.autoDispose.family<List<MptCa
 // Live Claims Stream Provider
 final claimsStreamProvider = StreamProvider.autoDispose.family<List<MptClaim>, String>((ref, gameId) {
   return ref.watch(gameplayRepositoryProvider).watchClaims(gameId);
+});
+
+// Live FlashHousie™ Memory Round Scores Stream Provider (Option-B Live TV Board)
+final memoryRoundScoresStreamProvider =
+    StreamProvider.autoDispose.family<List<MptMemoryRoundScore>, String>((ref, gameId) {
+  return ref.watch(gameplayRepositoryProvider).watchMemoryRoundScores(gameId);
 });
 
 // Player Ticket Provider
