@@ -23,6 +23,7 @@ import '../widgets/skill_arena_section.dart';
 import '../widgets/usp_grid_section.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
+import '../widgets/dabby_rapid_play_hero_card.dart';
 import '../../rewards/widgets/organizer_game_claims_dialog.dart';
 
 
@@ -339,6 +340,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 12),
             ],
 
+            // 0. Dabby Mascot Hero Card (Interactive Warm-up & Game Simulation with Dabby)
+            const DabbyRapidPlayHeroCard(),
+            const SizedBox(height: 14),
+
             // 1. Two-Part Dashboard Arena:
             // Desktop: Side-by-side 2-column split (Left: Classic Bingo & Variants, Right: DabHousie™ Skill Arena & Levels)
             // Mobile/Tablet: Stacked cleanly
@@ -443,6 +448,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 14),
+
+          // Fresh Hero Card: Play with Dabby Simulation
+          const DabbyRapidPlayHeroCard(),
           const SizedBox(height: 14),
 
           // Card 1: Got an Invite Code?

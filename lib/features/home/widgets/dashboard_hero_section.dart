@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import 'corporate_inquiry_dialog.dart';
-import 'flash_housie_solo_dialog.dart';
 
 class DashboardHeroSection extends ConsumerWidget {
   const DashboardHeroSection({super.key});
@@ -228,42 +226,6 @@ class DashboardHeroSection extends ConsumerWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      // DABBY QUICK SOLO DAB BUTTON
-                      ElevatedButton.icon(
-                        onPressed: () => _showDabbySoloSimulationDialog(context),
-                        icon: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.asset(
-                            AppAssets.dabbyMascot,
-                            width: 20,
-                            height: 20,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 18,
-                              color: Color(0xFF38BDF8),
-                            ),
-                          ),
-                        ),
-                        label: const Text('Warm Up with Dabby!'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E293B),
-                          foregroundColor: const Color(0xFF38BDF8),
-                          side: const BorderSide(
-                            color: Color(0xFF38BDF8),
-                            width: 1.2,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 14,
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -394,13 +356,6 @@ class DashboardHeroSection extends ConsumerWidget {
         const SizedBox(height: 5),
         buildLine(line2),
       ],
-    );
-  }
-
-  void _showDabbySoloSimulationDialog(BuildContext context) {
-    FlashHousieSoloDialog.show(
-      context,
-      initialGameId: 'level_0a_make',
     );
   }
 }
