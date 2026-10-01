@@ -1331,31 +1331,31 @@
                 <label>Target Country / Region * (Select one or more)</label>
                 <div class="country-chips-wrap" id="bm-country-chips">
                   <button type="button" class="country-chip active" data-country="Global" onclick="toggleTargetCountry(this)">🌎 Global</button>
-                  <button type="button" class="country-chip" data-country="United States" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="United States" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>
                     United States
                   </button>
-                  <button type="button" class="country-chip" data-country="Canada" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="Canada" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>
                     Canada
                   </button>
-                  <button type="button" class="country-chip" data-country="United Kingdom" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="United Kingdom" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>
                     United Kingdom
                   </button>
-                  <button type="button" class="country-chip" data-country="India" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="India" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>
                     India
                   </button>
-                  <button type="button" class="country-chip" data-country="Australia" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="Australia" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>
                     Australia
                   </button>
-                  <button type="button" class="country-chip" data-country="Europe" onclick="toggleTargetCountry(this)">
+                  <button type="button" class="country-chip active" data-country="Europe" onclick="toggleTargetCountry(this)">
                     <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>
                     Europe
                   </button>
-                  <button type="button" class="country-chip" data-country="Other" onclick="toggleTargetCountry(this)">🌐 Other</button>
+                  <button type="button" class="country-chip active" data-country="Other" onclick="toggleTargetCountry(this)">🌐 Other</button>
                 </div>
               </div>
               <div class="brand-form-group">
@@ -1720,15 +1720,43 @@
     }
 
     function toggleTargetCountry(btn) {
-      btn.classList.toggle('active');
-      const activeBtns = document.querySelectorAll('#bm-country-chips .country-chip.active');
-      if (activeBtns.length === 0) {
+      const country = btn.getAttribute('data-country');
+      const allChips = Array.from(document.querySelectorAll('#bm-country-chips .country-chip'));
+      const globalBtn = allChips.find(b => b.getAttribute('data-country') === 'Global');
+      const specificChips = allChips.filter(b => b.getAttribute('data-country') !== 'Global');
+
+      if (country === 'Global') {
+        const isTurningOn = !btn.classList.contains('active');
+        // When clicking Global: if turning on, turn all specific countries on; if turning off, turn all off
+        allChips.forEach(b => b.classList.toggle('active', isTurningOn));
+      } else {
+        // Toggling a specific country
+        btn.classList.toggle('active');
+        const activeSpecific = specificChips.filter(b => b.classList.contains('active'));
+
+        if (activeSpecific.length === specificChips.length) {
+          // If ALL specific countries are active, turn Global ON
+          if (globalBtn) globalBtn.classList.add('active');
+        } else {
+          // If any specific country is NOT selected, turn Global OFF
+          if (globalBtn) globalBtn.classList.remove('active');
+        }
+      }
+
+      // Ensure at least one country or global remains selected
+      const activeTotal = document.querySelectorAll('#bm-country-chips .country-chip.active');
+      if (activeTotal.length === 0) {
         btn.classList.add('active');
       }
     }
 
     function getSelectedCountries() {
-      const activeBtns = Array.from(document.querySelectorAll('#bm-country-chips .country-chip.active'));
+      const allChips = Array.from(document.querySelectorAll('#bm-country-chips .country-chip'));
+      const globalBtn = allChips.find(b => b.getAttribute('data-country') === 'Global');
+      if (globalBtn && globalBtn.classList.contains('active')) {
+        return ['Global'];
+      }
+      const activeBtns = allChips.filter(b => b.classList.contains('active') && b.getAttribute('data-country') !== 'Global');
       const list = activeBtns.map(b => b.getAttribute('data-country')).filter(Boolean);
       return list.length > 0 ? list : ['Global'];
     }
