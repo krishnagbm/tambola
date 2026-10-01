@@ -22,4 +22,5 @@ class AppAssets {
   // Mascot
   static const String dabbyMascot = 'assets/branding/dabby_mascot_ball90.png';
   static const String dabbyTicketBanner = 'assets/branding/DabMascot_3x9_Empty_Perfect.png';
+  static const String dabbyShowcaseBanner = 'assets/branding/DabMascot_3x9_Perfect.png';
 }

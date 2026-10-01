@@ -4,14 +4,166 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 
-class DabbyRapidPlayHeroCard extends StatefulWidget {
+/// Compact Hero Card showcasing Dabby the Mascot with a Play with Dabby button.
+/// Keeps the dashboard compact and uncluttered so that the main business cards
+/// (Classic Bingo & Skill Arena) remain immediately visible above the fold.
+class DabbyRapidPlayHeroCard extends StatelessWidget {
   const DabbyRapidPlayHeroCard({super.key});
 
+  void _openPlayDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => const Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: _DabbyPlayModal(),
+      ),
+    );
+  }
+
   @override
-  State<DabbyRapidPlayHeroCard> createState() => _DabbyRapidPlayHeroCardState();
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompact = screenWidth < 700;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.45),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Banner image container (compact height, constrained to avoid pushing content down)
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: isCompact ? 160 : 210,
+              minHeight: 120,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  AppAssets.dabbyShowcaseBanner,
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  errorBuilder: (ctx, err, stack) => Image.asset(
+                    AppAssets.dabbyTicketBanner,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                  ),
+                ),
+                // Gradient overlay at bottom of banner for seamless transition
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          const Color(0xFF0F172A).withValues(alpha: 0.85),
+                        ],
+                        stops: const [0.6, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Caption & Action row below the mascot banner
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                const Text(
+                  '⚡',
+                  style: TextStyle(fontSize: 22),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Warm Up with Dabby!',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Instant 15-number rapid solo game with Dabby the mascot • Practice your dabbing speed!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: () => _openPlayDialog(context),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                  label: const Text('Play with Dabby'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: const Color(0xFF0F172A),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 14 : 20,
+                      vertical: 10,
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
+/// The interactive modal game simulation that pops up when user taps "Play with Dabby"
+class _DabbyPlayModal extends StatefulWidget {
+  const _DabbyPlayModal();
+
+  @override
+  State<_DabbyPlayModal> createState() => _DabbyPlayModalState();
+}
+
+class _DabbyPlayModalState extends State<_DabbyPlayModal>
     with SingleTickerProviderStateMixin {
   static const double _callDurationSec = 5.0;
   static const int _maxConsecutiveMisses = 5;
@@ -53,7 +205,6 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
   String? _feedbackText;
   Color _feedbackColor = Colors.white;
   Timer? _feedbackTimer;
-
   int _gameCode = 577873;
 
   @override
@@ -100,78 +251,48 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
 
   void _generateAuthenticTicket() {
     final random = Random();
-    _ticket = [
-      List.filled(9, null),
-      List.filled(9, null),
-      List.filled(9, null),
-    ];
+    _ticket = List.generate(3, (_) => List<int?>.filled(9, null));
     _ticketNums.clear();
 
-    const configurations = [
-      [3, 6, 0],
-      [4, 4, 1],
-      [5, 2, 2],
-      [3, 3, 2],
-    ];
-    final config = configurations[random.nextInt(configurations.length)];
-    final num1s = config[0];
-    final num2s = config[1];
-    final num3s = config[2];
+    List<int> colCounts = List.filled(9, 1);
+    int remaining = 6;
+    while (remaining > 0) {
+      final col = random.nextInt(9);
+      if (colCounts[col] < 3) {
+        colCounts[col]++;
+        remaining--;
+      }
+    }
 
-    final colCounts = <int>[];
-    for (int i = 0; i < num1s; i++) {
-      colCounts.add(1);
-    }
-    for (int i = 0; i < num2s; i++) {
-      colCounts.add(2);
-    }
-    for (int i = 0; i < num3s; i++) {
-      colCounts.add(3);
-    }
-    colCounts.shuffle(random);
-
-    final colNumbers = <List<int>>[];
+    final colNumbers = <int, List<int>>{};
     for (int c = 0; c < 9; c++) {
-      final range = _colRanges[c];
-      final pool = List.generate(range[1] - range[0] + 1, (i) => range[0] + i)..shuffle(random);
+      final minVal = _colRanges[c][0];
+      final maxVal = _colRanges[c][1];
+      final pool = List.generate(maxVal - minVal + 1, (i) => minVal + i);
+      pool.shuffle(random);
       final picked = pool.take(colCounts[c]).toList()..sort();
-      colNumbers.add(picked);
+      colNumbers[c] = picked;
       _ticketNums.addAll(picked);
     }
 
-    // Place columns with 3 numbers
     for (int c = 0; c < 9; c++) {
-      if (colCounts[c] == 3) {
-        _ticket[0][c] = colNumbers[c][0];
-        _ticket[1][c] = colNumbers[c][1];
-        _ticket[2][c] = colNumbers[c][2];
-      }
-    }
-
-    // Place columns with 2 numbers
-    for (int c = 0; c < 9; c++) {
-      if (colCounts[c] == 2) {
+      final nums = colNumbers[c]!;
+      if (nums.length == 3) {
+        _ticket[0][c] = nums[0];
+        _ticket[1][c] = nums[1];
+        _ticket[2][c] = nums[2];
+      } else if (nums.length == 2) {
+        final rows = [0, 1, 2]..shuffle(random);
+        rows.sort();
+        _ticket[rows[0]][c] = nums[0];
+        _ticket[rows[1]][c] = nums[1];
+      } else if (nums.length == 1) {
         final rowIdxs = [0, 1, 2]..sort((r1, r2) {
           final count1 = _ticket[r1].where((x) => x != null).length;
           final count2 = _ticket[r2].where((x) => x != null).length;
           return count1.compareTo(count2);
         });
-        final rA = min(rowIdxs[0], rowIdxs[1]);
-        final rB = max(rowIdxs[0], rowIdxs[1]);
-        _ticket[rA][c] = colNumbers[c][0];
-        _ticket[rB][c] = colNumbers[c][1];
-      }
-    }
-
-    // Place columns with 1 number
-    for (int c = 0; c < 9; c++) {
-      if (colCounts[c] == 1) {
-        final rowIdxs = [0, 1, 2]..sort((r1, r2) {
-          final count1 = _ticket[r1].where((x) => x != null).length;
-          final count2 = _ticket[r2].where((x) => x != null).length;
-          return count1.compareTo(count2);
-        });
-        _ticket[rowIdxs[0]][c] = colNumbers[c][0];
+        _ticket[rowIdxs[0]][c] = nums[0];
       }
     }
   }
@@ -248,42 +369,52 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
 
   void _onCellTapped(int number) {
     if (_isGameOver || _isFullHouseWon) return;
-    if (_dabbedNums.contains(number)) return;
+
+    if (_dabbedNums.contains(number)) {
+      _showFeedback('ALREADY DABBED!', const Color(0xFFEAB308));
+      return;
+    }
 
     if (number == _currentBall) {
-      // Perfect Dab!
       setState(() {
         _dabbedNums.add(number);
         _score += 100;
         _consecutiveMisses = 0;
       });
-      _showFeedback('⚡ PERFECT DAB! +100', const Color(0xFF10B981));
-      _checkVictory();
-      if (!_isFullHouseWon) {
-        _callNextBall();
+      _showFeedback('🎯 PERFECT DAB! +100', const Color(0xFF10B981));
+
+      if (_dabbedNums.length == _ticketNums.length) {
+        _triggerFullHouseVictory();
+        return;
       }
-    } else if (_calledHistory.contains(number)) {
-      // Delayed Dab!
+      _callNextBall();
+      return;
+    }
+
+    if (_calledHistory.contains(number)) {
       setState(() {
         _dabbedNums.add(number);
         _score += 50;
         _consecutiveMisses = 0;
       });
-      _showFeedback('⏱️ DELAYED DAB! +50', const Color(0xFFFACC15));
-      _checkVictory();
-    } else {
-      // Not called yet
-      _showFeedback('⏳ NOT CALLED YET!', const Color(0xFFF87171));
+      _showFeedback('⏱️ DELAYED DAB! +50', const Color(0xFF38BDF8));
+
+      if (_dabbedNums.length == _ticketNums.length) {
+        _triggerFullHouseVictory();
+      }
+      return;
     }
+
+    _showFeedback('❌ NOT CALLED YET!', const Color(0xFFEF4444));
   }
 
-  void _checkVictory() {
-    if (_dabbedNums.length >= 15) {
-      _countdownTimer?.cancel();
-      setState(() {
-        _isFullHouseWon = true;
-      });
-    }
+  void _triggerFullHouseVictory() {
+    _countdownTimer?.cancel();
+    setState(() {
+      _isFullHouseWon = true;
+      _score += 500;
+    });
+    _showFeedback('🏆 FULL HOUSE! +500', const Color(0xFFFBBF24));
   }
 
   void _showFeedback(String msg, Color color) {
@@ -303,10 +434,12 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.sizeOf(context).width > 700;
-    final isOnTicket = _currentBall != null && _ticketNums.contains(_currentBall) && !_dabbedNums.contains(_currentBall);
+    final isOnTicket = _currentBall != null &&
+        _ticketNums.contains(_currentBall) &&
+        !_dabbedNums.contains(_currentBall);
 
     return Container(
+      constraints: const BoxConstraints(maxWidth: 780),
       decoration: BoxDecoration(
         color: const Color(0xFF090D1A),
         borderRadius: BorderRadius.circular(20),
@@ -316,52 +449,75 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
               : AppTheme.secondaryColor.withValues(alpha: 0.5),
           width: 2.0,
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: (isOnTicket ? const Color(0xFFEF4444) : AppTheme.primaryColor).withValues(alpha: 0.35),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: Colors.black87,
+            blurRadius: 28,
+            offset: Offset(0, 10),
           ),
         ],
       ),
-      padding: EdgeInsets.all(isWide ? 16 : 12),
+      padding: const EdgeInsets.all(14),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. TOP CALLER & PRESSURE BAR
-          _buildTopCallerBar(isWide, isOnTicket),
-          const SizedBox(height: 12),
+          // Header with close button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Text('🦁', style: TextStyle(fontSize: 20)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Play with Dabby • Solo Simulation',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                tooltip: 'Close Game',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
 
-          // 2. MASCOT 3x9 TICKET BANNER PLAYGROUND (1536 x 1024 Aspect Ratio)
+          // 1. Caller & Pressure Bar
+          _buildTopCallerBar(isOnTicket),
+          const SizedBox(height: 10),
+
+          // 2. 3x9 Ticket Banner
           AspectRatio(
             aspectRatio: 1536 / 1024,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  // High-Res Background Image
                   Image.asset(
                     AppAssets.dabbyTicketBanner,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
+                    errorBuilder: (ctx, err, stack) => Container(
                       color: const Color(0xFF1E293B),
                       child: const Center(
-                        child: Text(
-                          'Dabby Mascot Playground',
-                          style: TextStyle(color: Colors.white70),
-                        ),
+                        child: Text('Play with Dabby', style: TextStyle(color: Colors.white70)),
                       ),
                     ),
                   ),
 
-                  // Dynamic Game Code Overlay
+                  // Game Code Overlay
                   Positioned(
-                    top: 14,
-                    right: 18,
+                    top: 10,
+                    right: 14,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.55),
                         borderRadius: BorderRadius.circular(6),
@@ -370,17 +526,16 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                       child: Text(
                         'Game Code: $_gameCode',
                         style: const TextStyle(
-                          fontSize: 11.5,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
-                          letterSpacing: 0.6,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
 
-                  // Active 3x9 Grid Overlay matching empty ticket template coordinates
-                  // left: 23.43%, top: 31.84%, width: 73.05%, height: 39.45%
+                  // 3x9 Grid overlay
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final gridLeft = constraints.maxWidth * 0.2343;
@@ -411,7 +566,7 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                         child: Text(
                           _feedbackText!,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w900,
                             color: _feedbackColor,
                           ),
@@ -443,16 +598,16 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                             const Text(
                               '🏆 FULL HOUSE VICTORY! 🎉',
                               style: TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF451A03),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             const Text(
                               'All 15 numbers dabbed with Dabby!',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF451A03),
                               ),
@@ -477,15 +632,16 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                   if (_isGameOver)
                     Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                         decoration: BoxDecoration(
                           color: const Color(0xFF0F172A).withValues(alpha: 0.95),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0xFFEF4444), width: 2),
+                          border: Border.all(color: const Color(0xFFEF4444), width: 1.5),
                           boxShadow: const [
                             BoxShadow(
                               color: Colors.black87,
                               blurRadius: 20,
+                              offset: Offset(0, 6),
                             ),
                           ],
                         ),
@@ -495,7 +651,7 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                             const Text(
                               '⏰ GAME OVER',
                               style: TextStyle(
-                                fontSize: 22,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFFF87171),
                               ),
@@ -503,9 +659,9 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                             const SizedBox(height: 4),
                             Text(
                               _gameOverReason,
-                              style: const TextStyle(fontSize: 12.5, color: Color(0xFFCBD5E1)),
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 10),
                             ElevatedButton.icon(
                               onPressed: _startNewGame,
                               icon: const Icon(Icons.refresh_rounded, size: 18),
@@ -530,27 +686,26 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
     );
   }
 
-  Widget _buildTopCallerBar(bool isWide, bool isOnTicket) {
+  Widget _buildTopCallerBar(bool isOnTicket) {
     final progress = (_timeLeftSec / _callDurationSec).clamp(0.0, 1.0);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isOnTicket ? const Color(0xFFEF4444) : Colors.white12,
-          width: isOnTicket ? 1.8 : 1.0,
+          width: isOnTicket ? 1.6 : 1.0,
         ),
       ),
       child: Row(
         children: [
-          // Current Called Ball
           ScaleTransition(
             scale: _ballPopScale,
             child: Container(
-              width: isWide ? 56 : 46,
-              height: isWide ? 56 : 46,
+              width: 44,
+              height: 44,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -560,16 +715,16 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                 boxShadow: [
                   BoxShadow(
                     color: Color(0xFFD32F2F),
-                    blurRadius: 10,
-                    offset: Offset(0, 3),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
               child: Center(
                 child: Text(
                   _currentBall != null ? '$_currentBall' : '--',
-                  style: TextStyle(
-                    fontSize: isWide ? 26 : 21,
+                  style: const TextStyle(
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
@@ -577,9 +732,7 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
               ),
             ),
           ),
-          const SizedBox(width: 12),
-
-          // Caller Message & Prompt
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,7 +741,7 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                       decoration: BoxDecoration(
                         color: isOnTicket
                             ? const Color(0xFFEF4444).withValues(alpha: 0.2)
@@ -596,35 +749,34 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        isOnTicket ? '🔥 ON YOUR TICKET' : 'BALL CALLED',
+                        isOnTicket ? '🔥 ON TICKET' : 'CALLED',
                         style: TextStyle(
-                          fontSize: 9.5,
+                          fontSize: 9,
                           fontWeight: FontWeight.w900,
                           color: isOnTicket ? const Color(0xFFF87171) : AppTheme.secondaryColor,
-                          letterSpacing: 0.6,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
                       '$_score Pts • ${_dabbedNums.length}/15',
                       style: const TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: Colors.white70,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   _isGameOver
                       ? 'Game Over'
                       : (isOnTicket
                           ? 'DAB $_currentBall NOW!'
-                          : 'Dabby called $_currentBall • Scan your ticket!'),
+                          : 'Dabby called $_currentBall • Check ticket'),
                   style: TextStyle(
-                    fontSize: isWide ? 15 : 13,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w900,
                     color: isOnTicket ? Colors.white : const Color(0xFFCBD5E1),
                   ),
@@ -632,17 +784,15 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
               ],
             ),
           ),
-
-          // Countdown Ring
           SizedBox(
-            width: 44,
-            height: 44,
+            width: 38,
+            height: 38,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 CircularProgressIndicator(
                   value: progress,
-                  strokeWidth: 4,
+                  strokeWidth: 3.5,
                   backgroundColor: Colors.white12,
                   valueColor: AlwaysStoppedAnimation<Color>(
                     _timeLeftSec <= 2.0 ? const Color(0xFFEF4444) : const Color(0xFFFACC15),
@@ -651,7 +801,7 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
                 Text(
                   '${_timeLeftSec.ceil()}s',
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
@@ -659,13 +809,11 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
               ],
             ),
           ),
-          const SizedBox(width: 10),
-
-          // New Game / Reset
+          const SizedBox(width: 6),
           IconButton(
             tooltip: 'New Ticket',
             onPressed: _startNewGame,
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white70, size: 20),
           ),
         ],
       ),
@@ -697,27 +845,27 @@ class _DabbyRapidPlayHeroCardState extends State<DabbyRapidPlayHeroCard>
     final isCurrent = num == _currentBall && !isDabbed;
 
     return Padding(
-      padding: const EdgeInsets.all(2.0),
+      padding: const EdgeInsets.all(1.5),
       child: InkWell(
         onTap: () => _onCellTapped(num),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           decoration: BoxDecoration(
             color: isDabbed
                 ? const Color(0xFFFACC15).withValues(alpha: 0.88)
                 : (isCurrent ? const Color(0xFFEF4444).withValues(alpha: 0.35) : Colors.transparent),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: isCurrent
-                ? Border.all(color: const Color(0xFFEF4444), width: 2)
+                ? Border.all(color: const Color(0xFFEF4444), width: 1.8)
                 : null,
           ),
           child: Center(
             child: Text(
               '$num',
-              style: TextStyle(
-                fontSize: 17,
+              style: const TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.w900,
-                color: isDabbed ? const Color(0xFF0F172A) : const Color(0xFF0F172A),
+                color: Color(0xFF0F172A),
               ),
             ),
           ),
