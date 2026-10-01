@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import 'dashboard_hero_section.dart';
@@ -445,7 +444,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
           const SizedBox(
             height: 18,
             child: Text(
-              'Play solo, share a code with up to 4 friends free (no host needed), or host a skill playlist.',
+              'Play solo or share a 5-player code with friends free (no host or caller needed).',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
@@ -458,7 +457,7 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
           ),
           const SizedBox(height: 12),
 
-          // CTAs: Play Solo + Play with Friends + Host a Game (exact 40px single row)
+          // CTAs: Play Solo + Play with Friends (exact 40px single row)
           SizedBox(
             height: 40,
             child: SingleChildScrollView(
@@ -509,24 +508,6 @@ class _SkillArenaSectionState extends State<SkillArenaSection> {
                       textStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    onPressed: () => context.push('/create-game'),
-                    icon: const Icon(Icons.add_circle_outline, size: 17),
-                    label: const Text('Host a Game'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryLight,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 14,
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),

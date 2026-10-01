@@ -623,40 +623,87 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
             color: Colors.white.withValues(alpha: 0.22),
           ),
 
-          // 3. RIGHT SIDE: DABHOUSIE BRANDING LOGO (3rd Column)
+          // 3. RIGHT SIDE: DABBY MASCOT & DABHOUSIE BRANDING (3rd Column)
           Expanded(
             flex: 4,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: Image.asset(
-                    AppAssets.dabhousieLogo600x400,
-                    height: 70,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Image.asset(
-                      AppAssets.horizontalLogo,
-                      height: 50,
+                // Dabby Mascot
+                Flexible(
+                  flex: 5,
+                  child: Hero(
+                    tag: 'dabby_mascot_caller',
+                    child: Image.asset(
+                      AppAssets.dabbyMascot,
+                      height: 98,
                       fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Image.asset(
+                        AppAssets.dabhousieLogo600x400,
+                        height: 70,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Live Tambola, Housie & 90-Ball Bingo',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.secondaryColor,
-                    letterSpacing: 0.2,
+                const SizedBox(width: 8),
+                // Brand info & Dabby greeting
+                Flexible(
+                  flex: 6,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Text(
+                          'MEET DABBY',
+                          style: TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Your Live Host!',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Live Tambola & Bingo',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const Text(
+                        'dabhousie.com',
+                        style: TextStyle(
+                          fontSize: 9.0,
+                          color: AppTheme.secondaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                const Text(
-                  'dabhousie.com',
-                  style: TextStyle(fontSize: 9.5, color: Colors.white60),
                 ),
               ],
             ),

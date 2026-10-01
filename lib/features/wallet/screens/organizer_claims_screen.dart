@@ -46,9 +46,9 @@ class BrandPartnerOffer {
       retailPrice: 10.0,
       organizerPrice: 0.0,
       discountPercent: 100,
-      badgeText: '100% FREE FOR HOST',
+      badgeText: '⏰ LIMITED TIME OFFER',
       description:
-          '100% Free Sponsored Voucher! Winner gets \$10 in DabHousie Event Credits at zero cost to the host.',
+          'Limited-time offer for paid hosting tiers (6+ players). Winner gets \$10 in DabHousie Event Credits at zero cost to the host.',
     ),
     BrandPartnerOffer(
       id: 'sbux_10',
@@ -811,17 +811,24 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.accentSuccess.withValues(
+                                color: (offer.id == 'dabhousie_free_10'
+                                        ? AppTheme.accentWarning
+                                        : AppTheme.accentSuccess)
+                                    .withValues(
                                   alpha: 0.16,
                                 ),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                'SAVE ${offer.discountPercent}%',
-                                style: const TextStyle(
+                                offer.id == 'dabhousie_free_10'
+                                    ? '⏰ LIMITED TIME'
+                                    : 'SAVE ${offer.discountPercent}%',
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.accentSuccess,
+                                  color: offer.id == 'dabhousie_free_10'
+                                      ? AppTheme.accentWarning
+                                      : AppTheme.accentSuccess,
                                 ),
                               ),
                             ),
@@ -1851,7 +1858,14 @@ class _BrandGiftFulfillmentDialogState
   @override
   void initState() {
     super.initState();
-    final fallback = widget.preselectedOffer ?? BrandPartnerOffer.catalog.first;
+    final isFamilyPack = widget.game.fundedCapacity <= 5;
+    final defaultCatalogOffer = isFamilyPack
+        ? BrandPartnerOffer.catalog.firstWhere(
+            (o) => o.id != 'dabhousie_free_10',
+            orElse: () => BrandPartnerOffer.catalog.first,
+          )
+        : BrandPartnerOffer.catalog.first;
+    final fallback = widget.preselectedOffer ?? defaultCatalogOffer;
     _selectedOfferId = widget.reward.brandOfferId ?? fallback.id;
     _brandController = TextEditingController(
       text: widget.reward.fulfilledBrandName ?? fallback.brandName,
@@ -2133,15 +2147,24 @@ class _BrandGiftFulfillmentDialogState
                           ),
                           error: (_, _) => const SizedBox.shrink(),
                           data: (offers) {
+                            final isFamilyPack = widget.game.fundedCapacity <= 5;
+                            final filteredOffers = offers.where((offer) {
+                              if (isFamilyPack && offer.id == 'dabhousie_free_10') {
+                                return false;
+                              }
+                              return true;
+                            }).toList();
                             return ListView.separated(
                               scrollDirection: Axis.horizontal,
-                              itemCount: offers.length,
+                              itemCount: filteredOffers.length,
                               separatorBuilder: (_, _) =>
                                   const SizedBox(width: 10),
                               itemBuilder: (ctx, idx) {
-                                final offer = offers[idx];
+                                final offer = filteredOffers[idx];
                                 final isSelected = _selectedOfferId == offer.id;
                                 final isFree = offer.organizerPrice == 0;
+                                final isLimitedTime =
+                                    offer.id == 'dabhousie_free_10';
                                 final isTemplate =
                                     offer.isHostSelfFulfilledTemplate;
                                 return InkWell(
@@ -2198,30 +2221,44 @@ class _BrandGiftFulfillmentDialogState
                                                     vertical: 1.5,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: isFree
-                                                    ? AppTheme.accentSuccess
+                                                color: isLimitedTime
+                                                    ? AppTheme.accentWarning
                                                           .withValues(
                                                             alpha: 0.2,
                                                           )
-                                                    : AppTheme.accentPartyPurple
-                                                          .withValues(
-                                                            alpha: 0.2,
-                                                          ),
+                                                    : (isFree
+                                                          ? AppTheme
+                                                                .accentSuccess
+                                                                .withValues(
+                                                                  alpha: 0.2,
+                                                                )
+                                                          : AppTheme
+                                                                .accentPartyPurple
+                                                                .withValues(
+                                                                  alpha: 0.2,
+                                                                )),
                                                 borderRadius:
                                                     BorderRadius.circular(4),
                                               ),
                                               child: Text(
-                                                isFree
-                                                    ? 'SPONSORED'
-                                                    : (isTemplate
-                                                          ? 'TEMPLATE'
-                                                          : '-${offer.discountPercent}%'),
+                                                isLimitedTime
+                                                    ? '⏰ LIMITED TIME'
+                                                    : (isFree
+                                                          ? 'SPONSORED'
+                                                          : (isTemplate
+                                                                ? 'TEMPLATE'
+                                                                : '-${offer.discountPercent}%')),
                                                 style: TextStyle(
                                                   fontSize: 9,
                                                   fontWeight: FontWeight.bold,
-                                                  color: isFree
-                                                      ? AppTheme.accentSuccess
-                                                      : const Color(0xFFC4B5FD),
+                                                  color: isLimitedTime
+                                                      ? AppTheme.accentWarning
+                                                      : (isFree
+                                                            ? AppTheme
+                                                                  .accentSuccess
+                                                            : const Color(
+                                                                0xFFC4B5FD,
+                                                              )),
                                                 ),
                                               ),
                                             ),

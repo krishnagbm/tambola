@@ -18,4 +18,7 @@ class AppAssets {
   static const String ballPurple = 'assets/branding/game_balls/ball_purple_256x256.png';
   static const String ballRed = 'assets/branding/game_balls/ball_red_256x256.png';
   static const String ballYellow = 'assets/branding/game_balls/ball_yellow_256x256.png';
+
+  // Mascot
+  static const String dabbyMascot = 'assets/branding/dabby_mascot_ball90.png';
 }

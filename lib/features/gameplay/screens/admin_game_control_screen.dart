@@ -2183,16 +2183,25 @@ class _AdminGameControlScreenState
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.smart_toy_rounded,
-                            size: 15,
-                            color: _isAutoPilotEnabled
-                                ? AppTheme.primaryDark
-                                : const Color(0xFF94A3B8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: Image.asset(
+                              AppAssets.dabbyMascot,
+                              width: 18,
+                              height: 18,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.smart_toy_rounded,
+                                size: 15,
+                                color: _isAutoPilotEnabled
+                                    ? AppTheme.primaryDark
+                                    : const Color(0xFF94A3B8),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 5),
                           Text(
-                            '🤖 Auto-Pilot Host',
+                            '🤖 Dabby Auto-Pilot',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -2419,18 +2428,27 @@ class _AdminGameControlScreenState
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              isCelebrating
-                                  ? Icons.celebration_rounded
-                                  : _isAutoPilotPaused
-                                  ? Icons.pause_circle_outline_rounded
-                                  : Icons.timer_outlined,
-                              size: 16,
-                              color: isCelebrating || isFlashRevealing
-                                  ? AppTheme.secondaryColor
-                                  : _isAutoPilotPaused
-                                  ? AppTheme.accentWarning
-                                  : const Color(0xFF38BDF8),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.asset(
+                                AppAssets.dabbyMascot,
+                                width: 16,
+                                height: 16,
+                                fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  isCelebrating
+                                      ? Icons.celebration_rounded
+                                      : _isAutoPilotPaused
+                                      ? Icons.pause_circle_outline_rounded
+                                      : Icons.timer_outlined,
+                                  size: 15,
+                                  color: isCelebrating || isFlashRevealing
+                                      ? AppTheme.secondaryColor
+                                      : _isAutoPilotPaused
+                                      ? AppTheme.accentWarning
+                                      : const Color(0xFF38BDF8),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 5),
                             Text(
