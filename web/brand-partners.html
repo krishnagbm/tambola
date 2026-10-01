@@ -677,6 +677,144 @@
       grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 16px;
     }
+
+    /* Multi-Step Wizard Navigation */
+    .wizard-steps-indicator {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 24px;
+      padding: 0 8px;
+    }
+
+    .wizard-steps-indicator::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 36px;
+      right: 36px;
+      height: 2px;
+      background: #334155;
+      z-index: 1;
+    }
+
+    .wizard-step-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      z-index: 2;
+      cursor: pointer;
+    }
+
+    .wizard-step-bubble {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #1E293B;
+      border: 2px solid #475569;
+      color: #94A3B8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      transition: all 0.25s ease;
+    }
+
+    .wizard-step-bubble-wrap.active .wizard-step-bubble {
+      background: #F59E0B;
+      border-color: #FCD34D;
+      color: #0F172A;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+    }
+
+    .wizard-step-bubble-wrap.completed .wizard-step-bubble {
+      background: #10B981;
+      border-color: #34D399;
+      color: #FFFFFF;
+    }
+
+    .wizard-step-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94A3B8;
+      transition: color 0.2s ease;
+    }
+
+    .wizard-step-bubble-wrap.active .wizard-step-label {
+      color: #FCD34D;
+    }
+
+    .wizard-step-bubble-wrap.completed .wizard-step-label {
+      color: #34D399;
+    }
+
+    .wizard-panel {
+      display: none;
+      animation: fadeInStep 0.25s ease;
+    }
+
+    .wizard-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeInStep {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .wizard-nav-btns {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-wizard-secondary {
+      background: #1E293B;
+      border: 1px solid #475569;
+      color: #CBD5E1;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-wizard-secondary:hover {
+      background: #334155;
+      color: #FFFFFF;
+    }
+
+    .btn-wizard-primary {
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      border: 1px solid rgba(253, 211, 77, 0.4);
+      color: #0F172A;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-wizard-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+    }
   </style>
 </head>
 <body>
@@ -1067,7 +1205,7 @@
       </div>
     </section>
 
-    <!-- 1. BRAND MARKETING PARTNER PORTAL (REGISTRATION FORM) -->
+    <!-- 1. BRAND MARKETING PARTNER PORTAL (REGISTRATION FORM WIZARD) -->
     <section class="bp-section" id="partner-registration-portal">
       <div class="bp-portal-card">
         <div style="margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 16px;">
@@ -1076,229 +1214,282 @@
             Become a DabHousie Brand Marketing Partner
           </h2>
           <p style="font-size: 14px; color: #CBD5E1; margin: 0; line-height: 1.55;">
-            Start with a small 10-reward promotional pilot. Give engaged players a reason to discover your brand, while directing winners to your website, app or promotional landing page.
+            Start with a small 10-reward promotional pilot in 3 quick steps. Give engaged players a reason to discover your brand.
           </p>
         </div>
 
+        <!-- 3-Step Wizard Progress Indicator -->
+        <div class="wizard-steps-indicator" id="wizard-steps-indicator">
+          <div class="wizard-step-bubble-wrap active" id="wizard-step-wrap-1" onclick="goToWizardStep(1)">
+            <div class="wizard-step-bubble">1</div>
+            <div class="wizard-step-label">Brand &amp; Contact</div>
+          </div>
+          <div class="wizard-step-bubble-wrap" id="wizard-step-wrap-2" onclick="goToWizardStep(2)">
+            <div class="wizard-step-bubble">2</div>
+            <div class="wizard-step-label">Offer &amp; Rewards</div>
+          </div>
+          <div class="wizard-step-bubble-wrap" id="wizard-step-wrap-3" onclick="goToWizardStep(3)">
+            <div class="wizard-step-bubble">3</div>
+            <div class="wizard-step-label">Redemption &amp; Launch</div>
+          </div>
+        </div>
+
         <form id="brand-register-form" onsubmit="submitBrandOfferRegistration(event)">
-          <!-- Brand & Domain -->
-          <div class="brand-form-grid">
-            <div class="brand-form-group">
-              <label for="bm-brand-name">Brand / Company Name *</label>
-              <input type="text" id="bm-brand-name" required placeholder="e.g. Starbucks, Nike, Artisan Co.">
-              <span class="field-error-msg">❌ Brand name is required.</span>
+          
+          <!-- STEP 1: Quick Brand & Contact (Minimal & Easy) -->
+          <div class="wizard-panel active" id="wizard-panel-1">
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #FCD34D; margin: 0 0 4px;">Step 1: Your Brand &amp; Contact Details</h3>
+              <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">Tell us who you are. We auto-load your company logo from your domain.</p>
             </div>
-            <div class="brand-form-group">
-              <label for="bm-domain">Company Website Domain * (Auto-loads Logo)</label>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="text" id="bm-domain" required placeholder="e.g. yourbrand.com" oninput="updateDomainPreview(this.value)" style="flex: 1;">
-                <img id="bm-logo-preview" src="" alt="Brand Logo" style="height: 34px; width: 34px; object-fit: contain; background: #FFFFFF; border-radius: 6px; padding: 2px; display: none;" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)">
+
+            <div class="brand-form-grid">
+              <div class="brand-form-group">
+                <label for="bm-brand-name">Brand / Company Name *</label>
+                <input type="text" id="bm-brand-name" required placeholder="e.g. Starbucks, Nike, Artisan Co.">
+                <span class="field-error-msg">❌ Brand name is required.</span>
               </div>
-              <span class="field-error-msg">❌ Website domain is required.</span>
-            </div>
-          </div>
-
-          <!-- Contact Details -->
-          <div class="brand-form-grid-3">
-            <div class="brand-form-group">
-              <label for="bm-contact-name">Marketing Representative *</label>
-              <input type="text" id="bm-contact-name" required placeholder="Your full name">
-              <span class="field-error-msg">❌ Representative name is required.</span>
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-contact-role">Role / Title</label>
-              <input type="text" id="bm-contact-role" placeholder="e.g. Growth / Brand Manager">
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-contact-email">Corporate Work Email *</label>
-              <input type="email" id="bm-contact-email" required placeholder="partnerships@yourbrand.com">
-              <span class="field-error-msg">❌ Valid corporate email is required.</span>
-            </div>
-          </div>
-
-          <!-- Offer Title, Offer Type & Category -->
-          <div class="brand-form-grid-3">
-            <div class="brand-form-group">
-              <label for="bm-product-title">Offer Title *</label>
-              <input type="text" id="bm-product-title" required placeholder="e.g. $15 Promotional Reward or 25% Off">
-              <span class="field-error-msg">❌ Offer title is required.</span>
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-offer-type">Offer Type *</label>
-              <select id="bm-offer-type">
-                <option value="GIFT_VOUCHER">Gift vouchers</option>
-                <option value="DISCOUNT">Discount vouchers</option>
-                <option value="PROMO_CODE">Promo codes</option>
-                <option value="NEW_CUSTOMER_OFFER">New-customer offers</option>
-                <option value="FREE_PRODUCT">Free products</option>
-                <option value="FREE_SERVICE_TRIAL">Free services/trials</option>
-                <option value="LIMITED_TIME_PROMO">Limited-time promotions</option>
-                <option value="AFFILIATE_REFERRAL">Affiliate/referral offers</option>
-                <option value="OTHER">Other</option>
-              </select>
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-category">Category *</label>
-              <select id="bm-category">
-                <option value="Coffee & Dining">☕ Coffee &amp; Dining</option>
-                <option value="Shopping Vouchers">🛍️ Retail &amp; Shopping</option>
-                <option value="Streaming & Entertainment">🎬 Digital &amp; Subscriptions</option>
-                <option value="Gourmet Hampers">🍫 Food &amp; Gourmet</option>
-                <option value="Tech & Gadgets">🔊 Tech &amp; Consumer Goods</option>
-                <option value="Beauty & Lifestyle">✨ Beauty &amp; Wellness</option>
-                <option value="Sports & Apparel">👟 Fitness &amp; Apparel</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- 5. Target Country / Region & Currency -->
-          <div class="brand-form-grid" style="grid-template-columns: 2fr 1fr;">
-            <div class="brand-form-group">
-              <label>Target Country / Region * (Select one or more)</label>
-              <div class="country-chips-wrap" id="bm-country-chips">
-                <button type="button" class="country-chip active" data-country="Global" onclick="toggleTargetCountry(this)">🌎 Global</button>
-                <button type="button" class="country-chip" data-country="United States" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>
-                  United States
-                </button>
-                <button type="button" class="country-chip" data-country="Canada" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>
-                  Canada
-                </button>
-                <button type="button" class="country-chip" data-country="United Kingdom" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>
-                  United Kingdom
-                </button>
-                <button type="button" class="country-chip" data-country="India" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>
-                  India
-                </button>
-                <button type="button" class="country-chip" data-country="Australia" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>
-                  Australia
-                </button>
-                <button type="button" class="country-chip" data-country="Europe" onclick="toggleTargetCountry(this)">
-                  <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>
-                  Europe
-                </button>
-                <button type="button" class="country-chip" data-country="Other" onclick="toggleTargetCountry(this)">🌐 Other</button>
+              <div class="brand-form-group">
+                <label for="bm-domain">Company Website Domain * (Auto-loads Logo)</label>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="text" id="bm-domain" required placeholder="e.g. yourbrand.com" oninput="updateDomainPreview(this.value)" style="flex: 1;">
+                  <img id="bm-logo-preview" src="" alt="Brand Logo" style="height: 34px; width: 34px; object-fit: contain; background: #FFFFFF; border-radius: 6px; padding: 2px; display: none;" crossorigin="anonymous" onload="window.autoTrimLogo && window.autoTrimLogo(this)">
+                </div>
+                <span class="field-error-msg">❌ Website domain is required.</span>
               </div>
-              <span class="brand-form-helper">Country and currency restrictions are captured so offers are only matched to eligible markets.</span>
             </div>
+
+            <div class="brand-form-grid">
+              <div class="brand-form-group">
+                <label for="bm-contact-name">Marketing Representative *</label>
+                <input type="text" id="bm-contact-name" required placeholder="Your full name">
+                <span class="field-error-msg">❌ Representative name is required.</span>
+              </div>
+              <div class="brand-form-group">
+                <label for="bm-contact-email">Corporate Work Email *</label>
+                <input type="email" id="bm-contact-email" required placeholder="partnerships@yourbrand.com">
+                <span class="field-error-msg">❌ Valid corporate email is required.</span>
+              </div>
+            </div>
+
             <div class="brand-form-group">
-              <label for="bm-currency">Offer Currency *</label>
-              <select id="bm-currency">
-                <option value="USD">USD ($) — United States / Global</option>
-                <option value="CAD">CAD (CA$) — Canada</option>
-                <option value="GBP">GBP (£) — United Kingdom</option>
-                <option value="INR">INR (₹) — India</option>
-                <option value="AUD">AUD (A$) — Australia</option>
-                <option value="EUR">EUR (€) — Europe</option>
-              </select>
+              <label for="bm-contact-role">Role / Title (Optional)</label>
+              <input type="text" id="bm-contact-role" placeholder="e.g. Growth Lead, Brand Manager, Founder">
+            </div>
+
+            <div class="wizard-nav-btns" style="justify-content: flex-end;">
+              <button type="button" class="btn-wizard-primary" onclick="validateAndNext(1)">
+                Next: Offer Details ➔
+              </button>
             </div>
           </div>
 
-          <!-- 2 & 3. Retail Value, Reward Sponsorship Value / Host Cost, Voucher Batch -->
-          <div class="brand-form-grid-pricing">
-            <div class="brand-form-group">
-              <label for="bm-retail-price">Offer Retail Value ($) *</label>
-              <input type="number" id="bm-retail-price" required min="1" step="0.5" value="15" oninput="updateDiscountBadge()">
-              <span class="brand-form-helper">Customer-facing value of the promotional reward.</span>
+          <!-- STEP 2: The Promotional Reward / Offer -->
+          <div class="wizard-panel" id="wizard-panel-2">
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #FCD34D; margin: 0 0 4px;">Step 2: Offer &amp; Promotional Value</h3>
+              <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">Specify what players win and which regions get to play for it.</p>
             </div>
-            <div class="brand-form-group">
-              <label for="bm-org-price">Reward Sponsorship Value / Host Cost ($) *</label>
-              <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
-              <span class="brand-form-helper">Amount associated with each reward when selected by a game host. Enter $0 if the reward is fully sponsored by the brand.</span>
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-vouchers-count">Voucher Batch Qty *</label>
-              <input type="number" id="bm-vouchers-count" required min="1" max="500" step="1" value="10">
-              <span class="brand-form-helper" style="color: #FCD34D; font-weight: 600;">Recommended pilot: 10 rewards</span>
-            </div>
-          </div>
 
-          <!-- 7 & 8. Landing Page URL & Voucher Code Type -->
-          <div class="brand-form-grid">
-            <div class="brand-form-group">
-              <label for="bm-product-url">Product Landing Page URL *</label>
-              <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/promotional-offer">
-              <span class="brand-form-helper">This is the page players will visit to learn about or redeem your offer.</span>
-            </div>
-            <div class="brand-form-group">
-              <label for="bm-voucher-code-type">Voucher Code Type *</label>
-              <select id="bm-voucher-code-type" onchange="handleCodeTypeChange()">
-                <option value="SHARED_PROMO_CODE">Shared promotional code</option>
-                <option value="UNIQUE_PER_WINNER">Unique code per winner</option>
-                <option value="NO_CODE_REQUIRED">No code required (Landing page link)</option>
-              </select>
-              <span class="brand-form-helper">Specifies how winners redeem the promotional reward.</span>
-            </div>
-          </div>
-
-          <div class="brand-form-group" id="bm-promo-code-group">
-            <label for="bm-promo-code">Promotional / Voucher Code (Shared with Winners)</label>
-            <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE20 (or leave blank to coordinate unique codes via partnerships@dabhousie.com)">
-          </div>
-
-          <!-- 6. Redemption Rules (Optional) -->
-          <div style="background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 14px;">
-            <div style="font-size: 12.5px; font-weight: 800; color: #FCD34D; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
-              📋 Redemption Rules &amp; Terms (Optional)
-            </div>
             <div class="brand-form-grid-3">
-              <div class="brand-form-group" style="margin-bottom: 8px;">
-                <label for="bm-expiration-date">Expiration Date</label>
-                <input type="date" id="bm-expiration-date">
+              <div class="brand-form-group">
+                <label for="bm-product-title">Offer Title *</label>
+                <input type="text" id="bm-product-title" required placeholder="e.g. $15 Promotional Voucher or 25% Off">
+                <span class="field-error-msg">❌ Offer title is required.</span>
               </div>
-              <div class="brand-form-group" style="margin-bottom: 8px;">
-                <label for="bm-redemption-channel">Redemption Channel</label>
-                <select id="bm-redemption-channel">
-                  <option value="ONLINE">Online</option>
-                  <option value="IN_STORE">In Store</option>
-                  <option value="BOTH">Both (Online &amp; In Store)</option>
+              <div class="brand-form-group">
+                <label for="bm-offer-type">Offer Type *</label>
+                <select id="bm-offer-type">
+                  <option value="GIFT_VOUCHER">Gift vouchers</option>
+                  <option value="DISCOUNT">Discount vouchers</option>
+                  <option value="PROMO_CODE">Promo codes</option>
+                  <option value="NEW_CUSTOMER_OFFER">New-customer offers</option>
+                  <option value="FREE_PRODUCT">Free products</option>
+                  <option value="FREE_SERVICE_TRIAL">Free services/trials</option>
+                  <option value="LIMITED_TIME_PROMO">Limited-time promotions</option>
+                  <option value="AFFILIATE_REFERRAL">Affiliate/referral offers</option>
+                  <option value="OTHER">Other</option>
                 </select>
               </div>
-              <div class="brand-form-group" style="margin-bottom: 8px;">
-                <label for="bm-minimum-purchase">Minimum Purchase</label>
-                <input type="text" id="bm-minimum-purchase" placeholder="e.g. None or $25 minimum">
+              <div class="brand-form-group">
+                <label for="bm-category">Category *</label>
+                <select id="bm-category">
+                  <option value="Coffee & Dining">☕ Coffee &amp; Dining</option>
+                  <option value="Shopping Vouchers">🛍️ Retail &amp; Shopping</option>
+                  <option value="Streaming & Entertainment">🎬 Digital &amp; Subscriptions</option>
+                  <option value="Gourmet Hampers">🍫 Food &amp; Gourmet</option>
+                  <option value="Tech & Gadgets">🔊 Tech &amp; Consumer Goods</option>
+                  <option value="Beauty & Lifestyle">✨ Beauty &amp; Wellness</option>
+                  <option value="Sports & Apparel">👟 Fitness &amp; Apparel</option>
+                </select>
               </div>
             </div>
-            <div class="brand-form-grid" style="align-items: center;">
-              <div class="brand-form-group" style="margin-bottom: 0;">
-                <label for="bm-redemption-restrictions">Redemption Restrictions</label>
-                <input type="text" id="bm-redemption-restrictions" placeholder="e.g. Limit 1 per customer, valid in selected regions">
+
+            <!-- Target Country / Region & Currency -->
+            <div class="brand-form-grid" style="grid-template-columns: 2fr 1fr;">
+              <div class="brand-form-group">
+                <label>Target Country / Region * (Select one or more)</label>
+                <div class="country-chips-wrap" id="bm-country-chips">
+                  <button type="button" class="country-chip active" data-country="Global" onclick="toggleTargetCountry(this)">🌎 Global</button>
+                  <button type="button" class="country-chip" data-country="United States" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><path d="M0 0h28v1.54H0V0zm0 3.08h28v1.54H0V3.08zm0 3.08h28v1.54H0V6.16zm0 3.08h28v1.54H0V9.24zm0 3.08h28v1.54H0v-1.54zm0 3.08h28v1.54H0V15.4zm0 3.08h28V20H0v-1.52z" fill="#B22234"/><rect width="12" height="10.78" fill="#3C3B6E"/></svg>
+                    United States
+                  </button>
+                  <button type="button" class="country-chip" data-country="Canada" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="7" height="20" fill="#D80621"/><rect x="21" width="7" height="20" fill="#D80621"/><path d="M14 4l1.1 2.6 2.2-.5-1.1 2.2 2 .8-2.2 1.8.5 1.5h-2v3.1h-1v-3.1h-2l.5-1.5-2.2-1.8 2-.8-1.1-2.2 2.2.5L14 4z" fill="#D80621"/></svg>
+                    Canada
+                  </button>
+                  <button type="button" class="country-chip" data-country="United Kingdom" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#012169"/><path d="M0 0l28 20M28 0L0 20" stroke="#FFFFFF" stroke-width="4"/><path d="M0 0l28 20M28 0L0 20" stroke="#C8102E" stroke-width="2"/><path d="M14 0v20M0 10h28" stroke="#FFFFFF" stroke-width="6"/><path d="M14 0v20M0 10h28" stroke="#C8102E" stroke-width="3.6"/></svg>
+                    United Kingdom
+                  </button>
+                  <button type="button" class="country-chip" data-country="India" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#FFFFFF"/><rect width="28" height="6.67" fill="#FF9933"/><rect y="13.33" width="28" height="6.67" fill="#138808"/><circle cx="14" cy="10" r="2.5" fill="none" stroke="#000080" stroke-width="1"/></svg>
+                    India
+                  </button>
+                  <button type="button" class="country-chip" data-country="Australia" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#00008B"/><path d="M0 0l14 10M14 0L0 10" stroke="#FFFFFF" stroke-width="2.2"/><path d="M7 0v10M0 5h14" stroke="#FFFFFF" stroke-width="3.2"/><path d="M7 0v10M0 5h14" stroke="#C8102E" stroke-width="1.8"/><circle cx="7" cy="15" r="1.7" fill="#FFFFFF"/><circle cx="21" cy="15.5" r="1.1" fill="#FFFFFF"/><circle cx="21" cy="4.5" r="1.0" fill="#FFFFFF"/></svg>
+                    Australia
+                  </button>
+                  <button type="button" class="country-chip" data-country="Europe" onclick="toggleTargetCountry(this)">
+                    <svg class="bp-flag-svg-sm" viewBox="0 0 28 20" aria-hidden="true"><rect width="28" height="20" rx="2" fill="#003399"/><circle cx="14" cy="10" r="5.5" fill="none" stroke="#FFCC00" stroke-width="1.5" stroke-dasharray="1.4 1.5"/></svg>
+                    Europe
+                  </button>
+                  <button type="button" class="country-chip" data-country="Other" onclick="toggleTargetCountry(this)">🌐 Other</button>
+                </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; padding-top: 14px;">
-                <input type="checkbox" id="bm-new-customers-only" style="width: 18px; height: 18px; accent-color: #F59E0B;">
-                <label for="bm-new-customers-only" style="font-size: 13px; font-weight: 700; color: #E2E8F0; cursor: pointer;">
-                  New Customers Only
-                </label>
+              <div class="brand-form-group">
+                <label for="bm-currency">Offer Currency *</label>
+                <select id="bm-currency">
+                  <option value="USD">USD ($) — United States / Global</option>
+                  <option value="CAD">CAD (CA$) — Canada</option>
+                  <option value="GBP">GBP (£) — United Kingdom</option>
+                  <option value="INR">INR (₹) — India</option>
+                  <option value="AUD">AUD (A$) — Australia</option>
+                  <option value="EUR">EUR (€) — Europe</option>
+                </select>
               </div>
+            </div>
+
+            <!-- Retail Value & Host Cost -->
+            <div class="brand-form-grid-pricing">
+              <div class="brand-form-group">
+                <label for="bm-retail-price">Offer Retail Value ($) *</label>
+                <input type="number" id="bm-retail-price" required min="1" step="0.5" value="15" oninput="updateDiscountBadge()">
+                <span class="brand-form-helper">Face value shown to winners.</span>
+              </div>
+              <div class="brand-form-group">
+                <label for="bm-org-price">Reward Sponsorship Value / Host Cost ($) *</label>
+                <input type="number" id="bm-org-price" required min="0" step="0.5" value="0" oninput="updateDiscountBadge()">
+                <span class="brand-form-helper">Enter $0 if 100% sponsored by brand. <span id="bm-discount-pill" style="display:none; color:#10B981; font-weight:700;"></span></span>
+              </div>
+              <div class="brand-form-group">
+                <label for="bm-vouchers-count">Pilot Batch Qty *</label>
+                <input type="number" id="bm-vouchers-count" required min="1" max="500" step="1" value="10">
+                <span class="brand-form-helper" style="color: #FCD34D; font-weight: 600;">Recommended pilot: 10</span>
+              </div>
+            </div>
+
+            <div class="wizard-nav-btns">
+              <button type="button" class="btn-wizard-secondary" onclick="goToWizardStep(1)">
+                ⬅ Back to Brand
+              </button>
+              <button type="button" class="btn-wizard-primary" onclick="validateAndNext(2)">
+                Next: Redemption Rules ➔
+              </button>
             </div>
           </div>
 
-          <!-- 9. Offer Description & Customer Benefit -->
-          <div class="brand-form-group">
-            <label for="bm-description">Offer Description &amp; Customer Benefit *</label>
-            <textarea id="bm-description" rows="3" required placeholder="Explain why players will want this reward and how they redeem it."></textarea>
-            <span class="field-error-msg">❌ Please provide a brief offer description and customer benefit.</span>
+          <!-- STEP 3: Redemption, Landing Page & Launch -->
+          <div class="wizard-panel" id="wizard-panel-3">
+            <div style="margin-bottom: 16px;">
+              <h3 style="font-size: 16px; font-weight: 800; color: #FCD34D; margin: 0 0 4px;">Step 3: Redemption &amp; Pilot Launch</h3>
+              <p style="font-size: 12.5px; color: #94A3B8; margin: 0;">Tell winners where to redeem their reward. Easy and flexible!</p>
+            </div>
+
+            <div class="brand-form-grid">
+              <div class="brand-form-group">
+                <label for="bm-product-url">Product / Offer Landing Page URL *</label>
+                <input type="url" id="bm-product-url" required placeholder="https://www.yourbrand.com/promotional-offer">
+                <span class="brand-form-helper">Where players click to redeem or learn about your offer.</span>
+              </div>
+              <div class="brand-form-group">
+                <label for="bm-voucher-code-type">Voucher Code Type *</label>
+                <select id="bm-voucher-code-type" onchange="handleCodeTypeChange()">
+                  <option value="SHARED_PROMO_CODE">Shared promotional code</option>
+                  <option value="UNIQUE_PER_WINNER">Unique code per winner</option>
+                  <option value="NO_CODE_REQUIRED">No code required (Landing page link)</option>
+                </select>
+                <span class="brand-form-helper">How winners claim the reward.</span>
+              </div>
+            </div>
+
+            <div class="brand-form-group" id="bm-promo-code-group">
+              <label for="bm-promo-code">Promotional / Voucher Code (Shared with Winners)</label>
+              <input type="text" id="bm-promo-code" placeholder="e.g. DABHOUSIE20 (or leave blank to coordinate unique codes via email)">
+            </div>
+
+            <!-- Optional Rules in Collapsible accordion style -->
+            <details style="background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px;">
+              <summary style="font-size: 12.5px; font-weight: 800; color: #FCD34D; cursor: pointer; user-select: none;">
+                ➕ Optional: Expiration, Minimum Purchase &amp; Terms
+              </summary>
+              <div style="margin-top: 14px;">
+                <div class="brand-form-grid-3">
+                  <div class="brand-form-group" style="margin-bottom: 8px;">
+                    <label for="bm-expiration-date">Expiration Date</label>
+                    <input type="date" id="bm-expiration-date">
+                  </div>
+                  <div class="brand-form-group" style="margin-bottom: 8px;">
+                    <label for="bm-redemption-channel">Redemption Channel</label>
+                    <select id="bm-redemption-channel">
+                      <option value="ONLINE">Online</option>
+                      <option value="IN_STORE">In Store</option>
+                      <option value="BOTH">Both (Online &amp; In Store)</option>
+                    </select>
+                  </div>
+                  <div class="brand-form-group" style="margin-bottom: 8px;">
+                    <label for="bm-minimum-purchase">Minimum Purchase</label>
+                    <input type="text" id="bm-minimum-purchase" placeholder="e.g. None or $25 minimum">
+                  </div>
+                </div>
+                <div class="brand-form-grid" style="align-items: center;">
+                  <div class="brand-form-group" style="margin-bottom: 0;">
+                    <label for="bm-redemption-restrictions">Restrictions</label>
+                    <input type="text" id="bm-redemption-restrictions" placeholder="e.g. Limit 1 per customer">
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; padding-top: 14px;">
+                    <input type="checkbox" id="bm-new-customers-only" style="width: 18px; height: 18px; accent-color: #F59E0B;">
+                    <label for="bm-new-customers-only" style="font-size: 13px; font-weight: 700; color: #E2E8F0; cursor: pointer;">
+                      New Customers Only
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <div class="brand-form-group">
+              <label for="bm-description">Offer Description &amp; Customer Benefit *</label>
+              <textarea id="bm-description" rows="2" required placeholder="Explain in 1-2 sentences why players will love this reward."></textarea>
+              <span class="field-error-msg">❌ Please provide a brief offer description and customer benefit.</span>
+            </div>
+
+            <div id="bm-status-msg" style="display: none; padding: 12px 16px; border-radius: 10px; font-size: 13.5px; margin-bottom: 14px;"></div>
+
+            <p style="font-size: 12px; color: #94A3B8; margin: 4px 0 12px; line-height: 1.5;">
+              By submitting this form, you agree to our <a href="/terms-conditions.html#brand-partner-terms" style="color: #FCD34D; text-decoration: underline;">Terms &amp; Conditions</a> and <a href="/privacy-policy.html#brand-partner-data" style="color: #FCD34D; text-decoration: underline;">Privacy Policy</a>, including the <a href="/terms-conditions.html#brand-partner-terms" style="color: #93C5FD; text-decoration: underline;">Brand Marketing Partner Terms</a>.
+            </p>
+
+            <div class="wizard-nav-btns">
+              <button type="button" class="btn-wizard-secondary" onclick="goToWizardStep(2)">
+                ⬅ Back to Offer
+              </button>
+              <button type="submit" id="bm-submit-btn" class="btn-bp-primary">
+                🚀 Submit 10-Reward Pilot
+              </button>
+            </div>
           </div>
 
-          <div id="bm-status-msg" style="display: none; padding: 12px 16px; border-radius: 10px; font-size: 13.5px; margin-bottom: 14px;"></div>
-
-          <p style="font-size: 12px; color: #94A3B8; margin: 4px 0 12px; line-height: 1.5;">
-            By submitting this form, you agree to our <a href="/terms-conditions.html#brand-partner-terms" style="color: #FCD34D; text-decoration: underline;">Terms &amp; Conditions</a> and <a href="/privacy-policy.html#brand-partner-data" style="color: #FCD34D; text-decoration: underline;">Privacy Policy</a>, including the <a href="/terms-conditions.html#brand-partner-terms" style="color: #93C5FD; text-decoration: underline;">Brand Marketing Partner Terms</a> and <a href="/privacy-policy.html#brand-partner-data" style="color: #93C5FD; text-decoration: underline;">Brand Marketing Partner Data</a> sections.
-          </p>
-
-          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px;">
-            <span style="font-size: 12px; color: #94A3B8;">
-              Need custom assistance? Email <a href="mailto:partnerships@dabhousie.com" style="color: #60A5FA; text-decoration: underline;">partnerships@dabhousie.com</a>
-            </span>
-            <!-- 10. CTA -->
-            <button type="submit" id="bm-submit-btn" class="btn-bp-primary">
-              🚀 Start 10-Reward Pilot
-            </button>
-          </div>
         </form>
       </div>
     </section>
@@ -1549,6 +1740,88 @@
       group.style.display = type === 'NO_CODE_REQUIRED' ? 'none' : 'flex';
     }
 
+    let currentWizardStep = 1;
+
+    function goToWizardStep(step) {
+      if (step < 1 || step > 3) return;
+      currentWizardStep = step;
+
+      // Update panels
+      for (let i = 1; i <= 3; i++) {
+        const panel = document.getElementById(`wizard-panel-${i}`);
+        const wrap = document.getElementById(`wizard-step-wrap-${i}`);
+        if (panel) {
+          panel.classList.toggle('active', i === step);
+        }
+        if (wrap) {
+          wrap.classList.remove('active', 'completed');
+          if (i === step) {
+            wrap.classList.add('active');
+          } else if (i < step) {
+            wrap.classList.add('completed');
+          }
+        }
+      }
+
+      // Scroll to form header smoothly
+      const portal = document.getElementById('partner-registration-portal');
+      if (portal) {
+        portal.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function validateAndNext(currentStep) {
+      if (currentStep === 1) {
+        const brandName = document.getElementById('bm-brand-name');
+        const domain = document.getElementById('bm-domain');
+        const repName = document.getElementById('bm-contact-name');
+        const repEmail = document.getElementById('bm-contact-email');
+
+        if (!brandName.value.trim()) {
+          brandName.focus();
+          brandName.reportValidity();
+          return;
+        }
+        if (!domain.value.trim()) {
+          domain.focus();
+          domain.reportValidity();
+          return;
+        }
+        if (!repName.value.trim()) {
+          repName.focus();
+          repName.reportValidity();
+          return;
+        }
+        if (!repEmail.value.trim() || !repEmail.checkValidity()) {
+          repEmail.focus();
+          repEmail.reportValidity();
+          return;
+        }
+        goToWizardStep(2);
+      } else if (currentStep === 2) {
+        const title = document.getElementById('bm-product-title');
+        const retail = document.getElementById('bm-retail-price');
+        const vouchers = document.getElementById('bm-vouchers-count');
+
+        if (!title.value.trim()) {
+          title.focus();
+          title.reportValidity();
+          return;
+        }
+        if (!retail.value.trim() || parseFloat(retail.value) <= 0) {
+          retail.focus();
+          retail.reportValidity();
+          return;
+        }
+        if (!vouchers.value.trim() || parseInt(vouchers.value, 10) <= 0) {
+          vouchers.focus();
+          vouchers.reportValidity();
+          return;
+        }
+        goToWizardStep(3);
+      }
+    }
+
     async function submitBrandOfferRegistration(e) {
       e.preventDefault();
       const btn = document.getElementById('bm-submit-btn');
@@ -1601,6 +1874,7 @@
           msgEl.style.color = '#6EE7B7';
           msgEl.textContent = '🎉 ' + (data.message || 'Thank you for sponsoring a DabHousie Brand Offer! Your 10-reward pilot has been submitted and is waiting for approval.');
           document.getElementById('brand-register-form').reset();
+          goToWizardStep(1);
           const logoPrev = document.getElementById('bm-logo-preview');
           if (logoPrev) logoPrev.style.display = 'none';
           updateDiscountBadge();
