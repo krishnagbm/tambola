@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DabHousie™ - Rapid Call & Dab!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070d1e;
+      --accent-gold: #facc15;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --text-white: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 12%, #1e1b4b 0%, #070d1e 65%, #020617 100%);
+      color: var(--text-white);
+      font-family: 'Outfit', 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 14px 40px;
+      overflow-x: hidden;
+    }
+
+    /* HIGH-PRESSURE TOP CALLER BAR */
+    .rapid-caller-bar {
+      max-width: 1100px;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 27, 75, 0.95) 100%);
+      border: 2px solid rgba(239, 68, 68, 0.4);
+      border-radius: 24px;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 35px rgba(239, 68, 68, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Pulsing red border glow when timer is ticking down */
+    .rapid-caller-bar.urgent {
+      border-color: rgba(239, 68, 68, 0.9);
+      animation: alertPulse 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes alertPulse {
+      0% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.95); }
+    }
+
+    /* Left: Called Ball & Urgency Prompt */
+    .caller-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .ball-container {
+      position: relative;
+    }
+
+    .ball-sphere {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #ff4b4b 0%, #dc2626 50%, #991b1b 100%);
+      color: #ffffff;
+      font-size: 32px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.7), inset 0 3px 6px rgba(255, 255, 255, 0.6);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .ball-sphere.pop {
+      animation: ballPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes ballPop {
+      0% { transform: scale(0.6); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .call-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .call-label {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #f87171;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .call-instruction {
+      font-size: 20px;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+
+    .call-instruction span.highlight-num {
+      color: #facc15;
+      background: rgba(250, 204, 21, 0.15);
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+
+    /* Center: Countdown Ring & Seconds Counter */
+    .timer-center {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .ring-wrapper {
+      position: relative;
+      width: 58px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .ring-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 5;
+    }
+
+    .ring-progress {
+      fill: none;
+      stroke: #ef4444;
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 157; /* 2 * PI * 25 */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+    }
+
+    .timer-seconds-text {
+      position: absolute;
+      font-size: 19px;
+      font-weight: 900;
+      color: #ffffff;
+    }
+
+    .timer-alert-text {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fca5a5;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Right: Score & New Ticket */
+    .caller-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .score-badge {
+      background: rgba(250, 204, 21, 0.15);
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      color: #facc15;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-new {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-new:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Countdown Bar running across bottom edge of header */
+    .urgent-progress-line {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #10b981 0%, #facc15 60%, #ef4444 100%);
+      width: 100%;
+      transform-origin: left;
+      transition: transform 0.1s linear;
+    }
+
+    /* Banner Container (Aspect Ratio 1536 x 1024) */
+    .banner-wrapper {
+      max-width: 1100px;
+      width: 100%;
+      position: relative;
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.2);
+      aspect-ratio: 1536 / 1024;
+      background: #000;
+    }
+
+    .banner-bg-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Dynamic Game Code Overlay */
+    .game-code-overlay {
+      position: absolute;
+      top: 24.3%;
+      right: 4.8%;
+      color: #ffffff;
+      font-size: clamp(10px, 1.25vw, 15px);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* 3x9 Grid Overlay matching the 27 cells inside DabMascot_3x9_Empty_Perfect.png */
+    .grid-overlay {
+      position: absolute;
+      left: 23.43%;
+      top: 31.84%;
+      width: 73.05%;
+      height: 39.45%;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      column-gap: 0.8%;
+      row-gap: 2.4%;
+      padding: 0;
+      z-index: 10;
+    }
+
+    /* Individual Cell Button */
+    .overlay-cell {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(14px, 2.3vw, 34px);
+      font-weight: 900;
+      color: #0f172a;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 12%;
+      transition: transform 0.15s ease, background-color 0.2s ease;
+    }
+
+    .overlay-cell.empty {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .overlay-cell:not(.empty):hover {
+      background: rgba(250, 204, 21, 0.22);
+    }
+
+    .overlay-cell:not(.empty):active {
+      transform: scale(0.92);
+    }
+
+    /* If the cell matches the currently called number, give it a pulsating urgency cue! */
+    .overlay-cell.is-called:not(.dabbed) {
+      animation: cellTargetPulse 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes cellTargetPulse {
+      0% {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        background: rgba(239, 68, 68, 0.12);
+      }
+      100% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.85);
+        background: rgba(239, 68, 68, 0.28);
+      }
+    }
+
+    /* Dab Highlight with Golden Radiant Marker */
+    .overlay-cell.dabbed .dab-stamp {
+      display: block;
+      animation: dabPop 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .dab-stamp {
+      display: none;
+      position: absolute;
+      width: 78%;
+      height: 78%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fef08a 0%, #facc15 65%, #eab308 100%);
+      box-shadow: 0 2px 8px rgba(161, 98, 7, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+      z-index: 1;
+    }
+
+    .overlay-cell span.num {
+      position: relative;
+      z-index: 2;
+      transition: color 0.15s ease;
+    }
+
+    .overlay-cell.dabbed span.num {
+      color: #713f12;
+      text-shadow: 0 1px 2px rgba(254, 240, 138, 0.8);
+    }
+
+    /* Missed indicator if user failed to dab before time */
+    .missed-stamp {
+      display: none;
+      position: absolute;
+      width: 82%;
+      height: 82%;
+      border-radius: 50%;
+      border: 3px dashed #ef4444;
+      background: rgba(239, 68, 68, 0.15);
+      z-index: 1;
+    }
+    .overlay-cell.missed .missed-stamp {
+      display: block;
+    }
+
+    @keyframes dabPop {
+      0% { transform: scale(0.2); opacity: 0; }
+      80% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Floating Feedback Floating text (+100 / MISSED) */
+    .feedback-float {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      font-weight: 900;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.5s ease;
+    }
+    /* Non-blocking Celebration Canvas on top of the ticket */
+    #celebrationCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 50;
+      border-radius: 28px;
+    }
+
+    .victory-badge-banner {
+      display: none;
+      position: absolute;
+      top: 14%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.95) 0%, rgba(202, 138, 4, 0.95) 100%);
+      color: #451a03;
+      padding: 10px 28px;
+      border-radius: 999px;
+      font-size: clamp(14px, 2vw, 22px);
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      box-shadow: 0 10px 30px rgba(250, 204, 21, 0.6), 0 0 0 3px #ffffff;
+      z-index: 60;
+      pointer-events: none;
+      animation: badgePulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes badgePulse {
+      0% { transform: translateX(-50%) scale(0.96); box-shadow: 0 6px 20px rgba(250, 204, 21, 0.4); }
+      100% { transform: translateX(-50%) scale(1.04); box-shadow: 0 12px 35px rgba(250, 204, 21, 0.85); }
+    }
+  </style>
+</head>
+<body>
+  <!-- HIGH-PRESSURE TOP CALLER BAR -->
+  <div class="rapid-caller-bar" id="callerBar">
+    <div class="caller-left">
+      <div class="ball-container">
+        <div class="ball-sphere" id="currentBallSphere">--</div>
+      </div>
+      <div class="call-meta">
+        <span class="call-label">🔥 NUMBER CALLED • DAB NOW!</span>
+        <div class="call-instruction" id="callInstruction">
+          Find and Dab <span class="highlight-num" id="highlightNum">--</span>!
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div class="timer-center">
+      <div class="ring-wrapper">
+        <svg class="ring-svg" viewBox="0 0 60 60">
+          <circle class="ring-bg" cx="30" cy="30" r="25" />
+          <circle class="ring-progress" id="ringProgress" cx="30" cy="30" r="25" />
+        </svg>
+        <span class="timer-seconds-text" id="timerSeconds">5</span>
+      </div>
+      <div class="timer-alert-text" id="timerUrgencyText">Next call in 5s</div>
+    </div>
+
+    <!-- Live Score & Refresh Ticket -->
+    <div class="caller-right">
+      <div class="score-badge">
+        <span>⚡</span>
+        <span id="scoreText">0 Dabs</span>
+      </div>
+      <button class="btn-new" onclick="startNewGame()">
+        🎲 New Ticket
+      </button>
+    </div>
+
+    <!-- Urgent progress line at bottom -->
+    <div class="urgent-progress-line" id="urgentLine"></div>
+  </div>
+
+  <!-- Mascot 3x9 Ticket Banner Playground -->
+  <div class="banner-wrapper">
+    <img src="DabMascot_3x9_Empty_Perfect.png" class="banner-bg-img" alt="DabHousie Mascot 3x9 Empty Ticket Background">
+
+    <!-- Non-blocking Fireworks & Balloons Canvas over the ticket -->
+    <canvas id="celebrationCanvas"></canvas>
+
+    <!-- Floating Victory Banner (Non-blocking) -->
+    <div class="victory-badge-banner" id="victoryBadge">
+      🏆 FULL HOUSE VICTORY! • ALL 15 NUMBERS DABBED! 🎉
+    </div>
+
+    <!-- Game Over / Inactivity Banner -->
+    <div class="game-over-banner" id="gameOverBanner" style="display: none; position: absolute; top: 12%; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); border: 2px solid #ef4444; color: #fff; padding: 16px 28px; border-radius: 20px; z-index: 70; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.8);">
+      <div style="font-size: 24px; font-weight: 900; color: #f87171; margin-bottom: 4px;">⏰ GAME OVER!</div>
+      <div style="font-size: 14px; color: #cbd5e1; margin-bottom: 12px;" id="gameOverReason">You did not dab any balls in time.</div>
+      <button onclick="startNewGame()" style="background: #10b981; color: #000; border: none; font-weight: 900; font-size: 14px; padding: 8px 20px; border-radius: 999px; cursor: pointer;">
+        🔄 Play Again
+      </button>
+    </div>
+
+    <!-- Live Game Code Replacement Overlay -->
+    <div class="game-code-overlay" id="gameCodeDisplay">Game Code: 577873</div>
+
+    <!-- Active 3x9 Grid (27 Cells) -->
+    <div class="grid-overlay" id="gridOverlay"></div>
+  </div>
+
+  <div class="feedback-float" id="feedbackFloat"></div>
+
+  <script>
+    const CALL_DURATION_SEC = 5.0; // 5 seconds per number call to create thrilling pressure!
+    const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 25; // 157.08
+
+    const COL_RANGES = [
+      [1, 9],
+      [10, 19],
+      [20, 29],
+      [30, 39],
+      [40, 49],
+      [50, 59],
+      [60, 69],
+      [70, 79],
+      [80, 90]
+    ];
+
+    let currentTicket = [];
+    let ticketNumbersSet = new Set();
+    let dabbedSet = new Set();
+    let calledNumbersList = [];
+    let currentCalledNumber = null;
+    let timerInterval = null;
+    let timeLeft = CALL_DURATION_SEC;
+    let score = 0;
+
+    let consecutiveMisses = 0;
+    const MAX_CONSECUTIVE_MISSES = 5; // Stop if player is inactive for 5 calls in a row
+    let uncalledPool = [];
+
+    function randInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function initUncalledPool() {
+      uncalledPool = [];
+      for (let i = 1; i <= 90; i++) uncalledPool.push(i);
+      uncalledPool.sort(() => Math.random() - 0.5);
+    }
+
+    function generateAuthenticTambolaTicket() {
+      // In authentic Tambola, 15 numbers are distributed across 9 columns:
+      // Typically:
+      // - 1 to 3 columns have 3 numbers
+      // - 4 to 6 columns have 2 numbers
+      // - 1 to 3 columns have 1 number
+      // (Total numbers = 15, max 3 per column, min 1 per column)
+      // Pick how many columns get 3 numbers: randomly 0, 1, or 2 columns!
+      // If 0 columns have 3 numbers: six cols have 2 numbers, three cols have 1 number (6*2 + 3*1 = 15)
+      // If 1 column has 3 numbers: five cols have 2 numbers, three cols have 1 number (1*3 + 5*2 + 3*1 = 16 -> so 1*3 + 4*2 + 4*1 = 15)
+      // If 2 columns have 3 numbers: 2*3 + 2*2 + 5*1 = 15, or 2*3 + 3*2 + 3*1 = 15 (Wait: 6 + 6 + 3 = 15)
+      
+      const configurations = [
+        // [countOfColsWith1, countOfColsWith2, countOfColsWith3]
+        [3, 6, 0], // Zero cols with 3 numbers! (3*1 + 6*2 = 15)
+        [4, 4, 1], // One col with 3 numbers (4*1 + 4*2 + 3 = 15)
+        [5, 2, 2], // Two cols with 3 numbers (5*1 + 2*2 + 6 = 15)
+        [3, 3, 2], // Wait: 3*1 + 3*2 + 2*3 = 3 + 6 + 6 = 15!
+      ];
+      
+      const config = configurations[Math.floor(Math.random() * configurations.length)];
+      const num1s = config[0];
+      const num2s = config[1];
+      const num3s = config[2];
+
+      let colDistribution = [];
+      for (let i = 0; i < num1s; i++) colDistribution.push(1);
+      for (let i = 0; i < num2s; i++) colDistribution.push(2);
+      for (let i = 0; i < num3s; i++) colDistribution.push(3);
+      // Shuffle column sizes
+      colDistribution.sort(() => Math.random() - 0.5);
+
+      let colCounts = colDistribution;
+
+      let colNumbers = [];
+      for (let c = 0; c < 9; c++) {
+        let [min, max] = COL_RANGES[c];
+        let pool = [];
+        for (let n = min; n <= max; n++) pool.push(n);
+        pool.sort(() => Math.random() - 0.5);
+        let selected = pool.slice(0, colCounts[c]).sort((a, b) => a - b);
+        colNumbers.push(selected);
+      }
+
+      let grid = [
+        Array(9).fill(null),
+        Array(9).fill(null),
+        Array(9).fill(null)
+      ];
+
+      for (let c = 0; c < 9; c++) {
+        if (colCounts[c] === 3) {
+          grid[0][c] = colNumbers[c][0];
+          grid[1][c] = colNumbers[c][1];
+          grid[2][c] = colNumbers[c][2];
+        }
+      }
+
+      for (let c = 0; c < 9; c++) {
+        if (colCounts[c] === 2) {
+          let rowIdxs = [0, 1, 2].sort((r1, r2) => {
+            return grid[r1].filter(x => x !== null).length - grid[r2].filter(x => x !== null).length;
+          });
+          let rA = Math.min(rowIdxs[0], rowIdxs[1]);
+          let rB = Math.max(rowIdxs[0], rowIdxs[1]);
+          grid[rA][c] = colNumbers[c][0];
+          grid[rB][c] = colNumbers[c][1];
+        }
+      }
+
+      for (let c = 0; c < 9; c++) {
+        if (colCounts[c] === 1) {
+          let rowIdxs = [0, 1, 2].sort((r1, r2) => {
+            return grid[r1].filter(x => x !== null).length - grid[r2].filter(x => x !== null).length;
+          });
+          grid[rowIdxs[0]][c] = colNumbers[c][0];
+        }
+      }
+
+      return grid;
+    }
+
+    function renderTicket() {
+      const gridContainer = document.getElementById('gridOverlay');
+      gridContainer.innerHTML = '';
+      ticketNumbersSet.clear();
+
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 9; c++) {
+          const val = currentTicket[r][c];
+          const cell = document.createElement('div');
+          cell.className = 'overlay-cell' + (val === null ? ' empty' : '');
+          cell.id = val !== null ? `cell-${val}` : `cell-empty-${r}-${c}`;
+
+          if (val !== null) {
+            ticketNumbersSet.add(val);
+            cell.dataset.val = val;
+            cell.innerHTML = `
+              <div class="dab-stamp"></div>
+              <div class="missed-stamp"></div>
+              <span class="num">${val}</span>
+            `;
+            cell.onclick = () => onCellClicked(val, cell);
+          }
+
+          gridContainer.appendChild(cell);
+        }
+      }
+    }
+
+    function onCellClicked(val, cellEl) {
+      if (dabbedSet.has(val)) return; // already dabbed
+
+      // Check if clicked the current active called number
+      if (val === currentCalledNumber) {
+        dabbedSet.add(val);
+        consecutiveMisses = 0; // Active player!
+        cellEl.classList.remove('is-called');
+        cellEl.classList.remove('missed');
+        cellEl.classList.add('dabbed');
+        score += 100;
+        showFeedback('⚡ PERFECT DAB! +100', '#10b981');
+        updateScore();
+        checkCelebration();
+
+        if (dabbedSet.size < 15) {
+          callNextNumber();
+        }
+      } else if (calledNumbersList.includes(val)) {
+        // Player dabbed a previously called number (Delayed Dab!)
+        dabbedSet.add(val);
+        consecutiveMisses = 0; // Active player!
+        cellEl.classList.remove('is-called');
+        cellEl.classList.remove('missed');
+        cellEl.classList.add('dabbed');
+        score += 50;
+        showFeedback('⏱️ DELAYED DAB! +50', '#facc15');
+        updateScore();
+        checkCelebration();
+      } else {
+        // Uncalled number clicked
+        cellEl.style.transform = 'translateX(5px)';
+        setTimeout(() => { cellEl.style.transform = ''; }, 150);
+        showFeedback('⏳ NOT CALLED YET!', '#f87171');
+      }
+    }
+
+    function triggerGameOver(reason) {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+
+      const overBanner = document.getElementById('gameOverBanner');
+      const overReason = document.getElementById('gameOverReason');
+      if (overReason) overReason.innerText = reason;
+      if (overBanner) overBanner.style.display = 'block';
+
+      const instructionEl = document.getElementById('callInstruction');
+      if (instructionEl) {
+        instructionEl.innerHTML = `<span style="color:#f87171">Game Over</span> • Tap Play Again when ready`;
+      }
+      document.getElementById('timerUrgencyText').innerText = 'Paused';
+    }
+
+    function callNextNumber() {
+      if (dabbedSet.size >= 15) return;
+
+      // Check if uncalled pool has exhausted
+      if (uncalledPool.length === 0) {
+        triggerGameOver('All 90 numbers have been called!');
+        return;
+      }
+
+      // Clear previous called highlight
+      if (currentCalledNumber) {
+        const prevCell = document.getElementById(`cell-${currentCalledNumber}`);
+        if (prevCell && !dabbedSet.has(currentCalledNumber)) {
+          prevCell.classList.remove('is-called');
+          prevCell.classList.add('missed'); // mark as missed
+        }
+      }
+
+      // Pick from uncalled pool without repetition!
+      // Give 75% preference to remaining numbers on ticket if available
+      const uncalledTicketNums = Array.from(ticketNumbersSet).filter(n => !calledNumbersList.includes(n));
+      let pick;
+
+      if (uncalledTicketNums.length > 0 && Math.random() < 0.75) {
+        pick = uncalledTicketNums[Math.floor(Math.random() * uncalledTicketNums.length)];
+        // remove from pool
+        const idx = uncalledPool.indexOf(pick);
+        if (idx !== -1) uncalledPool.splice(idx, 1);
+      } else {
+        pick = uncalledPool.pop();
+      }
+
+      currentCalledNumber = pick;
+      calledNumbersList.push(pick);
+
+      // Update Top Bar Display
+      const ballSphere = document.getElementById('currentBallSphere');
+      ballSphere.innerText = pick;
+      ballSphere.classList.remove('pop');
+      void ballSphere.offsetWidth; // trigger reflow
+      ballSphere.classList.add('pop');
+
+      const isOnTicket = ticketNumbersSet.has(pick) && !dabbedSet.has(pick);
+      const instructionEl = document.getElementById('callInstruction');
+      if (instructionEl) {
+        if (isOnTicket) {
+          instructionEl.innerHTML = `🔥 ON YOUR TICKET! Click <span class="highlight-num">${pick}</span>!`;
+          const cell = document.getElementById(`cell-${pick}`);
+          if (cell) cell.classList.add('is-called');
+        } else {
+          instructionEl.innerHTML = `Called Ball <span class="highlight-num">${pick}</span> (Check Ticket)`;
+        }
+      }
+
+      // Reset countdown timer
+      resetTimer();
+    }
+
+    function resetTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timeLeft = CALL_DURATION_SEC;
+      updateTimerUI();
+
+      const startTime = Date.now();
+      const endTime = startTime + (CALL_DURATION_SEC * 1000);
+
+      timerInterval = setInterval(() => {
+        const now = Date.now();
+        const diff = (endTime - now) / 1000;
+        timeLeft = Math.max(0, diff);
+        updateTimerUI();
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+
+          // Time expired for this ball!
+          if (ticketNumbersSet.has(currentCalledNumber) && !dabbedSet.has(currentCalledNumber)) {
+            showFeedback('⏰ TIME OUT!', '#ef4444');
+            consecutiveMisses++;
+          } else {
+            // Unclicked call
+            consecutiveMisses++;
+          }
+
+          // If user has missed 5 balls in a row without dabbing, quiet stop and show game over
+          if (consecutiveMisses >= MAX_CONSECUTIVE_MISSES) {
+            triggerGameOver('You missed 5 calls in a row without dabbing.');
+            return;
+          }
+
+          callNextNumber();
+        }
+      }, 50);
+    }
+
+    function updateTimerUI() {
+      const secDisplay = Math.ceil(timeLeft);
+      document.getElementById('timerSeconds').innerText = secDisplay;
+      
+      const urgencyText = document.getElementById('timerUrgencyText');
+      const callerBar = document.getElementById('callerBar');
+      const ringProgress = document.getElementById('ringProgress');
+      const urgentLine = document.getElementById('urgentLine');
+
+      const fraction = timeLeft / CALL_DURATION_SEC;
+      const strokeOffset = CIRCLE_CIRCUMFERENCE * (1 - fraction);
+      ringProgress.style.strokeDashoffset = strokeOffset;
+      urgentLine.style.transform = `scaleX(${fraction})`;
+
+      if (timeLeft <= 2.0) {
+        callerBar.classList.add('urgent');
+        urgencyText.innerText = '⚡ HURRY UP!';
+        urgencyText.style.color = '#ef4444';
+        ringProgress.style.stroke = '#ef4444';
+      } else {
+        callerBar.classList.remove('urgent');
+        urgencyText.innerText = `Next in ${secDisplay}s`;
+        urgencyText.style.color = '#fca5a5';
+        ringProgress.style.stroke = '#facc15';
+      }
+    }
+
+    function showFeedback(text, color) {
+      const fb = document.getElementById('feedbackFloat');
+      fb.innerText = text;
+      fb.style.color = color;
+      fb.style.opacity = '1';
+      fb.style.transform = 'translate(-50%, -65%) scale(1.1)';
+      setTimeout(() => {
+        fb.style.opacity = '0';
+        fb.style.transform = 'translate(-50%, -50%) scale(0.9)';
+      }, 450);
+    }
+
+    function updateScore() {
+      document.getElementById('scoreText').innerText = `${score} Pts • ${dabbedSet.size}/15`;
+    }
+
+    function checkCelebration() {
+      if (dabbedSet.size === 15) {
+        clearInterval(timerInterval);
+        document.getElementById('callInstruction').innerHTML = '🏆 Full House Victory! All 15 Dabbed!';
+        
+        // Show non-blocking victory banner
+        const badge = document.getElementById('victoryBadge');
+        if (badge) badge.style.display = 'block';
+
+        // Trigger on-canvas fireworks & floating balloons
+        launchCanvasCelebration();
+      }
+    }
+
+    // Non-blocking Fireworks & Floating Balloons Animation on Ticket Canvas
+    function launchCanvasCelebration() {
+      const canvas = document.getElementById('celebrationCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+
+      const colors = ['#facc15', '#38bdf8', '#f43f5e', '#10b981', '#a855f7', '#fb923c'];
+
+      // 1. Firework Spark Particles
+      const fireworks = [];
+      function addFireworkBurst(bx, by) {
+        for (let i = 0; i < 45; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 8 + 2;
+          fireworks.push({
+            x: bx,
+            y: by,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            radius: Math.random() * 3 + 2,
+            alpha: 1,
+            decay: Math.random() * 0.015 + 0.01
+          });
+        }
+      }
+
+      // Initial bursts
+      addFireworkBurst(canvas.width * 0.25, canvas.height * 0.35);
+      addFireworkBurst(canvas.width * 0.75, canvas.height * 0.3);
+      setTimeout(() => addFireworkBurst(canvas.width * 0.5, canvas.height * 0.4), 600);
+      setTimeout(() => addFireworkBurst(canvas.width * 0.85, canvas.height * 0.5), 1400);
+
+      // 2. Floating Party Balloons rising from bottom
+      const balloons = [];
+      for (let i = 0; i < 18; i++) {
+        balloons.push({
+          x: Math.random() * canvas.width,
+          y: canvas.height + Math.random() * 150 + 20,
+          vy: -(Math.random() * 1.6 + 1.2),
+          vx: Math.sin(i) * 0.6,
+          radius: Math.random() * 12 + 16,
+          color: colors[i % colors.length],
+          wobbleSpeed: Math.random() * 0.04 + 0.02,
+          wobbleOffset: Math.random() * 10
+        });
+      }
+
+      let frameCount = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frameCount++;
+
+        // Random additional bursts occasionally
+        if (frameCount % 60 === 0 && frameCount < 400) {
+          addFireworkBurst(Math.random() * canvas.width * 0.8 + canvas.width * 0.1, Math.random() * canvas.height * 0.5 + 40);
+        }
+
+        // Draw and update fireworks
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+          const p = fireworks[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.15; // gravity
+          p.vx *= 0.98;
+          p.alpha -= p.decay;
+
+          if (p.alpha <= 0) {
+            fireworks.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Draw and update floating balloons
+        balloons.forEach(b => {
+          b.y += b.vy;
+          b.x += Math.sin(frameCount * b.wobbleSpeed + b.wobbleOffset) * 0.8;
+
+          ctx.save();
+          // Balloon body
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.ellipse(b.x, b.y, b.radius * 0.85, b.radius, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Highlight shine
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.beginPath();
+          ctx.ellipse(b.x - b.radius * 0.28, b.y - b.radius * 0.35, b.radius * 0.22, b.radius * 0.32, -0.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          // String
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(b.x, b.y + b.radius);
+          ctx.quadraticCurveTo(b.x + 6, b.y + b.radius + 14, b.x, b.y + b.radius + 28);
+          ctx.stroke();
+
+          ctx.restore();
+        });
+
+        // Loop animation
+        if (fireworks.length > 0 || balloons.some(b => b.y + b.radius > -30)) {
+          requestAnimationFrame(animate);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      }
+
+      animate();
+    }
+
+    function startNewGame() {
+      clearInterval(timerInterval);
+      const badge = document.getElementById('victoryBadge');
+      if (badge) badge.style.display = 'none';
+      const overBanner = document.getElementById('gameOverBanner');
+      if (overBanner) overBanner.style.display = 'none';
+      const canvas = document.getElementById('celebrationCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      initUncalledPool();
+      consecutiveMisses = 0;
+      currentTicket = generateAuthenticTambolaTicket();
+      dabbedSet.clear();
+      calledNumbersList = [];
+      score = 0;
+      updateScore();
+
+      const code = randInt(100000, 999999);
+      document.getElementById('gameCodeDisplay').innerText = `Game Code: ${code}`;
+
+      renderTicket();
+      callNextNumber();
+    }
+
+    // Launch game on page load
+    startNewGame();
+  </script>
+</body>
+</html>
