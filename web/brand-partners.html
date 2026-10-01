@@ -1727,19 +1727,25 @@
 
       if (country === 'Global') {
         const isTurningOn = !btn.classList.contains('active');
-        // When clicking Global: if turning on, turn all specific countries on; if turning off, turn all off
+        // When clicking Global: if turning on, turn all specific countries on; if turning off, turn all off except Global
         allChips.forEach(b => b.classList.toggle('active', isTurningOn));
       } else {
-        // Toggling a specific country
-        btn.classList.toggle('active');
-        const activeSpecific = specificChips.filter(b => b.classList.contains('active'));
-
-        if (activeSpecific.length === specificChips.length) {
-          // If ALL specific countries are active, turn Global ON
-          if (globalBtn) globalBtn.classList.add('active');
+        // If Global is currently selected (meaning all countries are selected by default)
+        // and user clicks a specific country like US or Canada, they want to start with that specific country!
+        if (globalBtn && globalBtn.classList.contains('active')) {
+          allChips.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
         } else {
-          // If any specific country is NOT selected, turn Global OFF
-          if (globalBtn) globalBtn.classList.remove('active');
+          // Normal multi-select toggle
+          btn.classList.toggle('active');
+          const activeSpecific = specificChips.filter(b => b.classList.contains('active'));
+
+          if (activeSpecific.length === specificChips.length) {
+            // If user individually selected ALL countries, turn Global back ON
+            if (globalBtn) globalBtn.classList.add('active');
+          } else {
+            if (globalBtn) globalBtn.classList.remove('active');
+          }
         }
       }
 
