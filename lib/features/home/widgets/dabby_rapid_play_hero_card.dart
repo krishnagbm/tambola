@@ -27,6 +27,82 @@ class DabbyRapidPlayHeroCard extends StatelessWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompact = screenWidth < 700;
 
+    if (isCompact) {
+      // Mobile stacked layout
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.45),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Banner artwork
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 150, minHeight: 110),
+              child: Image.asset(
+                AppAssets.dabbyShowcaseBanner,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Text('⚡', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Warm Up with Dabby!',
+                          style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w900, color: Colors.white),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          '15-number rapid solo game • Speed practice',
+                          style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: () => _openPlayDialog(context),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 18),
+                    label: const Text('Play'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF59E0B),
+                      foregroundColor: const Color(0xFF0F172A),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Desktop/Tablet 2-Column Split
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
@@ -44,112 +120,104 @@ class DabbyRapidPlayHeroCard extends StatelessWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Banner image container (compact height, constrained to avoid pushing content down)
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: isCompact ? 160 : 210,
-              minHeight: 120,
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Image.asset(
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left Column: High-Res 3x9 Perfect Mascot Artwork
+            Expanded(
+              flex: 5,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 180),
+                color: Colors.black,
+                child: Image.asset(
                   AppAssets.dabbyShowcaseBanner,
                   fit: BoxFit.cover,
                   alignment: Alignment.center,
                   errorBuilder: (ctx, err, stack) => Image.asset(
                     AppAssets.dabbyTicketBanner,
                     fit: BoxFit.cover,
-                    alignment: Alignment.center,
                   ),
                 ),
-                // Gradient overlay at bottom of banner for seamless transition
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          const Color(0xFF0F172A).withValues(alpha: 0.85),
-                        ],
-                        stops: const [0.6, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
 
-          // Caption & Action row below the mascot banner
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                const Text(
-                  '⚡',
-                  style: TextStyle(fontSize: 22),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Warm Up with Dabby!',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: -0.2,
+            // Right Column: Mascot Intro, Speed Training Info & Play Action
+            Expanded(
+              flex: 6,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.4)),
+                          ),
+                          child: const Text(
+                            '⚡ DABBY RAPID PLAY',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFFCD34D),
+                              letterSpacing: 0.6,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Instant 15-number rapid solo game with Dabby the mascot • Practice your dabbing speed!',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade400,
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Warm-Up Arena',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Warm Up with Dabby!',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Practice your dabbing speed on authentic 3×9 Tambola tickets. Instant 15-number rapid solo game with Dabby the mascot — no waiting, 100% free!',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Color(0xFF94A3B8),
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => _openPlayDialog(context),
+                      icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                      label: const Text('Play with Dabby Now'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: const Color(0xFF0F172A),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 3,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: () => _openPlayDialog(context),
-                  icon: const Icon(Icons.play_arrow_rounded, size: 20),
-                  label: const Text('Play with Dabby'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF59E0B),
-                    foregroundColor: const Color(0xFF0F172A),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isCompact ? 14 : 20,
-                      vertical: 10,
-                    ),
-                    textStyle: const TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w900,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 3,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -166,7 +234,7 @@ class _DabbyPlayModal extends StatefulWidget {
 class _DabbyPlayModalState extends State<_DabbyPlayModal>
     with SingleTickerProviderStateMixin {
   static const double _callDurationSec = 5.0;
-  static const int _maxConsecutiveMisses = 5;
+  static const int _maxConsecutiveMisses = 15; // Generous 15 turns of tolerance
 
   static const List<List<int>> _colRanges = [
     [1, 9],
@@ -661,17 +729,33 @@ class _DabbyPlayModalState extends State<_DabbyPlayModal>
                               _gameOverReason,
                               style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                             ),
-                            const SizedBox(height: 10),
-                            ElevatedButton.icon(
-                              onPressed: _startNewGame,
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('Play Again'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF10B981),
-                                foregroundColor: Colors.black,
-                                textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                              ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.close_rounded, size: 16),
+                                  label: const Text('Close'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white70,
+                                    side: const BorderSide(color: Colors.white24),
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                ElevatedButton.icon(
+                                  onPressed: _startNewGame,
+                                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                                  label: const Text('Play Again'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF10B981),
+                                    foregroundColor: Colors.black,
+                                    textStyle: const TextStyle(fontWeight: FontWeight.w900),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
