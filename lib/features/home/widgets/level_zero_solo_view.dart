@@ -931,127 +931,52 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
   }
 
   Widget _buildSubModeRow(bool isWaiting) {
-    List<(String, String)> chips;
-    String activeMode;
-    void Function(String) onSelect;
-
-    switch (widget.gameId) {
-      case 'level_0a_make':
-        activeMode = _makeMode;
-        chips = const [
-          (MakeHousieRoundSpec.modeMake5Quad, 'Make 5 (1 Quad)'),
-          (MakeHousieRoundSpec.modeMake15Guided, 'Make 10 (2 Quads)'),
-          (MakeHousieRoundSpec.modeMake15Master, 'Make 15 (Full Grid)'),
-        ];
-        onSelect = (m) {
-          _makeMode = m;
-          _initCurrentGame(autoStart: false);
-        };
-        break;
-      case 'level_0b_fix':
-        activeMode = _fixMode;
-        chips = const [
-          (FixHousieRoundSpec.modeFix1, 'Fix 1 Bug (Easy)'),
-          (FixHousieRoundSpec.modeFix3, 'Fix 3 Bugs (Med)'),
-          (FixHousieRoundSpec.modeFix5, 'Fix 5 Bugs (Hard)'),
-        ];
-        onSelect = (m) {
-          _fixMode = m;
-          _initCurrentGame(autoStart: false);
-        };
-        break;
-      case 'level_0c_math':
-        activeMode = _mathMode;
-        chips = const [
-          (MathHousieRoundSpec.modeAddSub5, 'Math 5 (+ / −)'),
-          (MathHousieRoundSpec.modeMulDiv5, 'Math 5 (× / ÷)'),
-          (MathHousieRoundSpec.modeMixed10, 'Math 10 (Mixed)'),
-        ];
-        onSelect = (m) {
-          _mathMode = m;
-          _initCurrentGame(autoStart: false);
-        };
-        break;
-      default:
-        activeMode = _sumMode;
-        chips = const [
-          (SumHousieRoundSpec.modeSumQ1, 'Sum Q1 (Easy 1–29)'),
-          (SumHousieRoundSpec.modeSumQ2, 'Sum Q2 (Med 30–59)'),
-          (SumHousieRoundSpec.modeSumQ3, 'Sum Q3 (Hard 60–90)'),
-          (SumHousieRoundSpec.modeSumAll3, 'Sum All 3 (Hardest Q1→Q3)'),
-        ];
-        onSelect = (m) {
-          _sumMode = m;
-          _initCurrentGame(autoStart: false);
-        };
-        break;
+    if (_roundCompleted || isWaiting || widget.gameId == 'level_0a_make') {
+      return const SizedBox.shrink();
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      alignment: WrapAlignment.spaceBetween,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final (modeVal, label) in chips)
-              ChoiceChip(
-                label: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: activeMode == modeVal ? Colors.black : Colors.white,
-                  ),
-                ),
-                selected: activeMode == modeVal,
-                selectedColor: AppTheme.secondaryColor,
-                backgroundColor: AppTheme.darkCard,
-                onSelected: (_) => onSelect(modeVal),
-              ),
-          ],
-        ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            OutlinedButton.icon(
-              onPressed: () => _initCurrentGame(autoStart: false),
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: Text(isWaiting ? 'Shuffle Card' : 'New Card / Reset'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppTheme.secondaryColor,
-                side: BorderSide(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.6),
-                ),
-                visualDensity: VisualDensity.compact,
-              ),
+        ElevatedButton.icon(
+          onPressed: () => _initCurrentGame(autoStart: false),
+          icon: const Icon(Icons.refresh_rounded, size: 16),
+          label: const Text(
+            'New Card',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1E293B),
+            foregroundColor: AppTheme.secondaryColor,
+            side: BorderSide(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.6),
             ),
-            if (!isWaiting && !_roundCompleted) ...[
-              const SizedBox(width: 6),
-              OutlinedButton.icon(
-                onPressed: () {
-                  widget.squadController?.broadcastCancelGame();
-                  setState(() {
-                    _feedbackBannerText = '🛑 Game round cancelled.';
-                    _feedbackIsError = true;
-                  });
-                  _initCurrentGame(autoStart: false, broadcastToSquad: false);
-                },
-                icon: const Icon(Icons.cancel_outlined, size: 15),
-                label: const Text('Cancel Game'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFF87171),
-                  side: const BorderSide(
-                    color: Color(0xFFEF4444),
-                  ),
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ],
-          ],
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            minimumSize: const Size(0, 36),
+            visualDensity: VisualDensity.compact,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(width: 6),
+        OutlinedButton.icon(
+          onPressed: () {
+            widget.squadController?.broadcastCancelGame();
+            setState(() {
+              _feedbackBannerText = '🛑 Game round cancelled.';
+              _feedbackIsError = true;
+            });
+            _initCurrentGame(autoStart: false, broadcastToSquad: false);
+          },
+          icon: const Icon(Icons.cancel_outlined, size: 15),
+          label: const Text('Cancel', style: TextStyle(fontSize: 11.5)),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFFF87171),
+            side: const BorderSide(color: Color(0xFFEF4444)),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            minimumSize: const Size(0, 36),
+            visualDensity: VisualDensity.compact,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
         ),
       ],
     );
@@ -1147,8 +1072,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
     }
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 58),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: _feedbackIsError
@@ -1168,6 +1092,7 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(
             _feedbackIsError
@@ -1192,22 +1117,24 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               children: [
                 Text(
                   headline,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     color: Colors.white,
+                    height: 1.25,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subline,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     color: Color(0xFFCBD5E1),
+                    height: 1.2,
                   ),
                 ),
               ],
@@ -1858,10 +1785,14 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
             ],
           ),
           const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _makeSpec.dealPool.map((ball) {
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: _makeSpec.dealPool.map((ball) {
               final isOnBoard = _onBoardMakeBalls.contains(ball);
               final isFlagged = isOnBoard && _isBallFlaggedByDab(ball);
               final isRevealed = _revealedMakeBalls.contains(ball);
@@ -1992,9 +1923,85 @@ class _LevelZeroSoloViewState extends State<LevelZeroSoloView> {
               );
             }).toList(),
           ),
+        ),
+        if (!_roundCompleted) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: const Color(0xFF334155).withValues(alpha: 0.6),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _initCurrentGame(autoStart: false),
+                  icon: const Icon(Icons.refresh_rounded, size: 15),
+                  label: Text(
+                    isWaiting ? 'Shuffle' : 'New Card',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    foregroundColor: AppTheme.secondaryColor,
+                    side: BorderSide(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    minimumSize: const Size(0, 34),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                if (!isWaiting) ...[
+                  const SizedBox(width: 6),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      widget.squadController?.broadcastCancelGame();
+                      setState(() {
+                        _feedbackBannerText = '🛑 Game round cancelled.';
+                        _feedbackIsError = true;
+                      });
+                      _initCurrentGame(autoStart: false, broadcastToSquad: false);
+                    },
+                    icon: const Icon(Icons.cancel_outlined, size: 14),
+                    label: const Text('Cancel', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF87171),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      minimumSize: const Size(0, 34),
+                      visualDensity: VisualDensity.compact,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
-      ),
-    );
+      ],
+    ),
+  ],
+),
+);
   }
 
   Widget _buildFixHelperStrip(bool isWaiting) {

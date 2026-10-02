@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/tambola_audio_caller.dart';
 import '../../../models/flash_housie_config.dart';
+import '../../../models/level_zero_skill_engine.dart';
 import 'level_zero_solo_view.dart';
 import 'skill_friend_squad_controller.dart';
 
@@ -183,6 +184,98 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     } catch (_) {}
   }
 
+  List<(String, String)> _getCurrentGameSubModes() {
+    switch (_activeGameId) {
+      case 'level_0a_make':
+        return const [
+          (MakeHousieRoundSpec.modeMake5Quad, 'Make 5 (1 Quad)'),
+          (MakeHousieRoundSpec.modeMake15Guided, 'Make 10 (2 Quads)'),
+          (MakeHousieRoundSpec.modeMake15Master, 'Make 15 (Full Grid)'),
+        ];
+      case 'level_0b_fix':
+        return const [
+          (FixHousieRoundSpec.modeFix1, 'Fix 1 Bug (Easy)'),
+          (FixHousieRoundSpec.modeFix3, 'Fix 3 Bugs (Med)'),
+          (FixHousieRoundSpec.modeFix5, 'Fix 5 Bugs (Hard)'),
+        ];
+      case 'level_0c_math':
+        return const [
+          (MathHousieRoundSpec.modeAddSub5, 'Math 5 (+ / −)'),
+          (MathHousieRoundSpec.modeMulDiv5, 'Math 5 (× / ÷)'),
+          (MathHousieRoundSpec.modeMixed10, 'Math 10 (Mixed)'),
+        ];
+      case 'level_0d_sum':
+        return const [
+          (SumHousieRoundSpec.modeSumQ1, 'Sum Q1 (Easy 1–29)'),
+          (SumHousieRoundSpec.modeSumQ2, 'Sum Q2 (Med 30–59)'),
+          (SumHousieRoundSpec.modeSumQ3, 'Sum Q3 (Hard 60–90)'),
+          (SumHousieRoundSpec.modeSumAll3, 'Sum All 3 (Hardest Q1→Q3)'),
+        ];
+      case 'level_1_flash':
+      default:
+        return const [
+          (FlashHousieConfig.modeFlash5, 'Flash 5 (1 Quad)'),
+          (FlashHousieConfig.modeFlash10, 'Flash 10 (2 Quads)'),
+          (FlashHousieConfig.modeFlash15, 'Flash 15 (3 Quads)'),
+        ];
+    }
+  }
+
+  String _getDefaultSubModeForGame(String gameId) {
+    switch (gameId) {
+      case 'level_0a_make':
+        return MakeHousieRoundSpec.modeMake5Quad;
+      case 'level_0b_fix':
+        return FixHousieRoundSpec.modeFix3;
+      case 'level_0c_math':
+        return MathHousieRoundSpec.modeAddSub5;
+      case 'level_0d_sum':
+        return SumHousieRoundSpec.modeSumQ1;
+      case 'level_1_flash':
+      default:
+        return FlashHousieConfig.modeFlash5;
+    }
+  }
+
+  String _getCurrentActiveSubMode() {
+    final validModes = _getCurrentGameSubModes().map((m) => m.$1).toList();
+    if (_activeGameId == 'level_1_flash') {
+      return validModes.contains(_selectedMode)
+          ? _selectedMode
+          : FlashHousieConfig.modeFlash5;
+    }
+    return validModes.contains(_sharedSubMode)
+        ? _sharedSubMode
+        : _getDefaultSubModeForGame(_activeGameId);
+  }
+
+  void _onSelectSubMode(String newSubMode) {
+    final nextSeed = 1000 + Random().nextInt(899999);
+    if (_activeGameId == 'level_1_flash') {
+      _selectedMode = newSubMode;
+      _sharedSubMode = newSubMode;
+      _sharedSeed = nextSeed;
+      _startNewSoloRound(
+        newSubMode,
+        autoStart: false,
+        explicitSeed: nextSeed,
+        broadcastToSquad: true,
+      );
+    } else {
+      _sharedSubMode = newSubMode;
+      _sharedSeed = nextSeed;
+      if (_squadController.isInSquad) {
+        _squadController.broadcastRoundSync(
+          gameId: _activeGameId,
+          subMode: newSubMode,
+          roundSeed: nextSeed,
+          autoStart: false,
+        );
+      }
+      setState(() {});
+    }
+  }
+
   void _selectGameTab(String gameId) {
     if (_activeGameId == gameId) return;
     _uiTickTimer?.cancel();
@@ -190,21 +283,24 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     _autoCallTimer?.cancel();
     _autoCallTimer = null;
     final nextSeed = 1000 + Random().nextInt(899999);
+    final nextSubMode = _getDefaultSubModeForGame(gameId);
     if (gameId == 'level_1_flash') {
-      _sharedSubMode = _selectedMode;
+      _selectedMode = nextSubMode;
+      _sharedSubMode = nextSubMode;
       _sharedSeed = nextSeed;
       _startNewSoloRound(
-        _selectedMode,
+        nextSubMode,
         autoStart: false,
         explicitSeed: nextSeed,
         broadcastToSquad: true,
       );
     } else {
+      _sharedSubMode = nextSubMode;
       _sharedSeed = nextSeed;
       if (_squadController.isInSquad) {
         _squadController.broadcastRoundSync(
           gameId: gameId,
-          subMode: _sharedSubMode,
+          subMode: nextSubMode,
           roundSeed: nextSeed,
           autoStart: false,
         );
@@ -535,21 +631,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     return 'Get Ready';
   }
 
-  (String, String) _activeBadgeAndTitle() {
-    final modeSuffix = _squadController.isInSquad ? 'SQUAD' : 'SOLO';
-    for (final g in _release1Games) {
-      if (g.$1 == _activeGameId) {
-        return (
-          g.$3.replaceAll('SOLO', modeSuffix),
-          _squadController.isInSquad
-              ? g.$4.replaceAll('Solo Arena', 'Friend Squad Arena')
-              : g.$4,
-        );
-      }
-    }
-    return ('⚡ LEVEL 1 • $modeSuffix', 'FlashHousie™ Arena');
-  }
-
   Widget _buildFriendSquadBar() {
     final inSquad = _squadController.isInSquad;
     final members = _squadController.sortedMembers;
@@ -597,100 +678,79 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
             ),
           ],
           if (!inSquad) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            Row(
               children: [
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.group_add_rounded,
-                      size: 16,
-                      color: AppTheme.secondaryColor,
-                    ),
-                    SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        'Play with Friends (No Hosting Needed • Free up to 5 Players: You + Max 4 Friends)',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFFE2E8F0),
-                        ),
-                      ),
-                    ),
-                  ],
+                const Icon(
+                  Icons.group_add_rounded,
+                  size: 16,
+                  color: AppTheme.secondaryColor,
                 ),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final newCode = await _squadController.createSquad(
-                          gameId: _activeGameId,
-                          subMode: _sharedSubMode,
-                          roundSeed: _sharedSeed,
-                          customNickname: _nicknameController.text.trim(),
-                        );
-                        await Clipboard.setData(
-                          ClipboardData(
-                            text:
-                                'Join my DabHousie Skill Game! Open the Skill Arena and enter Friend Code: $newCode (Max 5 players free)',
-                          ),
-                        );
-                        _showInDialogNotice(
-                          '🎉 Friend Code #$newCode copied! Share with up to 4 friends to play together.',
-                        );
-                      },
-                      icon: const Icon(Icons.share_rounded, size: 14),
-                      label: const Text(
-                        '👥 Share Code (Max 4 Friends)',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.secondaryColor,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        minimumSize: const Size(0, 30),
-                        visualDensity: VisualDensity.compact,
-                      ),
+                const SizedBox(width: 6),
+                const Expanded(
+                  child: Text(
+                    'Play with Friends (Free up to 5 Players)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFE2E8F0),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _showJoinCodeInput = !_showJoinCodeInput;
-                        });
-                      },
-                      icon: const Icon(Icons.vpn_key_rounded, size: 14),
-                      label: Text(
-                        _showJoinCodeInput ? 'Cancel' : '🔑 Join Friend Code',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                        ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final newCode = await _squadController.createSquad(
+                      gameId: _activeGameId,
+                      subMode: _sharedSubMode,
+                      roundSeed: _sharedSeed,
+                      customNickname: _nicknameController.text.trim(),
+                    );
+                    await Clipboard.setData(
+                      ClipboardData(
+                        text:
+                            'Join my DabHousie Skill Game! Open the Skill Arena and enter Friend Code: $newCode (Max 5 players free)',
                       ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF34D399),
-                        side: const BorderSide(color: Color(0xFF10B981)),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        minimumSize: const Size(0, 30),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ),
-                  ],
+                    );
+                    _showInDialogNotice(
+                      '🎉 Friend Code #$newCode copied! Share with up to 4 friends to play together.',
+                    );
+                  },
+                  icon: const Icon(Icons.share_rounded, size: 13),
+                  label: const Text(
+                    'Share Code',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.secondaryColor,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(0, 28),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _showJoinCodeInput = !_showJoinCodeInput;
+                    });
+                  },
+                  icon: const Icon(Icons.vpn_key_rounded, size: 13),
+                  label: Text(
+                    _showJoinCodeInput ? 'Cancel' : 'Enter Code',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF34D399),
+                    side: const BorderSide(color: Color(0xFF10B981)),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(0, 28),
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                  ),
                 ),
               ],
             ),
@@ -1024,7 +1084,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
     final latestBall = spec.latestCalledNumber;
     final wonAll = _recalledNumbers.length >= spec.trueNumbers.length;
     final activeQuadLabel = spec.activeQuadrants.map((q) => 'Q$q').join(' + ');
-    final (badgeText, titleText) = _activeBadgeAndTitle();
 
     return Dialog(
       backgroundColor: AppTheme.darkSurface,
@@ -1044,40 +1103,90 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Header Bar
+              // 1. Header Bar with Level Dropdown & Action Controls
               Row(
                 children: [
+                  // Compact Level Dropdown Selector
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
                     decoration: BoxDecoration(
-                      color: AppTheme.secondaryColor,
-                      borderRadius: BorderRadius.circular(6),
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.65),
+                        width: 1.2,
+                      ),
                     ),
-                    child: Text(
-                      badgeText,
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black,
-                        letterSpacing: 0.4,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _activeGameId,
+                        dropdownColor: const Color(0xFF1E293B),
+                        icon: const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.secondaryColor),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
+                        items: _release1Games.map((g) {
+                          final isDone = _completedGameIds.contains(g.$1);
+                          return DropdownMenuItem<String>(
+                            value: g.$1,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(g.$2),
+                                if (isDone) ...[
+                                  const SizedBox(width: 6),
+                                  const Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF34D399)),
+                                ],
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) _selectGameTab(val);
+                        },
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      titleText,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
+
+                  // Inline Quad / Sub-Mode Dropdown Selector (Level-0A, Quad-1 in one line)
+                  Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.65),
+                        width: 1.2,
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _getCurrentActiveSubMode(),
+                        dropdownColor: const Color(0xFF1E293B),
+                        icon: const Icon(Icons.arrow_drop_down_rounded, color: AppTheme.secondaryColor),
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        items: _getCurrentGameSubModes().map((m) {
+                          return DropdownMenuItem<String>(
+                            value: m.$1,
+                            child: Text(m.$2),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) _onSelectSubMode(val);
+                        },
+                      ),
                     ),
                   ),
+                  const Spacer(),
                   if (_activeGameId == 'level_1_flash')
                     IconButton(
                       icon: Icon(
@@ -1107,75 +1216,7 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
               ),
               const SizedBox(height: 8),
 
-              // 1B. Release 1 Skill Game Switcher Bar (Natural Order: 0A Make -> 0B Fix -> 0C Math -> 0D Sum -> Lvl 1 Flash)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: _release1Games.map((g) {
-                    final id = g.$1;
-                    final label = g.$2;
-                    final isSelected = _activeGameId == id;
-                    final isDone = _completedGameIds.contains(id);
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: InkWell(
-                        onTap: () => _selectGameTab(id),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF10B981).withValues(alpha: 0.22)
-                                : const Color(0xFF0F172A),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF10B981)
-                                  : (isDone
-                                        ? const Color(0xFF10B981).withValues(
-                                            alpha: 0.45,
-                                          )
-                                        : const Color(0xFF2E3A59)),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w900
-                                      : FontWeight.w700,
-                                  color: isSelected
-                                      ? const Color(0xFF34D399)
-                                      : Colors.white70,
-                                ),
-                              ),
-                              if (isDone) ...[
-                                const SizedBox(width: 4),
-                                const Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 13,
-                                  color: Color(0xFF34D399),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 1C. Hostless 5-Player Friend Squad Bar (Share Code with up to 4 friends without hosting!)
+              // 1B. Hostless 5-Player Friend Squad Bar (Share Code with up to 4 friends without hosting!)
               _buildFriendSquadBar(),
               const SizedBox(height: 10),
 
@@ -1197,77 +1238,60 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                   onSelectGameId: _selectGameTab,
                 ),
               ] else ...[
-                // 2. Mode Selector & New Card / Reset Row
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  alignment: WrapAlignment.spaceBetween,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        _buildModeChip(
-                          FlashHousieConfig.modeFlash5,
-                          'Flash 5 (1 Quad)',
+                // 2. Level 1 Action Row (New Card / Cancel during active play only)
+                if (!isWaitingToStart && !_roundCompleted) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _startNewSoloRound(_selectedMode, autoStart: false),
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: const Text(
+                          'New Card',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                         ),
-                        _buildModeChip(
-                          FlashHousieConfig.modeFlash10,
-                          'Flash 10 (2 Quads)',
-                        ),
-                        _buildModeChip(
-                          FlashHousieConfig.modeFlash15,
-                          'Flash 15 (3 Quads)',
-                        ),
-                      ],
-                    ),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        if (!isWaitingToStart && !_roundCompleted)
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              if (_squadController.isInSquad) {
-                                _squadController.broadcastCancelGame();
-                              }
-                              _startNewSoloRound(
-                                _selectedMode,
-                                autoStart: false,
-                                explicitSeed: _sharedSeed,
-                                broadcastToSquad: true,
-                              );
-                              _showInDialogNotice('🛑 Round cancelled.');
-                            },
-                            icon: const Icon(Icons.cancel_outlined, size: 15),
-                            label: const Text('Cancel Game'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFFF87171),
-                              side: const BorderSide(color: Color(0xFFF87171)),
-                              visualDensity: VisualDensity.compact,
-                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E293B),
+                          foregroundColor: AppTheme.secondaryColor,
+                          side: BorderSide(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.6),
                           ),
-                        OutlinedButton.icon(
-                          onPressed: () =>
-                              _startNewSoloRound(_selectedMode, autoStart: false),
-                          icon: const Icon(Icons.refresh_rounded, size: 16),
-                          label: Text(
-                            isWaitingToStart ? 'Shuffle Card' : 'New Card / Reset',
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.secondaryColor,
-                            side: BorderSide(
-                              color: AppTheme.secondaryColor.withValues(alpha: 0.6),
-                            ),
-                            visualDensity: VisualDensity.compact,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(0, 36),
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
+                      ),
+                      const SizedBox(width: 6),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          if (_squadController.isInSquad) {
+                            _squadController.broadcastCancelGame();
+                          }
+                          _startNewSoloRound(
+                            _selectedMode,
+                            autoStart: false,
+                            explicitSeed: _sharedSeed,
+                            broadcastToSquad: true,
+                          );
+                          _showInDialogNotice('🛑 Round cancelled.');
+                        },
+                        icon: const Icon(Icons.cancel_outlined, size: 15),
+                        label: const Text('Cancel', style: TextStyle(fontSize: 11.5)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFFF87171),
+                          side: const BorderSide(color: Color(0xFFF87171)),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          minimumSize: const Size(0, 36),
+                          visualDensity: VisualDensity.compact,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
 
                 // 3. Fixed-Height Status Banner
                 Container(
@@ -1399,30 +1423,73 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  ElevatedButton.icon(
-                                    onPressed: _launchActiveRound,
-                                    icon: const Icon(
-                                      Icons.play_arrow_rounded,
-                                      size: 18,
-                                    ),
-                                    label: Text(
-                                      'Start ${_modeShortName(_selectedMode)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w900,
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      ElevatedButton.icon(
+                                        onPressed: _launchActiveRound,
+                                        icon: const Icon(
+                                          Icons.play_arrow_rounded,
+                                          size: 18,
+                                        ),
+                                        label: Text(
+                                          'Start ${_modeShortName(_selectedMode)}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFF10B981),
+                                          foregroundColor: Colors.black,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
                                       ),
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF10B981),
-                                      foregroundColor: Colors.black,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
+                                      ElevatedButton.icon(
+                                        onPressed: () => _startNewSoloRound(
+                                          _selectedMode,
+                                          autoStart: false,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.refresh_rounded,
+                                          size: 16,
+                                        ),
+                                        label: const Text(
+                                          'Shuffle',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              const Color(0xFF1E293B),
+                                          foregroundColor:
+                                              AppTheme.secondaryColor,
+                                          side: BorderSide(
+                                            color: AppTheme.secondaryColor
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 8,
+                                          ),
+                                          visualDensity: VisualDensity.compact,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
                                       ),
-                                      visualDensity: VisualDensity.compact,
-                                    ),
+                                    ],
                                   ),
                                 ],
                               )
@@ -1693,24 +1760,6 @@ class _FlashHousieSoloDialogState extends State<FlashHousieSoloDialog> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildModeChip(String mode, String label) {
-    final isSelected = _selectedMode == mode;
-    return ChoiceChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.bold,
-          color: isSelected ? Colors.black : Colors.white,
-        ),
-      ),
-      selected: isSelected,
-      selectedColor: AppTheme.secondaryColor,
-      backgroundColor: AppTheme.darkCard,
-      onSelected: (_) => _startNewSoloRound(mode, autoStart: false),
     );
   }
 

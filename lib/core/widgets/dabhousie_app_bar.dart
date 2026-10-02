@@ -162,7 +162,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        if (showDesktopNav && screenWidth > 768) ...[
+        if (showDesktopNav && screenWidth >= 1024) ...[
           TextButton(
             onPressed: () {
               if (GoRouterState.of(context).matchedLocation != '/') {
@@ -177,6 +177,21 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     : const Color(0xFFCBD5E1),
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => launchUrl(
+              Uri.parse('${AppConfig.appBaseUrl}/play-with-dabby.html'),
+              webOnlyWindowName: '_self',
+            ),
+            icon: const Icon(Icons.bolt, color: Color(0xFFFACC15), size: 16),
+            label: const Text(
+              'Play with Dabby',
+              style: TextStyle(
+                color: Color(0xFFFACC15),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
@@ -206,7 +221,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/how-to-play-tambola.html',
                 child: const Row(
                   children: [
-                    Text('🎯', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.track_changes, size: 16, color: Color(0xFF38BDF8)),
                     SizedBox(width: 8),
                     Text(
                       'Tambola Guide (Jaldi 5 & Rules)',
@@ -219,7 +234,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/how-to-play-housie.html',
                 child: const Row(
                   children: [
-                    Text('🎲', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.casino_outlined, size: 16, color: Color(0xFFF59E0B)),
                     SizedBox(width: 8),
                     Text(
                       'Housie Guide (Party Rules & Caller)',
@@ -232,7 +247,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/90-ball-bingo.html',
                 child: const Row(
                   children: [
-                    Text('🎱', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.sports_esports_outlined, size: 16, color: Color(0xFF34D399)),
                     SizedBox(width: 8),
                     Text(
                       '90-Ball Bingo Guide (Standard Rules)',
@@ -288,7 +303,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: 8),
-        ] else if (showDesktopNav && screenWidth <= 768) ...[
+        ] else if (showDesktopNav && screenWidth < 1024) ...[
           PopupMenuButton<String>(
             tooltip: 'Site Navigation',
             icon: const Icon(Icons.more_vert, color: Color(0xFFCBD5E1), size: 20),
@@ -303,10 +318,23 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
             },
             itemBuilder: (ctx) => [
               PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/play-with-dabby.html',
+                child: const Row(
+                  children: [
+                    Icon(Icons.bolt, size: 16, color: Color(0xFFFACC15)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Play with Dabby (Practice)',
+                      style: TextStyle(color: Color(0xFFFACC15), fontSize: 13, fontWeight: FontWeight.w800),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
                 value: '${AppConfig.appBaseUrl}/recent-games.html',
                 child: const Row(
                   children: [
-                    Text('🏆', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.emoji_events_outlined, size: 16, color: AppTheme.secondaryColor),
                     SizedBox(width: 8),
                     Text(
                       'Recent Games & Hall of Fame',
@@ -319,7 +347,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/brand-partners.html',
                 child: const Row(
                   children: [
-                    Text('🤝', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.handshake_outlined, size: 16, color: Colors.white70),
                     SizedBox(width: 8),
                     Text(
                       'Brand Partners',
@@ -332,7 +360,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/how-it-works.html',
                 child: const Row(
                   children: [
-                    Text('📖', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.menu_book_outlined, size: 16, color: Colors.white70),
                     SizedBox(width: 8),
                     Text(
                       'How It Works',
@@ -345,7 +373,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/pricing.html',
                 child: const Row(
                   children: [
-                    Text('🏷️', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.sell_outlined, size: 16, color: Colors.white70),
                     SizedBox(width: 8),
                     Text(
                       'Pricing & Credit Packs',
@@ -358,7 +386,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/how-to-play-tambola.html',
                 child: const Row(
                   children: [
-                    Text('🎯', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.track_changes, size: 16, color: Color(0xFF38BDF8)),
                     SizedBox(width: 8),
                     Text(
                       'Tambola Guide (Jaldi 5 & Rules)',
@@ -371,7 +399,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/how-to-play-housie.html',
                 child: const Row(
                   children: [
-                    Text('🎲', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.casino_outlined, size: 16, color: Color(0xFFF59E0B)),
                     SizedBox(width: 8),
                     Text(
                       'Housie Guide (Party Rules & Caller)',
@@ -384,7 +412,7 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 value: '${AppConfig.appBaseUrl}/90-ball-bingo.html',
                 child: const Row(
                   children: [
-                    Text('🎱', style: TextStyle(fontSize: 14)),
+                    Icon(Icons.sports_esports_outlined, size: 16, color: Color(0xFF34D399)),
                     SizedBox(width: 8),
                     Text(
                       '90-Ball Bingo Guide (Standard Rules)',
@@ -428,7 +456,11 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🏆', style: TextStyle(fontSize: 13)),
+                        const Icon(
+                          Icons.emoji_events_outlined,
+                          size: 15,
+                          color: AppTheme.secondaryColor,
+                        ),
                         const SizedBox(width: 5),
                         const Text(
                           'My Rewards',

@@ -91,20 +91,80 @@ c:\dev\Tambola\
 
 ## 🛠️ Local Development & Build Commands
 
-### 1. Run Locally (Chrome)
+### 1. Run Flutter Web Locally
+
+#### Option A: Web Server on Port 8080 (Recommended — avoids Chrome launch & lock issues)
 ```bash
-flutter pub get
-flutter run -d chrome
+flutter run -d web-server --web-port=8080 --web-hostname=localhost
+```
+*Starts Flutter Web on `http://localhost:8080`. Simply open your preferred browser and navigate to `http://localhost:8080`.*
+
+#### Option B: Direct Chrome Window
+```bash
+flutter run -d chrome --web-port=8080
+```
+*Note: If `flutter run -d chrome` does not automatically spawn a browser window (due to a locked Chrome user-data directory or headless background process), use Option A above.*
+
+---
+
+### 2. Static Code Analysis & Verification
+```bash
+# Analyze all files across the project
+flutter analyze
+
+# Analyze specific feature files
+flutter analyze lib/features/home/widgets/dabby_rapid_play_hero_card.dart lib/core/widgets/dabhousie_app_bar.dart
 ```
 
-### 2. Static Analysis & Unit Tests
+---
+
+### 3. Unit Tests & Ticket Space Verification
 ```bash
-dart analyze
+# Run all Flutter unit & widget tests
 flutter test
+
+# Run Tambola 3x9 authentic ticket engine tests (15 numbers, 5 per row, 8.12T permutations)
+flutter test test/unit/tambola_ticket_test.dart
+
+# Run 8.12 Trillion mathematical stress & collision test (Python)
+python test/sql_ticket_stress_test.py
 ```
 
-### 3. Production Web Build
+---
+
+### 4. Test Standalone SEO Web Pages & "Play with Dabby" Locally
+To preview and test static HTML pages (`/play-with-dabby.html`, `/how-it-works.html`, `/90-ball-bingo.html`, etc.) with local assets:
+```bash
+# Using Python built-in HTTP server:
+python -m http.server 8080 --directory web
+
+# Or using Node npx:
+npx serve web -p 8080
+```
+Then open in your browser:
+- **Play with Dabby (Practice Solo Game):** `http://localhost:8080/play-with-dabby.html`
+- **Embedded Modal View:** `http://localhost:8080/play-with-dabby.html?embed=true`
+- **90-Ball Bingo Guide:** `http://localhost:8080/90-ball-bingo.html`
+- **How It Works:** `http://localhost:8080/how-it-works.html`
+
+---
+
+### 5. Multiplayer Stress & Direct Test Suite (Node.js)
+```bash
+# Fast headless direct multiplayer runner (tests room creation, seat assignment, claims):
+npm run test:fast
+
+# Full headless browser multiplayer simulation:
+npm run test:browser
+
+# Seed test auth profiles:
+npm run test:seed
+```
+
+---
+
+### 6. Production Web Build
 ```bash
 flutter build web --release
 ```
-*(Deployed automatically via AWS Amplify on push to `origin/main`.)*
+*(Deployed automatically via AWS Amplify CI/CD pipeline on push to `origin/main`.)*

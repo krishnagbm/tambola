@@ -152,12 +152,12 @@ class DashboardHeroSection extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
 
-              // Subhead (exact 38px 2-line slot on desktop, 54px 3-line slot on mobile)
+              // Subhead (exact 54px 3-line slot matching Skill card on both desktop & mobile)
               SizedBox(
-                height: isWide ? 38 : 54,
+                height: 54,
                 child: Text(
-                  'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.',
-                  maxLines: isWide ? 2 : 3,
+                  'Live multiplayer Tambola, Housie & 90-Ball Bingo for friends, family, parties, and events. Join instantly on the web — zero app download required.\n',
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: isWide ? 13 : 12.5,

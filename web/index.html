@@ -41,6 +41,11 @@
   <meta name="apple-mobile-web-app-title" content="DabHousie">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
+  <!-- Web & Noto Fallback Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&family=Noto+Color+Emoji&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://www.dabhousie.com/">
@@ -85,6 +90,10 @@
       left: 50%;
       -ms-transform: translate(-50%, -50%);
       transform: translate(-50%, -50%);
+      width: 360px;
+      max-width: 82vw;
+      height: auto;
+      object-fit: contain;
     }
 
     /* Semantic SEO Content Layer (Accessible to search engine crawlers and screen readers) */
@@ -105,6 +114,53 @@
     /* Collapse unfilled AdSense containers cleanly */
     ins.adsbygoogle[data-ad-status="unfilled"] {
       display: none !important;
+    }
+
+    /* In-App Dabby Modal Responsive Wrapper (Styled 1:1 with Play Solo Dialog Theme) */
+    #dabby-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(11, 16, 38, 0.75);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    #dabby-modal-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      height: 78vh;
+      max-height: 680px;
+      background-color: #262A3F;
+      border: 1.5px solid rgba(255, 193, 7, 0.65);
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      margin: auto;
+    }
+
+    @media (max-width: 768px) {
+      #dabby-modal-overlay {
+        padding: 8px;
+        background-color: rgba(11, 16, 38, 0.85);
+      }
+      #dabby-modal-wrap {
+        max-width: 100%;
+        height: 86vh;
+        max-height: 600px;
+        border-radius: 16px;
+      }
     }
   </style>
 
@@ -207,6 +263,94 @@
     window.addEventListener('flutter-first-frame', function() {
       removeSplashFromWeb();
     });
+
+    // In-App Dabby 90-Ball Bingo Modal Popup Helper
+    window.openDabbyModal = function() {
+      var overlay = document.getElementById('dabby-modal-overlay');
+      var frame = document.getElementById('dabby-modal-frame');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'dabby-modal-overlay';
+
+        var wrap = document.createElement('div');
+        wrap.id = 'dabby-modal-wrap';
+
+        var topBar = document.createElement('div');
+        topBar.style.display = 'flex';
+        topBar.style.alignItems = 'center';
+        topBar.style.justifyContent = 'space-between';
+        topBar.style.padding = '8px 14px';
+        topBar.style.backgroundColor = '#0f172a';
+        topBar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.1)';
+        topBar.style.flexShrink = '0';
+
+        var title = document.createElement('div');
+        title.innerHTML = '<span style="color:#facc15;font-weight:900;font-size:15px;">⚡ Play with Dabby</span> <span style="color:#94a3b8;font-size:12px;margin-left:8px;">• 90-Ball Bingo Rapid Practice</span>';
+        
+        var actions = document.createElement('div');
+        actions.style.display = 'flex';
+        actions.style.alignItems = 'center';
+        actions.style.gap = '10px';
+
+        var fullPageBtn = document.createElement('a');
+        fullPageBtn.href = '/play-with-dabby.html';
+        fullPageBtn.target = '_blank';
+        fullPageBtn.innerText = '⤢ Open Full Page';
+        fullPageBtn.style.color = '#cbd5e1';
+        fullPageBtn.style.fontSize = '12px';
+        fullPageBtn.style.textDecoration = 'none';
+        fullPageBtn.style.padding = '4px 10px';
+        fullPageBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+        fullPageBtn.style.borderRadius = '6px';
+
+        var closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕';
+        closeBtn.style.background = 'rgba(239, 68, 68, 0.2)';
+        closeBtn.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        closeBtn.style.color = '#f87171';
+        closeBtn.style.fontSize = '14px';
+        closeBtn.style.fontWeight = 'bold';
+        closeBtn.style.width = '28px';
+        closeBtn.style.height = '28px';
+        closeBtn.style.borderRadius = '50%';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = window.closeDabbyModal;
+
+        actions.appendChild(fullPageBtn);
+        actions.appendChild(closeBtn);
+        topBar.appendChild(title);
+        topBar.appendChild(actions);
+
+        frame = document.createElement('iframe');
+        frame.id = 'dabby-modal-frame';
+        frame.src = '/play-with-dabby.html?embed=true';
+        frame.style.width = '100%';
+        frame.style.flex = '1';
+        frame.style.border = 'none';
+        frame.style.overflow = 'hidden';
+        frame.setAttribute('scrolling', 'no');
+
+        wrap.appendChild(topBar);
+        wrap.appendChild(frame);
+        overlay.appendChild(wrap);
+
+        overlay.onclick = function(e) {
+          if (e.target === overlay) window.closeDabbyModal();
+        };
+
+        document.body.appendChild(overlay);
+      } else {
+        frame.src = '/play-with-dabby.html?embed=true';
+        overlay.style.display = 'flex';
+      }
+    };
+
+    window.closeDabbyModal = function() {
+      var overlay = document.getElementById('dabby-modal-overlay');
+      if (overlay) overlay.style.display = 'none';
+      var frame = document.getElementById('dabby-modal-frame');
+      if (frame) frame.src = 'about:blank';
+    };
   </script>
 </head>
 <body>
@@ -225,6 +369,7 @@
       <p>Live multiplayer Tambola, Housie &amp; 90-Ball Bingo plus Solo, Multiplayer &amp; Team 3×9 Skill Games (FlashHousie™, MakeHousie™, FixHousie™).</p>
       <nav>
         <a href="https://www.dabhousie.com/join.html">Join a Game</a>
+        <a href="https://www.dabhousie.com/play-with-dabby.html">Play 90-Ball Bingo with Dabby (Practice)</a>
         <a href="https://www.dabhousie.com/recent-games.html">Recent Games</a>
         <a href="https://www.dabhousie.com/brand-partners.html">Brand Partners</a>
         <a href="https://www.dabhousie.com/#/create-game">Host a Game (Free for 1–5 Players*)</a>
@@ -316,9 +461,9 @@
   </div>
 
   <picture id="splash">
-    <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-    <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-    <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="DabHousie Logo">
+    <source srcset="splash/img/dark-4x.png" media="(prefers-color-scheme: dark)">
+    <source srcset="splash/img/dark-4x.png" media="(prefers-color-scheme: light)">
+    <img class="center" aria-hidden="true" src="splash/img/dark-4x.png" alt="DabHousie 90-Ball Bingo Logo">
   </picture>
   
   <script src="flutter_bootstrap.js" async=""></script>
