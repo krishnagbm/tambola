@@ -200,19 +200,13 @@
       font-weight: 600;
     }
 
-    /* Ad Banner Slot Container (hidden until filled by live AdSense unit) */
+    /* Ad Banner Slot Container (collapses if unfilled via site.css) */
     .ad-slot-wrapper {
-      display: none;
-      margin: 32px auto 0;
+      display: block;
+      margin: 28px auto 0;
       max-width: 620px;
-      min-height: 90px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px dashed rgba(255, 255, 255, 0.12);
-      border-radius: 12px;
-      align-items: center;
-      justify-content: center;
-      color: #64748B;
-      font-size: 12px;
+      text-align: center;
+      overflow: hidden;
     }
 
     .host-switch-note {
@@ -394,10 +388,16 @@
       </div>
     </div>
 
-    <!-- AdSense Banner Container Placeholder -->
+    <!-- Google AdSense Responsive Display Unit (Lobby / Pre-Game Waiting Area) -->
     <div class="ad-slot-wrapper">
-      <!-- Google AdSense Display Unit: Replace with <ins class="adsbygoogle"> when active -->
-      <span>📢 Advertisement Area</span>
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-6136000774092015"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
     </div>
 
     <!-- Quick Player Guide & FAQs for SEO and User Clarity -->

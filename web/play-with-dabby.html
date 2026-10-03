@@ -866,19 +866,67 @@
       <div class="feedback-float" id="feedbackFloat"></div>
     </div>
 
-    <!-- SEO / Platform Feature Notes -->
+    <!-- Educational Guide & DabHousie Mechanics Section (Hidden in modal embed mode) -->
     <div class="game-seo-features">
       <div class="feature-box">
-        <h2>🎱 Authentic 90-Ball Bingo Rules</h2>
-        <p>Every ticket adheres strictly to the international standard 3×9 matrix: exactly 5 numbers per row (15 numbers total) with vertically sorted numbers across all 9 standard column ranges (1–9, 10–19... 80–90).</p>
+        <h2>⚡ What is "Play with Dabby"?</h2>
+        <p><strong>Play with Dabby</strong> is DabHousie's free, solo rapid-calling practice arena. It allows visitors and players to experience genuine 90-ball Tambola gameplay directly in the browser—with instant automatic calling, countdown timer, and live ticket interaction—without needing an account or waiting for a live scheduled event.</p>
       </div>
+
       <div class="feature-box">
-        <h2>⚡ 8.1 Trillion Mathematical Ticket Space</h2>
-        <p>Generated using DabHousie’s verified constraint-satisfaction ticket engine, guaranteeing zero duplicate tickets and uniform statistical distribution across every game session.</p>
+        <h2>🎟️ The Authentic 3×9 Ticket Architecture</h2>
+        <p>A standard 90-ball Tambola ticket consists of a <strong>3-row by 9-column grid (27 total cells)</strong>. Exactly <strong>15 cells contain numbers</strong> (exactly 5 numbers per row) and <strong>12 cells remain blank</strong> (exactly 4 blanks per row). This precise mathematical balance ensures fair chance and pattern parity across every ticket.</p>
       </div>
+
       <div class="feature-box">
-        <h2>👨‍👩‍👧‍👦 Host Live Multiplayer Games</h2>
-        <p>Ready to play with friends, family, or your community? Host multiplayer 90-Ball Bingo rooms with up to 250 players with automatic server-side claims verification.</p>
+        <h2>📊 How Numbers are Distributed Across Columns</h2>
+        <p>Numbers 1 through 90 are grouped strictly into 9 column decades from left to right:</p>
+        <p style="font-size: 12.5px; color: #CBD5E1; margin-top: 6px; line-height: 1.5;">
+          • Col 1: 1–9 &nbsp;|&nbsp; Col 2: 10–19 &nbsp;|&nbsp; Col 3: 20–29<br>
+          • Col 4: 30–39 &nbsp;|&nbsp; Col 5: 40–49 &nbsp;|&nbsp; Col 6: 50–59<br>
+          • Col 7: 60–69 &nbsp;|&nbsp; Col 8: 70–79 &nbsp;|&nbsp; Col 9: 80–90
+        </p>
+        <p style="margin-top: 6px;">Each column holds between 1 and 3 numbers, always sorted in strictly ascending numerical order from top to bottom.</p>
+      </div>
+
+      <div class="feature-box">
+        <h2>📐 Why Generated Tickets are Mathematically Valid</h2>
+        <p>DabHousie generates tickets using a <strong>constraint-satisfaction generation engine</strong>. Every ticket satisfies three simultaneous invariants: (1) exactly 5 numbers per row, (2) 1 to 3 numbers per column within decade bounds, and (3) strictly sorted ascending column order. Out of over 8.1 trillion possible combinations, no two players receive identical tickets.</p>
+      </div>
+
+      <div class="feature-box">
+        <h2>🎱 How Called Numbers Relate to the Ticket</h2>
+        <p>As Dabby calls numbers at random from the 1–90 pool, each drawn ball is highlighted in the caller sphere. In this practice mode, you have <strong>5 seconds per call</strong> to scan your ticket's corresponding decade column, locate the matching number if present, and dab it before the next ball arrives.</p>
+      </div>
+
+      <div class="feature-box">
+        <h2>🎯 How Dabbing &amp; Reflex Training Works</h2>
+        <p>Tapping a called number on your ticket "dabs" it—turning the tile gold and increasing your dab score. Dabbing reinforces spatial recognition: knowing that number 47 is always in Column 5 or 83 is in Column 9 trains you to find numbers in under two seconds during fast-paced multiplayer games.</p>
+      </div>
+
+      <div class="feature-box">
+        <h2>🏆 Winning Patterns in Tambola &amp; Housie</h2>
+        <p>In standard Tambola and 90-ball Bingo, players race to complete specific patterns:</p>
+        <p style="font-size: 12.5px; color: #CBD5E1; margin-top: 6px; line-height: 1.5;">
+          • <strong>Early 5 (Jaldi 5):</strong> First 5 numbers dabbed anywhere on the ticket.<br>
+          • <strong>Top Line / Middle Line / Bottom Line:</strong> All 5 numbers on any individual row.<br>
+          • <strong>Four Corners:</strong> The leftmost &amp; rightmost numbers of the top and bottom rows.<br>
+          • <strong>Full House (Bingo):</strong> All 15 numbers completely dabbed on the ticket!
+        </p>
+      </div>
+
+      <div class="feature-box">
+        <h2>🛡️ How This Differs from Multiplayer DabHousie</h2>
+        <p>While <em>Play with Dabby</em> is a solo training sandbox with simulated calling, a <strong>live multiplayer DabHousie event</strong> features real-time WebSocket synchronization across up to 250 players, live big-screen TV caller displays, synchronized speech caller, and server-authoritative claim verification that completely eliminates false "Bogey" disputes.</p>
+      </div>
+
+      <div class="feature-box" style="background: linear-gradient(135deg, rgba(30,27,75,0.9), rgba(15,23,42,0.95)); border-color: rgba(250,204,21,0.4);">
+        <h2>🚀 Ready for a Real Live Game?</h2>
+        <p>Once you have practiced your rapid-dab reflex with Dabby, you can easily transition to hosting or joining a multiplayer event:</p>
+        <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+          <a href="/#/create-game" class="btn-new" style="text-decoration: none; padding: 8px 16px; font-size: 12.5px; display: inline-block;">👨‍👩‍👧‍👦 Host a Game Free</a>
+          <a href="/join.html" class="score-badge" style="text-decoration: none; padding: 8px 16px; font-size: 12.5px; display: inline-block; color: #facc15; border: 1px solid rgba(250,204,21,0.5);">🔑 Join with Code</a>
+        </div>
       </div>
     </div>
   </div>
