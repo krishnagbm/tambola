@@ -1237,7 +1237,7 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '$dateStr • ${game.playerCount} Players • ${game.totalClaimsCount} Prize Claims',
+                          '$dateStr • ${game.playerCount} Players (${game.activePlayerCount} Active) • ${game.totalClaimsCount} Prize Claims',
                           style: const TextStyle(
                             fontSize: 11.5,
                             color: Color(0xFF94A3B8),
@@ -1962,16 +1962,17 @@ class _BrandGiftFulfillmentDialogState
         return;
       }
 
-      // RULE 3: 75% attendance strength required when game concluded naturally
+      // RULE 3: 75% active ticket participation required when game concluded naturally
       final capacity = widget.game.fundedCapacity;
       if (capacity > 5) {
-        final attendanceRatio = widget.game.playerCount / capacity;
-        if (attendanceRatio < 0.75) {
+        final activePlayers = widget.game.activePlayerCount;
+        final activeRatio = activePlayers / capacity;
+        if (activeRatio < 0.75) {
           final needed = (capacity * 0.75).ceil();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '👥 Quorum Required: 75% attendee strength required to allocate free brand vouchers ($needed players for $capacity capacity, actual: ${widget.game.playerCount}). Free voucher locked.',
+                '👥 Quorum Required: 75% active ticket participation required to allocate free brand vouchers ($needed active ticket dabbers needed for $capacity capacity, actual: $activePlayers active). Free voucher locked.',
               ),
               backgroundColor: AppTheme.accentWarning,
               duration: const Duration(seconds: 5),
@@ -2170,7 +2171,7 @@ class _BrandGiftFulfillmentDialogState
                       size: 16,
                       color: (widget.reward.isGuest ||
                               (widget.game.fundedCapacity > 5 &&
-                                  widget.game.playerCount / widget.game.fundedCapacity < 0.75))
+                                  widget.game.activePlayerCount / widget.game.fundedCapacity < 0.75))
                           ? AppTheme.accentWarning
                           : AppTheme.secondaryColor,
                     ),
@@ -2180,9 +2181,9 @@ class _BrandGiftFulfillmentDialogState
                         widget.reward.isGuest
                             ? 'Sponsor Guard: Winner is a guest account. 100% Free sponsored vouchers require a registered account. Allocate a template or custom gift.'
                             : (widget.game.fundedCapacity > 5 &&
-                                    widget.game.playerCount / widget.game.fundedCapacity < 0.75)
-                                ? 'Sponsor Guard: 75% attendance quorum required for free vouchers (${widget.game.playerCount}/${widget.game.fundedCapacity} players). Use custom gift or template.'
-                                : 'Sponsor Guard: Registered accounts only • Natural game conclusion • 75% attendance verified (${widget.game.playerCount}/${widget.game.fundedCapacity}).',
+                                    widget.game.activePlayerCount / widget.game.fundedCapacity < 0.75)
+                                ? 'Sponsor Guard: 75% active ticket participation quorum required for free vouchers (${widget.game.activePlayerCount}/${widget.game.fundedCapacity} active dabbers). Use custom gift or template.'
+                                : 'Sponsor Guard: Registered accounts only • Natural game conclusion • 75% active ticket participation verified (${widget.game.activePlayerCount}/${widget.game.fundedCapacity} active).',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFFCBD5E1),
@@ -2284,7 +2285,7 @@ class _BrandGiftFulfillmentDialogState
                           data: (offers) {
                             final isFamilyPack = widget.game.fundedCapacity <= 5;
                             final isQuorumMet = widget.game.fundedCapacity <= 5 ||
-                                (widget.game.playerCount / widget.game.fundedCapacity >= 0.75);
+                                (widget.game.activePlayerCount / widget.game.fundedCapacity >= 0.75);
                             final canClaimFreeSponsored = !widget.reward.isGuest && !isFamilyPack && isQuorumMet;
                             final maxAllowedCapValue = BrandOffer.maxFreeVoucherValueForCapacity(widget.game.fundedCapacity);
 
@@ -2318,7 +2319,7 @@ class _BrandGiftFulfillmentDialogState
                                           if (widget.reward.isGuest) {
                                             reason = 'Sponsor Guard: Guest accounts cannot claim free sponsored brand vouchers. Winner must have a registered DabHousie account.';
                                           } else if (!isQuorumMet) {
-                                            reason = 'Sponsor Guard: 75% attendance quorum required (${widget.game.playerCount}/${widget.game.fundedCapacity} players).';
+                                            reason = 'Sponsor Guard: 75% active ticket participation quorum required (${widget.game.activePlayerCount}/${widget.game.fundedCapacity} active dabbers).';
                                           } else if (isFreeExceedsCap) {
                                             reason = 'Sponsor Guard: Capped at \$${maxAllowedCapValue.toStringAsFixed(0)} for ${widget.game.fundedCapacity} players.';
                                           }

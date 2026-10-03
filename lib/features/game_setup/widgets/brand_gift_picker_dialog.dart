@@ -469,7 +469,7 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                       child: Text(
                         widget.fundedCapacity <= 5
                             ? 'Free games (1–5 players) use Global Gift Templates or Custom Gifts. 100% Free Sponsored Brand Vouchers are reserved for Small Party tiers (6+ players).'
-                            : 'Sponsor Guard: Max 1 free voucher per brand per game • Capped at \$$_sym${BrandOffer.maxFreeVoucherValueForCapacity(widget.fundedCapacity).toStringAsFixed(0)} for ${widget.fundedCapacity} players • 75% attendance quorum required to allocate.',
+                            : 'Sponsor Guard: Max 1 free voucher per brand per game • Capped at \$$_sym${BrandOffer.maxFreeVoucherValueForCapacity(widget.fundedCapacity).toStringAsFixed(0)} for ${widget.fundedCapacity} players • 75% active ticket participation quorum required to allocate.',
                         style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFFCBD5E1),

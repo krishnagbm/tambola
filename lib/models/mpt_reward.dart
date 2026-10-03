@@ -162,6 +162,7 @@ class OrganizerGameClaimsSummary {
   final String inviteCode;
   final String status;
   final int playerCount;
+  final int activePlayerCount;
   final int fundedCapacity;
   final String? organizationName;
   final String? organizationLogoUrl;
@@ -177,6 +178,7 @@ class OrganizerGameClaimsSummary {
     required this.inviteCode,
     required this.status,
     required this.playerCount,
+    int? activePlayerCount,
     required this.fundedCapacity,
     this.organizationName,
     this.organizationLogoUrl,
@@ -185,7 +187,7 @@ class OrganizerGameClaimsSummary {
     required this.settledCount,
     required this.totalClaimsCount,
     required this.rewards,
-  });
+  }) : activePlayerCount = activePlayerCount ?? playerCount;
 
   factory OrganizerGameClaimsSummary.fromJson(Map<String, dynamic> json) {
     final rawRewards = json['rewards'] as List? ?? const [];
@@ -193,12 +195,16 @@ class OrganizerGameClaimsSummary {
         .map((e) => MptReward.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
 
+    final parsedPlayerCount = (json['player_count'] as num?)?.toInt() ?? 0;
+    final parsedActivePlayerCount = (json['active_player_count'] as num?)?.toInt() ?? parsedPlayerCount;
+
     return OrganizerGameClaimsSummary(
       gameId: json['game_id']?.toString() ?? '',
       name: json['name'] as String? ?? 'Hosted Game',
       inviteCode: json['invite_code'] as String? ?? '------',
       status: json['status'] as String? ?? 'COMPLETED',
-      playerCount: (json['player_count'] as num?)?.toInt() ?? 0,
+      playerCount: parsedPlayerCount,
+      activePlayerCount: parsedActivePlayerCount,
       fundedCapacity: (json['funded_capacity'] as num?)?.toInt() ?? 25,
       organizationName: json['organization_name'] as String?,
       organizationLogoUrl: json['organization_logo_url'] as String?,

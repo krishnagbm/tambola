@@ -245,6 +245,23 @@ class RewardsRepository {
         final rewards = await getGameRewardsForHost(gid);
         final unsettled = rewards.where((r) => r.isAvailable).length;
         final settled = rewards.where((r) => r.isClaimed).length;
+        int activeCount = (g['final_capacity'] as num?)?.toInt() ?? 0;
+        try {
+          final activeClaims = await _supabase
+              .from('MPT_claims')
+              .select('user_id')
+              .eq('game_id', gid);
+          if (activeClaims.isNotEmpty) {
+            final distinctUsers = activeClaims
+                .map((c) => c['user_id']?.toString())
+                .where((u) => u != null && u.isNotEmpty)
+                .toSet();
+            if (distinctUsers.isNotEmpty) {
+              activeCount = distinctUsers.length;
+            }
+          }
+        } catch (_) {}
+
         summaries.add(
           OrganizerGameClaimsSummary(
             gameId: gid,
@@ -252,6 +269,7 @@ class RewardsRepository {
             inviteCode: g['invite_code'] as String? ?? '------',
             status: g['status'] as String? ?? 'COMPLETED',
             playerCount: (g['final_capacity'] as num?)?.toInt() ?? 0,
+            activePlayerCount: activeCount,
             fundedCapacity: (g['funded_capacity'] as num?)?.toInt() ?? 25,
             organizationName: g['organization_name'] as String?,
             organizationLogoUrl: g['organization_logo_url'] as String?,
