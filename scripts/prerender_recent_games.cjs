@@ -58,7 +58,13 @@ const PRIZE_FORMAT_MAP = {
   'BOTTOM_LINE': { label: 'Bottom Line', icon: '🥉', isGrand: false },
   'EARLY_FIVE': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
   'EARLY_5': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
-  'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false }
+  'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false },
+  'ROUND_1': { label: 'Round 1 Memory Winner', icon: '⚡', isGrand: false },
+  'ROUND_2': { label: 'Round 2 Memory Winner', icon: '⚡', isGrand: false },
+  'ROUND_3': { label: 'Round 3 Memory Winner', icon: '⚡', isGrand: false },
+  'FLASH_SCORE_R1': { label: 'Round 1 Speed Winner', icon: '⚡', isGrand: false },
+  'FLASH_SCORE_R2': { label: 'Round 2 Speed Winner', icon: '⚡', isGrand: false },
+  'FLASH_SCORE_R3': { label: 'Round 3 Speed Winner', icon: '⚡', isGrand: false }
 };
 
 const LOGO_DEV_PK = 'pk_ALfnmL3AQTqaatAQSzQxvQ';
@@ -109,13 +115,33 @@ function formatDate(dateStr) {
   });
 }
 
+function isSkillGame(g) {
+  if (!g) return false;
+  const mode = String(g.game_mode || g.mode || '').toUpperCase();
+  if (mode.includes('SKILL') || mode.includes('FLASH')) return true;
+  if (Array.isArray(g.winners_roster)) {
+    return g.winners_roster.some(w => {
+      const pt = String(w.prize_type || '').toUpperCase();
+      return pt.startsWith('ROUND_') || pt.startsWith('FLASH_');
+    });
+  }
+  return false;
+}
+
 async function fetchArchives() {
   try {
-    const pRes = await fetch(PUBLIC_API_ENDPOINT, {
+    let pRes = await fetch(PUBLIC_API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'get_recent_games' })
     });
+    if (!pRes.ok) {
+      pRes = await fetch(LEGACY_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_recent_games' })
+      });
+    }
     if (pRes.ok) {
       const payload = await pRes.json();
       const games = Array.isArray(payload && payload.games) ? payload.games : [];
@@ -146,6 +172,7 @@ function generateCardsHtml(games) {
 
   let html = '';
   games.slice(0, 9).forEach((g) => {
+    const isSkill = isSkillGame(g);
     const capacity = g.player_count || g.funded_capacity || 5;
     const balls = g.numbers_called_count != null ? g.numbers_called_count : 68;
     const duration = formatDuration(g.duration_seconds || 720);
@@ -253,22 +280,31 @@ function generateCardsHtml(games) {
       }
     }
 
+    const cardClass = isSkill ? 'game-card skill-game' : 'game-card';
+    const modeBadge = isSkill ? '<div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div>' : '';
+    const callsMeta = isSkill
+      ? `<div class="game-meta-item skill-meta">⚡ <strong>3 Flash Rounds</strong></div>`
+      : `<div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>`;
+
     html += `
-          <div class="game-card">
+          <div class="${cardClass}">
             <div class="game-card-header">
-              <div class="game-title">${escapeHtml(g.name || 'Tambola Event')}</div>
+              <div>
+                <div class="game-title">${escapeHtml(g.name || (isSkill ? 'FlashHousie™ Skill Event' : 'Tambola Event'))}</div>
+                ${modeBadge ? `<div style="margin-top: 4px;">${modeBadge}</div>` : ''}
+              </div>
               <div class="game-code-badge">${escapeHtml(g.invite_code || 'EVENT')}</div>
             </div>
             ${orgHtml}
 
             <div class="game-meta-row">
               <div class="game-meta-item">👥 <strong>${capacity} Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>
+              ${callsMeta}
               <div class="game-meta-item">⏱️ <strong>${duration}</strong></div>
               <div class="game-meta-item">📅 ${dateStr}</div>
             </div>
 
-            <div class="winners-section-title">${winners.length > 0 ? 'Verified Prize Winners' : 'Event Status'}</div>
+            <div class="winners-section-title">${winners.length > 0 ? (isSkill ? 'Verified Skill Winners' : 'Verified Prize Winners') : 'Event Status'}</div>
             <div class="winners-list">
               ${winnersHtml}
             </div>
@@ -285,24 +321,30 @@ async function prerender() {
 
   let totalPlayers = 0;
   let totalWinners = 0;
+  let totalSkillGames = 0;
   games.forEach(g => {
     totalPlayers += (g.player_count || g.funded_capacity || 0);
     if (Array.isArray(g.winners_roster)) {
       totalWinners += g.winners_roster.length;
     }
+    if (isSkillGame(g)) {
+      totalSkillGames++;
+    }
   });
 
   const totalGamesStr = games.length.toLocaleString();
+  const totalSkillGamesStr = totalSkillGames.toLocaleString();
   const totalPlayersStr = totalPlayers.toLocaleString();
   const totalWinnersStr = totalWinners.toLocaleString();
 
-  console.log(`📊 Snapshot Metrics: ${totalGamesStr} Games | ${totalPlayersStr} Players | ${totalWinnersStr} Winners`);
+  console.log(`📊 Snapshot Metrics: ${totalGamesStr} Games | ${totalSkillGamesStr} Skill Games | ${totalPlayersStr} Players | ${totalWinnersStr} Winners`);
 
   const filePath = path.resolve('web/recent-games.html');
   let html = fs.readFileSync(filePath, 'utf-8');
 
   // Replace metric pill values
   html = html.replace(/<div class="metric-val" id="total-games-val">.*?<\/div>/, `<div class="metric-val" id="total-games-val">${totalGamesStr}</div>`);
+  html = html.replace(/<div class="metric-val" id="total-skill-games-val">.*?<\/div>/, `<div class="metric-val" id="total-skill-games-val">${totalSkillGamesStr}</div>`);
   html = html.replace(/<div class="metric-val" id="total-players-val">.*?<\/div>/, `<div class="metric-val" id="total-players-val">${totalPlayersStr}</div>`);
   html = html.replace(/<div class="metric-val" id="total-winners-val">.*?<\/div>/, `<div class="metric-val" id="total-winners-val">${totalWinnersStr}</div>`);
 

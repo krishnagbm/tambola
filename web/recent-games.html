@@ -229,6 +229,32 @@
       white-space: nowrap;
     }
 
+    .skill-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #FCD34D;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    .game-card.skill-game::before {
+      background: linear-gradient(90deg, #F59E0B, #EC4899, #8B5CF6);
+    }
+
+    .game-meta-item.skill-meta {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #FDE68A;
+    }
+
     .org-badge {
       display: inline-flex;
       align-items: center;
@@ -799,14 +825,21 @@
           <div class="metric-pill">
             <span class="metric-icon">🎲</span>
             <div>
-              <div class="metric-val" id="total-games-val">8</div>
-              <div class="metric-lbl">Events Completed</div>
+              <div class="metric-val" id="total-games-val">5</div>
+              <div class="metric-lbl">Total Events</div>
+            </div>
+          </div>
+          <div class="metric-pill">
+            <span class="metric-icon">⚡</span>
+            <div>
+              <div class="metric-val" id="total-skill-games-val">2</div>
+              <div class="metric-lbl">Skill Games</div>
             </div>
           </div>
           <div class="metric-pill">
             <span class="metric-icon">👥</span>
             <div>
-              <div class="metric-val" id="total-players-val">330</div>
+              <div class="metric-val" id="total-players-val">315</div>
               <div class="metric-lbl">Players Entertained</div>
             </div>
           </div>
@@ -1015,6 +1048,7 @@
         <div class="filter-bar">
           <div class="filter-group">
             <button class="filter-btn active" onclick="setFilter('OVERVIEW')">📖 Overview &amp; Guide</button>
+            <button class="filter-btn" onclick="setFilter('SKILL')">⚡ Skill Games (FlashHousie™)</button>
             <button class="filter-btn" onclick="setFilter('GALA')">👑 Galas (100+ Players)</button>
             <button class="filter-btn" onclick="setFilter('CLUB')">🎉 Clubs (20–99)</button>
             <button class="filter-btn" onclick="setFilter('FAMILY')">🏡 Family (1–19)</button>
@@ -1022,28 +1056,31 @@
           </div>
 
           <div id="showing-count-container" style="display: block; font-size: 13px; color: #94A3B8;">
-            Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">Overview</span>
+            Showing <span id="showing-count" style="font-weight: 700; color: #FFFFFF;">5</span>
           </div>
         </div>
 
         <!-- Games Card Grid -->
         <div class="games-grid" id="games-grid">
-    
-          <div class="game-card">
+
+          <div class="game-card skill-game">
             <div class="game-card-header">
-              <div class="game-title">Kitty Party DabHousie Bonanza 💃</div>
+              <div>
+                <div class="game-title">Kitty Party DabHousie Bonanza 💃</div>
+                <div style="margin-top: 4px;"><div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div></div>
+              </div>
               <div class="game-code-badge">3C3F2D</div>
             </div>
             
 
             <div class="game-meta-row">
               <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>0/90 Calls</strong></div>
+              <div class="game-meta-item skill-meta">⚡ <strong>3 Flash Rounds</strong></div>
               <div class="game-meta-item">⏱️ <strong>15m 27s</strong></div>
               <div class="game-meta-item">📅 Sep 26, 2026</div>
             </div>
 
-            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-section-title">Verified Skill Winners</div>
             <div class="winners-list">
               
               <div class="winner-row grand-prize ">
@@ -1064,8 +1101,8 @@
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 1</span>
+                    <span>⚡</span>
+                    <span>Round 1 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1079,8 +1116,8 @@
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 2</span>
+                    <span>⚡</span>
+                    <span>Round 2 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1094,8 +1131,8 @@
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 3</span>
+                    <span>⚡</span>
+                    <span>Round 3 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1109,28 +1146,31 @@
             </div>
           </div>
     
-          <div class="game-card">
+          <div class="game-card skill-game">
             <div class="game-card-header">
-              <div class="game-title">Diwali DabHousie Dhamaka 🪔</div>
+              <div>
+                <div class="game-title">Diwali DabHousie Dhamaka 🪔</div>
+                <div style="margin-top: 4px;"><div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div></div>
+              </div>
               <div class="game-code-badge">3F7443</div>
             </div>
             
 
             <div class="game-meta-row">
               <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>0/90 Calls</strong></div>
+              <div class="game-meta-item skill-meta">⚡ <strong>3 Flash Rounds</strong></div>
               <div class="game-meta-item">⏱️ <strong>35m 50s</strong></div>
               <div class="game-meta-item">📅 Sep 26, 2026</div>
             </div>
 
-            <div class="winners-section-title">Verified Prize Winners</div>
+            <div class="winners-section-title">Verified Skill Winners</div>
             <div class="winners-list">
               
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 1</span>
+                    <span>⚡</span>
+                    <span>Round 1 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1144,8 +1184,8 @@
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 2</span>
+                    <span>⚡</span>
+                    <span>Round 2 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1159,8 +1199,8 @@
               <div class="winner-row  ">
                 <div class="winner-row-top">
                   <div class="winner-prize-name">
-                    <span>🏅</span>
-                    <span>ROUND 3</span>
+                    <span>⚡</span>
+                    <span>Round 3 Memory Winner</span>
                     <span class="winner-val-pill">$20</span>
                   </div>
                   <div class="winner-player-tag">
@@ -1176,55 +1216,10 @@
     
           <div class="game-card">
             <div class="game-card-header">
-              <div class="game-title">Office Chai &amp; DabHousie Break ☕</div>
-              <div class="game-code-badge">1922DD</div>
-            </div>
-            
-
-            <div class="game-meta-row">
-              <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>1/90 Calls</strong></div>
-              <div class="game-meta-item">⏱️ <strong>22s</strong></div>
-              <div class="game-meta-item">📅 Sep 26, 2026</div>
-            </div>
-
-            <div class="winners-section-title">Event Status</div>
-            <div class="winners-list">
-              
-        <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
-          🚫 Game cancelled / ended early without winners.
-        </div>
-      
-            </div>
-          </div>
-    
-          <div class="game-card">
-            <div class="game-card-header">
-              <div class="game-title">Weekend Housefull Mania 🏠</div>
-              <div class="game-code-badge">5E1E5B</div>
-            </div>
-            
-
-            <div class="game-meta-row">
-              <div class="game-meta-item">👥 <strong>5 Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>0/90 Calls</strong></div>
-              <div class="game-meta-item">⏱️ <strong>7m 33s</strong></div>
-              <div class="game-meta-item">📅 Sep 26, 2026</div>
-            </div>
-
-            <div class="winners-section-title">Event Status</div>
-            <div class="winners-list">
-              
-        <div style="font-size: 13px; color: #FCA5A5; background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 12px; text-align: center;">
-          🚫 Game cancelled / ended early without winners.
-        </div>
-      
-            </div>
-          </div>
-    
-          <div class="game-card">
-            <div class="game-card-header">
-              <div class="game-title">Thursday DabHousie Dhamaka 🪔</div>
+              <div>
+                <div class="game-title">Thursday DabHousie Dhamaka 🪔</div>
+                
+              </div>
               <div class="game-code-badge">4E196B</div>
             </div>
             
@@ -1399,7 +1394,10 @@
     
           <div class="game-card">
             <div class="game-card-header">
-              <div class="game-title">DabHousie Fiesta 🎊</div>
+              <div>
+                <div class="game-title">DabHousie Fiesta 🎊</div>
+                
+              </div>
               <div class="game-code-badge">CA8E81</div>
             </div>
             
@@ -1509,7 +1507,10 @@
     
           <div class="game-card">
             <div class="game-card-header">
-              <div class="game-title">Monday Club Gala 🎉</div>
+              <div>
+                <div class="game-title">Monday Club Gala 🎉</div>
+                
+              </div>
               <div class="game-code-badge">14A3F7</div>
             </div>
             
@@ -1756,7 +1757,13 @@
       'BOTTOM_LINE': { label: 'Bottom Line', icon: '🥉', isGrand: false },
       'EARLY_FIVE': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
       'EARLY_5': { label: 'Early 5 (Jaldi 5)', icon: '⚡', isGrand: false },
-      'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false }
+      'FOUR_CORNERS': { label: 'Four Corners', icon: '🎯', isGrand: false },
+      'ROUND_1': { label: 'Round 1 Memory Winner', icon: '⚡', isGrand: false },
+      'ROUND_2': { label: 'Round 2 Memory Winner', icon: '⚡', isGrand: false },
+      'ROUND_3': { label: 'Round 3 Memory Winner', icon: '⚡', isGrand: false },
+      'FLASH_SCORE_R1': { label: 'Round 1 Speed Winner', icon: '⚡', isGrand: false },
+      'FLASH_SCORE_R2': { label: 'Round 2 Speed Winner', icon: '⚡', isGrand: false },
+      'FLASH_SCORE_R3': { label: 'Round 3 Speed Winner', icon: '⚡', isGrand: false }
     };
 
     function escapeHtml(str) {
@@ -1863,18 +1870,39 @@
       }
     }
 
+    function isSkillGame(g) {
+      if (!g) return false;
+      const mode = String(g.game_mode || g.mode || '').toUpperCase();
+      if (mode.includes('SKILL') || mode.includes('FLASH')) return true;
+      if (Array.isArray(g.winners_roster)) {
+        return g.winners_roster.some(w => {
+          const pt = String(w.prize_type || '').toUpperCase();
+          return pt.startsWith('ROUND_') || pt.startsWith('FLASH_');
+        });
+      }
+      return false;
+    }
+
     function renderAll() {
       let totalPlayers = 0;
       let totalWinners = 0;
+      let totalSkillGames = 0;
 
       allGames.forEach(g => {
         totalPlayers += (g.player_count || g.funded_capacity || 0);
         if (Array.isArray(g.winners_roster)) {
           totalWinners += g.winners_roster.length;
         }
+        if (isSkillGame(g)) {
+          totalSkillGames++;
+        }
       });
 
       document.getElementById('total-games-val').textContent = allGames.length > 0 ? allGames.length.toLocaleString() : (allGames.length === 0 ? '0' : '--');
+      const skillEl = document.getElementById('total-skill-games-val');
+      if (skillEl) {
+        skillEl.textContent = totalSkillGames.toLocaleString();
+      }
       document.getElementById('total-players-val').textContent = totalPlayers > 0 ? totalPlayers.toLocaleString() : (allGames.length === 0 ? '0' : '--');
       document.getElementById('total-winners-val').textContent = totalWinners > 0 ? totalWinners.toLocaleString() : (allGames.length === 0 ? '0' : '--');
 
@@ -1898,6 +1926,8 @@
         filteredGames = [];
       } else if (currentFilter === 'ALL') {
         filteredGames = [...allGames];
+      } else if (currentFilter === 'SKILL') {
+        filteredGames = allGames.filter(g => isSkillGame(g));
       } else if (currentFilter === 'GALA') {
         filteredGames = allGames.filter(g => (g.player_count || g.funded_capacity || 0) >= 100);
       } else if (currentFilter === 'CLUB') {
@@ -1938,7 +1968,18 @@
             </p>
           </header>
 
-          <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-bottom: 26px;">
+          <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin-bottom: 26px;">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 14px; padding: 20px;">
+              <div style="font-size: 28px; margin-bottom: 8px;">⚡</div>
+              <h3 style="font-size: 17px; font-weight: 800; color: #FCD34D; margin: 0 0 6px;">Skill Games (FlashHousie™)</h3>
+              <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5; margin: 0 0 12px;">
+                Visual memory sweeps &amp; rapid recall competitions across 3 timed rounds. Zero chance or caller balls — purely reaction and recall speed.
+              </p>
+              <button onclick="setFilter('SKILL')" class="filter-btn" style="background: rgba(245, 158, 11, 0.18); border-color: #F59E0B; color: #FDE68A; font-size: 12px; padding: 6px 14px;">
+                View Skill Games →
+              </button>
+            </div>
+
             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px;">
               <div style="font-size: 28px; margin-bottom: 8px;">👑</div>
               <h3 style="font-size: 17px; font-weight: 800; color: #FCD34D; margin: 0 0 6px;">100+ Player Galas</h3>
@@ -2121,22 +2162,32 @@
           }
         }
 
+        const isSkill = isSkillGame(g);
+        const cardClass = isSkill ? 'game-card skill-game' : 'game-card';
+        const modeBadge = isSkill ? '<div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div>' : '';
+        const callsMeta = isSkill
+          ? `<div class="game-meta-item skill-meta">⚡ <strong>3 Flash Rounds</strong></div>`
+          : `<div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>`;
+
         html += `
-          <div class="game-card">
+          <div class="${cardClass}">
             <div class="game-card-header">
-              <div class="game-title">${escapeHtml(g.name || 'Tambola Event')}</div>
+              <div>
+                <div class="game-title">${escapeHtml(g.name || (isSkill ? 'FlashHousie™ Skill Event' : 'Tambola Event'))}</div>
+                ${modeBadge ? `<div style="margin-top: 4px;">${modeBadge}</div>` : ''}
+              </div>
               <div class="game-code-badge">${escapeHtml(g.invite_code || 'EVENT')}</div>
             </div>
             ${orgHtml}
 
             <div class="game-meta-row">
               <div class="game-meta-item">👥 <strong>${capacity} Players</strong></div>
-              <div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>
+              ${callsMeta}
               <div class="game-meta-item">⏱️ <strong>${duration}</strong></div>
               <div class="game-meta-item">📅 ${dateStr}</div>
             </div>
 
-            <div class="winners-section-title">${winners.length > 0 ? 'Verified Prize Winners' : 'Event Status'}</div>
+            <div class="winners-section-title">${winners.length > 0 ? (isSkill ? 'Verified Skill Winners' : 'Verified Prize Winners') : 'Event Status'}</div>
             <div class="winners-list">
               ${winnersHtml}
             </div>
