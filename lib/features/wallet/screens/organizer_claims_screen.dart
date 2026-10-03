@@ -1938,6 +1938,62 @@ class _BrandGiftFulfillmentDialogState
       return;
     }
 
+    // SPONSOR GUARD RULE ENFORCEMENT for Free Sponsored Brand Vouchers
+    final prizeValNum = prizeVal ?? 0.0;
+    final isFreeSponsoredSelection = _selectedOfferId != null &&
+        (_selectedOfferId!.startsWith('dabhousie_free') ||
+            _selectedOfferId!.toLowerCase().contains('free') ||
+            prizeValNum > 0 &&
+                (brandName.toLowerCase().contains('dabhousie') ||
+                    _giftCodeController.text.toUpperCase().startsWith('DABFREE')));
+
+    if (isFreeSponsoredSelection) {
+      // RULE 5: Free gift vouchers are allowed only to registered accounts, not to guest accounts
+      if (widget.reward.isGuest) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              '🔐 Sponsor Guard Policy: Free brand vouchers can only be allocated to registered accounts, not guest accounts. Please ask the winner to verify their account or allocate a custom prize.',
+            ),
+            backgroundColor: AppTheme.accentWarning,
+            duration: Duration(seconds: 5),
+          ),
+        );
+        return;
+      }
+
+      // RULE 3: 75% attendance strength required when game concluded naturally
+      final capacity = widget.game.fundedCapacity;
+      if (capacity > 5) {
+        final attendanceRatio = widget.game.playerCount / capacity;
+        if (attendanceRatio < 0.75) {
+          final needed = (capacity * 0.75).ceil();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '👥 Quorum Required: 75% attendee strength required to allocate free brand vouchers ($needed players for $capacity capacity, actual: ${widget.game.playerCount}). Free voucher locked.',
+              ),
+              backgroundColor: AppTheme.accentWarning,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+          return;
+        }
+      } else {
+        // Free tier games (1–5 players) cannot allocate free brand vouchers
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Sponsor Guard Policy: Free games (1–5 players) are ineligible for 100% Free Sponsored Brand Vouchers. Available only for 6+ player tiers.',
+            ),
+            backgroundColor: AppTheme.accentWarning,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isSubmitting = true);
     try {
       await ref
@@ -2088,6 +2144,85 @@ class _BrandGiftFulfillmentDialogState
               const Divider(color: Color(0xFF2E334D), height: 1),
               const SizedBox(height: 12),
 
+              // Sponsor Guard & Rulebook Guidance Banner
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: (widget.reward.isGuest ||
+                            (widget.game.fundedCapacity > 5 &&
+                                widget.game.playerCount / widget.game.fundedCapacity < 0.75))
+                        ? AppTheme.accentWarning.withValues(alpha: 0.5)
+                        : AppTheme.secondaryColor.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      (widget.reward.isGuest ||
+                              (widget.game.fundedCapacity > 5 &&
+                                  widget.game.playerCount / widget.game.fundedCapacity < 0.75))
+                          ? Icons.warning_amber_rounded
+                          : Icons.shield_outlined,
+                      size: 16,
+                      color: (widget.reward.isGuest ||
+                              (widget.game.fundedCapacity > 5 &&
+                                  widget.game.playerCount / widget.game.fundedCapacity < 0.75))
+                          ? AppTheme.accentWarning
+                          : AppTheme.secondaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.reward.isGuest
+                            ? 'Sponsor Guard: Winner is a guest account. 100% Free sponsored vouchers require a registered account. Allocate a template or custom gift.'
+                            : (widget.game.fundedCapacity > 5 &&
+                                    widget.game.playerCount / widget.game.fundedCapacity < 0.75)
+                                ? 'Sponsor Guard: 75% attendance quorum required for free vouchers (${widget.game.playerCount}/${widget.game.fundedCapacity} players). Use custom gift or template.'
+                                : 'Sponsor Guard: Registered accounts only • Natural game conclusion • 75% attendance verified (${widget.game.playerCount}/${widget.game.fundedCapacity}).',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFFCBD5E1),
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.tryParse('https://www.dabhousie.com/brand-voucher-rules.html');
+                        if (uri != null) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '📜 Rulebook',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: AppTheme.secondaryColor,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.open_in_new_rounded,
+                            size: 11,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
@@ -2148,8 +2283,13 @@ class _BrandGiftFulfillmentDialogState
                           error: (_, _) => const SizedBox.shrink(),
                           data: (offers) {
                             final isFamilyPack = widget.game.fundedCapacity <= 5;
+                            final isQuorumMet = widget.game.fundedCapacity <= 5 ||
+                                (widget.game.playerCount / widget.game.fundedCapacity >= 0.75);
+                            final canClaimFreeSponsored = !widget.reward.isGuest && !isFamilyPack && isQuorumMet;
+                            final maxAllowedCapValue = BrandOffer.maxFreeVoucherValueForCapacity(widget.game.fundedCapacity);
+
                             final filteredOffers = offers.where((offer) {
-                              if (isFamilyPack && offer.id == 'dabhousie_free_10') {
+                              if (isFamilyPack && offer.isFreeSponsoredVoucher) {
                                 return false;
                               }
                               return true;
@@ -2167,11 +2307,34 @@ class _BrandGiftFulfillmentDialogState
                                     offer.id == 'dabhousie_free_10';
                                 final isTemplate =
                                     offer.isHostSelfFulfilledTemplate;
+                                final isFreeExceedsCap = isFree && offer.retailPrice > maxAllowedCapValue;
+                                final isFreeBlocked = isFree && (!canClaimFreeSponsored || isFreeExceedsCap);
+
                                 return InkWell(
                                   borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _selectLiveOffer(offer),
-                                  child: Container(
-                                    width: 225,
+                                  onTap: isFreeBlocked
+                                      ? () {
+                                          String reason = 'This free voucher is unavailable for this claim.';
+                                          if (widget.reward.isGuest) {
+                                            reason = 'Sponsor Guard: Guest accounts cannot claim free sponsored brand vouchers. Winner must have a registered DabHousie account.';
+                                          } else if (!isQuorumMet) {
+                                            reason = 'Sponsor Guard: 75% attendance quorum required (${widget.game.playerCount}/${widget.game.fundedCapacity} players).';
+                                          } else if (isFreeExceedsCap) {
+                                            reason = 'Sponsor Guard: Capped at \$${maxAllowedCapValue.toStringAsFixed(0)} for ${widget.game.fundedCapacity} players.';
+                                          }
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(reason),
+                                              backgroundColor: AppTheme.accentWarning,
+                                              duration: const Duration(seconds: 4),
+                                            ),
+                                          );
+                                        }
+                                      : () => _selectLiveOffer(offer),
+                                  child: Opacity(
+                                    opacity: isFreeBlocked ? 0.45 : 1.0,
+                                    child: Container(
+                                      width: 225,
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       color: isSelected
@@ -2293,6 +2456,7 @@ class _BrandGiftFulfillmentDialogState
                                       ],
                                     ),
                                   ),
+                                ),
                                 );
                               },
                             );

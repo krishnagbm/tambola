@@ -92,6 +92,14 @@
     <priority>0.85</priority>
   </url>
 
+  <!-- Brand Partner Gift Voucher Rulebook & Sponsor Guard -->
+  <url>
+    <loc>https://www.dabhousie.com/brand-voucher-rules.html</loc>
+    <lastmod>2026-10-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
   <!-- Create / Host Game -->
   <url>
     <loc>https://www.dabhousie.com/#/create-game</loc>

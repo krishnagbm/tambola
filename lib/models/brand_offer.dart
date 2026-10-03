@@ -223,13 +223,29 @@ class BrandOffer {
       organizerPrice > 0 &&
       (promoCode == null || promoCode!.trim().isEmpty);
 
+  bool get isFreeSponsoredVoucher =>
+      !isCustomHostOffer && organizerPrice == 0;
+
   bool get isDabHousieSponsoredFreeVoucher =>
-      !isCustomHostOffer &&
-      organizerPrice == 0 &&
+      isFreeSponsoredVoucher &&
       (brandName.toLowerCase().contains('dabhousie') ||
           brandDomain.toLowerCase().contains('dabhousie.com') ||
           id.toLowerCase().contains('dabhousie_free') ||
           (promoCode != null && promoCode!.toUpperCase().startsWith('DABFREE')));
+
+  /// Anti-Abuse Scale: Max free sponsored voucher value permitted based on funded game capacity
+  /// • 1–5 Players: $0 (Free Tier ineligible for free brand sponsored vouchers)
+  /// • 6–15 Players (Small Party): Up to $10 voucher
+  /// • 16–25 Players (Medium Group): Up to $25 voucher
+  /// • 26–50 Players (Large Group): Up to $50 voucher
+  /// • 51+ Players (Club / Mega): Up to $100+ voucher
+  static double maxFreeVoucherValueForCapacity(int capacity) {
+    if (capacity <= 5) return 0.0;
+    if (capacity <= 15) return 10.0;
+    if (capacity <= 25) return 25.0;
+    if (capacity <= 50) return 50.0;
+    return 100.0;
+  }
 
   int get vouchersRemaining =>
       (vouchersTotalCount - vouchersConsumedCount).clamp(0, 999999);

@@ -26,6 +26,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
   final String currencyCode;
   final String currencySymbol;
   final int fundedCapacity;
+  final Map<String, BrandOffer>? existingAssignedGifts;
 
   const BrandGiftPickerDialog({
     super.key,
@@ -36,6 +37,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     this.currencyCode = 'USD',
     this.currencySymbol = '\$',
     this.fundedCapacity = 25,
+    this.existingAssignedGifts,
   });
 
   static Future<BrandGiftSelectionResult?> show(
@@ -47,6 +49,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     String currencyCode = 'USD',
     String currencySymbol = '\$',
     int fundedCapacity = 25,
+    Map<String, BrandOffer>? existingAssignedGifts,
   }) {
     return showDialog<BrandGiftSelectionResult>(
       context: context,
@@ -58,6 +61,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
         currencyCode: currencyCode,
         currencySymbol: currencySymbol,
         fundedCapacity: fundedCapacity,
+        existingAssignedGifts: existingAssignedGifts,
       ),
     );
   }
@@ -442,42 +446,69 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                 const SizedBox(height: 10),
               ],
 
-              if (widget.fundedCapacity <= 5) ...[
-                Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppTheme.secondaryColor.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        size: 16,
-                        color: AppTheme.secondaryColor,
-                      ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Free games (1–5 players) use Global Gift Templates or Custom Gifts. 100% Free Sponsored DabHousie vouchers are available for Small Party tiers (6+ players).',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFFCBD5E1),
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
+              // Sponsor Integrity & Rulebook Guidance Banner
+              Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.35),
                   ),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.shield_outlined,
+                      size: 16,
+                      color: AppTheme.secondaryColor,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.fundedCapacity <= 5
+                            ? 'Free games (1–5 players) use Global Gift Templates or Custom Gifts. 100% Free Sponsored Brand Vouchers are reserved for Small Party tiers (6+ players).'
+                            : 'Sponsor Guard: Max 1 free voucher per brand per game • Capped at \$$_sym${BrandOffer.maxFreeVoucherValueForCapacity(widget.fundedCapacity).toStringAsFixed(0)} for ${widget.fundedCapacity} players • 75% attendance quorum required to allocate.',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: Color(0xFFCBD5E1),
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () async {
+                        final uri = Uri.tryParse('https://www.dabhousie.com/brand-voucher-rules.html');
+                        if (uri != null) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '📜 Rulebook',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: AppTheme.secondaryColor,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          SizedBox(width: 2),
+                          Icon(
+                            Icons.open_in_new_rounded,
+                            size: 11,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               if (_isCustomMode)
                 Expanded(child: _buildCustomOfferForm())
@@ -1352,6 +1383,48 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
           const SizedBox(width: 10),
           ElevatedButton.icon(
             onPressed: () {
+              // RULE 1 & 2 ENFORCEMENT: Anti-Abuse validation for Free Sponsored Vouchers
+              if (offer.isFreeSponsoredVoucher) {
+                // Rule 2 Check: Max value based on room capacity
+                final maxAllowedVal = BrandOffer.maxFreeVoucherValueForCapacity(widget.fundedCapacity);
+                if (offer.retailPrice > maxAllowedVal) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Tier Limit: Free sponsored vouchers for ${widget.fundedCapacity} players are capped at \$$_sym${maxAllowedVal.toStringAsFixed(0)}. Upgrade room capacity to unlock \$$_sym${offer.retailPrice.toStringAsFixed(0)} vouchers.',
+                      ),
+                      backgroundColor: AppTheme.accentWarning,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                  return;
+                }
+
+                // Rule 1 Check: Max 1 free sponsored voucher per game per brand
+                if (widget.existingAssignedGifts != null) {
+                  final brandLower = offer.brandName.trim().toLowerCase();
+                  final alreadyHasBrand = widget.existingAssignedGifts!.entries.any((entry) {
+                    if (entry.key == widget.prizeKey) return false; // replacing current prize is ok
+                    final otherOffer = entry.value;
+                    return otherOffer.isFreeSponsoredVoucher &&
+                        otherOffer.brandName.trim().toLowerCase() == brandLower;
+                  });
+
+                  if (alreadyHasBrand) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Sponsor Guard Rule: Only 1 free sponsored voucher from "${offer.brandName}" is allowed per game. Please select a gift from a different brand or a custom prize.',
+                        ),
+                        backgroundColor: AppTheme.accentWarning,
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                    return;
+                  }
+                }
+              }
+
               final localizedOffer = offer.copyWith(
                 retailPrice: localRetail,
                 organizerPrice: localOrg,

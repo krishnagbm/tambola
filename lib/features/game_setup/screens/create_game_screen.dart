@@ -167,10 +167,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       if (tierId != null) _selectedTierId = tierId;
 
       if (capacity <= 5) {
-        // Strip any 100% Free sponsored DabHousie vouchers because free tier (1-5 players) is not eligible
+        // Strip any 100% Free sponsored vouchers because free tier (1-5 players) is not eligible
         final removedKeys = <String>[];
         _selectedPrizeGifts.removeWhere((key, offer) {
-          if (offer.isDabHousieSponsoredFreeVoucher) {
+          if (offer.isFreeSponsoredVoucher) {
             removedKeys.add(key);
             return true;
           }
@@ -181,10 +181,33 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                '100% Free DabHousie sponsored vouchers are only available for Small Party (6+ players) tiers and above.',
+                '100% Free sponsored brand vouchers are only available for Small Party (6+ players) tiers and above.',
               ),
               backgroundColor: AppTheme.accentWarning,
               duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      } else {
+        // Enforce Rule 2: Remove any free sponsored voucher that exceeds the max allowed value for the selected capacity
+        final maxAllowed = BrandOffer.maxFreeVoucherValueForCapacity(capacity);
+        final removedExceeded = <String>[];
+        _selectedPrizeGifts.removeWhere((key, offer) {
+          if (offer.isFreeSponsoredVoucher && offer.retailPrice > maxAllowed) {
+            removedExceeded.add(key);
+            return true;
+          }
+          return false;
+        });
+
+        if (removedExceeded.isNotEmpty && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Adjusted gifts: Free sponsored vouchers for $capacity players cannot exceed \$$_currencySymbol${maxAllowed.toStringAsFixed(0)}.',
+              ),
+              backgroundColor: AppTheme.accentWarning,
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -2234,6 +2257,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       currencyCode: _selectedCurrencyCode,
       currencySymbol: _currencySymbol,
       fundedCapacity: _selectedCapacity,
+      existingAssignedGifts: _selectedPrizeGifts,
     );
     if (result == null || !mounted) return;
 
