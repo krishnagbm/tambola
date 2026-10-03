@@ -161,6 +161,37 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   bool _isPrivate = false;
   bool _isLoading = false;
 
+  void _setCapacity(int capacity, {String? tierId}) {
+    setState(() {
+      _selectedCapacity = capacity;
+      if (tierId != null) _selectedTierId = tierId;
+
+      if (capacity <= 5) {
+        // Strip any 100% Free sponsored DabHousie vouchers because free tier (1-5 players) is not eligible
+        final removedKeys = <String>[];
+        _selectedPrizeGifts.removeWhere((key, offer) {
+          if (offer.isDabHousieSponsoredFreeVoucher) {
+            removedKeys.add(key);
+            return true;
+          }
+          return false;
+        });
+
+        if (removedKeys.isNotEmpty && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '100% Free DabHousie sponsored vouchers are only available for Small Party (6+ players) tiers and above.',
+              ),
+              backgroundColor: AppTheme.accentWarning,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    });
+  }
+
   String _getPrivateCreditBreakdownText(int maxPlayers) {
     if (maxPlayers <= 5) return 'Free + 5 = 5 Credits';
     if (maxPlayers <= 15) return '15 + 5 = 20 Credits';
@@ -2202,6 +2233,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       currentSelection: _selectedPrizeGifts[key],
       currencyCode: _selectedCurrencyCode,
       currencySymbol: _currencySymbol,
+      fundedCapacity: _selectedCapacity,
     );
     if (result == null || !mounted) return;
 
@@ -3256,10 +3288,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
-              onTap: () => setState(() {
-                _selectedTierId = tier.id;
-                _selectedCapacity = tier.maxPlayers;
-              }),
+              onTap: () => _setCapacity(tier.maxPlayers, tierId: tier.id),
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -3308,10 +3337,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       value: tier.id,
                       groupValue: isSelected ? tier.id : null,
                       activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
-                      onChanged: (val) => setState(() {
-                        _selectedTierId = tier.id;
-                        _selectedCapacity = tier.maxPlayers;
-                      }),
+                      onChanged: (val) {
+                        if (val != null) _setCapacity(tier.maxPlayers, tierId: val);
+                      },
                     ),
                   ],
                 ),
@@ -3345,7 +3373,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
-              onTap: () => setState(() => _selectedCapacity = cap),
+              onTap: () => _setCapacity(cap),
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -3380,7 +3408,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       value: cap,
                       groupValue: _selectedCapacity,
                       activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
-                      onChanged: (val) => setState(() => _selectedCapacity = val!),
+                      onChanged: (val) {
+                        if (val != null) _setCapacity(val);
+                      },
                     ),
                   ],
                 ),

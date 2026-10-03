@@ -223,6 +223,14 @@ class BrandOffer {
       organizerPrice > 0 &&
       (promoCode == null || promoCode!.trim().isEmpty);
 
+  bool get isDabHousieSponsoredFreeVoucher =>
+      !isCustomHostOffer &&
+      organizerPrice == 0 &&
+      (brandName.toLowerCase().contains('dabhousie') ||
+          brandDomain.toLowerCase().contains('dabhousie.com') ||
+          id.toLowerCase().contains('dabhousie_free') ||
+          (promoCode != null && promoCode!.toUpperCase().startsWith('DABFREE')));
+
   int get vouchersRemaining =>
       (vouchersTotalCount - vouchersConsumedCount).clamp(0, 999999);
 

@@ -25,6 +25,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
   final BrandOffer? currentSelection;
   final String currencyCode;
   final String currencySymbol;
+  final int fundedCapacity;
 
   const BrandGiftPickerDialog({
     super.key,
@@ -34,6 +35,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     this.currentSelection,
     this.currencyCode = 'USD',
     this.currencySymbol = '\$',
+    this.fundedCapacity = 25,
   });
 
   static Future<BrandGiftSelectionResult?> show(
@@ -44,6 +46,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
     BrandOffer? currentSelection,
     String currencyCode = 'USD',
     String currencySymbol = '\$',
+    int fundedCapacity = 25,
   }) {
     return showDialog<BrandGiftSelectionResult>(
       context: context,
@@ -54,6 +57,7 @@ class BrandGiftPickerDialog extends ConsumerStatefulWidget {
         currentSelection: currentSelection,
         currencyCode: currencyCode,
         currencySymbol: currencySymbol,
+        fundedCapacity: fundedCapacity,
       ),
     );
   }
@@ -438,6 +442,43 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                 const SizedBox(height: 10),
               ],
 
+              if (widget.fundedCapacity <= 5) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 16,
+                        color: AppTheme.secondaryColor,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Free games (1–5 players) use Global Gift Templates or Custom Gifts. 100% Free Sponsored DabHousie vouchers are available for Small Party tiers (6+ players).',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFFCBD5E1),
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               if (_isCustomMode)
                 Expanded(child: _buildCustomOfferForm())
               else ...[
@@ -689,7 +730,12 @@ class _BrandGiftPickerDialogState extends ConsumerState<BrandGiftPickerDialog> {
                       ),
                     ),
                     data: (offers) {
+                      final isFreeFamilyTier = widget.fundedCapacity <= 5;
                       final filtered = offers.where((o) {
+                        // 100% Free Sponsored DabHousie vouchers are strictly reserved for paid tiers (6+ players)
+                        if (isFreeFamilyTier && o.isDabHousieSponsoredFreeVoucher) {
+                          return false;
+                        }
                         if (_selectedStatusFilter != 'ALL' &&
                             o.status.toUpperCase() != _selectedStatusFilter) {
                           return false;
