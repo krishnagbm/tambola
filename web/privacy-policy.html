@@ -190,13 +190,13 @@
         <strong>Application Name:</strong> DabHousie (Multiplayer Tambola, Housie &amp; 90-Ball Bingo)<br>
         <strong>Developer Entity:</strong> Digital App Studio<br>
         <strong>Domain:</strong> https://www.dabhousie.com<br>
-        <strong>Effective Date:</strong> September 15, 2026 • <strong>Last Updated:</strong> September 26, 2026
+        <strong>Effective Date:</strong> September 15, 2026 • <strong>Last Updated:</strong> October 3, 2026
       </div>
     </div>
 
     <div class="highlight-box">
       <h4>🔒 Summary of Our Privacy Commitment</h4>
-      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties, data brokers, or advertising networks. We access authentication provider data (Google Identity, Sign in with Apple, Microsoft / Microsoft Entra ID, and verified corporate email OTP) solely for user authentication, organizer session management, and profile display.</p>
+      <p>DabHousie collects minimal user data necessary to operate multiplayer Tambola games and authenticate event organizers. We <strong>never sell, rent, or trade your personal data</strong> to third parties or data brokers. We access authentication provider data (Google Identity, Sign in with Apple, Microsoft / Microsoft Entra ID, and verified corporate email OTP) solely for user authentication, organizer session management, and profile display. We maintain transparent disclosures regarding third-party analytics and advertising services.</p>
     </div>
 
     <h2>1. Introduction &amp; Scope</h2>
@@ -250,7 +250,7 @@
 
     <h3>B. Information Collected During Gameplay (Guests &amp; Players)</h3>
     <ul>
-      <li><strong>Guest Session Identifier</strong>: Guest players who join games via invite codes or room links do not need to log in. We assign a pseudonymous session UUID stored locally in your browser to maintain your active game ticket, dabbed numbers, and live claim status.</li>
+      <li><strong>Guest Player Identity &amp; Session Management</strong>: Players who join games via invite codes or room links participate as guests without requiring an account or personal registration. The authoritative player identity in our architecture is an anonymous authentication UUID generated securely by our authentication service (Supabase Anonymous Auth). To preserve your ticket state, dabbed numbers, and live claim status across brief disconnects or page reloads, a pseudonymous local session identifier (such as <code>mpt_local_uuid</code>) is maintained in your browser's local storage as a client-side session key.</li>
       <li><strong>Display Names &amp; Avatars</strong>: Player nickname and avatar emoji selected by the user for in-game identification on the room leaderboard.</li>
       <li><strong>Game Activity &amp; Logs</strong>: Live number call sequence, ticket generation records, timestamped prize claim requests (e.g., Early Five, Top Line, Middle Line, Bottom Line, Four Corners, Full House), promotional voucher claim codes, and room completion statuses.</li>
       <li><strong>Zero Player Financial or Payout Data</strong>: Because joining games as a player is 100% free and all in-game prizes consist exclusively of promotional vouchers or gifts fulfilled directly by the event host or brand sponsors (no cash delivery is permitted), Digital App Studio never collects, requests, or stores credit card numbers, bank account details, UPI IDs, or financial payout information from players.</li>
@@ -320,14 +320,32 @@
       <li><strong>Microsoft Corporation (Microsoft Identity Platform / Entra ID)</strong>: OAuth 2.0 / OpenID Connect authentication provider for personal Microsoft and organizational work accounts.</li>
     </ul>
 
-    <h2>7. Cookies and Local Storage</h2>
-    <p>DabHousie uses browser local storage (`localStorage`) and session cookies strictly for essential functional operations:</p>
+    <h2>7. Cookies, Local Storage &amp; Third-Party Services</h2>
+    <p>DabHousie uses browser local storage (<code>localStorage</code>) and first-party cookies for essential functional operations, alongside select third-party analytics and advertising services on public web pages:</p>
+
+    <h3>A. Essential First-Party Functional Storage</h3>
     <ul>
-      <li><code>mpt_player_name</code> &amp; <code>mpt_player_avatar</code>: Preserving your customized player name and avatar preference locally.</li>
-      <li><code>mpt_local_uuid</code>: Anonymous guest player session persistence across page refreshes.</li>
-      <li><code>sb-access-token</code> / <code>sb-refresh-token</code>: Secure encrypted authentication tokens for logged-in hosts.</li>
+      <li><code>mpt_player_name</code> &amp; <code>mpt_player_avatar</code>: Preserves your selected player nickname and avatar emoji locally in your browser.</li>
+      <li><code>mpt_local_uuid</code>: Local client-side session identifier used to maintain active room connection, ticket numbers, and dab state across brief page reloads.</li>
+      <li><code>sb-access-token</code> &amp; <code>sb-refresh-token</code>: Secure encrypted authentication tokens for logged-in game organizers.</li>
     </ul>
-    <p>We do not use third-party tracking cookies or cross-site marketing trackers.</p>
+
+    <h3>B. Google Analytics 4 (Web Analytics)</h3>
+    <p>We use <strong>Google Analytics 4</strong>, a web analysis service provided by Google LLC ("Google"), on our public informational and marketing pages. Google Analytics helps us understand how visitors discover and interact with the website, traffic sources, aggregate page views, user engagement, and performance trends so we can improve platform reliability and user experience.</p>
+    <ul>
+      <li><strong>Data Processed</strong>: Google Analytics uses cookies and similar identifiers to collect pseudonymous technical data, such as your browser type, device category, approximate geographic region (country/city level derived from truncated IP addresses), referring URLs, pages visited, and interaction events.</li>
+      <li><strong>Aggregate Reporting</strong>: We use Google Analytics data in aggregate form. We do not use Google Analytics to identify individual visitors by name or merge analytics telemetry with your authenticated organizer account or private gameplay tickets.</li>
+      <li><strong>Opt-Out</strong>: You can prevent Google Analytics from collecting data across websites by installing the official <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">Google Analytics Opt-out Browser Add-on</a>.</li>
+    </ul>
+
+    <h3>C. Google AdSense &amp; Third-Party Advertising</h3>
+    <p>To help support platform hosting, server bandwidth, and free multiplayer game hosting for families and small groups, DabHousie displays advertisements through <strong>Google AdSense</strong> on select public pages (such as guides, information pages, and join screens). DabHousie live gameplay boards and host management interfaces remain strictly focused and ad-free.</p>
+    <ul>
+      <li><strong>Use of Cookies &amp; Web Beacons</strong>: Google and its certified advertising partners may place and read cookies or web beacons on your browser, or use device identifiers, to serve, personalize, and measure advertisements based on prior visits to our site or other websites across the Internet.</li>
+      <li><strong>Personalized vs. Non-Personalized Ads</strong>: Depending on your location, browser settings, applicable privacy regulations, and consent preferences, ads served by Google may be personalized (tailored to your inferred interests and browsing history) or non-personalized (contextual ads based on page content and general geographic location).</li>
+      <li><strong>Independent Third-Party Processing</strong>: Advertising cookies and ad measurement technologies are operated independently by Google and its advertising partners in accordance with <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Google's Advertising Policies and Technologies</a>. DabHousie does not control Google's advertising cookies and does not sell or disclose your personal contact information to third-party advertisers.</li>
+      <li><strong>Managing Your Ad Choices</strong>: You can customize your Google advertising preferences, view the information Google uses to personalize ads, or opt out of personalized ads at any time by visiting <a href="https://myadcenter.google.com/" target="_blank" rel="noopener">Google My Ad Center</a>. You can also opt out of third-party interest-based advertising via the <a href="https://optout.aboutads.info/" target="_blank" rel="noopener">Digital Advertising Alliance WebChoices tool</a> or <a href="https://www.youronlinechoices.com/" target="_blank" rel="noopener">Your Online Choices</a> (for visitors in the European Union / UK).</li>
+    </ul>
 
     <h2>8. Data Retention &amp; User Deletion Rights (Right to be Forgotten)</h2>
     <p>We retain user profile data and game history for as long as your account remains active. You have full control over your personal data:</p>
