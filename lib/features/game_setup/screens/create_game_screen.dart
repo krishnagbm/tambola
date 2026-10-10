@@ -19,6 +19,7 @@ import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../auth/widgets/auth_dialog.dart';
 import '../../home/widgets/corporate_inquiry_dialog.dart';
 import '../widgets/brand_gift_picker_dialog.dart';
+import '../widgets/schedule_game_dialog.dart';
 
 class CreateGameScreen extends ConsumerStatefulWidget {
   const CreateGameScreen({super.key});
@@ -225,6 +226,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   DateTime? _scheduledDateTime;
+  DabbyScheduleConfig? _dabbyScheduleConfig;
 
   final Map<String, bool> _prizes = {
     'EARLY_FIVE': true,
@@ -409,6 +411,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           'currency_symbol': _currencySymbol,
         };
       }
+    }
+    if (_scheduledDateTime != null) {
+      final config = _dabbyScheduleConfig ?? DabbyScheduleConfig(scheduledAt: _scheduledDateTime!);
+      map['_dabby_orchestration'] = config.toJson(plannedCapacity: _selectedCapacity);
     }
     return map;
   }
@@ -3564,97 +3570,148 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Widget _buildSchedulePicker() {
+    final isScheduled = _scheduledDateTime != null;
+    final isAutonomous = _dabbyScheduleConfig?.isAutonomousHostEnabled ?? true;
+    final quorumCount = ((_dabbyScheduleConfig?.quorumPercentage ?? 0.67) * _selectedCapacity).ceil();
+    final graceMinutes = _dabbyScheduleConfig?.gracePeriodMinutes ?? 5;
+    final autoUpgrade = _dabbyScheduleConfig?.autoUpgradeOnWaitlist ?? true;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppTheme.darkSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFF2E334D),
+          color: isScheduled ? AppTheme.secondaryColor : const Color(0xFF2E334D),
+          width: isScheduled ? 1.5 : 1,
         ),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isHorizontal = constraints.maxWidth >= 520;
-          final infoColumn = Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.calendar_month,
-                    size: 20,
-                    color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Scheduled Game Time (Optional)',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              Image.asset(
+                AppAssets.dabbyMascot,
+                width: 20,
+                height: 20,
+                errorBuilder: (_, __, ___) => Icon(
+                  isScheduled ? Icons.smart_toy_rounded : Icons.calendar_month,
+                  size: 20,
+                  color: isScheduled ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
+                ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                _scheduledDateTime == null
-                    ? 'Play immediately on launch in 🤖 Auto-Pilot or 🎙️ Manual Host mode.'
-                    : 'Scheduled for: ${_formatDateTime(_scheduledDateTime!)} (Supports 🤖 Auto-Pilot)',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _scheduledDateTime != null ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
-                  fontWeight: _scheduledDateTime != null ? FontWeight.w600 : FontWeight.normal,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isScheduled
+                      ? 'Scheduled: ${_formatDateTime(_scheduledDateTime!)}'
+                      : 'Scheduled Game Time (Optional)',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    color: isScheduled ? AppTheme.secondaryColor : Colors.white,
+                  ),
                 ),
               ),
             ],
-          );
-
-          final actionsRow = Row(
-            mainAxisSize: MainAxisSize.min,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            !isScheduled
+                ? 'Play immediately on launch, or set a kickoff with Dabby Auto-Pilot & quorum rules.'
+                : 'Dabby will orchestrate the lobby and kick off on auto-pilot.',
+            style: const TextStyle(
+              fontSize: 11.5,
+              color: Color(0xFFA0AEC0),
+            ),
+          ),
+          if (isScheduled) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                _buildScheduleBadge(
+                  icon: Icons.smart_toy_rounded,
+                  label: isAutonomous ? 'Auto-Pilot: ON' : 'Host Manual',
+                  color: isAutonomous ? AppTheme.accentSuccess : const Color(0xFF94A3B8),
+                ),
+                if (isAutonomous) ...[
+                  _buildScheduleBadge(
+                    icon: Icons.groups_rounded,
+                    label: 'Quorum: $quorumCount/$_selectedCapacity',
+                    color: AppTheme.secondaryColor,
+                  ),
+                  _buildScheduleBadge(
+                    icon: Icons.hourglass_bottom_rounded,
+                    label: 'Grace: ${graceMinutes}m',
+                    color: const Color(0xFF38BDF8),
+                  ),
+                  if (autoUpgrade)
+                    _buildScheduleBadge(
+                      icon: Icons.upgrade_rounded,
+                      label: 'Auto-Upgrade: ON',
+                      color: AppTheme.accentSuccess,
+                    ),
+                ],
+              ],
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(
             children: [
-              OutlinedButton.icon(
-                onPressed: _pickScheduleDateTime,
-                icon: const Icon(Icons.access_time, size: 16),
-                label: Text(_scheduledDateTime == null ? 'Set Date & Time' : 'Change Time'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryColor,
-                  side: const BorderSide(color: AppTheme.secondaryColor),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _openScheduleDialog,
+                  icon: Icon(isScheduled ? Icons.tune_rounded : Icons.access_time_rounded, size: 15),
+                  label: Text(isScheduled ? 'Configure Autonomous Rules ⚙️' : 'Set Date & Time'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                    side: const BorderSide(color: AppTheme.secondaryColor),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-              if (_scheduledDateTime != null) ...[
+              if (isScheduled) ...[
                 const SizedBox(width: 8),
                 TextButton(
-                  onPressed: () => setState(() => _scheduledDateTime = null),
+                  onPressed: () => setState(() {
+                    _scheduledDateTime = null;
+                    _dabbyScheduleConfig = null;
+                  }),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
-                  child: const Text('Clear', style: TextStyle(color: AppTheme.accentDanger, fontWeight: FontWeight.bold)),
+                  child: const Text('Clear', style: TextStyle(color: AppTheme.accentDanger, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ],
-          );
+          ),
+        ],
+      ),
+    );
+  }
 
-          if (isHorizontal) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: infoColumn),
-                const SizedBox(width: 16),
-                actionsRow,
-              ],
-            );
-          } else {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                infoColumn,
-                const SizedBox(height: 12),
-                actionsRow,
-              ],
-            );
-          }
-        },
+  Widget _buildScheduleBadge({required IconData icon, required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 3.5),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color),
+          ),
+        ],
       ),
     );
   }
@@ -3673,60 +3730,26 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     return '${dt.day}/${dt.month}/${dt.year} at $timeStr';
   }
 
-  Future<void> _pickScheduleDateTime() async {
-    final now = DateTime.now();
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _scheduledDateTime ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              surface: AppTheme.darkCard,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
+  Future<void> _openScheduleDialog() async {
+    final walletAsync = ref.read(walletProvider);
+    final availableCredits = walletAsync.value?.availableCredits ?? 0;
+    final result = await ScheduleGameDialog.show(
+      context,
+      initialDateTime: _scheduledDateTime,
+      initialConfig: _dabbyScheduleConfig,
+      plannedCapacity: _selectedCapacity,
+      availableCredits: availableCredits,
     );
-
-    if (pickedDate == null || !mounted) return;
-
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: _scheduledDateTime != null
-          ? TimeOfDay.fromDateTime(_scheduledDateTime!)
-          : TimeOfDay.fromDateTime(now.add(const Duration(minutes: 30))),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              surface: AppTheme.darkCard,
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (pickedTime == null || !mounted) return;
+    if (result == null || !mounted) return;
 
     setState(() {
-      _scheduledDateTime = DateTime(
-        pickedDate.year,
-        pickedDate.month,
-        pickedDate.day,
-        pickedTime.hour,
-        pickedTime.minute,
-      );
+      if (result.cleared) {
+        _scheduledDateTime = null;
+        _dabbyScheduleConfig = null;
+      } else if (result.config != null) {
+        _scheduledDateTime = result.config!.scheduledAt;
+        _dabbyScheduleConfig = result.config;
+      }
     });
   }
 }
