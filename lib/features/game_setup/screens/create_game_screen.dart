@@ -937,20 +937,20 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildGroupSizeSection(),
-                                      const SizedBox(height: 16),
-                                      _buildWinnerEligibilitySection(),
-                                      const SizedBox(height: 12),
-                                      _buildCustomPatternsCallout(),
-                                    ],
-                                  ),
+                                  child: _buildGroupSizeSection(),
                                 ),
                                 const SizedBox(width: 24),
                                 Expanded(
-                                  child: _buildWinningPatternsSection(),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildWinningPatternsSection(),
+                                      const SizedBox(height: 14),
+                                      _buildWinnerEligibilitySection(),
+                                      const SizedBox(height: 10),
+                                      _buildCustomPatternsCallout(),
+                                    ],
+                                  ),
                                 ),
                               ],
                             )
@@ -961,9 +961,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                 _buildGroupSizeSection(),
                                 const SizedBox(height: 24),
                                 _buildWinningPatternsSection(),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 14),
                                 _buildWinnerEligibilitySection(),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 10),
                                 _buildCustomPatternsCallout(),
                               ],
                             ),
@@ -3076,17 +3076,69 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text(
-            '• Zero Player Entry Fees: DabHousie is strictly a social event platform. Organizers must never collect entry fees, ticket charges, or wagers from players (online or offline).\n'
-            '• Vouchers & Gifts Only: All prizes are promotional gift vouchers or sponsor offers fulfilled by the Host or Brand Partner. No cash payouts are permitted.',
-            style: TextStyle(
-              fontSize: 11,
-              color: Color(0xFFCBD5E1),
-              height: 1.4,
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.4),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: RichText(
+                        text: const TextSpan(
+                          style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.4),
+                          children: [
+                            TextSpan(
+                              text: 'Zero Player Entry Fees: ',
+                              style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: 'DabHousie is strictly a social event platform. Organizers must never collect entry fees, ticket charges, or wagers from players (online or offline).',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.4),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: RichText(
+                        text: const TextSpan(
+                          style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.4),
+                          children: [
+                            TextSpan(
+                              text: 'Vouchers & Gifts Only: ',
+                              style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
+                            TextSpan(
+                              text: 'All prizes are promotional gift vouchers or sponsor offers fulfilled by the Host or Brand Partner. No cash payouts are permitted.',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           InkWell(
             onTap: () => setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed),
             borderRadius: BorderRadius.circular(8),
