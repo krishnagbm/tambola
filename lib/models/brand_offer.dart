@@ -189,6 +189,49 @@ class BrandOffer {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'brand_name': brandName,
+      'brand_domain': brandDomain,
+      'brand_logo_url': brandLogoUrl,
+      'contact_name': contactName,
+      'contact_email': contactEmail,
+      'product_title': productTitle,
+      'product_description': productDescription,
+      'category': category,
+      'offer_type': offerType,
+      'target_region': targetRegion,
+      'target_countries': targetCountries,
+      'product_image_url': productImageUrl,
+      'product_url': productUrl,
+      'retail_price': retailPrice,
+      'organizer_price': organizerPrice,
+      'discount_percent': discountPercent,
+      'currency': currency,
+      'voucher_code_type': voucherCodeType,
+      'promo_code': promoCode,
+      'emoji': emoji,
+      'badge_text': badgeText,
+      'status': status,
+      'expiration_date': expirationDate,
+      'redemption_restrictions': redemptionRestrictions,
+      'minimum_purchase': minimumPurchase,
+      'new_customers_only': newCustomersOnly,
+      'redemption_channel': redemptionChannel,
+      'vouchers_total_count': vouchersTotalCount,
+      'vouchers_consumed_count': vouchersConsumedCount,
+      'games_assigned_count': gamesAssignedCount,
+      'clicks_count': clicksCount,
+      'game_views_count': gameViewsCount,
+      'offer_views_count': offerViewsCount,
+      'winner_count': winnerCount,
+      'reward_claims_count': rewardClaimsCount,
+      'redemptions_count': redemptionsCount,
+      'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
+
   Map<String, dynamic> toPrizeConfigJson({
     double? customPrizeValue,
     String? currencyCode,

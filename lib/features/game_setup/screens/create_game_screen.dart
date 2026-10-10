@@ -1,9 +1,12 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
@@ -155,6 +158,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       }
     });
     _autoSplitBudget();
+    _scheduleSaveDraft();
   }
 
   int _selectedCapacity = 5;
@@ -214,6 +218,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         }
       }
     });
+    _scheduleSaveDraft();
   }
 
   String _getPrivateCreditBreakdownText(int maxPlayers) {
@@ -313,21 +318,260 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     ];
   }
 
+  static const String _draftStorageKey = 'dabhousie_create_game_draft';
+  bool _hasRestoredDraft = false;
+  Timer? _draftDebounceTimer;
+
+  void _scheduleSaveDraft() {
+    _draftDebounceTimer?.cancel();
+    _draftDebounceTimer = Timer(const Duration(milliseconds: 350), () {
+      _saveDraft();
+    });
+  }
+
+  Future<void> _saveDraft() async {
+    _draftDebounceTimer?.cancel();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prizeValuesMap = <String, String>{};
+      for (final entry in _prizeValueControllers.entries) {
+        prizeValuesMap[entry.key] = entry.value.text.trim();
+      }
+
+      final prizeGiftsMap = <String, dynamic>{};
+      for (final entry in _selectedPrizeGifts.entries) {
+        prizeGiftsMap[entry.key] = entry.value.toJson();
+      }
+
+      final draft = {
+        'name': _nameController.text.trim(),
+        'is_private': _isPrivate,
+        'selected_capacity': _selectedCapacity,
+        'selected_tier_id': _selectedTierId,
+        'selected_currency_code': _selectedCurrencyCode,
+        'total_budget': _totalBudgetController.text.trim(),
+        'prizes': _prizes,
+        'prize_values': prizeValuesMap,
+        'selected_prize_gifts': prizeGiftsMap,
+        'minor_prize_policy': _minorPrizePolicy,
+        'enable_org_branding': _enableOrgBranding,
+        'org_name': _orgNameController.text.trim(),
+        'org_logo_url': _orgLogoUrlController.text.trim(),
+        'org_approver_email': _orgApproverEmailController.text.trim(),
+        'org_visual_confirmed': _orgVisualConfirmed,
+        'org_authority_confirmed': _orgAuthorityConfirmed,
+        'free_to_play_confirmed': _freeToPlayConfirmed,
+        'scheduled_date_time': _scheduledDateTime?.toIso8601String(),
+        'dabby_schedule_config': _dabbyScheduleConfig?.toDraftJson(),
+        'saved_at': DateTime.now().toIso8601String(),
+      };
+
+      await prefs.setString(_draftStorageKey, jsonEncode(draft));
+    } catch (_) {}
+  }
+
+  Future<void> _clearDraft() async {
+    _draftDebounceTimer?.cancel();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_draftStorageKey);
+    } catch (_) {}
+  }
+
+  Future<void> _loadDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_draftStorageKey);
+      if (raw == null || raw.isEmpty) return;
+
+      final draft = jsonDecode(raw) as Map<String, dynamic>;
+
+      if (draft['saved_at'] != null) {
+        final savedAt = DateTime.tryParse(draft['saved_at'].toString());
+        if (savedAt != null && DateTime.now().difference(savedAt).inDays > 7) {
+          await _clearDraft();
+          return;
+        }
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _hasRestoredDraft = true;
+        if (draft['name'] != null && (draft['name'] as String).isNotEmpty) {
+          _nameController.text = draft['name'] as String;
+        }
+        if (draft['is_private'] != null) {
+          _isPrivate = draft['is_private'] as bool;
+        }
+        if (draft['selected_capacity'] != null) {
+          _selectedCapacity = (draft['selected_capacity'] as num).toInt();
+        }
+        if (draft['selected_tier_id'] != null) {
+          _selectedTierId = draft['selected_tier_id'] as String?;
+        }
+        if (draft['selected_currency_code'] != null) {
+          _selectedCurrencyCode = draft['selected_currency_code'] as String;
+        }
+        if (draft['total_budget'] != null) {
+          _totalBudgetController.text = draft['total_budget'] as String;
+        }
+        if (draft['prizes'] is Map) {
+          final pMap = draft['prizes'] as Map;
+          for (final entry in pMap.entries) {
+            _prizes[entry.key.toString()] = entry.value == true;
+          }
+        }
+        if (draft['prize_values'] is Map) {
+          final vMap = draft['prize_values'] as Map;
+          for (final entry in vMap.entries) {
+            final key = entry.key.toString();
+            final val = entry.value.toString();
+            if (_prizeValueControllers.containsKey(key)) {
+              _prizeValueControllers[key]!.text = val;
+            } else {
+              _prizeValueControllers[key] = TextEditingController(text: val)
+                ..addListener(() {
+                  _scheduleSaveDraft();
+                  setState(() {});
+                });
+            }
+          }
+        }
+        if (draft['selected_prize_gifts'] is Map) {
+          final gMap = draft['selected_prize_gifts'] as Map;
+          for (final entry in gMap.entries) {
+            if (entry.value is Map) {
+              try {
+                _selectedPrizeGifts[entry.key.toString()] =
+                    BrandOffer.fromJson(Map<String, dynamic>.from(entry.value as Map));
+              } catch (_) {}
+            }
+          }
+        }
+        if (draft['minor_prize_policy'] != null) {
+          _minorPrizePolicy = draft['minor_prize_policy'] as String;
+        }
+        if (draft['enable_org_branding'] != null) {
+          _enableOrgBranding = draft['enable_org_branding'] as bool;
+        }
+        if (draft['org_name'] != null) {
+          _orgNameController.text = draft['org_name'] as String;
+        }
+        if (draft['org_logo_url'] != null) {
+          _orgLogoUrlController.text = draft['org_logo_url'] as String;
+        }
+        if (draft['org_approver_email'] != null) {
+          _orgApproverEmailController.text = draft['org_approver_email'] as String;
+        }
+        if (draft['org_visual_confirmed'] != null) {
+          _orgVisualConfirmed = draft['org_visual_confirmed'] as bool;
+        }
+        if (draft['org_authority_confirmed'] != null) {
+          _orgAuthorityConfirmed = draft['org_authority_confirmed'] as bool;
+        }
+        if (draft['free_to_play_confirmed'] != null) {
+          _freeToPlayConfirmed = draft['free_to_play_confirmed'] as bool;
+        }
+        if (draft['scheduled_date_time'] != null) {
+          final parsedDt = DateTime.tryParse(draft['scheduled_date_time'].toString());
+          if (parsedDt != null && parsedDt.isAfter(DateTime.now())) {
+            _scheduledDateTime = parsedDt;
+          }
+        }
+        if (draft['dabby_schedule_config'] is Map) {
+          try {
+            final cfg = DabbyScheduleConfig.fromJson(
+              Map<String, dynamic>.from(draft['dabby_schedule_config'] as Map),
+            );
+            if (cfg.scheduledAt.isAfter(DateTime.now())) {
+              _dabbyScheduleConfig = cfg;
+              _scheduledDateTime = cfg.scheduledAt;
+            }
+          } catch (_) {}
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.history_toggle_off_rounded, color: AppTheme.secondaryColor, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Restored your customized host game settings.',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    await _clearDraft();
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const CreateGameScreen(),
+                        transitionDuration: Duration.zero,
+                      ),
+                    );
+                  },
+                  child: const Text('Start Fresh', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1E293B),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(color: Color(0xFF334155)),
+            ),
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
   @override
   void initState() {
     super.initState();
     final initialName = (List<String>.from(_suggestedNames)..shuffle()).first;
-    _nameController = TextEditingController(text: initialName)..addListener(() => setState(() {}));
-    _orgNameController = TextEditingController()..addListener(() => setState(() {}));
-    _orgLogoUrlController = TextEditingController()..addListener(() => setState(() {}));
-    _orgApproverEmailController = TextEditingController()..addListener(() => setState(() {}));
-    _totalBudgetController = TextEditingController(text: '100');
+    _nameController = TextEditingController(text: initialName)
+      ..addListener(() {
+        _scheduleSaveDraft();
+        setState(() {});
+      });
+    _orgNameController = TextEditingController()
+      ..addListener(() {
+        _scheduleSaveDraft();
+        setState(() {});
+      });
+    _orgLogoUrlController = TextEditingController()
+      ..addListener(() {
+        _scheduleSaveDraft();
+        setState(() {});
+      });
+    _orgApproverEmailController = TextEditingController()
+      ..addListener(() {
+        _scheduleSaveDraft();
+        setState(() {});
+      });
+    _totalBudgetController = TextEditingController(text: '100')
+      ..addListener(() {
+        _scheduleSaveDraft();
+      });
     for (final entry in _defaultPrizeWeights.entries) {
       _prizeValueControllers[entry.key] = TextEditingController(
         text: entry.value.toStringAsFixed(0),
-      );
+      )..addListener(() {
+        _scheduleSaveDraft();
+      });
     }
     _shuffleMockWinners();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDraft());
   }
 
   double get _allocatedPrizeSum {
@@ -432,6 +676,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   @override
   void dispose() {
+    _draftDebounceTimer?.cancel();
     _nameController.dispose();
     _orgNameController.dispose();
     _orgLogoUrlController.dispose();
@@ -504,7 +749,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Future<void> _handleCreate() async {
     final user = ref.read(currentUserProvider).value;
     if (user == null || !user.isRegistered) {
-      AuthGuard.requireHostAuth(context, ref, () => _handleCreate());
+      await _saveDraft();
+      if (!mounted) return;
+      AuthGuard.requireHostAuth(
+        context,
+        ref,
+        () => _handleCreate(),
+        returnRoute: '/create-game',
+      );
       return;
     }
 
@@ -665,6 +917,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         }
       }
 
+      await _clearDraft();
       if (!mounted) return;
       _showSuccessDialog(game, brandApprovalMessage: brandApprovalMsg, isSelfApproved: isBrandSelfApproved);
     } catch (e) {
@@ -894,7 +1147,25 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           ),
                           const SizedBox(width: 8),
                           ElevatedButton(
-                            onPressed: () => AuthDialog.show(context, isHostContext: true),
+                            onPressed: () async {
+                              await _saveDraft();
+                              if (!context.mounted) return;
+                              AuthDialog.show(
+                                context,
+                                isHostContext: true,
+                                returnRoute: '/create-game',
+                                onAuthenticated: () {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('✨ Signed in successfully! Your game setup is preserved.'),
+                                        backgroundColor: AppTheme.accentSuccess,
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.secondaryColor,
                               foregroundColor: Colors.black,
@@ -1116,7 +1387,15 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               ),
               if (isHostPersonal) ...[
                 TextButton(
-                  onPressed: () => AuthDialog.show(context, isHostContext: true),
+                  onPressed: () async {
+                    await _saveDraft();
+                    if (!mounted) return;
+                    AuthDialog.show(
+                      context,
+                      isHostContext: true,
+                      returnRoute: '/create-game',
+                    );
+                  },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     backgroundColor: Colors.white.withValues(alpha: 0.05),
@@ -1134,6 +1413,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       _orgVisualConfirmed = false;
                       _orgAuthorityConfirmed = false;
                     }
+                    _scheduleSaveDraft();
                   }),
                 ),
               ],
@@ -2313,6 +2593,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _syncTotalBudgetFromIndividualValues();
       }
     });
+    _scheduleSaveDraft();
   }
 
   Widget _buildWinningPatternsSection() {
@@ -2638,6 +2919,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                 setState(() {
                                   _prizes[key] = val ?? false;
                                 });
+                                _scheduleSaveDraft();
                               },
                             ),
                           ),
@@ -2968,6 +3250,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             onChanged: (val) {
               if (val != null) {
                 setState(() => _minorPrizePolicy = val);
+                _scheduleSaveDraft();
               }
             },
           ),
@@ -3157,7 +3440,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   Widget _buildFreeToPlayConsentCheckbox() {
     return InkWell(
-      onTap: () => setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed),
+      onTap: () {
+        setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed);
+        _scheduleSaveDraft();
+      },
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -3182,7 +3468,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               child: Checkbox(
                 value: _freeToPlayConfirmed,
                 activeColor: AppTheme.accentSuccess,
-                onChanged: (val) => setState(() => _freeToPlayConfirmed = val ?? false),
+                onChanged: (val) {
+                  setState(() => _freeToPlayConfirmed = val ?? false);
+                  _scheduleSaveDraft();
+                },
               ),
             ),
             const SizedBox(width: 8),
@@ -3267,19 +3556,58 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'DabHousie Game Setup',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.3,
-                      ),
+                    const Row(
+                      children: [
+                        Text(
+                          'DabHousie Game Setup',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Text('✨', style: TextStyle(fontSize: 15)),
+                      ],
                     ),
-                    SizedBox(width: 6),
-                    Text('✨', style: TextStyle(fontSize: 15)),
+                    if (_hasRestoredDraft)
+                      InkWell(
+                        onTap: () async {
+                          await _clearDraft();
+                          if (!mounted) return;
+                          Navigator.pushReplacement(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => const CreateGameScreen(),
+                              transitionDuration: Duration.zero,
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.restart_alt_rounded, size: 13, color: AppTheme.secondaryColor),
+                              SizedBox(width: 4),
+                              Text(
+                                'Start Fresh',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.secondaryColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 3),
@@ -3360,7 +3688,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           Switch.adaptive(
             value: _isPrivate,
             activeThumbColor: AppTheme.accentPartyPurple,
-            onChanged: (val) => setState(() => _isPrivate = val),
+            onChanged: (val) {
+              setState(() => _isPrivate = val);
+              _scheduleSaveDraft();
+            },
           ),
         ],
       ),
@@ -3677,10 +4008,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               if (isScheduled) ...[
                 const SizedBox(width: 8),
                 TextButton(
-                  onPressed: () => setState(() {
-                    _scheduledDateTime = null;
-                    _dabbyScheduleConfig = null;
-                  }),
+                  onPressed: () {
+                    setState(() {
+                      _scheduledDateTime = null;
+                      _dabbyScheduleConfig = null;
+                    });
+                    _saveDraft();
+                  },
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
@@ -3751,6 +4085,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _dabbyScheduleConfig = result.config;
       }
     });
+    _saveDraft();
   }
 }
 

@@ -9,8 +9,9 @@ class AuthGuard {
   static void requireHostAuth(
     BuildContext context,
     WidgetRef ref,
-    VoidCallback onAuthorized,
-  ) {
+    VoidCallback onAuthorized, {
+    String returnRoute = '/create-game',
+  }) {
     final userState = ref.read(currentUserProvider);
     final user = userState.value;
 
@@ -20,6 +21,7 @@ class AuthGuard {
       AuthDialog.show(
         context,
         isHostContext: true,
+        returnRoute: returnRoute,
         onAuthenticated: onAuthorized,
       );
     }

@@ -720,7 +720,10 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8, left: 4),
               child: TextButton.icon(
-                onPressed: () => AuthDialog.show(context),
+                onPressed: () => AuthDialog.show(
+                  context,
+                  returnRoute: GoRouterState.of(context).matchedLocation,
+                ),
                 icon: Container(
                   width: 18,
                   height: 18,

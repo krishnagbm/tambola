@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
@@ -13,12 +13,14 @@ class AuthDialog extends ConsumerStatefulWidget {
   final bool isHostContext;
   final bool startWithEmailOtp;
   final VoidCallback? onAuthenticated;
+  final String? returnRoute;
 
   const AuthDialog({
     super.key,
     this.isHostContext = false,
     this.startWithEmailOtp = false,
     this.onAuthenticated,
+    this.returnRoute,
   });
 
   static Future<void> show(
@@ -26,6 +28,7 @@ class AuthDialog extends ConsumerStatefulWidget {
     bool isHostContext = false,
     bool startWithEmailOtp = false,
     VoidCallback? onAuthenticated,
+    String? returnRoute,
   }) {
     return showDialog(
       context: context,
@@ -33,6 +36,7 @@ class AuthDialog extends ConsumerStatefulWidget {
         isHostContext: isHostContext,
         startWithEmailOtp: startWithEmailOtp,
         onAuthenticated: onAuthenticated,
+        returnRoute: returnRoute,
       ),
     );
   }
@@ -103,6 +107,12 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
     });
 
     try {
+      final route = widget.returnRoute ?? (widget.isHostContext ? '/create-game' : null);
+      if (route != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('post_auth_return_route', route);
+      }
+
       await signInAction();
       if (mounted) {
         final user = ref.read(currentUserProvider).value;
@@ -205,8 +215,15 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
       ref.invalidate(authRepositoryProvider);
 
       if (mounted) {
+        final route = widget.returnRoute ?? (widget.isHostContext ? '/create-game' : null);
         Navigator.pop(context);
         widget.onAuthenticated?.call();
+        if (route != null && mounted) {
+          final currentLoc = GoRouterState.of(context).matchedLocation;
+          if (currentLoc != route) {
+            context.go(route);
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -822,7 +839,7 @@ class _AuthDialogState extends ConsumerState<AuthDialog> {
                             letterSpacing: 0.2,
                           ),
                         ),
-                        if (badge != null) badge,
+                        ?badge,
                       ],
                     ),
                     const SizedBox(height: 2),

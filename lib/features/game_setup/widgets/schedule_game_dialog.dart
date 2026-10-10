@@ -32,6 +32,26 @@ class DabbyScheduleConfig {
     'auto_upgrade_on_waitlist': autoUpgradeOnWaitlist,
   };
 
+  Map<String, dynamic> toDraftJson() => {
+    'scheduled_at': scheduledAt.toIso8601String(),
+    'autonomous_host_enabled': isAutonomousHostEnabled,
+    'quorum_percentage': quorumPercentage,
+    'grace_period_minutes': gracePeriodMinutes,
+    'low_quorum_action': lowQuorumAction,
+    'auto_upgrade_on_waitlist': autoUpgradeOnWaitlist,
+  };
+
+  factory DabbyScheduleConfig.fromJson(Map<String, dynamic> json) {
+    return DabbyScheduleConfig(
+      scheduledAt: DateTime.tryParse(json['scheduled_at']?.toString() ?? '') ?? DateTime.now(),
+      isAutonomousHostEnabled: json['autonomous_host_enabled'] as bool? ?? true,
+      quorumPercentage: (json['quorum_percentage'] as num?)?.toDouble() ?? 0.67,
+      gracePeriodMinutes: (json['grace_period_minutes'] as num?)?.toInt() ?? 5,
+      lowQuorumAction: (json['low_quorum_action'] as String?) ?? 'AUTO_CANCEL',
+      autoUpgradeOnWaitlist: json['auto_upgrade_on_waitlist'] as bool? ?? true,
+    );
+  }
+
   DabbyScheduleConfig copyWith({
     DateTime? scheduledAt,
     bool? isAutonomousHostEnabled,

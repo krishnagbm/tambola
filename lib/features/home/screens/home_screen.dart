@@ -21,6 +21,7 @@ import '../widgets/opening_screen.dart';
 import '../widgets/perfect_for_chips_section.dart';
 import '../widgets/skill_arena_section.dart';
 import '../widgets/usp_grid_section.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../widgets/dabby_rapid_play_hero_card.dart';
@@ -44,6 +45,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _loadingProvider;
   final ScrollController _playerGamesScrollController = ScrollController();
 
+  Future<void> _checkPostAuthReturnRoute() async {
+    try {
+      final user = ref.read(currentUserProvider).value;
+      if (user != null && user.isRegistered) {
+        final prefs = await SharedPreferences.getInstance();
+        final returnRoute = prefs.getString('post_auth_return_route');
+        if (returnRoute != null && returnRoute.isNotEmpty) {
+          await prefs.remove('post_auth_return_route');
+          if (mounted) {
+            context.go(returnRoute);
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (mounted) {
         ref.invalidate(myHostedGamesProvider);
         ref.invalidate(myJoinedGamesProvider);
+        _checkPostAuthReturnRoute();
       }
     });
   }
@@ -155,6 +173,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<MptUser>>(currentUserProvider, (previous, next) {
+      final user = next.value;
+      if (user != null && user.isRegistered) {
+        _checkPostAuthReturnRoute();
+      }
+    });
+
     final userState = ref.watch(currentUserProvider);
     final walletState = ref.watch(walletProvider);
     final hostedGamesState = ref.watch(myHostedGamesProvider);
