@@ -56,6 +56,9 @@ class MptGame {
   bool get isInProgress => status == 'IN_PROGRESS' && !isCompleted;
   bool get isCancelled => status == 'CANCELLED';
 
+  /// Returns the effective scheduled time, checking scheduledAt and dabbyScheduleConfig
+  DateTime? get effectiveScheduledAt => scheduledAt ?? dabbyScheduleConfig?.scheduledAt;
+
   FlashHousieConfig? get flashHousieConfig =>
       FlashHousieConfig.fromPrizeGiftsConfig(prizeGiftsConfig);
 

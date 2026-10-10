@@ -5,6 +5,7 @@ import '../models/brand_offer.dart';
 import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
 import '../models/mpt_seat_otp.dart';
+import '../features/game_setup/widgets/schedule_game_dialog.dart';
 
 class GameRepository {
   final SupabaseClient _supabase;
@@ -134,6 +135,39 @@ class GameRepository {
     await _supabase
         .from('MPT_games')
         .update({'name': cleanName})
+        .eq('id', gameId);
+  }
+
+  /// Updates or clears the schedule and Dabby orchestration config for a game
+  Future<void> updateGameSchedule({
+    required String gameId,
+    required DateTime? scheduledAt,
+    DabbyScheduleConfig? config,
+    int? capacity,
+  }) async {
+    final game = await getGame(gameId);
+    final updatedPrizeGifts = Map<String, dynamic>.from(game.prizeGiftsConfig);
+
+    if (scheduledAt != null && config != null) {
+      final effectiveCap = capacity ?? game.fundedCapacity;
+      updatedPrizeGifts['_dabby_orchestration'] = config.toJson(plannedCapacity: effectiveCap);
+    } else if (scheduledAt == null) {
+      updatedPrizeGifts.remove('_dabby_orchestration');
+    }
+
+    final updatePayload = <String, dynamic>{
+      'scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+      'prize_gifts_config': updatedPrizeGifts,
+    };
+
+    if (capacity != null && capacity > 0) {
+      updatePayload['initial_funded_capacity'] = capacity;
+      updatePayload['funded_capacity'] = capacity;
+    }
+
+    await _supabase
+        .from('MPT_games')
+        .update(updatePayload)
         .eq('id', gameId);
   }
 

@@ -132,6 +132,127 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     }
   }
 
+  Future<void> _handleReschedule(MptGame game) async {
+    final walletCredits = ref.read(walletProvider).value?.availableCredits ?? 0;
+    final result = await ScheduleGameDialog.show(
+      context,
+      initialDateTime: game.effectiveScheduledAt,
+      initialConfig: game.dabbyScheduleConfig,
+      plannedCapacity: game.fundedCapacity,
+      availableCredits: walletCredits,
+    );
+
+    if (result == null) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      if (result.cleared) {
+        await ref.read(gameRepositoryProvider).updateGameSchedule(
+          gameId: game.id,
+          scheduledAt: null,
+        );
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Game schedule cleared. The game is now on-demand.'),
+            backgroundColor: AppTheme.accentSuccess,
+          ),
+        );
+      } else if (result.config != null) {
+        await ref.read(gameRepositoryProvider).updateGameSchedule(
+          gameId: game.id,
+          scheduledAt: result.config!.scheduledAt,
+          config: result.config,
+          capacity: game.fundedCapacity,
+        );
+        ref.invalidate(gameStreamProvider(widget.gameId));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Game rescheduled to ${Formatters.formatShortDate(result.config!.scheduledAt)}! 🎉',
+            ),
+            backgroundColor: AppTheme.accentSuccess,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update schedule: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _handleClearSchedule(MptGame game) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.event_busy_rounded, color: AppTheme.accentWarning),
+            SizedBox(width: 8),
+            Text('Clear Game Schedule?', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'This will remove the scheduled start time and disable Dabby autonomous auto-start. The game will remain open for players in the lobby as an on-demand game until you manually start it.',
+          style: TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Schedule'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentWarning,
+              foregroundColor: AppTheme.primaryDark,
+            ),
+            child: const Text('Yes, Clear Schedule'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(gameRepositoryProvider).updateGameSchedule(
+        gameId: game.id,
+        scheduledAt: null,
+      );
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Schedule cleared. Game is now on-demand.'),
+          backgroundColor: AppTheme.accentSuccess,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to clear schedule: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
     final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
     int creditsNeeded = 0;
@@ -595,6 +716,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Widget _buildGameHeaderCard(MptGame game) {
+    final effectiveSched = game.effectiveScheduledAt;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -624,24 +747,54 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'LOBBY OPEN',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryLight),
-                  ),
+                Wrap(
+                  spacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (effectiveSched != null)
+                      InkWell(
+                        onTap: () => _handleReschedule(game),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit_calendar_rounded, size: 12, color: AppTheme.secondaryColor),
+                              SizedBox(width: 4),
+                              Text(
+                                'RESCHEDULE',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'LOBBY OPEN',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryLight),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            if (game.scheduledAt != null) ...[
+            if (effectiveSched != null) ...[
               const SizedBox(height: 12),
               () {
                 final now = DateTime.now();
-                final diff = game.scheduledAt!.difference(now);
+                final diff = effectiveSched.difference(now);
                 final isPassed = diff.isNegative;
                 String countdownText;
                 if (isPassed) {
@@ -675,7 +828,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                               const Icon(Icons.alarm_on_rounded, size: 18, color: AppTheme.secondaryColor),
                               const SizedBox(width: 6),
                               Text(
-                                'Scheduled: ${Formatters.formatShortDate(game.scheduledAt!)}',
+                                'Scheduled: ${Formatters.formatShortDate(effectiveSched)}',
                                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                               ),
                             ],
@@ -705,10 +858,70 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                             : 'Host Scheduled: The room will remain open for players until you click Start Game.',
                         style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
                       ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _isProcessing ? null : () => _handleReschedule(game),
+                            icon: const Icon(Icons.edit_calendar_rounded, size: 14),
+                            label: const Text('Reschedule / Change Time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.secondaryColor,
+                              side: const BorderSide(color: AppTheme.secondaryColor),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: _isProcessing ? null : () => _handleClearSchedule(game),
+                            icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFF94A3B8)),
+                            label: const Text('Clear Schedule', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 );
               }(),
+            ] else ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.schedule, size: 18, color: Color(0xFFA0AEC0)),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'On-Demand Game (Not Scheduled)',
+                        style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _isProcessing ? null : () => _handleReschedule(game),
+                      icon: const Icon(Icons.calendar_month_rounded, size: 14),
+                      label: const Text('Schedule Game Start', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: AppTheme.primaryDark,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
             const SizedBox(height: 12),
             Container(
@@ -850,8 +1063,9 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Widget _buildActionButtons(MptGame game, int confirmedCount, int waitingCount, int walletCredits) {
-    final isScheduled = game.scheduledAt != null;
-    final isPassed = isScheduled && game.scheduledAt!.isBefore(DateTime.now());
+    final effectiveSched = game.effectiveScheduledAt;
+    final isScheduled = effectiveSched != null;
+    final isPassed = isScheduled && effectiveSched.isBefore(DateTime.now());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -872,11 +1086,31 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           ),
         ),
         if (isScheduled && !isPassed) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Scheduled for ${Formatters.formatShortDate(game.scheduledAt!)}. Game will auto-launch when time arrives.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  'Scheduled for ${Formatters.formatShortDate(effectiveSched)}. Auto-launches on time.',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _handleReschedule(game),
+                child: const Text(
+                  'Reschedule',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.secondaryColor,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
         const SizedBox(height: 10),
