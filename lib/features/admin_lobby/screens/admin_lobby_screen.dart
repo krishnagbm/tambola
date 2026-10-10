@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,12 +7,14 @@ import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
 import '../../../models/mpt_capacity_tier.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../models/mpt_seat_otp.dart';
 import '../../../providers/app_providers.dart';
+import '../../game_setup/widgets/schedule_game_dialog.dart';
 
 class AdminLobbyScreen extends ConsumerStatefulWidget {
   final String gameId;
@@ -24,6 +27,21 @@ class AdminLobbyScreen extends ConsumerStatefulWidget {
 
 class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   bool _isProcessing = false;
+  Timer? _scheduleTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _scheduleTimer?.cancel();
+    super.dispose();
+  }
 
   void _handleGoBack() {
     if (context.canPop()) {
@@ -619,6 +637,79 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                 ),
               ],
             ),
+            if (game.scheduledAt != null) ...[
+              const SizedBox(height: 12),
+              () {
+                final now = DateTime.now();
+                final diff = game.scheduledAt!.difference(now);
+                final isPassed = diff.isNegative;
+                String countdownText;
+                if (isPassed) {
+                  countdownText = 'Scheduled time reached • Ready to Launch';
+                } else {
+                  final hours = diff.inHours;
+                  final mins = diff.inMinutes % 60;
+                  final secs = diff.inSeconds % 60;
+                  countdownText = hours > 0
+                      ? 'Starts in ${hours}h ${mins}m ${secs}s'
+                      : 'Starts in ${mins}m ${secs}s';
+                }
+                final config = game.dabbyScheduleConfig;
+                final isAuto = config?.isAutonomousHostEnabled ?? true;
+
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.alarm_on_rounded, size: 18, color: AppTheme.secondaryColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Scheduled: ${Formatters.formatShortDate(game.scheduledAt!)}',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isPassed ? AppTheme.accentWarning.withValues(alpha: 0.2) : AppTheme.darkSurface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: isPassed ? AppTheme.accentWarning : AppTheme.secondaryColor),
+                            ),
+                            child: Text(
+                              countdownText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isPassed ? AppTheme.accentWarning : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isAuto
+                            ? '🤖 Dabby Autonomous Host Active: Room will auto-launch when countdown ends. You can also start early at any time.'
+                            : 'Host Scheduled: The room will remain open for players until you click Start Game.',
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
+                      ),
+                    ],
+                  ),
+                );
+              }(),
+            ],
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -759,19 +850,35 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Widget _buildActionButtons(MptGame game, int confirmedCount, int waitingCount, int walletCredits) {
+    final isScheduled = game.scheduledAt != null;
+    final isPassed = isScheduled && game.scheduledAt!.isBefore(DateTime.now());
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton.icon(
           onPressed: _isProcessing ? null : () => _handleStartGame(game, confirmedCount, walletCredits),
           icon: const Icon(Icons.play_arrow_rounded),
-          label: const Text('Start Game & Deduct Credits', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          label: Text(
+            isScheduled
+                ? (isPassed ? 'Start Game Now & Deduct Credits' : 'Start Game Early & Deduct Credits')
+                : 'Start Game & Deduct Credits',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.accentSuccess,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
+        if (isScheduled && !isPassed) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Scheduled for ${Formatters.formatShortDate(game.scheduledAt!)}. Game will auto-launch when time arrives.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+          ),
+        ],
         const SizedBox(height: 10),
 
         if (AppConfig.enableMockCredits)

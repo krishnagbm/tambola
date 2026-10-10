@@ -1053,6 +1053,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
+                                    _buildLobbyWaitingNotice(context, currentGame),
                                     _buildPlayerIdentityBanner(
                                       currentUser,
                                       ticket,
@@ -1212,6 +1213,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          _buildLobbyWaitingNotice(context, currentGame),
                           // Player Identity & Ticket Number Card
                           _buildPlayerIdentityBanner(
                             currentUser,
@@ -1362,6 +1364,57 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLobbyWaitingNotice(BuildContext context, MptGame? game) {
+    if (game == null || !game.isOpen) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.meeting_room_rounded, color: AppTheme.secondaryColor, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  game.scheduledAt != null
+                      ? '⏳ GAME SCHEDULED: ${Formatters.formatShortDate(game.scheduledAt!)}'
+                      : '⏳ WAITING FOR ORGANIZER TO START',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Viewing ticket preview. Live balls will call automatically here once game starts.',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: () => context.push('/game-status/${widget.gameId}'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.darkSurface,
+              foregroundColor: AppTheme.primaryLight,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Lobby', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

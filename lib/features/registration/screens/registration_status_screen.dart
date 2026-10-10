@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../../../models/mpt_game.dart';
 import '../../../models/mpt_registration.dart';
 import '../../../providers/app_providers.dart';
+import '../../game_setup/widgets/schedule_game_dialog.dart';
 import '../widgets/player_lobby_showcase_player.dart';
 
 class RegistrationStatusScreen extends ConsumerWidget {
@@ -394,29 +396,47 @@ class RegistrationStatusScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppTheme.darkSurface,
-              borderRadius: BorderRadius.circular(12),
+          if (game.scheduledAt != null) ...[
+            ScheduledCountdownSection(
+              scheduledAt: game.scheduledAt!,
+              dabbyConfig: game.dabbyScheduleConfig,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  height: 14,
-                  width: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryLight),
-                ),
-                SizedBox(width: 10),
-                Text(
-                  'Waiting for Organizer to start...',
-                  style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
-                ),
-              ],
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.darkSurface,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 14,
+                    width: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryLight),
+                  ),
+                  SizedBox(width: 10),
+                  Text(
+                    'Waiting for Organizer to start...',
+                    style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/play/${game.id}'),
+            icon: const Icon(Icons.confirmation_number_outlined, size: 16),
+            label: const Text('Preview My Ticket Numbers'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.primaryLight,
+              side: BorderSide(color: AppTheme.primaryLight.withValues(alpha: 0.6)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 10),
           TextButton.icon(
             onPressed: () => _handleLeaveGame(context, ref),
             icon: const Icon(Icons.exit_to_app_rounded, size: 16, color: Color(0xFFEF4444)),
@@ -538,6 +558,109 @@ class RegistrationStatusScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () => context.go('/join'),
             child: const Text('Join Game'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ScheduledCountdownSection extends StatefulWidget {
+  final DateTime scheduledAt;
+  final DabbyScheduleConfig? dabbyConfig;
+
+  const ScheduledCountdownSection({
+    super.key,
+    required this.scheduledAt,
+    this.dabbyConfig,
+  });
+
+  @override
+  State<ScheduledCountdownSection> createState() => _ScheduledCountdownSectionState();
+}
+
+class _ScheduledCountdownSectionState extends State<ScheduledCountdownSection> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final difference = widget.scheduledAt.difference(now);
+    final isPassed = difference.isNegative;
+
+    String countdownText;
+    if (isPassed) {
+      countdownText = 'Scheduled time reached • Waiting for launch...';
+    } else {
+      final hours = difference.inHours;
+      final minutes = difference.inMinutes % 60;
+      final seconds = difference.inSeconds % 60;
+      if (hours > 0) {
+        countdownText = 'Starts in ${hours}h ${minutes}m ${seconds}s';
+      } else {
+        countdownText = 'Starts in ${minutes}m ${seconds}s';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.alarm_on_rounded, size: 18, color: AppTheme.secondaryColor),
+              const SizedBox(width: 8),
+              Text(
+                'SCHEDULED: ${Formatters.formatShortDate(widget.scheduledAt)}',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor, letterSpacing: 0.5),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isPassed ? AppTheme.accentWarning : AppTheme.secondaryColor),
+            ),
+            child: Text(
+              countdownText,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                color: isPassed ? AppTheme.accentWarning : Colors.white,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.dabbyConfig?.isAutonomousHostEnabled == true
+                ? '🤖 Dabby Autonomous Host is active. When countdown completes, the room will automatically launch and take you directly to your live game!'
+                : 'The Organizer will launch the game room on or before the scheduled time. When started, you will automatically transition to your live ticket!',
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

@@ -344,21 +344,42 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Live Game in Progress Alert Banner
+            // Live Game in Progress or Scheduled Lobby Alert Banner
             if (liveJoined != null) ...[
-              _buildLiveGameBanner(
-                context,
-                title: (liveJoined['game']?['name'] ?? 'Live Game').toString(),
-                subtitle: 'You are registered in this live session!',
-                onTap: () => context.push('/play/${liveJoined['game_id']}'),
-              ),
+              () {
+                final g = liveJoined['game'] as Map<String, dynamic>? ?? {};
+                final status = (g['status'] ?? 'OPEN').toString();
+                final isLive = status == 'IN_PROGRESS';
+                final schedRaw = g['scheduled_at'];
+                final schedAt = schedRaw != null ? DateTime.tryParse(schedRaw.toString())?.toLocal() : null;
+                return _buildLiveGameBanner(
+                  context,
+                  title: (g['name'] ?? 'Live Game').toString(),
+                  isLive: isLive,
+                  badgeText: isLive ? 'LIVE NOW' : (schedAt != null ? 'SCHEDULED' : 'LOBBY OPEN'),
+                  badgeColor: isLive ? AppTheme.accentSuccess : (schedAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight),
+                  icon: isLive ? Icons.play_circle_filled : (schedAt != null ? Icons.access_time_filled : Icons.meeting_room_rounded),
+                  subtitle: isLive
+                      ? 'Game is LIVE! Tap to play your ticket now.'
+                      : (schedAt != null
+                          ? 'Scheduled: ${Formatters.formatShortDate(schedAt)} • Waiting in Lobby'
+                          : 'Seat Confirmed • Waiting for Organizer to start in Lobby'),
+                  onTap: () => context.push(isLive ? '/play/${liveJoined['game_id']}' : '/game-status/${liveJoined['game_id']}'),
+                );
+              }(),
               const SizedBox(height: 12),
             ] else if (liveHosted != null) ...[
               _buildLiveGameBanner(
                 context,
                 title: liveHosted.name,
+                isLive: !liveHosted.isOpen,
+                badgeText: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
+                badgeColor: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
+                icon: liveHosted.isOpen ? Icons.meeting_room_rounded : Icons.sensors_rounded,
                 subtitle: liveHosted.isOpen
-                    ? 'Lobby Open • Waiting for players. Tap to manage lobby & invite.'
+                    ? (liveHosted.scheduledAt != null
+                        ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.scheduledAt!)} • Tap to manage lobby.'
+                        : 'Lobby Open • Waiting for players. Tap to manage lobby & invite.')
                     : 'You are hosting this live session. Tap to resume caller controls.',
                 onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
               ),
@@ -421,19 +442,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         children: [
           // Live Game in Progress Alert Banner (if any)
           if (liveJoined != null) ...[
-            _buildLiveGameBanner(
-              context,
-              title: (liveJoined['game']?['name'] ?? 'Live Game').toString(),
-              subtitle: 'You are registered in this live session! Tap to play.',
-              onTap: () => context.push('/play/${liveJoined['game_id']}'),
-            ),
+            () {
+              final g = liveJoined['game'] as Map<String, dynamic>? ?? {};
+              final status = (g['status'] ?? 'OPEN').toString();
+              final isLive = status == 'IN_PROGRESS';
+              final schedRaw = g['scheduled_at'];
+              final schedAt = schedRaw != null ? DateTime.tryParse(schedRaw.toString())?.toLocal() : null;
+              return _buildLiveGameBanner(
+                context,
+                title: (g['name'] ?? 'Live Game').toString(),
+                isLive: isLive,
+                badgeText: isLive ? 'LIVE NOW' : (schedAt != null ? 'SCHEDULED' : 'LOBBY OPEN'),
+                badgeColor: isLive ? AppTheme.accentSuccess : (schedAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight),
+                icon: isLive ? Icons.play_circle_filled : (schedAt != null ? Icons.access_time_filled : Icons.meeting_room_rounded),
+                subtitle: isLive
+                    ? 'Game is LIVE! Tap to play your ticket now.'
+                    : (schedAt != null
+                        ? 'Scheduled: ${Formatters.formatShortDate(schedAt)} • Waiting in Lobby'
+                        : 'Seat Confirmed • Waiting for Organizer to start in Lobby'),
+                onTap: () => context.push(isLive ? '/play/${liveJoined['game_id']}' : '/game-status/${liveJoined['game_id']}'),
+              );
+            }(),
             const SizedBox(height: 14),
           ] else if (liveHosted != null) ...[
             _buildLiveGameBanner(
               context,
               title: liveHosted.name,
+              isLive: !liveHosted.isOpen,
+              badgeText: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
+              badgeColor: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
+              icon: liveHosted.isOpen ? Icons.meeting_room_rounded : Icons.sensors_rounded,
               subtitle: liveHosted.isOpen
-                  ? 'Lobby Open • Waiting for players. Tap to manage lobby & invite.'
+                  ? (liveHosted.scheduledAt != null
+                      ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.scheduledAt!)} • Tap to manage lobby.'
+                      : 'Lobby Open • Waiting for players. Tap to manage lobby & invite.')
                   : 'You are hosting this live session. Tap to resume controls.',
               onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
             ),
@@ -633,26 +675,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildLiveGameBanner(BuildContext context, {required String title, required String subtitle, required VoidCallback onTap}) {
+  Widget _buildLiveGameBanner(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool isLive = true,
+    String badgeText = 'LIVE NOW',
+    Color badgeColor = AppTheme.accentSuccess,
+    IconData icon = Icons.play_circle_filled,
+  }) {
+    final themeColor = isLive ? AppTheme.accentSuccess : (badgeColor == AppTheme.secondaryColor ? AppTheme.secondaryColor : AppTheme.primaryLight);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.accentSuccess.withOpacity(0.12),
+          color: themeColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppTheme.accentSuccess, width: 1.5),
+          border: Border.all(color: themeColor, width: 1.5),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.accentSuccess.withOpacity(0.25),
+                color: themeColor.withValues(alpha: 0.25),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.play_circle_filled, color: AppTheme.accentSuccess, size: 24),
+              child: Icon(icon, color: themeColor, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -664,10 +716,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppTheme.accentSuccess,
+                          color: badgeColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('LIVE NOW', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.black)),
+                        child: Text(badgeText, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.black)),
                       ),
                       const SizedBox(width: 6),
                       Expanded(
@@ -684,7 +736,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.accentSuccess),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: themeColor),
           ],
         ),
       ),

@@ -38,7 +38,7 @@ class GameRepository {
         params: {
           'p_name': name,
           'p_planned_capacity': plannedCapacity,
-          'p_scheduled_at': scheduledAt?.toIso8601String(),
+          'p_scheduled_at': scheduledAt?.toUtc().toIso8601String(),
           'p_prizes_config':
               prizesConfig ??
               [
@@ -82,7 +82,7 @@ class GameRepository {
             'planned_capacity_tier_id': effectiveTierId,
             'initial_funded_capacity': plannedCapacity,
             'funded_capacity': plannedCapacity,
-            'scheduled_at': scheduledAt?.toIso8601String(),
+            'scheduled_at': scheduledAt?.toUtc().toIso8601String(),
             'is_private': isPrivate,
             'prizes_config':
                 prizesConfig ??
@@ -475,7 +475,7 @@ class GameRepository {
         'otps': otps
             .map((o) => {'seat_number': o.seatNumber, 'otp_code': o.otpCode})
             .toList(),
-        'scheduled_at': game.scheduledAt?.toIso8601String(),
+        'scheduled_at': game.scheduledAt?.toUtc().toIso8601String(),
       };
 
       // 1. Try AWS API Gateway Lambda endpoint

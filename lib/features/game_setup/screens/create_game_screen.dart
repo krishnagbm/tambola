@@ -361,7 +361,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         'org_visual_confirmed': _orgVisualConfirmed,
         'org_authority_confirmed': _orgAuthorityConfirmed,
         'free_to_play_confirmed': _freeToPlayConfirmed,
-        'scheduled_date_time': _scheduledDateTime?.toIso8601String(),
+        'scheduled_date_time': _scheduledDateTime?.toUtc().toIso8601String(),
         'dabby_schedule_config': _dabbyScheduleConfig?.toDraftJson(),
         'saved_at': DateTime.now().toIso8601String(),
       };

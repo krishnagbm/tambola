@@ -1,4 +1,5 @@
 import 'flash_housie_config.dart';
+import '../features/game_setup/widgets/schedule_game_dialog.dart';
 
 class MptGame {
   final String id;
@@ -87,18 +88,28 @@ class MptGame {
       initialFundedCapacity: json['initial_funded_capacity'] as int? ?? 25,
       fundedCapacity: json['funded_capacity'] as int? ?? 25,
       finalCapacity: json['final_capacity'] as int?,
-      scheduledAt: json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at']) : null,
-      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at']) : null,
-      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']) : null,
+      scheduledAt: json['scheduled_at'] != null ? DateTime.parse(json['scheduled_at']).toLocal() : null,
+      startedAt: json['started_at'] != null ? DateTime.parse(json['started_at']).toLocal() : null,
+      completedAt: json['completed_at'] != null ? DateTime.parse(json['completed_at']).toLocal() : null,
       isPrivate: json['is_private'] as bool? ?? false,
       prizesConfig: parsePrizes(json['prizes_config']),
       totalPrizeBudget: (json['total_prize_budget'] as num?)?.toDouble() ?? 0.0,
       prizeGiftsConfig: parsePrizeGifts(json['prize_gifts_config']),
       minorPrizePolicy: json['minor_prize_policy'] as String? ?? 'ONE_MINOR_PER_PLAYER',
       stateVersion: json['state_version'] as int? ?? 1,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : DateTime.now(),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']).toLocal() : DateTime.now(),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']).toLocal() : DateTime.now(),
     );
+  }
+
+  DabbyScheduleConfig? get dabbyScheduleConfig {
+    final raw = prizeGiftsConfig['_dabby_orchestration'];
+    if (raw is Map<String, dynamic>) {
+      return DabbyScheduleConfig.fromJson(raw);
+    } else if (raw is Map) {
+      return DabbyScheduleConfig.fromJson(Map<String, dynamic>.from(raw));
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -112,17 +123,17 @@ class MptGame {
       'initial_funded_capacity': initialFundedCapacity,
       'funded_capacity': fundedCapacity,
       'final_capacity': finalCapacity,
-      'scheduled_at': scheduledAt?.toIso8601String(),
-      'started_at': startedAt?.toIso8601String(),
-      'completed_at': completedAt?.toIso8601String(),
+      'scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+      'started_at': startedAt?.toUtc().toIso8601String(),
+      'completed_at': completedAt?.toUtc().toIso8601String(),
       'is_private': isPrivate,
       'prizes_config': prizesConfig,
       'total_prize_budget': totalPrizeBudget,
       'prize_gifts_config': prizeGiftsConfig,
       'minor_prize_policy': minorPrizePolicy,
       'state_version': stateVersion,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
   }
 }

@@ -23,7 +23,7 @@ class DabbyScheduleConfig {
   int getQuorumCount(int totalCapacity) => (totalCapacity * quorumPercentage).ceil();
 
   Map<String, dynamic> toJson({required int plannedCapacity}) => {
-    'scheduled_at': scheduledAt.toIso8601String(),
+    'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     'autonomous_host_enabled': isAutonomousHostEnabled,
     'quorum_percentage': quorumPercentage,
     'quorum_count': getQuorumCount(plannedCapacity),
@@ -33,7 +33,7 @@ class DabbyScheduleConfig {
   };
 
   Map<String, dynamic> toDraftJson() => {
-    'scheduled_at': scheduledAt.toIso8601String(),
+    'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     'autonomous_host_enabled': isAutonomousHostEnabled,
     'quorum_percentage': quorumPercentage,
     'grace_period_minutes': gracePeriodMinutes,
@@ -43,7 +43,9 @@ class DabbyScheduleConfig {
 
   factory DabbyScheduleConfig.fromJson(Map<String, dynamic> json) {
     return DabbyScheduleConfig(
-      scheduledAt: DateTime.tryParse(json['scheduled_at']?.toString() ?? '') ?? DateTime.now(),
+      scheduledAt: json['scheduled_at'] != null
+          ? (DateTime.tryParse(json['scheduled_at'].toString())?.toLocal() ?? DateTime.now())
+          : DateTime.now(),
       isAutonomousHostEnabled: json['autonomous_host_enabled'] as bool? ?? true,
       quorumPercentage: (json['quorum_percentage'] as num?)?.toDouble() ?? 0.67,
       gracePeriodMinutes: (json['grace_period_minutes'] as num?)?.toInt() ?? 5,
