@@ -937,7 +937,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Expanded(
-                                  child: _buildGroupSizeSection(),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildGroupSizeSection(),
+                                      const SizedBox(height: 16),
+                                      _buildSchedulePicker(),
+                                      const SizedBox(height: 14),
+                                      _buildFreeToPlayPolicyCard(),
+                                    ],
+                                  ),
                                 ),
                                 const SizedBox(width: 24),
                                 Expanded(
@@ -959,17 +968,19 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildGroupSizeSection(),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 20),
                                 _buildWinningPatternsSection(),
                                 const SizedBox(height: 14),
                                 _buildWinnerEligibilitySection(),
                                 const SizedBox(height: 10),
                                 _buildCustomPatternsCallout(),
+                                const SizedBox(height: 16),
+                                _buildSchedulePicker(),
+                                const SizedBox(height: 14),
+                                _buildFreeToPlayPolicyCard(),
                               ],
                             ),
-                          const SizedBox(height: 24),
-                          _buildSchedulePicker(),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           _buildCreateButton(),
                         ],
                       );
@@ -3002,7 +3013,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildFreeToPlayComplianceCard(),
+        _buildFreeToPlayConsentCheckbox(),
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
@@ -3038,33 +3049,28 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     );
   }
 
-  Widget _buildFreeToPlayComplianceCard() {
+  Widget _buildFreeToPlayPolicyCard() {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _freeToPlayConfirmed
-            ? AppTheme.accentSuccess.withValues(alpha: 0.1)
-            : AppTheme.darkSurface,
+        color: AppTheme.darkSurface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _freeToPlayConfirmed
-              ? AppTheme.accentSuccess.withValues(alpha: 0.55)
-              : const Color(0xFF334155),
-          width: _freeToPlayConfirmed ? 1.5 : 1,
+          color: const Color(0xFF334155),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
-                _freeToPlayConfirmed ? Icons.verified_user_rounded : Icons.gavel_rounded,
+                Icons.gavel_rounded,
                 size: 16,
-                color: _freeToPlayConfirmed ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                color: AppTheme.secondaryColor,
               ),
-              const SizedBox(width: 6),
-              const Expanded(
+              SizedBox(width: 6),
+              Expanded(
                 child: Text(
                   'Free-to-Play & Voucher-Only Policy (No Gambling)',
                   style: TextStyle(
@@ -3138,77 +3144,82 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          InkWell(
-            onTap: () => setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.darkCard,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: _freeToPlayConfirmed
-                      ? AppTheme.accentSuccess.withValues(alpha: 0.5)
-                      : const Color(0xFF334155),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: Checkbox(
-                      value: _freeToPlayConfirmed,
-                      activeColor: AppTheme.accentSuccess,
-                      onChanged: (val) => setState(() => _freeToPlayConfirmed = val ?? false),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: Colors.white,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        children: [
-                          const TextSpan(
-                            text: 'I confirm that no money or entry fee is collected from players to join this game, and prizes are strictly promotional vouchers/gifts (no cash delivery) per our ',
-                          ),
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: InkWell(
-                              onTap: () async {
-                                final uri = Uri.parse('${AppConfig.appBaseUrl}/terms-conditions.html#anti-gambling-policy');
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                }
-                              },
-                              child: const Text(
-                                'Terms & Conditions',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  color: AppTheme.secondaryColor,
-                                  decoration: TextDecoration.underline,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const TextSpan(text: '.'),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFreeToPlayConsentCheckbox() {
+    return InkWell(
+      onTap: () => setState(() => _freeToPlayConfirmed = !_freeToPlayConfirmed),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: _freeToPlayConfirmed
+              ? AppTheme.accentSuccess.withValues(alpha: 0.12)
+              : AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: _freeToPlayConfirmed
+                ? AppTheme.accentSuccess.withValues(alpha: 0.6)
+                : const Color(0xFF334155),
+            width: _freeToPlayConfirmed ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: Checkbox(
+                value: _freeToPlayConfirmed,
+                activeColor: AppTheme.accentSuccess,
+                onChanged: (val) => setState(() => _freeToPlayConfirmed = val ?? false),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Colors.white,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  children: [
+                    const TextSpan(
+                      text: 'I confirm that no money or entry fee is collected from players to join this game, and prizes are strictly promotional vouchers/gifts (no cash delivery) per our ',
+                    ),
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.middle,
+                      child: InkWell(
+                        onTap: () async {
+                          final uri = Uri.parse('${AppConfig.appBaseUrl}/terms-conditions.html#anti-gambling-policy');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: const Text(
+                          'Terms & Conditions',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: AppTheme.secondaryColor,
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const TextSpan(text: '.'),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
