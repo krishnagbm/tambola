@@ -106,11 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _handleShareInvite(MptGame game) async {
-    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
-        '🔑 Invite Code: ${game.inviteCode}\n\n'
-        '👉 Tap the link below to join directly in your browser:\n$link';
-    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
+    await Share.share(game.inviteShareMessage, subject: 'Join DabHousie: ${game.name}');
   }
 
   Future<void> _handleCancelGameFromHome(MptGame game) async {
@@ -1424,6 +1420,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ],
                             ),
+                            if (game.effectiveScheduledAt != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.alarm_on_rounded, size: 12, color: AppTheme.secondaryColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Scheduled: ${Formatters.formatShortDate(game.effectiveScheduledAt!)}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                  ),
+                                ],
+                              ),
+                            ],
                             const SizedBox(height: 4),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -17,7 +17,23 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/',
+      builder: (context, state) {
+        final tabStr = state.uri.queryParameters['tab'];
+        final tabIndex = int.tryParse(tabStr ?? '') ?? 0;
+        return HomeScreen(initialTabIndex: tabIndex);
+      },
+    ),
+    GoRoute(
+      path: '/dashboard',
       builder: (context, state) => const HomeScreen(initialTabIndex: 0),
+    ),
+    GoRoute(
+      path: '/player',
+      builder: (context, state) => const HomeScreen(initialTabIndex: 1),
+    ),
+    GoRoute(
+      path: '/organizer',
+      builder: (context, state) => const HomeScreen(initialTabIndex: 2),
     ),
     GoRoute(
       path: '/profile',

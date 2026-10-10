@@ -44,11 +44,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   void _handleGoBack() {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go('/');
-    }
+    context.go('/organizer');
   }
 
   void _handleCopyLink(MptGame game) {
@@ -60,11 +56,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleShareInvite(MptGame game) async {
-    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play DabHousie with me in "${game.name}"!\n\n'
-        '🔑 Invite Code: ${game.inviteCode}\n\n'
-        '👉 Tap the link below to join directly in your browser:\n$link';
-    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
+    await Share.share(game.inviteShareMessage, subject: 'Join DabHousie: ${game.name}');
   }
 
   Future<void> _handleCancelGame(MptGame game) async {
@@ -492,6 +484,11 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
         ),
         title: const Text('Organizer Game Lobby'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.dashboard_customize_outlined),
+            tooltip: 'Organizer Dashboard',
+            onPressed: () => context.go('/organizer'),
+          ),
           IconButton(
             icon: const Icon(Icons.tv, color: AppTheme.secondaryColor),
             tooltip: 'Display Game on TV / Projector',

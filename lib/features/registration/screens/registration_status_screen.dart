@@ -102,7 +102,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
                           style: const TextStyle(fontSize: 14, color: AppTheme.secondaryColor, fontWeight: FontWeight.w600),
                           textAlign: TextAlign.center,
                         ),
-                        if (game.scheduledAt != null) ...[
+                        if (game.effectiveScheduledAt != null) ...[
                           const SizedBox(height: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -118,7 +118,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
                                 const Icon(Icons.access_time, size: 16, color: AppTheme.primaryLight),
                                 const SizedBox(width: 6),
                                 Text(
-                                  'Scheduled: ${Formatters.formatShortDate(game.scheduledAt!)}',
+                                  'Scheduled: ${Formatters.formatShortDate(game.effectiveScheduledAt!)}',
                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppTheme.primaryLight),
                                 ),
                               ],

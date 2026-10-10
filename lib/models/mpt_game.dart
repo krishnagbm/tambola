@@ -1,5 +1,6 @@
 import 'flash_housie_config.dart';
 import '../features/game_setup/widgets/schedule_game_dialog.dart';
+import '../core/utils/formatters.dart';
 
 class MptGame {
   final String id;
@@ -58,6 +59,13 @@ class MptGame {
 
   /// Returns the effective scheduled time, checking scheduledAt and dabbyScheduleConfig
   DateTime? get effectiveScheduledAt => scheduledAt ?? dabbyScheduleConfig?.scheduledAt;
+
+  /// Player-facing invitation message formatted with schedule time and invite link
+  String get inviteShareMessage => Formatters.buildGameInviteMessage(
+        gameName: name,
+        inviteCode: inviteCode,
+        scheduledAt: effectiveScheduledAt,
+      );
 
   FlashHousieConfig? get flashHousieConfig =>
       FlashHousieConfig.fromPrizeGiftsConfig(prizeGiftsConfig);

@@ -939,159 +939,228 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   Future<void> _handleShare(MptGame game) async {
-    final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
-    final text = '🎉 You are invited to play DabHousie in "${game.name}"!\n\n'
-        '🔑 Invite Code: ${game.inviteCode}\n\n'
-        '👉 Tap to join or download the app:\n$link';
-    await Share.share(text, subject: 'Join DabHousie: ${game.name}');
+    await Share.share(game.inviteShareMessage, subject: 'Join DabHousie: ${game.name}');
   }
 
   void _showSuccessDialog(MptGame game, {String? brandApprovalMessage, bool isSelfApproved = false}) {
+    final effectiveSched = game.effectiveScheduledAt;
+
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppTheme.darkCard,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.check_circle, color: AppTheme.accentSuccess),
-            SizedBox(width: 8),
-            Text('Game Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Icon(Icons.check_circle, color: AppTheme.accentSuccess),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text('Game Created! 🎉', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Color(0xFFA0AEC0)),
+              tooltip: 'Close to Dashboard',
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.go('/organizer');
+              },
+            ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Game: ${game.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-            const Text('Share this Invite Code with your players:', style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0))),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.darkSurface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primaryColor),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    game.inviteCode,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 2, color: AppTheme.secondaryColor),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Game: ${game.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              if (effectiveSched != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
                   ),
-                  Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 18, color: AppTheme.primaryLight),
-                        tooltip: 'Copy Code Only',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: game.inviteCode));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Invite code copied to clipboard!')),
-                          );
-                        },
+                      Row(
+                        children: [
+                          const Icon(Icons.alarm_on_rounded, size: 18, color: AppTheme.secondaryColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Scheduled: ${Formatters.formatDate(effectiveSched)}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                            ),
+                          ),
+                        ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.link, size: 20, color: AppTheme.primaryLight),
-                        tooltip: 'Copy Direct Join Link',
-                        onPressed: () => _handleCopyLink(game),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.share, color: AppTheme.secondaryColor),
-                        tooltip: 'Share Invite',
-                        onPressed: () => _handleShare(game),
+                      const SizedBox(height: 4),
+                      Text(
+                        game.dabbyScheduleConfig?.isAutonomousHostEnabled == true
+                            ? '🤖 Dabby Autonomous Host Active: Game will auto-launch when scheduled time arrives. Players can join & reserve tickets now.'
+                            : 'Host Scheduled: Players can join the lobby and reserve seats in advance.',
+                        style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1)),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Initial Funded Capacity: ${game.fundedCapacity} Seats (Overflow players will automatically join the Waiting List).',
-              style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-            ),
-            if (brandApprovalMessage != null) ...[
+                ),
+              ],
               const SizedBox(height: 12),
+              const Text('Share this Invite Code with your players:', style: TextStyle(fontSize: 13, color: Color(0xFFA0AEC0))),
+              const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelfApproved
-                      ? AppTheme.accentSuccess.withValues(alpha: 0.15)
-                      : AppTheme.secondaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isSelfApproved
-                        ? AppTheme.accentSuccess.withValues(alpha: 0.5)
-                        : AppTheme.secondaryColor.withValues(alpha: 0.4),
-                  ),
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryColor),
                 ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      isSelfApproved ? Icons.verified_user_rounded : Icons.mark_email_read_rounded,
-                      color: isSelfApproved ? AppTheme.accentSuccess : AppTheme.secondaryColor,
-                      size: 20,
+                    Text(
+                      game.inviteCode,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 2, color: AppTheme.secondaryColor),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isSelfApproved
-                            ? '🏢 Corporate Branding: $brandApprovalMessage'
-                            : '🏢 Corporate Approval: $brandApprovalMessage',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
-                      ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.copy, size: 18, color: AppTheme.primaryLight),
+                          tooltip: 'Copy Code Only',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: game.inviteCode));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Invite code copied to clipboard!')),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.link, size: 20, color: AppTheme.primaryLight),
+                          tooltip: 'Copy Direct Join Link',
+                          onPressed: () => _handleCopyLink(game),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.share, color: AppTheme.secondaryColor),
+                          tooltip: 'Share Invite',
+                          onPressed: () => _handleShare(game),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-            if (game.isPrivate) ...[
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.lock_outline_rounded, color: AppTheme.accentPartyPurple, size: 20),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '🔒 Private Party Mode: Single-use passcodes for each seat have been created & emailed to you. You can view, copy, and manage them anytime in your Organizer Lobby.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 12),
+              Text(
+                'Initial Funded Capacity: ${game.fundedCapacity} Seats (Overflow players will automatically join the Waiting List).',
+                style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
               ),
+              if (brandApprovalMessage != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelfApproved
+                        ? AppTheme.accentSuccess.withValues(alpha: 0.15)
+                        : AppTheme.secondaryColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelfApproved
+                          ? AppTheme.accentSuccess.withValues(alpha: 0.5)
+                          : AppTheme.secondaryColor.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isSelfApproved ? Icons.verified_user_rounded : Icons.mark_email_read_rounded,
+                        color: isSelfApproved ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isSelfApproved
+                              ? '🏢 Corporate Branding: $brandApprovalMessage'
+                              : '🏢 Corporate Approval: $brandApprovalMessage',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (game.isPrivate) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lock_outline_rounded, color: AppTheme.accentPartyPurple, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '🔒 Private Party Mode: Single-use passcodes for each seat have been created & emailed to you. You can view, copy, and manage them anytime in your Organizer Lobby.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
-          TextButton.icon(
-            onPressed: () => _handleCopyLink(game),
-            icon: const Icon(Icons.link, size: 16, color: AppTheme.primaryLight),
-            label: const Text('Copy Link', style: TextStyle(color: AppTheme.primaryLight)),
-          ),
-          TextButton.icon(
-            onPressed: () => _handleShare(game),
-            icon: const Icon(Icons.share, size: 16, color: AppTheme.secondaryColor),
-            label: const Text('Share Invite', style: TextStyle(color: AppTheme.secondaryColor)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.go('/admin-lobby/${game.id}');
-            },
-            child: const Text('Open Organizer Lobby'),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton.icon(
+                onPressed: () => _handleCopyLink(game),
+                icon: const Icon(Icons.link, size: 16, color: AppTheme.primaryLight),
+                label: const Text('Copy Link', style: TextStyle(color: AppTheme.primaryLight)),
+              ),
+              TextButton.icon(
+                onPressed: () => _handleShare(game),
+                icon: const Icon(Icons.share, size: 16, color: AppTheme.secondaryColor),
+                label: const Text('Share Invite', style: TextStyle(color: AppTheme.secondaryColor)),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.go('/organizer');
+                },
+                icon: const Icon(Icons.dashboard_customize_outlined, size: 16),
+                label: const Text('Organizer Dashboard'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Color(0xFF475569)),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.go('/admin-lobby/${game.id}');
+                },
+                icon: const Icon(Icons.meeting_room_rounded, size: 16),
+                label: const Text('Open Organizer Lobby'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: AppTheme.primaryDark,
+                ),
+              ),
+            ],
           ),
         ],
       ),

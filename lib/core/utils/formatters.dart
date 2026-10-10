@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import '../config/app_config.dart';
 
 class Formatters {
   static String formatDate(DateTime date) {
@@ -7,6 +8,26 @@ class Formatters {
 
   static String formatShortDate(DateTime date) {
     return DateFormat('MMM d, h:mm a').format(date.toLocal());
+  }
+
+  /// Builds a player-facing invitation message including scheduled date/time if applicable
+  static String buildGameInviteMessage({
+    required String gameName,
+    required String inviteCode,
+    DateTime? scheduledAt,
+  }) {
+    final link = '${AppConfig.appBaseUrl}/#/join/$inviteCode';
+    if (scheduledAt != null) {
+      final timeFormatted = formatDate(scheduledAt);
+      return '🎉 You are invited to play DabHousie in "$gameName"!\n\n'
+          '📅 Scheduled Time: $timeFormatted\n'
+          '🔑 Invite Code: $inviteCode\n\n'
+          '👉 Tap to reserve your seat & preview tickets:\n$link';
+    } else {
+      return '🎉 You are invited to play DabHousie in "$gameName"!\n\n'
+          '🔑 Invite Code: $inviteCode\n\n'
+          '👉 Tap the link below to join directly in your browser:\n$link';
+    }
   }
 
   static String formatCredits(int credits) {
