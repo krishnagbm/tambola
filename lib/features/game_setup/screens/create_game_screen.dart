@@ -923,40 +923,56 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   _buildPrivatePartyToggle(),
                   const SizedBox(height: 16),
 
-                  _buildSchedulePicker(),
-                  const SizedBox(height: 16),
-
                   _buildCorporateBrandingSection(),
                   const SizedBox(height: 24),
 
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final isTwoColumn = constraints.maxWidth >= 640;
-                      if (isTwoColumn) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: _buildGroupSizeSection(),
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (isTwoColumn)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _buildGroupSizeSection(),
+                                      const SizedBox(height: 16),
+                                      _buildWinnerEligibilitySection(),
+                                      const SizedBox(height: 12),
+                                      _buildCustomPatternsCallout(),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  child: _buildWinningPatternsSection(),
+                                ),
+                              ],
+                            )
+                          else
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildGroupSizeSection(),
+                                const SizedBox(height: 24),
+                                _buildWinningPatternsSection(),
+                                const SizedBox(height: 16),
+                                _buildWinnerEligibilitySection(),
+                                const SizedBox(height: 12),
+                                _buildCustomPatternsCallout(),
+                              ],
                             ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: _buildWinningPatternsSection(includeCreateButton: true),
-                            ),
-                          ],
-                        );
-                      } else {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildGroupSizeSection(),
-                            const SizedBox(height: 24),
-                            _buildWinningPatternsSection(includeCreateButton: false),
-                            const SizedBox(height: 24),
-                            _buildCreateButton(),
-                          ],
-                        );
-                      }
+                          const SizedBox(height: 24),
+                          _buildSchedulePicker(),
+                          const SizedBox(height: 16),
+                          _buildCreateButton(),
+                        ],
+                      );
                     },
                   ),
                 ],
@@ -2282,7 +2298,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     });
   }
 
-  Widget _buildWinningPatternsSection({bool includeCreateButton = true}) {
+  Widget _buildWinningPatternsSection() {
     final allocatedSum = _allocatedPrizeSum;
     final totalBudgetVal =
         double.tryParse(_totalBudgetController.text.trim()) ?? allocatedSum;
@@ -2830,159 +2846,155 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 10),
+      ],
+    );
+  }
 
-        // 3. Winner Eligibility & Minor Prize Combination Rules
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.darkSurface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.primaryLight.withValues(alpha: 0.35),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildWinnerEligibilitySection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryLight.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
             children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.verified_user_outlined,
-                    size: 16,
-                    color: AppTheme.accentSuccess,
-                  ),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Winner Eligibility & Combination Rules',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+              Icon(
+                Icons.verified_user_outlined,
+                size: 16,
+                color: AppTheme.accentSuccess,
               ),
-              const SizedBox(height: 6),
-              const Text(
-                '• 🏆 1st Full House is ALWAYS open to ALL players (so nobody logs off early!).\n'
-                '• 🥈 2nd Full House is open to ALL players except the 1st Full House winner.',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Color(0xFFA7F3D0),
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Minor Prizes (Early 5, Corners & Row Lines) Policy:',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFFCBD5E1),
-                ),
-              ),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: _minorPrizePolicy,
-                isExpanded: true,
-                dropdownColor: AppTheme.darkCard,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-                decoration: InputDecoration(
-                  isDense: true,
-                  filled: true,
-                  fillColor: AppTheme.darkCard,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 9,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF334155)),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Winner Eligibility & Combination Rules',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'ONE_MINOR_PER_PLAYER',
-                    child: Text(
-                      'Max 1 Minor Prize per Player + Full House (Spreads Winners)',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 'ONE_LINE_PLUS_BONUS',
-                    child: Text(
-                      'Max 1 Row Line + 1 Bonus (Early 5/Corners) + Full House',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 'UNLIMITED',
-                    child: Text(
-                      'Unlimited Minor Prizes per Player + Full House',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _minorPrizePolicy = val);
-                  }
-                },
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-
-        // Custom Winning Patterns Enterprise Callout
-        InkWell(
-          onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppTheme.darkSurface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
-                ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Need Custom Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
-                      SizedBox(height: 2),
-                      Text('Star, Breakfast, King/Queen & custom rules →', style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1))),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 12),
-              ],
+          const SizedBox(height: 6),
+          const Text(
+            '• 🏆 1st Full House is ALWAYS open to ALL players (so nobody logs off early!).\n'
+            '• 🥈 2nd Full House is open to ALL players except the 1st Full House winner.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Color(0xFFA7F3D0),
+              height: 1.4,
             ),
           ),
-        ),
-        if (includeCreateButton) ...[
-          const SizedBox(height: 14),
-          _buildCreateButton(),
+          const SizedBox(height: 8),
+          const Text(
+            'Minor Prizes (Early 5, Corners & Row Lines) Policy:',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFCBD5E1),
+            ),
+          ),
+          const SizedBox(height: 6),
+          DropdownButtonFormField<String>(
+            initialValue: _minorPrizePolicy,
+            isExpanded: true,
+            dropdownColor: AppTheme.darkCard,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: AppTheme.darkCard,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 9,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(color: Color(0xFF334155)),
+              ),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'ONE_MINOR_PER_PLAYER',
+                child: Text(
+                  'Max 1 Minor Prize per Player + Full House (Spreads Winners)',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'ONE_LINE_PLUS_BONUS',
+                child: Text(
+                  'Max 1 Row Line + 1 Bonus (Early 5/Corners) + Full House',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'UNLIMITED',
+                child: Text(
+                  'Unlimited Minor Prizes per Player + Full House',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _minorPrizePolicy = val);
+              }
+            },
+          ),
         ],
-      ],
+      ),
+    );
+  }
+
+  Widget _buildCustomPatternsCallout() {
+    return InkWell(
+      onTap: () => CorporateInquiryDialog.show(context, initialTopic: 'Custom Winning Patterns'),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.accentPartyPurple.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: AppTheme.accentPartyPurple.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.accentPartyPurple, size: 16),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Need Custom Patterns?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                  SizedBox(height: 2),
+                  Text('Star, Breakfast, King/Queen & custom rules →', style: TextStyle(fontSize: 10, color: Color(0xFFCBD5E1))),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 12),
+          ],
+        ),
+      ),
     );
   }
 
