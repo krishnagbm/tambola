@@ -10,6 +10,7 @@ class DabbyScheduleConfig {
   final int gracePeriodMinutes;
   final String lowQuorumAction; // 'AUTO_CANCEL' or 'START_ANYWAY'
   final bool autoUpgradeOnWaitlist;
+  final int? quorumCount;
 
   const DabbyScheduleConfig({
     required this.scheduledAt,
@@ -18,9 +19,11 @@ class DabbyScheduleConfig {
     this.gracePeriodMinutes = 5,
     this.lowQuorumAction = 'AUTO_CANCEL',
     this.autoUpgradeOnWaitlist = true,
+    this.quorumCount,
   });
 
-  int getQuorumCount(int totalCapacity) => (totalCapacity * quorumPercentage).ceil();
+  int getQuorumCount(int totalCapacity) =>
+      quorumCount ?? (totalCapacity * quorumPercentage).ceil();
 
   Map<String, dynamic> toJson({required int plannedCapacity}) => {
     'scheduled_at': scheduledAt.toUtc().toIso8601String(),
@@ -36,6 +39,7 @@ class DabbyScheduleConfig {
     'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     'autonomous_host_enabled': isAutonomousHostEnabled,
     'quorum_percentage': quorumPercentage,
+    'quorum_count': quorumCount,
     'grace_period_minutes': gracePeriodMinutes,
     'low_quorum_action': lowQuorumAction,
     'auto_upgrade_on_waitlist': autoUpgradeOnWaitlist,
@@ -51,6 +55,7 @@ class DabbyScheduleConfig {
       gracePeriodMinutes: (json['grace_period_minutes'] as num?)?.toInt() ?? 5,
       lowQuorumAction: (json['low_quorum_action'] as String?) ?? 'AUTO_CANCEL',
       autoUpgradeOnWaitlist: json['auto_upgrade_on_waitlist'] as bool? ?? true,
+      quorumCount: (json['quorum_count'] as num?)?.toInt(),
     );
   }
 

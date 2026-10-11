@@ -1543,3 +1543,188 @@ DabHousie Brand Marketing Partner Program: {BASE_URL}/brand-partners.html
         from_email=PARTNERSHIPS_EMAIL,
         from_display_name="DabHousie Partnerships",
     )
+
+
+def send_low_quorum_decision_email(
+    to_email: str,
+    game_name: str,
+    game_id: str,
+    invite_code: str,
+    confirmed_count: int,
+    quorum_count: int,
+    scheduled_at_str: Optional[str] = None,
+    grace_period_minutes: int = 5,
+    organizer_name: Optional[str] = None,
+) -> bool:
+    """
+    Sends an immediate decision request email to the event organizer when a scheduled
+    game reaches its start time but has not met the required player quorum.
+    Includes one-click action buttons to Start Anyway (Autopilot) or Cancel Event.
+    """
+    if not to_email or "@" not in to_email:
+        print("  [ SES ] Invalid or missing recipient email for low quorum decision.")
+        return False
+
+    display_name = organizer_name or "Event Organizer"
+    sched_label = scheduled_at_str or "Scheduled Kickoff Time"
+    subject = f"⚠️ Action Needed: Quorum Not Reached for '{game_name}' ({confirmed_count}/{quorum_count} Players)"
+
+    start_url = f"{BASE_URL}/#/admin-control/{game_id}?autopilot=true"
+    cancel_url = f"{BASE_URL}/#/admin-lobby/{game_id}?action=cancel"
+    lobby_url = f"{BASE_URL}/#/admin-lobby/{game_id}"
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DabHousie Quorum Alert</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 10px 0; color:#f59e0b; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Dabby Autonomous Game Orchestration</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">⚠️ Player Quorum Decision Needed</h1>
+              <p style="margin:6px 0 0 0; color:#93c5fd; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
+
+          <!-- Main Body -->
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 14px 0; font-size:15px; color:#f1f5f9; line-height:1.5;">
+                Hello <strong>{display_name}</strong>,
+              </p>
+              <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
+                The scheduled start time for your event <strong>"{game_name}"</strong> has arrived, but player attendance has not yet reached your configured quorum.
+              </p>
+
+              <!-- Status Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0f172a; border:1px solid #334155; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
+                        <td align="right" style="padding:6px 0; color:#ffffff; font-size:14px; font-weight:700;">{game_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Party Code:</td>
+                        <td align="right" style="padding:6px 0;"><span style="background:#f59e0b; color:#000000; font-family:Courier,'Courier New',monospace; font-weight:800; font-size:13px; padding:2px 8px; border-radius:4px;">{invite_code}</span></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Scheduled Kickoff:</td>
+                        <td align="right" style="padding:6px 0; color:#cbd5e1; font-size:13px;">{sched_label}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Players in Lobby:</td>
+                        <td align="right" style="padding:6px 0; color:#ef4444; font-size:15px; font-weight:800;">{confirmed_count} / {quorum_count} required</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Grace Period Buffer:</td>
+                        <td align="right" style="padding:6px 0; color:#38bdf8; font-size:13px; font-weight:600;">{grace_period_minutes} minutes buffer</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Call to Action Decision Buttons -->
+              <div style="font-size:14px; font-weight:700; color:#f8fafc; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.8px;">
+                Choose How to Proceed:
+              </div>
+
+              <!-- Button 1: Start Anyway -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                <tr>
+                  <td align="center" bgcolor="#10b981" style="background-color:#10b981; border-radius:10px; padding:0; box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+                    <a href="{start_url}" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:block; font-size:15px; font-weight:800; text-decoration:none; padding:14px 20px; border-radius:10px; text-align:center;">
+                      🚀 Start Game Anyway (Launch Auto-Pilot) &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="font-size:12px; color:#94a3b8; margin:-8px 0 16px 4px;">
+                Starts the event immediately with the {confirmed_count} player(s) currently waiting in your lobby.
+              </div>
+
+              <!-- Button 2: Cancel Game -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:14px;">
+                <tr>
+                  <td align="center" bgcolor="#dc2626" style="background-color:#dc2626; border-radius:10px; padding:0;">
+                    <a href="{cancel_url}" target="_blank" style="background-color:#dc2626; color:#ffffff !important; display:block; font-size:15px; font-weight:800; text-decoration:none; padding:14px 20px; border-radius:10px; text-align:center;">
+                      🚫 Cancel Game Event &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <div style="font-size:12px; color:#94a3b8; margin:-8px 0 20px 4px;">
+                Closes the lobby, releases reserved seats, and notifies players. No organizer credits will be deducted.
+              </div>
+
+              <!-- Secondary link -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #1e293b; padding-top:14px;">
+                <tr>
+                  <td align="center">
+                    <a href="{lobby_url}" target="_blank" style="color:#38bdf8; font-size:13.5px; font-weight:600; text-decoration:underline;">
+                      Open Organizer Lobby to Reschedule or Wait &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              DabHousie Realtime Events &bull; <a href="{BASE_URL}" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a><br>
+              Need assistance? Contact our team at <a href="mailto:{AUDIT_EMAIL}" style="color:#38bdf8; text-decoration:none;">{AUDIT_EMAIL}</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Hello {display_name},
+
+The scheduled start time for your event "{game_name}" (Code: {invite_code}) has arrived, but player attendance has not yet reached your configured quorum:
+
+- Players in Lobby: {confirmed_count} / {quorum_count} required
+- Scheduled Time: {sched_label}
+- Grace Period: {grace_period_minutes} minutes
+
+CHOOSE HOW TO PROCEED:
+
+1. START GAME ANYWAY (Launch Auto-Pilot):
+{start_url}
+
+2. CANCEL GAME EVENT:
+{cancel_url}
+
+3. OPEN ORGANIZER LOBBY (To reschedule or wait):
+{lobby_url}
+
+DabHousie Realtime Events — {BASE_URL}
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        audit_email=AUDIT_EMAIL,
+        from_display_name="DabHousie Events",
+    )

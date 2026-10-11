@@ -6,6 +6,7 @@ import '../models/mpt_game.dart';
 import '../models/mpt_registration.dart';
 import '../models/mpt_seat_otp.dart';
 import '../features/game_setup/widgets/schedule_game_dialog.dart';
+import '../core/utils/formatters.dart';
 
 class GameRepository {
   final SupabaseClient _supabase;
@@ -764,5 +765,64 @@ class GameRepository {
         params: {'p_offer_id': offerId.trim()},
       );
     } catch (_) {}
+  }
+
+  /// Dispatches an immediate decision request email to the organizer when a scheduled
+  /// event reaches start time with low player attendance (below quorum).
+  Future<bool> sendScheduledGameDecisionEmail({
+    required String gameId,
+    String? targetEmail,
+    int? confirmedCount,
+    int? quorumCount,
+    String? scheduledAtStr,
+    int? gracePeriodMinutes,
+  }) async {
+    try {
+      final g = await getGame(gameId);
+      final currentProfile = _supabase.auth.currentUser;
+      final hostEmail = (targetEmail ?? currentProfile?.email ?? '').trim();
+      if (hostEmail.isEmpty || !hostEmail.contains('@')) {
+        return false;
+      }
+
+      final organizerName =
+          currentProfile?.userMetadata?['name'] as String? ??
+          currentProfile?.userMetadata?['display_name'] as String? ??
+          'Event Organizer';
+
+      final resolvedQuorum = quorumCount ?? g.dabbyScheduleConfig?.quorumCount ?? 1;
+      final resolvedGrace = gracePeriodMinutes ?? g.dabbyScheduleConfig?.gracePeriodMinutes ?? 5;
+      final resolvedSchedStr = scheduledAtStr ??
+          (g.effectiveScheduledAt != null
+              ? Formatters.formatShortDate(g.effectiveScheduledAt!)
+              : 'Scheduled Time');
+
+      final payload = {
+        'action': 'scheduled_game_decision',
+        'type': 'scheduled_game_decision',
+        'to_email': hostEmail,
+        'host_email': hostEmail,
+        'organizer_name': organizerName,
+        'game_id': g.id,
+        'game_name': g.name,
+        'invite_code': g.inviteCode,
+        'confirmed_count': confirmedCount ?? 0,
+        'quorum_count': resolvedQuorum,
+        'scheduled_at_str': resolvedSchedStr,
+        'grace_period_minutes': resolvedGrace,
+      };
+
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+      );
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 }

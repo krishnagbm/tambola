@@ -28,6 +28,12 @@ class AdminLobbyScreen extends ConsumerStatefulWidget {
 class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   bool _isProcessing = false;
   Timer? _scheduleTimer;
+  bool _decisionEmailDispatched = false;
+  int _extendedGraceMinutes = 0;
+  int _autoCancelCountdown = 60;
+  Timer? _autoCancelTimer;
+  bool _autoCancelPaused = false;
+  bool _checkedUrlAction = false;
 
   @override
   void initState() {
@@ -40,7 +46,112 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   @override
   void dispose() {
     _scheduleTimer?.cancel();
+    _autoCancelTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _dispatchDecisionEmail(MptGame game, int confirmedCount, int quorumCount, int graceMinutes) async {
+    try {
+      await ref.read(gameRepositoryProvider).sendScheduledGameDecisionEmail(
+        gameId: game.id,
+        confirmedCount: confirmedCount,
+        quorumCount: quorumCount,
+        gracePeriodMinutes: graceMinutes,
+      );
+    } catch (_) {}
+  }
+
+  void _handleExtendGraceBuffer() {
+    setState(() {
+      _extendedGraceMinutes += 5;
+      _autoCancelTimer?.cancel();
+      _autoCancelTimer = null;
+      _autoCancelCountdown = 60;
+      _autoCancelPaused = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Grace buffer extended by 5 minutes. Giving players more time! ⏱️'),
+        backgroundColor: AppTheme.accentSuccess,
+      ),
+    );
+  }
+
+  void _togglePauseAutoCancel() {
+    setState(() {
+      _autoCancelPaused = !_autoCancelPaused;
+    });
+  }
+
+  Future<void> _handleAutoCancel(MptGame game) async {
+    _autoCancelTimer?.cancel();
+    if (_isProcessing || game.isCancelled) return;
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(gameRepositoryProvider).cancelGame(widget.gameId);
+      ref.invalidate(myHostedGamesProvider);
+      ref.invalidate(gameStreamProvider(widget.gameId));
+      ref.invalidate(registrationsStreamProvider(widget.gameId));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scheduled event auto-cancelled due to unmet player quorum.'),
+          backgroundColor: AppTheme.accentWarning,
+        ),
+      );
+      context.go('/');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Auto-cancel failed: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _handleDirectLaunchAnyway(MptGame game, int confirmedCount, int walletCredits) async {
+    _autoCancelTimer?.cancel();
+    final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
+    int creditsNeeded = 0;
+    if (tiers.isNotEmpty) {
+      final matchingTier = tiers.firstWhere(
+        (t) => (confirmedCount == 0 && t.minPlayers <= 1) || (confirmedCount > 0 && confirmedCount >= t.minPlayers && confirmedCount <= t.maxPlayers),
+        orElse: () => tiers.firstWhere((t) => t.maxPlayers >= confirmedCount, orElse: () => tiers.last),
+      );
+      creditsNeeded = matchingTier.creditsRequired;
+    } else {
+      creditsNeeded = confirmedCount <= 5 ? 0 : 15;
+    }
+
+    if (walletCredits < creditsNeeded) {
+      _showInsufficientCreditsDialog(creditsNeeded, walletCredits);
+      return;
+    }
+
+    setState(() => _isProcessing = true);
+    try {
+      await ref.read(gameplayRepositoryProvider).startGame(widget.gameId);
+      ref.invalidate(walletProvider);
+      ref.invalidate(gameStreamProvider(widget.gameId));
+
+      if (!mounted) return;
+      context.go('/admin-control/${widget.gameId}?autopilot=true');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to launch game: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
   }
 
   void _handleGoBack() {
@@ -632,6 +743,11 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                         _buildGameHeaderCard(game),
                         const SizedBox(height: 16),
 
+                        if (game.effectiveScheduledAt != null) ...[
+                          _buildScheduleAndQuorumCard(game, confirmed.length, waiting.length, walletCredits),
+                          const SizedBox(height: 16),
+                        ],
+
                         _buildMetricsGrid(game, registrations.length, confirmed.length, waiting.length, walletCredits),
                         const SizedBox(height: 16),
 
@@ -961,6 +1077,505 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildScheduleAndQuorumCard(MptGame game, int confirmedCount, int waitingCount, int walletCredits) {
+    final effectiveSched = game.effectiveScheduledAt!;
+    final config = game.dabbyScheduleConfig;
+    final quorumCount = config?.getQuorumCount(game.fundedCapacity) ?? 1;
+    final gracePeriodMinutes = (config?.gracePeriodMinutes ?? 5) + _extendedGraceMinutes;
+    final graceEndTime = effectiveSched.add(Duration(minutes: gracePeriodMinutes));
+    final now = DateTime.now();
+
+    final isKickoffPassed = now.isAfter(effectiveSched);
+    final isGracePassed = now.isAfter(graceEndTime);
+    final isLowQuorum = confirmedCount < quorumCount;
+
+    // Check query param action=cancel
+    if (!_checkedUrlAction) {
+      _checkedUrlAction = true;
+      final action = GoRouterState.of(context).uri.queryParameters['action'];
+      if (action == 'cancel') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handleCancelGame(game);
+        });
+      }
+    }
+
+    // Auto dispatch decision email once if kickoff passed with low quorum
+    if (isKickoffPassed && isLowQuorum && !_decisionEmailDispatched && !_isProcessing) {
+      _decisionEmailDispatched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _dispatchDecisionEmail(game, confirmedCount, quorumCount, gracePeriodMinutes);
+      });
+    }
+
+    // Start auto-cancel timer if grace passed with low quorum and AUTO_CANCEL is configured
+    if (isKickoffPassed && isGracePassed && isLowQuorum && config?.lowQuorumAction == 'AUTO_CANCEL') {
+      if (_autoCancelTimer == null && !_autoCancelPaused && !_isProcessing && !game.isCancelled) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _autoCancelTimer != null) return;
+          _autoCancelTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+            if (!mounted) {
+              timer.cancel();
+              return;
+            }
+            if (_autoCancelPaused) return;
+            if (_autoCancelCountdown > 1) {
+              setState(() => _autoCancelCountdown--);
+            } else {
+              timer.cancel();
+              _autoCancelTimer = null;
+              _handleAutoCancel(game);
+            }
+          });
+        });
+      }
+    }
+
+    // Autonomous kickoff if quorum reached and autonomous host enabled
+    if (isKickoffPassed && !isLowQuorum && (config?.isAutonomousHostEnabled ?? true) && !_isProcessing && !game.isInProgress && !game.isCompleted && !game.isCancelled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isProcessing) {
+          _handleDirectLaunchAnyway(game, confirmedCount, walletCredits);
+        }
+      });
+    }
+
+    // Phase 1: Grace Period Buffer Expired & Low Quorum (Host Decision Needed)
+    if (isKickoffPassed && isGracePassed && isLowQuorum) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF3B0712), Color(0xFF1E293B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.accentDanger, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.accentDanger.withValues(alpha: 0.25),
+              blurRadius: 16,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentDanger.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger, size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Quorum Not Reached — Action Required',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Scheduled start time and grace period buffer have elapsed.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFFFDA4AF)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF334155)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Players in Lobby: $confirmedCount / $quorumCount required',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  Text(
+                    'Grace Buffer: $gracePeriodMinutes mins elapsed',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
+            ),
+            if (config?.lowQuorumAction == 'AUTO_CANCEL') ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentDanger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.timer_outlined, color: AppTheme.accentDanger, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _autoCancelPaused
+                            ? 'Auto-Cancel Paused. Select an option below to proceed.'
+                            : 'Auto-Cancel in $_autoCancelCountdown seconds unless started or extended.',
+                        style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFFFECDD3)),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _togglePauseAutoCancel,
+                      icon: Icon(_autoCancelPaused ? Icons.play_arrow : Icons.pause, size: 16),
+                      label: Text(_autoCancelPaused ? 'Resume' : 'Pause'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isProcessing ? null : () => _handleDirectLaunchAnyway(game, confirmedCount, walletCredits),
+                  icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+                  label: const Text('Start Anyway (Auto-Pilot)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentSuccess,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _isProcessing ? null : _handleExtendGraceBuffer,
+                  icon: const Icon(Icons.more_time_rounded, size: 18),
+                  label: const Text('Extend Wait (+5m)', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryLight,
+                    side: const BorderSide(color: AppTheme.primaryLight),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _isProcessing ? null : () => _handleCancelGame(game),
+                  icon: const Icon(Icons.cancel_outlined, size: 18),
+                  label: const Text('Cancel Event', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentDanger,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Phase 2: Kickoff Passed, Grace Period Active, Low Quorum
+    if (isKickoffPassed && !isGracePassed && isLowQuorum) {
+      final graceRemaining = graceEndTime.difference(now);
+      final graceRemainingStr = '${graceRemaining.inMinutes}:${(graceRemaining.inSeconds % 60).toString().padLeft(2, '0')}';
+
+      return Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF332005), Color(0xFF1E293B)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.accentWarning, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.accentWarning.withValues(alpha: 0.2),
+              blurRadius: 14,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentWarning.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.hourglass_top_rounded, color: AppTheme.accentWarning, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '⏳ Grace Period Buffer Active',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Quorum ($confirmedCount / $quorumCount players) not yet met. Decision email sent to your inbox.',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFFFDE68A)),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.accentWarning.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.accentWarning),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined, size: 14, color: AppTheme.accentWarning),
+                      const SizedBox(width: 6),
+                      Text(
+                        graceRemainingStr,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.accentWarning, fontFamily: 'monospace'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Dabby is waiting until ${Formatters.formatShortDate(graceEndTime)} before enforcing the configured low-quorum action (${config?.lowQuorumAction == "START_ANYWAY" ? "Start Anyway" : "Auto-Cancel"}).',
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFFE2E8F0)),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isProcessing ? null : () => _handleDirectLaunchAnyway(game, confirmedCount, walletCredits),
+                  icon: const Icon(Icons.rocket_launch_rounded, size: 16),
+                  label: const Text('Start Auto-Pilot Early'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentSuccess,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _isProcessing ? null : _handleExtendGraceBuffer,
+                  icon: const Icon(Icons.more_time_rounded, size: 16),
+                  label: const Text('Extend Buffer (+5m)'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.secondaryColor,
+                    side: const BorderSide(color: AppTheme.secondaryColor),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _isProcessing ? null : () => _handleCancelGame(game),
+                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                  label: const Text('Cancel Event'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.accentDanger,
+                    side: const BorderSide(color: AppTheme.accentDanger),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Phase 3: Quorum Met at/after Kickoff
+    if (isKickoffPassed && !isLowQuorum) {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF064E3B).withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.accentSuccess, width: 2),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppTheme.accentSuccess, size: 30),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🎉 Quorum Reached ($confirmedCount / $quorumCount Players)!',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    (config?.isAutonomousHostEnabled ?? true)
+                        ? 'Dabby Auto-Pilot is ready to launch the room.'
+                        : 'Ready to start. Tap "Start Game Now" below.',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFFA7F3D0)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Phase 4: Pre-Kickoff
+    final diff = effectiveSched.difference(now);
+    final isNegative = diff.isNegative;
+    final diffStr = isNegative
+        ? 'Passed'
+        : '${diff.inHours > 0 ? '${diff.inHours}h ' : ''}${diff.inMinutes % 60}m ${diff.inSeconds % 60}s';
+    final progress = quorumCount > 0 ? (confirmedCount / quorumCount).clamp(0.0, 1.0) : 1.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF334155)),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.schedule_rounded, color: AppTheme.secondaryColor, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Scheduled Event Kickoff',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      Formatters.formatShortDate(effectiveSched),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                ),
+                child: Text(
+                  'Starts in $diffStr',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Player Quorum: $confirmedCount / $quorumCount confirmed',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFCBD5E1)),
+              ),
+              Text(
+                '${(progress * 100).toInt()}%',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: const Color(0xFF1E293B),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progress >= 1.0 ? AppTheme.accentSuccess : AppTheme.secondaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    (config?.isAutonomousHostEnabled ?? true) ? Icons.smart_toy_outlined : Icons.mic_none_outlined,
+                    size: 14,
+                    color: const Color(0xFF94A3B8),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    (config?.isAutonomousHostEnabled ?? true) ? 'Dabby Auto-Pilot' : 'Manual Live Host',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () => _handleReschedule(game),
+                    child: const Text(
+                      'Reschedule',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor, decoration: TextDecoration.underline),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  InkWell(
+                    onTap: () => _handleClearSchedule(game),
+                    child: const Text(
+                      'Clear Schedule',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), decoration: TextDecoration.underline),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
