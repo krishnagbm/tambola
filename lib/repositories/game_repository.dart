@@ -780,7 +780,19 @@ class GameRepository {
     try {
       final g = await getGame(gameId);
       final currentProfile = _supabase.auth.currentUser;
-      final hostEmail = (targetEmail ?? currentProfile?.email ?? '').trim();
+      String hostEmail = (targetEmail ?? currentProfile?.email ?? '').trim();
+      if (hostEmail.isEmpty || !hostEmail.contains('@')) {
+        try {
+          final profileRow = await _supabase
+              .from('MPT_admin_profiles')
+              .select('email')
+              .eq('user_id', g.adminUserId)
+              .maybeSingle();
+          if (profileRow != null && profileRow['email'] != null) {
+            hostEmail = (profileRow['email'] as String).trim();
+          }
+        } catch (_) {}
+      }
       if (hostEmail.isEmpty || !hostEmail.contains('@')) {
         return false;
       }

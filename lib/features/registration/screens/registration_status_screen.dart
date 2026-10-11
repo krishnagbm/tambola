@@ -133,9 +133,9 @@ class RegistrationStatusScreen extends ConsumerWidget {
                         ] else if (game.isCompleted || game.status == 'COMPLETED') ...[
                           _buildConcludedCard(context, myReg, game),
                         ] else if (myReg.isConfirmed) ...[
-                          _buildConfirmedCard(context, ref, myReg, game),
+                          _buildConfirmedCard(context, ref, myReg, game, registrations),
                         ] else ...[
-                          _buildWaitingCard(context, ref, myReg, game),
+                          _buildWaitingCard(context, ref, myReg, game, registrations),
                         ],
 
                         const SizedBox(height: 20),
@@ -365,7 +365,115 @@ class RegistrationStatusScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildConfirmedCard(BuildContext context, WidgetRef ref, MptRegistration reg, MptGame game) {
+  Future<void> _handleHostStartAnyway(BuildContext context, WidgetRef ref, MptGame game) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.play_circle_fill_rounded, color: AppTheme.secondaryColor),
+            SizedBox(width: 8),
+            Text('Start Game Now?'),
+          ],
+        ),
+        content: const Text(
+          'Start the live game session immediately with the currently joined players?',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: AppTheme.primaryDark,
+            ),
+            child: const Text('Start Now'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameplayRepositoryProvider).startGame(game.id);
+      ref.invalidate(gameStreamProvider(game.id));
+      if (!context.mounted) return;
+      context.go('/play/${game.id}');
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start game: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  Future<void> _handleHostCancel(BuildContext context, WidgetRef ref, MptGame game) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: AppTheme.accentDanger),
+            SizedBox(width: 8),
+            Text('Cancel Game Event?'),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to cancel this scheduled game?\n\nAll participant registrations will be voided and any locked party credits will be refunded.',
+          style: TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep Waiting'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancel Event'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+
+    try {
+      await ref.read(gameRepositoryProvider).cancelGame(game.id);
+      ref.invalidate(gameStreamProvider(game.id));
+      ref.invalidate(registrationsStreamProvider(game.id));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Game event has been cancelled.')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to cancel game: $e'), backgroundColor: AppTheme.accentDanger),
+      );
+    }
+  }
+
+  Widget _buildConfirmedCard(
+    BuildContext context,
+    WidgetRef ref,
+    MptRegistration reg,
+    MptGame game,
+    List<MptRegistration> registrations,
+  ) {
+    final user = ref.watch(currentUserProvider).value;
+    final isHost = user?.id != null && user!.id == game.adminUserId;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -391,15 +499,20 @@ class RegistrationStatusScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'You are confirmed for this game.\nRegistration #${reg.registrationSeq}',
+            isHost
+                ? 'You are joined as Player & Party Host.\nRegistration #${reg.registrationSeq}'
+                : 'You are confirmed for this game.\nRegistration #${reg.registrationSeq}',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white, height: 1.4),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          if (game.scheduledAt != null) ...[
+          if (game.effectiveScheduledAt != null) ...[
             ScheduledCountdownSection(
-              scheduledAt: game.scheduledAt!,
-              dabbyConfig: game.dabbyScheduleConfig,
+              game: game,
+              registrations: registrations,
+              isHost: isHost,
+              onHostStartAnyway: () => _handleHostStartAnyway(context, ref, game),
+              onHostCancel: () => _handleHostCancel(context, ref, game),
             ),
           ] else ...[
             Container(
@@ -447,7 +560,16 @@ class RegistrationStatusScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildWaitingCard(BuildContext context, WidgetRef ref, MptRegistration reg, MptGame game) {
+  Widget _buildWaitingCard(
+    BuildContext context,
+    WidgetRef ref,
+    MptRegistration reg,
+    MptGame game,
+    List<MptRegistration> registrations,
+  ) {
+    final user = ref.watch(currentUserProvider).value;
+    final isHost = user?.id != null && user!.id == game.adminUserId;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -490,6 +612,16 @@ class RegistrationStatusScreen extends ConsumerWidget {
               style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondaryColor, fontSize: 13),
             ),
           ),
+          if (game.effectiveScheduledAt != null) ...[
+            const SizedBox(height: 16),
+            ScheduledCountdownSection(
+              game: game,
+              registrations: registrations,
+              isHost: isHost,
+              onHostStartAnyway: () => _handleHostStartAnyway(context, ref, game),
+              onHostCancel: () => _handleHostCancel(context, ref, game),
+            ),
+          ],
           const SizedBox(height: 14),
           const Text(
             'You will be notified automatically if the Organizer adds capacity before the game starts.',
@@ -565,22 +697,35 @@ class RegistrationStatusScreen extends ConsumerWidget {
   }
 }
 
-class ScheduledCountdownSection extends StatefulWidget {
-  final DateTime scheduledAt;
+class ScheduledCountdownSection extends ConsumerStatefulWidget {
+  final MptGame? game;
+  final List<MptRegistration> registrations;
+  final bool isHost;
+  final VoidCallback? onHostStartAnyway;
+  final VoidCallback? onHostCancel;
+
+  // Fallback properties for direct parameter instantiation
+  final DateTime? scheduledAt;
   final DabbyScheduleConfig? dabbyConfig;
 
   const ScheduledCountdownSection({
     super.key,
-    required this.scheduledAt,
+    this.game,
+    this.registrations = const [],
+    this.isHost = false,
+    this.onHostStartAnyway,
+    this.onHostCancel,
+    this.scheduledAt,
     this.dabbyConfig,
   });
 
   @override
-  State<ScheduledCountdownSection> createState() => _ScheduledCountdownSectionState();
+  ConsumerState<ScheduledCountdownSection> createState() => _ScheduledCountdownSectionState();
 }
 
-class _ScheduledCountdownSectionState extends State<ScheduledCountdownSection> {
+class _ScheduledCountdownSectionState extends ConsumerState<ScheduledCountdownSection> {
   Timer? _timer;
+  bool _decisionEmailDispatched = false;
 
   @override
   void initState() {
@@ -596,16 +741,50 @@ class _ScheduledCountdownSectionState extends State<ScheduledCountdownSection> {
     super.dispose();
   }
 
+  void _tryDispatchDecisionEmail(String gameId, int confirmedCount, int quorumCount, int graceMinutes) {
+    if (_decisionEmailDispatched) return;
+    _decisionEmailDispatched = true;
+    ref.read(gameRepositoryProvider).sendScheduledGameDecisionEmail(
+      gameId: gameId,
+      confirmedCount: confirmedCount,
+      quorumCount: quorumCount,
+      gracePeriodMinutes: graceMinutes,
+    ).catchError((_) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final scheduledAt = widget.game?.effectiveScheduledAt ??
+        widget.scheduledAt ??
+        DateTime.now();
+    final dabbyConfig = widget.game?.dabbyScheduleConfig ?? widget.dabbyConfig;
+
+    final capacity = widget.game?.fundedCapacity ?? 10;
+    final confirmedCount = widget.registrations.where((r) => r.isConfirmed).length;
+    final quorumCount = dabbyConfig?.getQuorumCount(capacity) ?? (capacity * 0.67).ceil();
+    final graceMinutes = dabbyConfig?.gracePeriodMinutes ?? 5;
+
     final now = DateTime.now();
-    final difference = widget.scheduledAt.difference(now);
+    final difference = scheduledAt.difference(now);
     final isPassed = difference.isNegative;
+    final isLowQuorum = confirmedCount < quorumCount;
+
+    final elapsedSeconds = isPassed ? now.difference(scheduledAt).inSeconds : 0;
+    final elapsedMinutes = (elapsedSeconds / 60).floor();
+    final isGracePassed = isPassed && elapsedMinutes >= graceMinutes;
+    final remainingGraceSeconds = isPassed
+        ? ((graceMinutes * 60) - elapsedSeconds).clamp(0, graceMinutes * 60)
+        : graceMinutes * 60;
+    final remainingGraceMinutes = (remainingGraceSeconds / 60).ceil();
+
+    // Auto-dispatch decision email if host is present at kickoff with low quorum
+    if (widget.isHost && isPassed && isLowQuorum && widget.game != null) {
+      _tryDispatchDecisionEmail(widget.game!.id, confirmedCount, quorumCount, graceMinutes);
+    }
 
     String countdownText;
-    if (isPassed) {
-      countdownText = 'Scheduled time reached • Waiting for launch...';
-    } else {
+    Color timerColor;
+    if (!isPassed) {
       final hours = difference.inHours;
       final minutes = difference.inMinutes % 60;
       final seconds = difference.inSeconds % 60;
@@ -614,56 +793,231 @@ class _ScheduledCountdownSectionState extends State<ScheduledCountdownSection> {
       } else {
         countdownText = 'Starts in ${minutes}m ${seconds}s';
       }
+      timerColor = AppTheme.secondaryColor;
+    } else if (!isLowQuorum) {
+      countdownText = '🚀 Quorum Reached ($confirmedCount/$quorumCount) • Launching...';
+      timerColor = AppTheme.accentSuccess;
+    } else if (!isGracePassed) {
+      countdownText = '⏳ Grace Buffer Active • ${remainingGraceMinutes}m remaining';
+      timerColor = AppTheme.accentWarning;
+    } else {
+      countdownText = '⚠️ Quorum Buffer Expired • Awaiting Host Decision';
+      timerColor = AppTheme.accentDanger;
     }
+
+    final quorumPercent = quorumCount > 0 ? (confirmedCount / quorumCount).clamp(0.0, 1.0) : 1.0;
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.secondaryColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(
+          color: isPassed && isLowQuorum
+              ? AppTheme.accentWarning.withValues(alpha: 0.7)
+              : AppTheme.secondaryColor.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // 1. Kickoff Time Header
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.alarm_on_rounded, size: 18, color: AppTheme.secondaryColor),
               const SizedBox(width: 8),
               Text(
-                'SCHEDULED: ${Formatters.formatShortDate(widget.scheduledAt)}',
+                'SCHEDULED: ${Formatters.formatShortDate(scheduledAt)}',
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor, letterSpacing: 0.5),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+
+          // 2. Attendance & Quorum Progress
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: AppTheme.darkSurface,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isPassed ? AppTheme.accentWarning : AppTheme.secondaryColor),
+              border: Border.all(color: const Color(0xFF2E334D)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.groups_rounded,
+                          size: 15,
+                          color: isLowQuorum ? AppTheme.accentWarning : AppTheme.accentSuccess,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Attendance: $confirmedCount / $quorumCount Players',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: isLowQuorum
+                            ? AppTheme.accentWarning.withValues(alpha: 0.15)
+                            : AppTheme.accentSuccess.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        isLowQuorum ? 'Need ${quorumCount - confirmedCount} more' : 'Quorum Met ✅',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          color: isLowQuorum ? AppTheme.accentWarning : AppTheme.accentSuccess,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: quorumPercent,
+                    backgroundColor: const Color(0xFF1E293B),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isLowQuorum ? AppTheme.accentWarning : AppTheme.accentSuccess,
+                    ),
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 3. Countdown / State Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurface,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: timerColor),
             ),
             child: Text(
               countdownText,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w900,
-                color: isPassed ? AppTheme.accentWarning : Colors.white,
-                letterSpacing: 0.5,
+                color: timerColor,
+                letterSpacing: 0.4,
               ),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            widget.dabbyConfig?.isAutonomousHostEnabled == true
-                ? '🤖 Dabby Autonomous Host is active. When countdown completes, the room will automatically launch and take you directly to your live game!'
-                : 'The Organizer will launch the game room on or before the scheduled time. When started, you will automatically transition to your live ticket!',
-            style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.35),
-            textAlign: TextAlign.center,
-          ),
+
+          // 4. Subtext / Policy Info
+          if (isPassed && isLowQuorum && !widget.isHost) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.accentWarning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '⏳ Quorum not reached yet ($confirmedCount of $quorumCount players joined).\nDabby grace buffer is active. Waiting for latecomers or host kickoff.',
+                style: const TextStyle(fontSize: 11, color: Color(0xFFFDE68A), height: 1.3),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ] else ...[
+            Text(
+              dabbyConfig?.isAutonomousHostEnabled == true
+                  ? '🤖 Dabby Autonomous Host is active. When countdown completes and quorum is met, the room launches automatically!'
+                  : 'The Organizer will launch the game room on or before the scheduled time. When started, you will automatically transition to your live ticket!',
+              style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.35),
+              textAlign: TextAlign.center,
+            ),
+          ],
+
+          // 5. Host Action Controls (If viewer is the organizer)
+          if (widget.isHost && widget.game != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.admin_panel_settings_rounded, color: AppTheme.secondaryColor, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Organizer Controls (You are the Host)',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isPassed && isLowQuorum
+                        ? 'Kickoff time reached with $confirmedCount of $quorumCount players. You can start now with current players, manage via Admin Lobby, or cancel.'
+                        : 'Quick actions to manage your scheduled game room:',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (isPassed && widget.onHostStartAnyway != null)
+                        ElevatedButton.icon(
+                          onPressed: widget.onHostStartAnyway,
+                          icon: const Icon(Icons.play_arrow_rounded, size: 16),
+                          label: const Text('Start Game Now'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentSuccess,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/admin-lobby/${widget.game!.id}'),
+                        icon: const Icon(Icons.dashboard_rounded, size: 15),
+                        label: const Text('Admin Lobby'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.secondaryColor,
+                          side: const BorderSide(color: AppTheme.secondaryColor),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          textStyle: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (widget.onHostCancel != null)
+                        TextButton.icon(
+                          onPressed: widget.onHostCancel,
+                          icon: const Icon(Icons.cancel_outlined, size: 15, color: AppTheme.accentDanger),
+                          label: const Text('Cancel Game', style: TextStyle(color: AppTheme.accentDanger, fontSize: 11.5)),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
+

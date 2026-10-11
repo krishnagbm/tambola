@@ -85,6 +85,18 @@ class ScheduleDialogResult {
   const ScheduleDialogResult({this.cleared = false, this.config});
 }
 
+class _QuorumOption {
+  final String label;
+  final int count;
+  final double percentage;
+
+  const _QuorumOption({
+    required this.label,
+    required this.count,
+    required this.percentage,
+  });
+}
+
 class ScheduleGameDialog extends StatefulWidget {
   final DateTime? initialDateTime;
   final DabbyScheduleConfig? initialConfig;
@@ -363,6 +375,11 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
             ),
           ),
           IconButton(
+            onPressed: _showScheduleHelpDialog,
+            icon: const Icon(Icons.help_outline_rounded, color: AppTheme.secondaryColor, size: 20),
+            tooltip: 'How Scheduler & Quorum Works',
+          ),
+          IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close_rounded, color: Color(0xFF94A3B8), size: 20),
             tooltip: 'Close',
@@ -560,7 +577,162 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
     );
   }
 
+  void _showScheduleHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+        actionsPadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.help_outline_rounded, color: AppTheme.secondaryColor, size: 22),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'How Scheduling & Quorum Works',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Quick guide to Dabby\'s automated lobby',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              _buildHelpItem(
+                icon: Icons.calendar_today_rounded,
+                title: '1. Set Kickoff Time',
+                desc: 'Choose when the party starts. Guests can check in early and wait in the lobby.',
+              ),
+              const SizedBox(height: 10),
+              _buildHelpItem(
+                icon: Icons.groups_rounded,
+                title: '2. What is Quorum?',
+                desc: 'The minimum number of players needed to start (e.g. 3 of 5). Game won\'t launch without it.',
+              ),
+              const SizedBox(height: 10),
+              _buildHelpItem(
+                icon: Icons.hourglass_bottom_rounded,
+                title: '3. Latecomer Grace Buffer',
+                desc: 'If quorum isn\'t met at kickoff, Dabby waits a buffer (e.g. 5 minutes) for latecomers.',
+              ),
+              const SizedBox(height: 10),
+              _buildHelpItem(
+                icon: Icons.check_circle_outline_rounded,
+                title: '4. If Quorum is Met',
+                desc: 'Dabby automatically launches the game and seats everyone straight into the action!',
+              ),
+              const SizedBox(height: 10),
+              _buildHelpItem(
+                icon: Icons.notifications_active_outlined,
+                title: '5. If Quorum is Unmet',
+                desc: 'Dabby emails the organizer to decide: Start with current players, wait more, or cancel with a full refund.',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: AppTheme.primaryDark,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            child: const Text('Got It', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpItem({required IconData icon, required String title, required String desc}) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF2E334D)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.secondaryColor, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<_QuorumOption> _getQuorumOptions() {
+    final cap = widget.plannedCapacity;
+    final options = <_QuorumOption>[];
+    final seenCounts = <int>{};
+
+    final count50 = (0.50 * cap).ceil();
+    final count67 = (0.67 * cap).ceil();
+    final count75 = (0.75 * cap).ceil();
+
+    final candidates = [
+      const _QuorumOption(label: 'Any (1)', count: 1, percentage: 0.0),
+      _QuorumOption(label: '$count50 Players', count: count50, percentage: 0.50),
+      if (count67 != count75 && count67 != count50)
+        _QuorumOption(label: '$count67 Players', count: count67, percentage: 0.67),
+      _QuorumOption(label: '$count75 Players', count: count75, percentage: 0.75),
+      _QuorumOption(label: 'All ($cap)', count: cap, percentage: 1.00),
+    ];
+
+    for (final opt in candidates) {
+      if (!seenCounts.contains(opt.count)) {
+        seenCounts.add(opt.count);
+        options.add(opt);
+      }
+    }
+    return options;
+  }
+
   Widget _buildQuorumSection(int quorumCount) {
+    final options = _getQuorumOptions();
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -592,8 +764,10 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
                 ),
                 child: Text(
                   _quorumPercentage == 0.0
-                      ? 'Any player count'
-                      : '$quorumCount of ${widget.plannedCapacity} Players (${(_quorumPercentage * 100).toInt()}%)',
+                      ? 'At least 1 Player'
+                      : (quorumCount == widget.plannedCapacity
+                          ? 'All $quorumCount Players'
+                          : '$quorumCount of ${widget.plannedCapacity} Players'),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
@@ -604,24 +778,21 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Game won\'t start until this minimum number of players check into the lobby.',
-            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+          Text(
+            _quorumPercentage == 0.0
+                ? 'Game will start automatically as long as at least 1 player is present.'
+                : 'Game won\'t start until at least $quorumCount players check into the lobby.',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 10),
 
           // Presets
           Row(
             children: [
-              _buildQuorumChip('50%', 0.50),
-              const SizedBox(width: 6),
-              _buildQuorumChip('67% (Recommended)', 0.67),
-              const SizedBox(width: 6),
-              _buildQuorumChip('75%', 0.75),
-              const SizedBox(width: 6),
-              _buildQuorumChip('100%', 1.00),
-              const SizedBox(width: 6),
-              _buildQuorumChip('Any', 0.0),
+              for (var i = 0; i < options.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                _buildQuorumOptionChip(options[i], quorumCount),
+              ],
             ],
           ),
         ],
@@ -629,11 +800,12 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
     );
   }
 
-  Widget _buildQuorumChip(String label, double value) {
-    final isSelected = (_quorumPercentage - value).abs() < 0.02;
+  Widget _buildQuorumOptionChip(_QuorumOption opt, int currentQuorumCount) {
+    final isSelected = (_quorumPercentage == 0.0 && opt.percentage == 0.0) ||
+        (_quorumPercentage > 0.0 && currentQuorumCount == opt.count);
     return Expanded(
       child: InkWell(
-        onTap: () => setState(() => _quorumPercentage = value),
+        onTap: () => setState(() => _quorumPercentage = opt.percentage),
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -646,7 +818,7 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
             ),
           ),
           child: Text(
-            label,
+            opt.label,
             style: TextStyle(
               fontSize: 10,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,

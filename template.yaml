@@ -165,6 +165,38 @@ Resources:
             Path: /public/recent-games
             Method: options
 
+  # ── 5. Autonomous Game Scheduler & Lobby Monitor ──────────────────
+  GameSchedulerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: functions.game_scheduler.handler
+      Description: Autonomous EventBridge worker to evaluate scheduled games for low-quorum alerts, auto-cancellation, and kickoff
+      Policies:
+        - SESCrudPolicy:
+            IdentityName: '*'
+      Events:
+        ScheduleCheck:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 minute)
+            Description: Periodic check every 1 minute for scheduled games
+        SchedulerPost:
+          Type: Api
+          Properties:
+            Path: /scheduler/tick
+            Method: post
+        SchedulerGet:
+          Type: Api
+          Properties:
+            Path: /scheduler/tick
+            Method: get
+        SchedulerOptions:
+          Type: Api
+          Properties:
+            Path: /scheduler/tick
+            Method: options
+
 Outputs:
   CheckoutApiEndpoint:
     Description: 'API Gateway endpoint URL for Checkout'
@@ -181,3 +213,6 @@ Outputs:
   RecentGamesApiEndpoint:
     Description: 'API Gateway endpoint URL for Public Recent Games'
     Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/public/recent-games'
+  SchedulerApiEndpoint:
+    Description: 'API Gateway endpoint URL for Game Scheduler Tick'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scheduler/tick'

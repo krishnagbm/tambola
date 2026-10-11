@@ -667,9 +667,12 @@ def _dispatch_ses_mime_or_standard(
                 ses_client.send_raw_email(
                     Source=sender_header,
                     Destinations=all_destinations,
-                    RawMessage={"Data": msg_root.as_string()},
+                    RawMessage={"Data": msg_root.as_bytes()},
                 )
-                print(f"  [ SES ] Raw MIME email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+                try:
+                    print(f"  [ SES ] Raw MIME email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+                except Exception:
+                    print(f"  [ SES ] Raw MIME email sent to {to_recipients}")
                 return True
             except Exception as e_raw:
                 print(f"  [ SES WARNING ] Raw MIME dispatch failed, falling back to standard send_email: {e_raw}")
@@ -691,7 +694,10 @@ def _dispatch_ses_mime_or_standard(
                 },
             },
         )
-        print(f"  [ SES ] Standard email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+        try:
+            print(f"  [ SES ] Standard email sent from {sender_header} to {to_recipients} (Cc: {cc_recipients}): '{subject}'")
+        except Exception:
+            print(f"  [ SES ] Standard email sent to {to_recipients}")
         return True
     except Exception as e:
         print(f"  [ SES ERROR ] Failed to send SES email: {e}")

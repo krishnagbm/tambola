@@ -402,8 +402,9 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Starting the game will lock the room with $confirmedCount Confirmed players and charge $creditsNeeded credits.\n\n'
-              'Choose your hosting style to begin:',
+              creditsNeeded == 0
+                  ? 'Starting the game will lock the room with $confirmedCount Confirmed players for Free (no credits charged).\n\nChoose your hosting style to begin:'
+                  : 'Starting the game will lock the room with $confirmedCount Confirmed players and charge $creditsNeeded credits.\n\nChoose your hosting style to begin:',
               style: const TextStyle(fontSize: 14, color: Color(0xFFE2E8F0)),
             ),
             const SizedBox(height: 14),
@@ -1679,6 +1680,34 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     final isScheduled = effectiveSched != null;
     final isPassed = isScheduled && effectiveSched.isBefore(DateTime.now());
 
+    final tiers = ref.watch(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
+    int creditsNeeded = 0;
+    if (tiers.isNotEmpty) {
+      final matchingTier = tiers.firstWhere(
+        (t) => (confirmedCount == 0 && t.minPlayers <= 1) || (confirmedCount > 0 && confirmedCount >= t.minPlayers && confirmedCount <= t.maxPlayers),
+        orElse: () => tiers.firstWhere((t) => t.maxPlayers >= confirmedCount, orElse: () => tiers.last),
+      );
+      creditsNeeded = matchingTier.creditsRequired;
+    } else {
+      creditsNeeded = confirmedCount <= 5 ? 0 : 15;
+    }
+
+    final isFree = creditsNeeded == 0;
+    final String startButtonText;
+    if (isFree) {
+      if (isScheduled) {
+        startButtonText = isPassed ? 'Start Family Pack Game (Free)' : 'Start Family Pack Early (Free)';
+      } else {
+        startButtonText = 'Start Family Pack Game (Free)';
+      }
+    } else {
+      if (isScheduled) {
+        startButtonText = isPassed ? 'Start Game Now & Deduct Credits' : 'Start Game Early & Deduct Credits';
+      } else {
+        startButtonText = 'Start Game & Deduct Credits';
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1686,9 +1715,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           onPressed: _isProcessing ? null : () => _handleStartGame(game, confirmedCount, walletCredits),
           icon: const Icon(Icons.play_arrow_rounded),
           label: Text(
-            isScheduled
-                ? (isPassed ? 'Start Game Now & Deduct Credits' : 'Start Game Early & Deduct Credits')
-                : 'Start Game & Deduct Credits',
+            startButtonText,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           style: ElevatedButton.styleFrom(
