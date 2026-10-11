@@ -12,6 +12,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/auth_guard.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/company_logo.dart';
 import '../../../models/brand_offer.dart';
 import '../../../models/mpt_capacity_tier.dart';
