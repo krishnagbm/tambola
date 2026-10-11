@@ -74,8 +74,29 @@ class _AdminGameControlScreenState
     });
     if (widget.autoPilot) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startAutoPilot();
+        if (mounted) _ensureStartedAndStartAutoPilot();
       });
+    }
+  }
+
+  Future<void> _ensureStartedAndStartAutoPilot() async {
+    try {
+      final currentGame = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (currentGame != null) {
+        if (currentGame.isCancelled) {
+          _stopAutoPilot();
+          return;
+        }
+        if (currentGame.status == 'OPEN') {
+          await ref.read(gameplayRepositoryProvider).startGame(widget.gameId);
+          ref.invalidate(gameStreamProvider(widget.gameId));
+        }
+      }
+    } catch (e) {
+      debugPrint('Auto-start game before autopilot warning: $e');
+    }
+    if (mounted) {
+      _startAutoPilot();
     }
   }
 
@@ -105,8 +126,13 @@ class _AdminGameControlScreenState
         timer.cancel();
         return;
       }
-      // Hold countdown if FlashHousie NeuroWave Spotlight is currently revealing
       final currentGame = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (currentGame?.isCancelled == true) {
+        timer.cancel();
+        _stopAutoPilot();
+        return;
+      }
+      // Hold countdown if FlashHousie NeuroWave Spotlight is currently revealing
       if (currentGame?.isFlashHousie == true &&
           currentGame?.flashHousieConfig != null) {
         final neuro = currentGame!.flashHousieConfig!.computeNeuroWaveState(
@@ -311,9 +337,29 @@ class _AdminGameControlScreenState
 
   Future<void> _handleCallNext() async {
     final cachedGame = ref.read(gameStreamProvider(widget.gameId)).value;
+    if (cachedGame?.isCancelled == true) {
+      _stopAutoPilot();
+      return;
+    }
     if (cachedGame?.status == 'COMPLETED') {
       _stopAutoPilot();
       return;
+    }
+    if (cachedGame?.status == 'OPEN') {
+      try {
+        await ref.read(gameplayRepositoryProvider).startGame(widget.gameId);
+        ref.invalidate(gameStreamProvider(widget.gameId));
+      } catch (e) {
+        if (!mounted) return;
+        _stopAutoPilot();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cannot call numbers: game must be started first ($e)'),
+            backgroundColor: AppTheme.accentDanger,
+          ),
+        );
+        return;
+      }
     }
 
     // Special handling for FlashHousie™ 5 / 10 / 15 multi-cycle gameplay
@@ -1299,6 +1345,59 @@ class _AdminGameControlScreenState
           });
         }
       }
+    }
+
+    if (game != null && game.isCancelled) {
+      _stopAutoPilot();
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Back to Home',
+            onPressed: () {
+              ref.invalidate(myHostedGamesProvider);
+              context.go('/');
+            },
+          ),
+          title: const Text('Organizer Game Control'),
+        ),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 550),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.cancel_outlined, size: 64, color: AppTheme.accentDanger),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Event Cancelled',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This scheduled game event ("${game.name}") has been cancelled. No numbers can be called and players have been notified.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => context.go('/'),
+                    icon: const Icon(Icons.home),
+                    label: const Text('Return to Home'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.secondaryColor,
+                      foregroundColor: AppTheme.primaryDark,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     return Scaffold(

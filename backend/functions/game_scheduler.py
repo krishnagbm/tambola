@@ -138,23 +138,36 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                 # 2. Check if grace period buffer has elapsed
                 if is_grace_passed:
                     if low_quorum_action == "AUTO_CANCEL":
-                        sb.from_("MPT_games").update({
-                            "status": "CANCELLED",
-                            "is_publicly_visible": False,
-                            "completed_at": now.isoformat(),
-                        }).eq("id", g["id"]).execute()
+                        # CRITICAL: Organizer is guaranteed a 10-minute decision response window
+                        # once the decision email is dispatched before automatic cancellation occurs.
+                        can_auto_cancel = True
+                        if decision_email_sent_at:
+                            try:
+                                email_dt = datetime.fromisoformat(decision_email_sent_at.replace("Z", "+00:00"))
+                                cancel_deadline = email_dt + timedelta(minutes=10)
+                                if now < cancel_deadline:
+                                    can_auto_cancel = False
+                                    secs_left = int((cancel_deadline - now).total_seconds())
+                                    mins_left = max(1, math.ceil(secs_left / 60))
+                                    print(f"  [ SCHEDULER ] Waiting for organizer decision email response ({mins_left}m remaining) for game {g.get('invite_code')}")
+                            except Exception as parse_err:
+                                print(f"  [ SCHEDULER ] Could not parse decision_email_sent_at: {parse_err}")
 
-                        summary["games_cancelled"].append({
-                            "invite_code": g.get("invite_code"),
-                            "reason": f"Low quorum ({confirmed_count}/{quorum_count}) after {grace_minutes}m grace",
-                        })
-                        print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} due to unmet quorum")
+                        if can_auto_cancel:
+                            sb.from_("MPT_games").update({
+                                "status": "CANCELLED",
+                                "is_publicly_visible": False,
+                                "completed_at": now.isoformat(),
+                            }).eq("id", g["id"]).execute()
+
+                            summary["games_cancelled"].append({
+                                "invite_code": g.get("invite_code"),
+                                "reason": f"Low quorum ({confirmed_count}/{quorum_count}) with no organizer response after 10m window",
+                            })
+                            print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} due to unmet quorum and elapsed decision window")
 
                     elif low_quorum_action == "START_ANYWAY" and autonomous_enabled:
-                        sb.from_("MPT_games").update({
-                            "status": "IN_PROGRESS",
-                            "started_at": now.isoformat(),
-                        }).eq("id", g["id"]).execute()
+                        _start_game(sb, g["id"])
 
                         summary["games_launched"].append({
                             "invite_code": g.get("invite_code"),
@@ -165,10 +178,7 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
             # ── Scenario B: Quorum Met at Kickoff ────────────────────────────
             else:
                 if autonomous_enabled:
-                    sb.from_("MPT_games").update({
-                        "status": "IN_PROGRESS",
-                        "started_at": now.isoformat(),
-                    }).eq("id", g["id"]).execute()
+                    _start_game(sb, g["id"])
 
                     summary["games_launched"].append({
                         "invite_code": g.get("invite_code"),
@@ -183,6 +193,25 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
         summary["error"] = str(e)
 
     return summary
+
+
+def _start_game(sb: Any, game_id: str) -> bool:
+    """Authoritative game start via MPT_start_game_and_charge RPC with fallback."""
+    try:
+        sb.rpc("MPT_start_game_and_charge", {"p_game_id": game_id}).execute()
+        print(f"  [ SCHEDULER ] MPT_start_game_and_charge RPC successfully executed for {game_id}")
+        return True
+    except Exception as e:
+        print(f"  [ SCHEDULER ] MPT_start_game_and_charge RPC failed for {game_id}: {e}")
+        try:
+            sb.from_("MPT_games").update({
+                "status": "IN_PROGRESS",
+                "started_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("id", game_id).execute()
+            return True
+        except Exception as e2:
+            print(f"  [ SCHEDULER ] Fallback direct status update failed for {game_id}: {e2}")
+            return False
 
 
 def _get_host_email(sb: Any, user_id: Optional[str]) -> Optional[str]:

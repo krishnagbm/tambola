@@ -1575,7 +1575,7 @@ def send_low_quorum_decision_email(
     sched_label = scheduled_at_str or "Scheduled Kickoff Time"
     subject = f"⚠️ Action Needed: Quorum Not Reached for '{game_name}' ({confirmed_count}/{quorum_count} Players)"
 
-    start_url = f"{BASE_URL}/#/admin-control/{game_id}?autopilot=true"
+    start_url = f"{BASE_URL}/#/admin-lobby/{game_id}?action=start_autopilot"
     cancel_url = f"{BASE_URL}/#/admin-lobby/{game_id}?action=cancel"
     lobby_url = f"{BASE_URL}/#/admin-lobby/{game_id}"
 
@@ -1672,9 +1672,18 @@ def send_low_quorum_decision_email(
                   </td>
                 </tr>
               </table>
-              <div style="font-size:12px; color:#94a3b8; margin:-8px 0 20px 4px;">
+              <div style="font-size:12px; color:#94a3b8; margin:-8px 0 16px 4px;">
                 Closes the lobby, releases reserved seats, and notifies players. No organizer credits will be deducted.
               </div>
+
+              <!-- 10-Minute Response Window Notice -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1e293b; border-left:3px solid #38bdf8; border-radius:6px; margin-bottom:20px;">
+                <tr>
+                  <td style="padding:10px 14px; font-size:12px; color:#cbd5e1; line-height:1.5;">
+                    ⏱️ <strong>10-Minute Response Buffer:</strong> Dabby will hold your lobby open for 10 minutes from this alert. If you do not launch or reschedule the event, Dabby will automatically cancel the game and refund all credits.
+                  </td>
+                </tr>
+              </table>
 
               <!-- Secondary link -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #1e293b; padding-top:14px;">

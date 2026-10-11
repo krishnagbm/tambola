@@ -58,6 +58,19 @@ class GameplayRepository {
         return (res['number'] as num).toInt();
       }
     } catch (e) {
+      final errStr = e.toString().toUpperCase();
+      // If RPC failed due to game state (e.g. not in progress, cancelled, completed)
+      // or auth/permission error, rethrow directly so callers see the true reason
+      // instead of attempting a direct table insert that violates RLS (42501).
+      if (errStr.contains('NOT_IN_PROGRESS') ||
+          errStr.contains('CANCELLED') ||
+          errStr.contains('COMPLETED') ||
+          errStr.contains('NOT_AUTHORIZED') ||
+          errStr.contains('P0001') ||
+          errStr.contains('42501')) {
+        rethrow;
+      }
+
       // Fallback
       final called = await getCalledNumbers(gameId);
       final calledSet = called.map((e) => e.number).toSet();

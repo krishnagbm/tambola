@@ -68,7 +68,8 @@ final appRouter = GoRouter(
       path: '/admin-lobby/:gameId',
       builder: (context, state) {
         final gameId = state.pathParameters['gameId']!;
-        return AdminLobbyScreen(gameId: gameId);
+        final action = state.uri.queryParameters['action'];
+        return AdminLobbyScreen(gameId: gameId, initialAction: action);
       },
     ),
     GoRoute(

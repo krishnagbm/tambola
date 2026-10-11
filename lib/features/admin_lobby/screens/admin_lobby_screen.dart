@@ -18,8 +18,9 @@ import '../../game_setup/widgets/schedule_game_dialog.dart';
 
 class AdminLobbyScreen extends ConsumerStatefulWidget {
   final String gameId;
+  final String? initialAction;
 
-  const AdminLobbyScreen({super.key, required this.gameId});
+  const AdminLobbyScreen({super.key, required this.gameId, this.initialAction});
 
   @override
   ConsumerState<AdminLobbyScreen> createState() => _AdminLobbyScreenState();
@@ -702,6 +703,12 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
           }
 
           if (game.isInProgress) {
+            if (!_checkedUrlAction && widget.initialAction == 'start_autopilot') {
+              _checkedUrlAction = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) context.go('/admin-control/${widget.gameId}?autopilot=true');
+              });
+            }
             return Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
@@ -732,6 +739,20 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
               final confirmed = registrations.where((r) => r.isConfirmed).toList();
               final waiting = registrations.where((r) => r.isWaiting).toList();
               final walletCredits = walletState.value?.availableCredits ?? 0;
+
+              if (!_checkedUrlAction) {
+                _checkedUrlAction = true;
+                if (widget.initialAction != null) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    if (widget.initialAction == 'start_autopilot') {
+                      _handleDirectLaunchAnyway(game, confirmed.length, walletCredits);
+                    } else if (widget.initialAction == 'cancel') {
+                      _handleAutoCancel(game);
+                    }
+                  });
+                }
+              }
 
               return Center(
                 child: ConstrainedBox(
