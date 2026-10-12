@@ -142,23 +142,22 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   void _onCurrencyChanged(String? newCode) {
     if (newCode == null || newCode == _selectedCurrencyCode) return;
-    final oldDefault =
-        (_currencyOptions[_selectedCurrencyCode]?['defaultBudget'] as num?)?.toDouble() ?? 100.0;
-    final newDefault =
-        (_currencyOptions[newCode]?['defaultBudget'] as num?)?.toDouble() ?? 100.0;
-    final currentTotal = double.tryParse(_totalBudgetController.text.trim()) ?? oldDefault;
+    final currentText = _totalBudgetController.text.trim();
+    final currentTotal = double.tryParse(currentText);
 
     setState(() {
+      final oldCode = _selectedCurrencyCode;
       _selectedCurrencyCode = newCode;
-      // Scale total budget automatically if host was using default or switching region scale
-      if ((currentTotal - oldDefault).abs() < 1.0 || currentTotal <= 0) {
-        _totalBudgetController.text = newDefault.toStringAsFixed(0);
-      } else {
-        final scaled = (currentTotal / oldDefault) * newDefault;
+      if (currentTotal != null && currentTotal > 0) {
+        final oldMult =
+            (_currencyOptions[oldCode]?['multiplier'] as num?)?.toDouble() ?? 1.0;
+        final newMult =
+            (_currencyOptions[newCode]?['multiplier'] as num?)?.toDouble() ?? 1.0;
+        final scaled = (currentTotal / oldMult) * newMult;
         _totalBudgetController.text = scaled.round().toString();
+        _autoSplitBudget();
       }
     });
-    _autoSplitBudget();
     _scheduleSaveDraft();
   }
 
@@ -560,13 +559,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         _scheduleSaveDraft();
         setState(() {});
       });
-    _totalBudgetController = TextEditingController(text: '100')
+    _totalBudgetController = TextEditingController(text: '')
       ..addListener(() {
         _scheduleSaveDraft();
       });
     for (final entry in _defaultPrizeWeights.entries) {
       _prizeValueControllers[entry.key] = TextEditingController(
-        text: entry.value.toStringAsFixed(0),
+        text: '',
       )..addListener(() {
         _scheduleSaveDraft();
       });
@@ -587,8 +586,19 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   }
 
   void _autoSplitBudget() {
-    final total = double.tryParse(_totalBudgetController.text.trim()) ?? 100.0;
-    if (total <= 0) return;
+    final total = double.tryParse(_totalBudgetController.text.trim()) ?? 0.0;
+    if (total <= 0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Enter a Total Game Prize Budget (e.g. 10 or 25) to auto-split across prizes.'),
+            backgroundColor: AppTheme.accentWarning,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
     final enabledKeys = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
     if (enabledKeys.isEmpty) return;
 
@@ -628,7 +638,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
 
   void _syncTotalBudgetFromIndividualValues() {
     final sum = _allocatedPrizeSum;
-    _totalBudgetController.text = sum.toStringAsFixed(sum == sum.roundToDouble() ? 0 : 2);
+    if (sum > 0) {
+      _totalBudgetController.text = sum.toStringAsFixed(sum == sum.roundToDouble() ? 0 : 2);
+    } else {
+      _totalBudgetController.text = '';
+    }
     setState(() {});
   }
 
@@ -2709,7 +2723,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         ),
         const SizedBox(height: 6),
         const Text(
-          'Select your country currency, set your promotional voucher budget, and link brand sponsor offers or host-fulfilled gift vouchers (no cash payouts allowed).',
+          'Select your country currency, optionally set a voucher budget (or leave at 0 for pure fun/family bragging rights), and link brand sponsor offers or host-fulfilled gift vouchers (no cash payouts allowed).',
           style: TextStyle(fontSize: 12.5, color: Color(0xFFA0AEC0)),
         ),
         const SizedBox(height: 12),
@@ -2822,6 +2836,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                       ),
                       decoration: InputDecoration(
                         prefixText: '$_currencySymbol ',
+                        hintText: '0',
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B),
+                        ),
                         prefixStyle: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w800,
@@ -2876,17 +2896,21 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 children: [
                   Flexible(
                     child: Text(
-                      'Allocated across active prizes: $_currencySymbol${allocatedSum.toStringAsFixed(0)}',
+                      totalBudgetVal > 0
+                          ? 'Allocated across active prizes: $_currencySymbol${allocatedSum.toStringAsFixed(0)}'
+                          : 'Prize budget is open / optional (0 = Play for fun & bragging rights)',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: (allocatedSum - totalBudgetVal).abs() < 0.5
-                            ? AppTheme.accentSuccess
-                            : const Color(0xFFE2E8F0),
+                        color: totalBudgetVal > 0
+                            ? ((allocatedSum - totalBudgetVal).abs() < 0.5
+                                ? AppTheme.accentSuccess
+                                : const Color(0xFFE2E8F0))
+                            : const Color(0xFF94A3B8),
                       ),
                     ),
                   ),
-                  if ((allocatedSum - totalBudgetVal).abs() >= 0.5)
+                  if (totalBudgetVal > 0 && (allocatedSum - totalBudgetVal).abs() >= 0.5)
                     InkWell(
                       onTap: _syncTotalBudgetFromIndividualValues,
                       borderRadius: BorderRadius.circular(6),
@@ -3052,6 +3076,12 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                   color: Colors.white,
                                 ),
                                 decoration: InputDecoration(
+                                  hintText: '0',
+                                  hintStyle: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF64748B),
+                                  ),
                                   prefixText: _currencySymbol,
                                   prefixStyle: const TextStyle(
                                     fontSize: 11.5,
