@@ -588,12 +588,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   void _autoSplitBudget() {
     final total = double.tryParse(_totalBudgetController.text.trim()) ?? 0.0;
     if (total <= 0) {
+      for (final controller in _prizeValueControllers.values) {
+        controller.text = '';
+      }
+      setState(() {});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Enter a Total Game Prize Budget (e.g. 10 or 25) to auto-split across prizes.'),
-            backgroundColor: AppTheme.accentWarning,
-            duration: Duration(seconds: 3),
+            content: Text('Budget is zero. All prize allocations have been reset to zero.'),
+            backgroundColor: AppTheme.accentSuccess,
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -2828,7 +2832,16 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         decimal: true,
                       ),
                       textAlign: TextAlign.right,
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (val) {
+                        final trimmed = val.trim();
+                        final parsed = double.tryParse(trimmed);
+                        if (trimmed.isNotEmpty && parsed == 0) {
+                          for (final controller in _prizeValueControllers.values) {
+                            controller.text = '';
+                          }
+                        }
+                        setState(() {});
+                      },
                       style: const TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w800,
@@ -2898,7 +2911,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     child: Text(
                       totalBudgetVal > 0
                           ? 'Allocated across active prizes: $_currencySymbol${allocatedSum.toStringAsFixed(0)}'
-                          : 'Prize budget is open / optional (0 = Play for fun & bragging rights)',
+                          : (allocatedSum > 0
+                              ? 'Allocated: $_currencySymbol${allocatedSum.toStringAsFixed(0)} (Budget is 0)'
+                              : 'Prize budget is open / optional (0 = Play for fun & bragging rights)'),
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -2906,7 +2921,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                             ? ((allocatedSum - totalBudgetVal).abs() < 0.5
                                 ? AppTheme.accentSuccess
                                 : const Color(0xFFE2E8F0))
-                            : const Color(0xFF94A3B8),
+                            : (allocatedSum > 0
+                                ? AppTheme.accentWarning
+                                : const Color(0xFF94A3B8)),
                       ),
                     ),
                   ),
@@ -2932,6 +2949,37 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (totalBudgetVal <= 0 && allocatedSum > 0)
+                    InkWell(
+                      onTap: () {
+                        for (final controller in _prizeValueControllers.values) {
+                          controller.text = '';
+                        }
+                        setState(() {});
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentWarning.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppTheme.accentWarning.withValues(alpha: 0.55),
+                          ),
+                        ),
+                        child: const Text(
+                          'Reset Prizes to 0 ✕',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.accentWarning,
                           ),
                         ),
                       ),
