@@ -413,7 +413,8 @@ BEGIN
             SELECT jsonb_agg(n_row)
             FROM (
                 SELECT 
-                    called_number,
+                    number,
+                    number AS called_number,
                     call_seq,
                     called_at
                 FROM public."MPT_called_numbers"

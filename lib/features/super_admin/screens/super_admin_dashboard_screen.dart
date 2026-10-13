@@ -1383,7 +1383,7 @@ class _SuperAdminDashboardScreenState
                                             border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
                                           ),
                                           child: Text(
-                                            '${n['called_number']}',
+                                            '${n['number'] ?? n['called_number'] ?? n}',
                                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
                                           ),
                                         );

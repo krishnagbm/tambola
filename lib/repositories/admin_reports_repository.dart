@@ -158,7 +158,7 @@ class AdminReportsRepository {
 
       final numbersData = await _supabase
           .from('MPT_called_numbers')
-          .select('called_number, call_seq, called_at')
+          .select('number, call_seq, called_at')
           .eq('game_id', gameId)
           .order('call_seq', ascending: true);
 
