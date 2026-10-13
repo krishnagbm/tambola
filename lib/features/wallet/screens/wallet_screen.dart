@@ -108,7 +108,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
 
               return Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: isTwoColumn ? 1080 : 680),
+                  constraints: BoxConstraints(maxWidth: isTwoColumn ? 1180 : 680),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                     child: Column(
@@ -124,9 +124,9 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(flex: 6, child: leftColumn),
-                              const SizedBox(width: 24),
-                              Expanded(flex: 5, child: rightColumn),
+                              Expanded(flex: 5, child: leftColumn),
+                              const SizedBox(width: 22),
+                              Expanded(flex: 6, child: rightColumn),
                             ],
                           )
                         else ...[
@@ -708,50 +708,47 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildLedgerFilterChip(
-                        label: 'Credit Activity',
-                        count: paidTxs.length,
-                        icon: Icons.payments_outlined,
-                        isSelected: _ledgerFilter == 'PAID',
-                        onTap: () {
-                          setState(() => _ledgerFilter = 'PAID');
-                          if (_ledgerScrollController.hasClients) {
-                            _ledgerScrollController.jumpTo(0);
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _buildLedgerFilterChip(
-                        label: 'Family Pack (0 Cr)',
-                        count: freeTxs.length,
-                        icon: Icons.family_restroom_rounded,
-                        isSelected: _ledgerFilter == 'FREE',
-                        onTap: () {
-                          setState(() => _ledgerFilter = 'FREE');
-                          if (_ledgerScrollController.hasClients) {
-                            _ledgerScrollController.jumpTo(0);
-                          }
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      _buildLedgerFilterChip(
-                        label: 'All Activity',
-                        count: txs.length,
-                        icon: Icons.list_alt_rounded,
-                        isSelected: _ledgerFilter == 'ALL',
-                        onTap: () {
-                          setState(() => _ledgerFilter = 'ALL');
-                          if (_ledgerScrollController.hasClients) {
-                            _ledgerScrollController.jumpTo(0);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    _buildLedgerFilterChip(
+                      label: 'Credit Activity',
+                      count: paidTxs.length,
+                      icon: Icons.payments_outlined,
+                      isSelected: _ledgerFilter == 'PAID',
+                      onTap: () {
+                        setState(() => _ledgerFilter = 'PAID');
+                        if (_ledgerScrollController.hasClients) {
+                          _ledgerScrollController.jumpTo(0);
+                        }
+                      },
+                    ),
+                    _buildLedgerFilterChip(
+                      label: 'Family Pack (0 Cr)',
+                      count: freeTxs.length,
+                      icon: Icons.family_restroom_rounded,
+                      isSelected: _ledgerFilter == 'FREE',
+                      onTap: () {
+                        setState(() => _ledgerFilter = 'FREE');
+                        if (_ledgerScrollController.hasClients) {
+                          _ledgerScrollController.jumpTo(0);
+                        }
+                      },
+                    ),
+                    _buildLedgerFilterChip(
+                      label: 'All Activity',
+                      count: txs.length,
+                      icon: Icons.list_alt_rounded,
+                      isSelected: _ledgerFilter == 'ALL',
+                      onTap: () {
+                        setState(() => _ledgerFilter = 'ALL');
+                        if (_ledgerScrollController.hasClients) {
+                          _ledgerScrollController.jumpTo(0);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
               const Divider(height: 1, color: Color(0xFF1E293B)),
@@ -942,7 +939,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       borderRadius: BorderRadius.circular(20),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5.5),
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primaryLight.withValues(alpha: 0.22)
@@ -952,7 +949,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
             color: isSelected
                 ? AppTheme.primaryLight
                 : const Color(0xFF334155),
-            width: isSelected ? 1.5 : 1,
+            width: isSelected ? 1.4 : 1,
           ),
         ),
         child: Row(
@@ -960,21 +957,21 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           children: [
             Icon(
               icon,
-              size: 14,
+              size: 13.5,
               color: isSelected ? AppTheme.primaryLight : const Color(0xFF94A3B8),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 color: isSelected ? Colors.white : const Color(0xFF94A3B8),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+              padding: const EdgeInsets.symmetric(horizontal: 5.5, vertical: 1),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppTheme.primaryLight
@@ -984,7 +981,7 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
               child: Text(
                 '$count',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 9.5,
                   fontWeight: FontWeight.bold,
                   color: isSelected ? Colors.white : const Color(0xFF94A3B8),
                 ),
