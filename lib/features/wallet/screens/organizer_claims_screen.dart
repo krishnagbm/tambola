@@ -939,35 +939,6 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  // Left / Right Scroll Navigation Arrows
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppTheme.darkSurface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF334155)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                          padding: const EdgeInsets.all(6),
-                          tooltip: 'Scroll Previous Offers',
-                          icon: const Icon(Icons.chevron_left_rounded, size: 20, color: Color(0xFFCBD5E1)),
-                          onPressed: () => _scrollCatalog(false),
-                        ),
-                        Container(width: 1, height: 16, color: const Color(0xFF334155)),
-                        IconButton(
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                          padding: const EdgeInsets.all(6),
-                          tooltip: 'Scroll Next Offers',
-                          icon: const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCBD5E1)),
-                          onPressed: () => _scrollCatalog(true),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
                   IconButton(
                     tooltip: _showBrandCatalogBanner
                         ? 'Hide Partner Offers'
@@ -988,150 +959,232 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
           ),
           if (_showBrandCatalogBanner) ...[
             const SizedBox(height: 14),
-            SizedBox(
-              height: 130,
-              child: ListView.separated(
-                controller: _catalogScrollController,
-                scrollDirection: Axis.horizontal,
-                itemCount: BrandPartnerOffer.catalog.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 12),
-                itemBuilder: (context, idx) {
-                  final offer = BrandPartnerOffer.catalog[idx];
-                  return Tooltip(
-                    message: 'Click to inspect ${offer.brandName} details & retailer store',
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => _showBrandOfferDetailsDialog(offer),
-                        borderRadius: BorderRadius.circular(14),
-                        hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
-                        child: Container(
-                          width: 250,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.darkSurface.withValues(alpha: 0.85),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: const Color(0xFF334155)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Left Scroll Arrow Button
+                Tooltip(
+                  message: 'Scroll Previous Offers',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _scrollCatalog(false),
+                      borderRadius: BorderRadius.circular(20),
+                      hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkSurface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF334155),
+                            width: 1.2,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    offer.emoji,
-                                    style: const TextStyle(fontSize: 22),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          offer.brandName,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppTheme.secondaryColor,
-                                          ),
-                                        ),
-                                        Text(
-                                          offer.productTitle,
-                                          style: const TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Text(
-                                offer.description,
-                                style: const TextStyle(
-                                  fontSize: 10.5,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        '\$${offer.organizerPrice.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w900,
-                                          color: AppTheme.accentSuccess,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        '\$${offer.retailPrice.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Color(0xFF64748B),
-                                          decoration: TextDecoration.lineThrough,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: (offer.id == 'dabhousie_free_10'
-                                                  ? AppTheme.accentWarning
-                                                  : AppTheme.accentSuccess)
-                                              .withValues(
-                                            alpha: 0.16,
-                                          ),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Text(
-                                          offer.id == 'dabhousie_free_10'
-                                              ? '⏰ LIMITED TIME'
-                                              : 'SAVE ${offer.discountPercent}%',
-                                          style: TextStyle(
-                                            fontSize: 9.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: offer.id == 'dabhousie_free_10'
-                                                ? AppTheme.accentWarning
-                                                : AppTheme.accentSuccess,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      const Icon(
-                                        Icons.open_in_new_rounded,
-                                        size: 11,
-                                        color: Color(0xFF94A3B8),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Colors.white,
+                          size: 22,
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Horizontal scrolling cards list
+                Expanded(
+                  child: SizedBox(
+                    height: 130,
+                    child: ListView.separated(
+                      controller: _catalogScrollController,
+                      scrollDirection: Axis.horizontal,
+                      itemCount: BrandPartnerOffer.catalog.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (context, idx) {
+                        final offer = BrandPartnerOffer.catalog[idx];
+                        return Tooltip(
+                          message: 'Click to inspect ${offer.brandName} details & retailer store',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _showBrandOfferDetailsDialog(offer),
+                              borderRadius: BorderRadius.circular(14),
+                              hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
+                              child: Container(
+                                width: 250,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.darkSurface.withValues(alpha: 0.85),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFF334155)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          offer.emoji,
+                                          style: const TextStyle(fontSize: 22),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                offer.brandName,
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: AppTheme.secondaryColor,
+                                                ),
+                                              ),
+                                              Text(
+                                                offer.productTitle,
+                                                style: const TextStyle(
+                                                  fontSize: 12.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      offer.description,
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '\$${offer.organizerPrice.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w900,
+                                                color: AppTheme.accentSuccess,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Text(
+                                              '\$${offer.retailPrice.toStringAsFixed(0)}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF64748B),
+                                                decoration: TextDecoration.lineThrough,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: (offer.id == 'dabhousie_free_10'
+                                                        ? AppTheme.accentWarning
+                                                        : AppTheme.accentSuccess)
+                                                    .withValues(
+                                                  alpha: 0.16,
+                                                ),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                offer.id == 'dabhousie_free_10'
+                                                    ? '⏰ LIMITED TIME'
+                                                    : 'SAVE ${offer.discountPercent}%',
+                                                style: TextStyle(
+                                                  fontSize: 9.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: offer.id == 'dabhousie_free_10'
+                                                      ? AppTheme.accentWarning
+                                                      : AppTheme.accentSuccess,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            const Icon(
+                                              Icons.open_in_new_rounded,
+                                              size: 11,
+                                              color: Color(0xFF94A3B8),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Right Scroll Arrow Button
+                Tooltip(
+                  message: 'Scroll Next Offers',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _scrollCatalog(true),
+                      borderRadius: BorderRadius.circular(20),
+                      hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: AppTheme.darkSurface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF334155),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ],
