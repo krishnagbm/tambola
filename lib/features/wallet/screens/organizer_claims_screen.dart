@@ -2198,6 +2198,7 @@ class _BrandGiftFulfillmentDialogState
   late final TextEditingController _prizeValueController;
   late final TextEditingController _winnerEmailController;
   late final TextEditingController _noteController;
+  final ScrollController _dialogOffersScrollController = ScrollController();
   bool _sendEmailToWinner = true;
   bool _isSubmitting = false;
 
@@ -2249,7 +2250,22 @@ class _BrandGiftFulfillmentDialogState
     _prizeValueController.dispose();
     _winnerEmailController.dispose();
     _noteController.dispose();
+    _dialogOffersScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollDialogOffers(bool forward) {
+    if (!_dialogOffersScrollController.hasClients) return;
+    final double target = forward
+        ? (_dialogOffersScrollController.offset + 235.0)
+            .clamp(0.0, _dialogOffersScrollController.position.maxScrollExtent)
+        : (_dialogOffersScrollController.offset - 235.0)
+            .clamp(0.0, _dialogOffersScrollController.position.maxScrollExtent);
+    _dialogOffersScrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   void _selectLiveOffer(BrandOffer offer) {
@@ -2686,7 +2702,49 @@ class _BrandGiftFulfillmentDialogState
                               );
                             }
 
-                            return ListView.separated(
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // Left Scroll Arrow Button
+                                Tooltip(
+                                  message: 'Scroll Previous Vouchers',
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () => _scrollDialogOffers(false),
+                                      borderRadius: BorderRadius.circular(20),
+                                      hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                      child: Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.darkSurface,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFF334155),
+                                            width: 1.2,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.3),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.chevron_left_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: ListView.separated(
+                                    controller: _dialogOffersScrollController,
                               scrollDirection: Axis.horizontal,
                               itemCount: filteredOffers.length,
                               separatorBuilder: (_, _) =>
@@ -2859,6 +2917,46 @@ class _BrandGiftFulfillmentDialogState
                                   ),
                                 );
                               },
+                            ),
+                          ),
+                                const SizedBox(width: 6),
+                                // Right Scroll Arrow Button
+                                Tooltip(
+                                  message: 'Scroll Next Vouchers',
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () => _scrollDialogOffers(true),
+                                      borderRadius: BorderRadius.circular(20),
+                                      hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                      child: Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.darkSurface,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFF334155),
+                                            width: 1.2,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.3),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.chevron_right_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             );
                           },
                         ),
