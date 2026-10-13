@@ -122,6 +122,7 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
   final Set<String> _closingAllGameIds = <String>{};
 
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _catalogScrollController = ScrollController();
   String _searchQuery = '';
   String _statusFilter = 'ALL'; // ALL, UNSETTLED, SETTLED
   bool _showBrandCatalogBanner = true;
@@ -134,8 +135,23 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
 
   @override
   void dispose() {
+    _catalogScrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _scrollCatalog(bool forward) {
+    if (!_catalogScrollController.hasClients) return;
+    final double target = forward
+        ? (_catalogScrollController.offset + 260.0)
+            .clamp(0.0, _catalogScrollController.position.maxScrollExtent)
+        : (_catalogScrollController.offset - 260.0)
+            .clamp(0.0, _catalogScrollController.position.maxScrollExtent);
+    _catalogScrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   void _refreshAll() {
@@ -378,6 +394,230 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showBrandOfferDetailsDialog(BrandPartnerOffer offer) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String purchaseUrl = 'https://www.dabhousie.com';
+        if (offer.id == 'sbux_10') {
+          purchaseUrl = 'https://www.starbucks.com/gift';
+        } else if (offer.id == 'netflix_20') {
+          purchaseUrl = 'https://www.netflix.com/redeem';
+        } else if (offer.id == 'amz_25') {
+          purchaseUrl = 'https://www.amazon.com/gift-cards';
+        } else if (offer.id == 'jbl_35') {
+          purchaseUrl = 'https://www.jbl.com';
+        }
+
+        final isFree = offer.organizerPrice == 0;
+
+        return Dialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.45),
+            ),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          offer.emoji,
+                          style: const TextStyle(fontSize: 26),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  offer.brandName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.secondaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: (isFree
+                                            ? AppTheme.accentWarning
+                                            : AppTheme.accentSuccess)
+                                        .withValues(alpha: 0.16),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    offer.badgeText,
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: isFree
+                                          ? AppTheme.accentWarning
+                                          : AppTheme.accentSuccess,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              offer.productTitle,
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Divider(color: Color(0xFF1E293B), height: 1),
+                  const SizedBox(height: 14),
+                  Text(
+                    offer.description,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFFCBD5E1),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Suggested Prize Value / Retail',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            ),
+                            Text(
+                              '\$${offer.retailPrice.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Organizer Out-of-Pocket Cost',
+                              style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            ),
+                            Text(
+                              isFree
+                                  ? '\$0.00 (Sponsored)'
+                                  : '\$${offer.organizerPrice.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: isFree
+                                    ? AppTheme.accentSuccess
+                                    : AppTheme.secondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isFree
+                              ? '💡 DabHousie Event Credits sponsored 100% by DabHousie for 6+ player games meeting 75% active participation quorum.'
+                              : '💡 Organizers purchase the official digital gift voucher from the retailer and enter the voucher code when clicking "Close Claim" on any conducted game winner.',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text(
+                          'Close',
+                          style: TextStyle(color: Color(0xFF94A3B8)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final uri = Uri.tryParse(purchaseUrl);
+                          if (uri != null) {
+                            await launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded, size: 15),
+                        label: Text(isFree ? 'Learn More' : 'Visit Brand Store'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.secondaryColor,
+                          foregroundColor: Colors.black,
+                          textStyle: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -698,6 +938,36 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  // Left / Right Scroll Navigation Arrows
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF334155)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          padding: const EdgeInsets.all(6),
+                          tooltip: 'Scroll Previous Offers',
+                          icon: const Icon(Icons.chevron_left_rounded, size: 20, color: Color(0xFFCBD5E1)),
+                          onPressed: () => _scrollCatalog(false),
+                        ),
+                        Container(width: 1, height: 16, color: const Color(0xFF334155)),
+                        IconButton(
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          padding: const EdgeInsets.all(6),
+                          tooltip: 'Scroll Next Offers',
+                          icon: const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCBD5E1)),
+                          onPressed: () => _scrollCatalog(true),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   IconButton(
                     tooltip: _showBrandCatalogBanner
                         ? 'Hide Partner Offers'
@@ -719,122 +989,145 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
           if (_showBrandCatalogBanner) ...[
             const SizedBox(height: 14),
             SizedBox(
-              height: 128,
+              height: 130,
               child: ListView.separated(
+                controller: _catalogScrollController,
                 scrollDirection: Axis.horizontal,
                 itemCount: BrandPartnerOffer.catalog.length,
                 separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, idx) {
                   final offer = BrandPartnerOffer.catalog[idx];
-                  return Container(
-                    width: 245,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppTheme.darkSurface.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF334155)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              offer.emoji,
-                              style: const TextStyle(fontSize: 22),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                  return Tooltip(
+                    message: 'Click to inspect ${offer.brandName} details & retailer store',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showBrandOfferDetailsDialog(offer),
+                        borderRadius: BorderRadius.circular(14),
+                        hoverColor: AppTheme.secondaryColor.withValues(alpha: 0.08),
+                        child: Container(
+                          width: 250,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkSurface.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
                                 children: [
                                   Text(
-                                    offer.brandName,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppTheme.secondaryColor,
-                                    ),
+                                    offer.emoji,
+                                    style: const TextStyle(fontSize: 22),
                                   ),
-                                  Text(
-                                    offer.productTitle,
-                                    style: const TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          offer.brandName,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppTheme.secondaryColor,
+                                          ),
+                                        ),
+                                        Text(
+                                          offer.productTitle,
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          offer.description,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            color: Color(0xFF94A3B8),
+                              Text(
+                                offer.description,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '\$${offer.organizerPrice.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppTheme.accentSuccess,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        '\$${offer.retailPrice.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF64748B),
+                                          decoration: TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: (offer.id == 'dabhousie_free_10'
+                                                  ? AppTheme.accentWarning
+                                                  : AppTheme.accentSuccess)
+                                              .withValues(
+                                            alpha: 0.16,
+                                          ),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          offer.id == 'dabhousie_free_10'
+                                              ? '⏰ LIMITED TIME'
+                                              : 'SAVE ${offer.discountPercent}%',
+                                          style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: offer.id == 'dabhousie_free_10'
+                                                ? AppTheme.accentWarning
+                                                : AppTheme.accentSuccess,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.open_in_new_rounded,
+                                        size: 11,
+                                        color: Color(0xFF94A3B8),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '\$${offer.organizerPrice.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                    color: AppTheme.accentSuccess,
-                                  ),
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  '\$${offer.retailPrice.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF64748B),
-                                    decoration: TextDecoration.lineThrough,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: (offer.id == 'dabhousie_free_10'
-                                        ? AppTheme.accentWarning
-                                        : AppTheme.accentSuccess)
-                                    .withValues(
-                                  alpha: 0.16,
-                                ),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                offer.id == 'dabhousie_free_10'
-                                    ? '⏰ LIMITED TIME'
-                                    : 'SAVE ${offer.discountPercent}%',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: offer.id == 'dabhousie_free_10'
-                                      ? AppTheme.accentWarning
-                                      : AppTheme.accentSuccess,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
                   );
                 },
@@ -2277,24 +2570,69 @@ class _BrandGiftFulfillmentDialogState
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 118,
-                        child: liveOffersAsync.when(
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                          error: (_, _) => const SizedBox.shrink(),
-                          data: (offers) {
+                        child: Builder(
+                          builder: (context) {
                             final isFamilyPack = widget.game.fundedCapacity <= 5;
                             final isQuorumMet = widget.game.fundedCapacity <= 5 ||
                                 (widget.game.activePlayerCount / widget.game.fundedCapacity >= 0.75);
                             final canClaimFreeSponsored = !widget.reward.isGuest && !isFamilyPack && isQuorumMet;
                             final maxAllowedCapValue = BrandOffer.maxFreeVoucherValueForCapacity(widget.game.fundedCapacity);
 
-                            final filteredOffers = offers.where((offer) {
+                            // Always provide default catalog templates so the host has immediate options even if DB has no rows
+                            final catalogOffers = BrandPartnerOffer.catalog.map((o) => BrandOffer(
+                              id: o.id,
+                              brandName: o.brandName,
+                              brandDomain: '${o.brandName.toLowerCase().replaceAll(' ', '')}.com',
+                              contactEmail: 'partners@dabhousie.com',
+                              productTitle: o.productTitle,
+                              productDescription: o.description,
+                              category: o.category,
+                              productUrl: o.id == 'sbux_10'
+                                  ? 'https://www.starbucks.com/gift'
+                                  : (o.id == 'netflix_20'
+                                      ? 'https://www.netflix.com/redeem'
+                                      : (o.id == 'amz_25'
+                                          ? 'https://www.amazon.com/gift-cards'
+                                          : (o.id == 'jbl_35'
+                                              ? 'https://www.jbl.com'
+                                              : 'https://www.dabhousie.com'))),
+                              retailPrice: o.retailPrice,
+                              organizerPrice: o.organizerPrice,
+                              discountPercent: o.discountPercent,
+                              promoCode: o.id == 'dabhousie_free_10' ? 'DABFREE10' : null,
+                              emoji: o.emoji,
+                              badgeText: o.badgeText,
+                            )).toList();
+
+                            final liveOffers = liveOffersAsync.valueOrNull ?? const <BrandOffer>[];
+                            final liveOfferIds = liveOffers.map((o) => o.id).toSet();
+                            final allOffers = <BrandOffer>[
+                              ...liveOffers,
+                              ...catalogOffers.where((c) => !liveOfferIds.contains(c.id)),
+                            ];
+
+                            final filteredOffers = allOffers.where((offer) {
                               if (isFamilyPack && offer.isFreeSponsoredVoucher) {
                                 return false;
                               }
                               return true;
                             }).toList();
+
+                            if (filteredOffers.isEmpty) {
+                              return Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.darkSurface,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFF334155)),
+                                ),
+                                child: const Text(
+                                  'No vouchers available for this game tier. You can enter custom details below.',
+                                  style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                                ),
+                              );
+                            }
+
                             return ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: filteredOffers.length,
@@ -2336,128 +2674,136 @@ class _BrandGiftFulfillmentDialogState
                                     opacity: isFreeBlocked ? 0.45 : 1.0,
                                     child: Container(
                                       width: 225,
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? AppTheme.secondaryColor.withValues(
-                                              alpha: 0.14,
-                                            )
-                                          : AppTheme.darkSurface,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
                                         color: isSelected
-                                            ? AppTheme.secondaryColor
-                                            : const Color(0xFF334155),
-                                        width: isSelected ? 1.5 : 1.0,
+                                            ? AppTheme.secondaryColor.withValues(
+                                                alpha: 0.16,
+                                              )
+                                            : AppTheme.darkSurface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? AppTheme.secondaryColor
+                                              : const Color(0xFF334155),
+                                          width: isSelected ? 2.0 : 1.0,
+                                        ),
                                       ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text(
-                                              offer.categoryEmoji,
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                offer.brandName,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                offer.categoryEmoji,
                                                 style: const TextStyle(
-                                                  fontSize: 11.5,
-                                                  fontWeight: FontWeight.bold,
-                                                  color:
-                                                      AppTheme.secondaryColor,
+                                                  fontSize: 18,
                                                 ),
-                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                            ),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 5,
-                                                    vertical: 1.5,
+                                              const SizedBox(width: 6),
+                                              Expanded(
+                                                child: Text(
+                                                  offer.brandName,
+                                                  style: const TextStyle(
+                                                    fontSize: 11.5,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        AppTheme.secondaryColor,
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: isLimitedTime
-                                                    ? AppTheme.accentWarning
-                                                          .withValues(
-                                                            alpha: 0.2,
-                                                          )
-                                                    : (isFree
-                                                          ? AppTheme
-                                                                .accentSuccess
-                                                                .withValues(
-                                                                  alpha: 0.2,
-                                                                )
-                                                          : AppTheme
-                                                                .accentPartyPurple
-                                                                .withValues(
-                                                                  alpha: 0.2,
-                                                                )),
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              child: Text(
-                                                isLimitedTime
-                                                    ? '⏰ LIMITED TIME'
-                                                    : (isFree
-                                                          ? 'SPONSORED'
-                                                          : (isTemplate
-                                                                ? 'TEMPLATE'
-                                                                : '-${offer.discountPercent}%')),
-                                                style: TextStyle(
-                                                  fontSize: 9,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: isLimitedTime
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 5,
+                                                      vertical: 1.5,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? AppTheme.secondaryColor
+                                                      : (isLimitedTime
                                                       ? AppTheme.accentWarning
+                                                            .withValues(
+                                                              alpha: 0.2,
+                                                            )
                                                       : (isFree
                                                             ? AppTheme
                                                                   .accentSuccess
-                                                            : const Color(
-                                                                0xFFC4B5FD,
-                                                              )),
+                                                                  .withValues(
+                                                                    alpha: 0.2,
+                                                                  )
+                                                            : AppTheme
+                                                                  .accentPartyPurple
+                                                                  .withValues(
+                                                                    alpha: 0.2,
+                                                                  ))),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  isSelected
+                                                      ? '✓ SELECTED'
+                                                      : (isLimitedTime
+                                                      ? '⏰ LIMITED TIME'
+                                                      : (isFree
+                                                            ? 'SPONSORED'
+                                                            : (isTemplate
+                                                                  ? 'TEMPLATE'
+                                                                  : '-${offer.discountPercent}%'))),
+                                                  style: TextStyle(
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isSelected
+                                                        ? Colors.black
+                                                        : (isLimitedTime
+                                                        ? AppTheme.accentWarning
+                                                        : (isFree
+                                                              ? AppTheme
+                                                                    .accentSuccess
+                                                                    : const Color(
+                                                                        0xFFC4B5FD,
+                                                                      ))),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          offer.productTitle,
-                                          style: const TextStyle(
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
+                                            ],
                                           ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              isFree
-                                                  ? 'Host: \$0 Sponsored'
-                                                  : (isTemplate
-                                                        ? 'Suggested: \$${offer.retailPrice.toStringAsFixed(0)} • Host buys code'
-                                                        : 'Host: \$${offer.organizerPrice.toStringAsFixed(0)}'),
-                                              style: const TextStyle(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppTheme.accentSuccess,
-                                              ),
+                                          Text(
+                                            offer.productTitle,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
                                             ),
-                                          ],
-                                        ),
-                                      ],
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                isFree
+                                                    ? 'Host: \$0 Sponsored'
+                                                    : (isTemplate
+                                                          ? 'Suggested: \$${offer.retailPrice.toStringAsFixed(0)} • Host buys code'
+                                                          : 'Host: \$${offer.organizerPrice.toStringAsFixed(0)}'),
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isSelected
+                                                      ? AppTheme.secondaryColor
+                                                      : AppTheme.accentSuccess,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
                                 );
                               },
                             );
