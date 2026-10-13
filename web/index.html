@@ -69,10 +69,17 @@
         if (unlocked) return;
         try {
           if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
             window.speechSynthesis.resume();
-            var dummy = new SpeechSynthesisUtterance(' ');
+            var dummy = new SpeechSynthesisUtterance('.');
             dummy.volume = 0.01;
             dummy.rate = 10;
+            dummy.onend = function() {
+              window.speechSynthesis.cancel();
+            };
+            dummy.onerror = function() {
+              window.speechSynthesis.cancel();
+            };
             window.speechSynthesis.speak(dummy);
           }
           var AudioCtx = window.AudioContext || window.webkitAudioContext;

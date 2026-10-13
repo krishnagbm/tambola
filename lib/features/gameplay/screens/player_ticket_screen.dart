@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -890,11 +891,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               _voiceEnabled ? Icons.volume_up : Icons.volume_off,
               color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey,
             ),
-            tooltip: _voiceEnabled ? 'Voice Calling ON' : 'Voice Calling OFF',
+            tooltip: _voiceEnabled ? 'Voice Calling ON (Unmute phone on iOS)' : 'Voice Calling OFF',
             onPressed: () async {
               final newState = !_voiceEnabled;
               setState(() => _voiceEnabled = newState);
               if (newState) {
+                if (kIsWeb) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Voice Calling ON 🔊 Note: On iPhone/iPad, ensure the physical Silent switch is OFF and media volume is up.'),
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                }
                 await TambolaAudioCaller().unlockAudio();
               }
               try {
