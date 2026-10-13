@@ -11,24 +11,83 @@
   <link rel="canonical" href="https://www.dabhousie.com/">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
 
-  <!-- Google tag (gtag.js) - Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
+  <!-- Google tag (gtag.js) - Google Analytics 4 (Real Users Only) -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-E46BLPH29F');
+    (function() {
+      // Exclude automated test runners (Playwright/Puppeteer/Selenium), test user-agents, localhost, or explicit test flags
+      var isTestEnvironment = 
+        Boolean(window.navigator && window.navigator.webdriver) ||
+        (window.navigator && window.navigator.userAgent && window.navigator.userAgent.indexOf('DabHousie-TestPlayer') !== -1) ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.search.indexOf('test=true') !== -1 ||
+        window.location.hash.indexOf('test=true') !== -1 ||
+        (function() {
+          try {
+            return window.sessionStorage && window.sessionStorage.getItem('dh_automated_test') === 'true';
+          } catch(e) { return false; }
+        })();
 
-    // Helper for tracking route changes in Flutter SPA
-    window.logPageView = function(pagePath, pageTitle) {
-      if (typeof gtag === 'function') {
-        gtag('event', 'page_view', {
-          page_path: pagePath,
-          page_title: pageTitle || document.title,
-          page_location: window.location.href
-        });
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){
+        if (!isTestEnvironment) {
+          window.dataLayer.push(arguments);
+        }
       }
-    };
+      window.gtag = gtag;
+
+      // Helper for tracking route changes in Flutter SPA
+      window.logPageView = function(pagePath, pageTitle) {
+        if (!isTestEnvironment && typeof gtag === 'function') {
+          gtag('event', 'page_view', {
+            page_path: pagePath,
+            page_title: pageTitle || document.title,
+            page_location: window.location.href
+          });
+        }
+      };
+
+      if (!isTestEnvironment) {
+        var gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F';
+        document.head.appendChild(gaScript);
+
+        gtag('js', new Date());
+        gtag('config', 'G-E46BLPH29F');
+      } else {
+        console.log('🤖 Test / automation / local environment detected — Google Analytics tracking suppressed.');
+      }
+    })();
+  </script>
+
+  <!-- iOS Safari & Mobile Audio Autoplay Unblocker -->
+  <script>
+    (function() {
+      var unlocked = false;
+      function unlockMobileAudio() {
+        if (unlocked) return;
+        try {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.resume();
+            var dummy = new SpeechSynthesisUtterance(' ');
+            dummy.volume = 0.01;
+            dummy.rate = 10;
+            window.speechSynthesis.speak(dummy);
+          }
+          var AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            var ctx = new AudioCtx();
+            if (ctx.state === 'suspended') {
+              ctx.resume();
+            }
+          }
+          unlocked = true;
+        } catch (e) {}
+      }
+      window.addEventListener('touchstart', unlockMobileAudio, { once: true, passive: true });
+      window.addEventListener('click', unlockMobileAudio, { once: true, passive: true });
+    })();
   </script>
 
   <!-- Google AdSense -->

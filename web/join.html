@@ -21,13 +21,35 @@
   <meta name="twitter:description" content="Enter your 6-digit game code to join live multiplayer Tambola, Housie, and 90-Ball Bingo.">
   <meta name="twitter:image" content="https://www.dabhousie.com/og-banner.png">
 
-  <!-- Google tag (gtag.js) - Google Analytics 4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
+  <!-- Google tag (gtag.js) - Google Analytics 4 (Real Users Only) -->
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-E46BLPH29F');
+    (function() {
+      var isTestEnvironment = 
+        Boolean(window.navigator && window.navigator.webdriver) ||
+        (window.navigator && window.navigator.userAgent && window.navigator.userAgent.indexOf('DabHousie-TestPlayer') !== -1) ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.search.indexOf('test=true') !== -1 ||
+        window.location.hash.indexOf('test=true') !== -1;
+
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){
+        if (!isTestEnvironment) {
+          window.dataLayer.push(arguments);
+        }
+      }
+      window.gtag = gtag;
+
+      if (!isTestEnvironment) {
+        var gaScript = document.createElement('script');
+        gaScript.async = true;
+        gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F';
+        document.head.appendChild(gaScript);
+
+        gtag('js', new Date());
+        gtag('config', 'G-E46BLPH29F');
+      }
+    })();
   </script>
 
   <!-- Google AdSense -->

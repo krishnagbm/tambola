@@ -1690,6 +1690,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildProfileTab(BuildContext context, MptUser user, AsyncValue walletState) {
     final isRegistered = user.isRegistered;
     final hasAvatarUrl = user.avatarUrl != null && user.avatarUrl!.isNotEmpty;
+    final adminRoleAsync = ref.watch(currentAdminRoleProvider);
+    final isAdmin = isRegistered && (adminRoleAsync.value?['is_admin'] == true);
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -1969,6 +1971,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/verify-reward'),
                 ),
+                if (isAdmin) ...[
+                  const Divider(height: 1, color: Color(0xFF2E334D)),
+                  ListTile(
+                    leading: const Icon(Icons.admin_panel_settings, color: AppTheme.secondaryColor),
+                    title: const Row(
+                      children: [
+                        Text(
+                          'Super Admin Console',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor,
+                            borderRadius: BorderRadius.all(Radius.circular(4)),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            child: Text(
+                              'ADMIN',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    subtitle: const Text(
+                      'Executive reports, live games & partner analytics',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: AppTheme.secondaryColor),
+                    onTap: () => context.push('/admin'),
+                  ),
+                ],
               ],
             ),
           ),

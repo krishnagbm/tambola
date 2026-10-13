@@ -216,9 +216,13 @@ export class PlayerSession {
       });
     }
 
+    // Block Google Analytics & Tag Manager network requests from automated test sessions
+    await this.context.route(/(googletagmanager|google-analytics)\.com/, (route) => route.abort());
+
     // Pre-seed local storage so Flutter's SharedPreferences immediately starts with this real player name
     await this.context.addInitScript((playerName) => {
       try {
+        sessionStorage.setItem('dh_automated_test', 'true');
         localStorage.setItem('flutter.mpt_player_name', JSON.stringify(playerName));
         localStorage.setItem('flutter.mpt_player_avatar', JSON.stringify('avatar_lion'));
       } catch (_) {}

@@ -31,9 +31,12 @@ class PlayerTicketScreen extends ConsumerStatefulWidget {
 class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   final Set<int> _markedNumbers = {};
   bool _isClaiming = false;
-  bool _voiceEnabled = false;
+  bool _voiceEnabled = true;
   int _lastAnnouncedSeq = 0;
   bool _showCelebration = false;
+  Timer? _finalGraceTimer;
+  int _finalGraceSecondsLeft = 0;
+  bool _hasStartedFinalGrace = false;
 
   // FlashHousie™ 5 / 10 / 15 & NeuroWave™ Spotlight State
   Timer? _neuroWaveUiTimer;
@@ -52,6 +55,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     super.initState();
     WakeLockHelper.keepScreenOn();
     _loadSavedMarks();
+    _loadVoicePreference();
     _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       final game = ref.read(gameStreamProvider(widget.gameId)).value;
@@ -64,8 +68,19 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   @override
   void dispose() {
     _neuroWaveUiTimer?.cancel();
+    _finalGraceTimer?.cancel();
     WakeLockHelper.release();
     super.dispose();
+  }
+
+  Future<void> _loadVoicePreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getBool('player_voice_calling_enabled');
+      if (saved != null && mounted) {
+        setState(() => _voiceEnabled = saved);
+      }
+    } catch (_) {}
   }
 
   Set<int> _recalledForCycle(int cycleIndex) =>
@@ -363,6 +378,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
 
   void _toggleMark(int number) {
     if (number == 0) return;
+    if (_voiceEnabled) {
+      TambolaAudioCaller().unlockAudio();
+    }
     setState(() {
       if (_markedNumbers.contains(number)) {
         _markedNumbers.remove(number);
@@ -781,7 +799,22 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
         ? confirmedPlayers.length
         : (gameStream.value?.fundedCapacity ?? 1);
 
-    // Announce number if voice enabled
+    // Announce number when new called balls arrive
+    ref.listen<AsyncValue<List<MptCalledNumber>>>(
+      calledNumbersStreamProvider(widget.gameId),
+      (prev, next) {
+        final calledNumbers = next.value ?? [];
+        if (calledNumbers.isNotEmpty &&
+            calledNumbers.length > _lastAnnouncedSeq) {
+          _lastAnnouncedSeq = calledNumbers.length;
+          final latestNum = calledNumbers.last.number;
+          if (_voiceEnabled) {
+            TambolaAudioCaller().announceNumber(latestNum);
+          }
+        }
+      },
+    );
+
     if (_voiceEnabled) {
       calledStream.whenData((calledNumbers) {
         if (calledNumbers.isNotEmpty &&
@@ -858,8 +891,16 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey,
             ),
             tooltip: _voiceEnabled ? 'Voice Calling ON' : 'Voice Calling OFF',
-            onPressed: () {
-              setState(() => _voiceEnabled = !_voiceEnabled);
+            onPressed: () async {
+              final newState = !_voiceEnabled;
+              setState(() => _voiceEnabled = newState);
+              if (newState) {
+                await TambolaAudioCaller().unlockAudio();
+              }
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('player_voice_calling_enabled', newState);
+              } catch (_) {}
             },
           ),
           IconButton(
@@ -987,11 +1028,44 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   ? activeCycleSpec.drawPool.length
                   : 90;
 
+              final is90NumbersDone =
+                  flashConfig == null && calledNumbers.length >= 90;
+
+              // Trigger 20-second final claim window on player side if all 90 numbers called
+              if (is90NumbersDone && !_hasStartedFinalGrace) {
+                _hasStartedFinalGrace = true;
+                _finalGraceSecondsLeft = 20;
+                _finalGraceTimer?.cancel();
+                _finalGraceTimer =
+                    Timer.periodic(const Duration(seconds: 1), (timer) {
+                  if (!mounted) {
+                    timer.cancel();
+                    return;
+                  }
+                  if (_finalGraceSecondsLeft > 1) {
+                    setState(() {
+                      _finalGraceSecondsLeft--;
+                    });
+                  } else {
+                    timer.cancel();
+                    setState(() {
+                      _finalGraceSecondsLeft = 0;
+                    });
+                  }
+                });
+              }
+
+              final isInFinalGracePeriod =
+                  is90NumbersDone && _finalGraceSecondsLeft > 0;
+
               final isGameEnded =
-                  currentGame?.isCompleted == true ||
-                  currentGame?.status == 'COMPLETED' ||
                   currentGame?.status == 'CANCELLED' ||
-                  (flashConfig == null && calledNumbers.length >= 90);
+                  (!isInFinalGracePeriod &&
+                      (currentGame?.isCompleted == true ||
+                          currentGame?.status == 'COMPLETED' ||
+                          (is90NumbersDone &&
+                              _hasStartedFinalGrace &&
+                              _finalGraceSecondsLeft <= 0)));
               final hasApprovedWinners =
                   (claimsStream.value ?? const <MptClaim>[]).any(
                     (c) => c.status == 'APPROVED',
@@ -1054,6 +1128,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     _buildLobbyWaitingNotice(context, currentGame),
+                                    if (isInFinalGracePeriod) ...[
+                                      _buildFinalGraceBanner(),
+                                      const SizedBox(height: 10),
+                                    ],
                                     _buildPlayerIdentityBanner(
                                       currentUser,
                                       ticket,
@@ -1214,6 +1292,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildLobbyWaitingNotice(context, currentGame),
+                          if (isInFinalGracePeriod) ...[
+                            _buildFinalGraceBanner(),
+                            const SizedBox(height: 10),
+                          ],
                           // Player Identity & Ticket Number Card
                           _buildPlayerIdentityBanner(
                             currentUser,
@@ -1364,6 +1446,88 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             },
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildFinalGraceBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFB45309), Color(0xFFD97706)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD97706).withValues(alpha: 0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.hourglass_top_rounded,
+            color: Color(0xFFFEF3C7),
+            size: 26,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'All 90 Numbers Called!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13.5,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${_finalGraceSecondsLeft}s Left',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFFDE68A),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'Final claim window is open! Mark your last numbers and claim your remaining lines or Full House now.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFFFEF3C7),
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

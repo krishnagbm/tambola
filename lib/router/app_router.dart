@@ -9,6 +9,7 @@ import '../features/registration/screens/join_game_screen.dart';
 import '../features/registration/screens/registration_status_screen.dart';
 import '../features/rewards/screens/rewards_screen.dart';
 import '../features/rewards/screens/verify_reward_screen.dart';
+import '../features/super_admin/screens/super_admin_dashboard_screen.dart';
 import '../features/wallet/screens/organizer_claims_screen.dart';
 import '../features/wallet/screens/wallet_screen.dart';
 
@@ -112,6 +113,10 @@ final appRouter = GoRouter(
         final gameId = state.pathParameters['gameId']!;
         return LiveGameDisplayScreen(gameId: gameId);
       },
+    ),
+    GoRoute(
+      path: '/admin',
+      builder: (context, state) => const SuperAdminDashboardScreen(),
     ),
   ],
 );

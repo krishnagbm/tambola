@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class TambolaAudioCaller {
@@ -42,7 +43,32 @@ class TambolaAudioCaller {
       await _flutterTts.setSpeechRate(0.48);
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
+
+      // On iOS devices, configure the audio category to playback so speech plays
+      // even if the physical Ring/Silent switch is set to Silent.
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+        await _flutterTts.setIosAudioCategory(
+          IosTextToSpeechAudioCategory.playback,
+          [
+            IosTextToSpeechAudioCategoryOptions.defaultToSpeaker,
+            IosTextToSpeechAudioCategoryOptions.mixWithOthers,
+          ],
+          IosTextToSpeechAudioMode.defaultMode,
+        );
+        await _flutterTts.setSharedInstance(true);
+        await _flutterTts.awaitSynthCompletion(true);
+      }
+
       _isInitialized = true;
+    } catch (_) {}
+  }
+
+  /// Primes/unlocks audio on mobile user interaction
+  Future<void> unlockAudio() async {
+    isMuted = false;
+    await _initTts();
+    try {
+      await _flutterTts.stop();
     } catch (_) {}
   }
 
@@ -67,6 +93,8 @@ class TambolaAudioCaller {
     }
 
     try {
+      // Clear any pending/stalled speech utterance so iOS / Web does not drop this call
+      await _flutterTts.stop();
       await _flutterTts.speak(speechText);
     } catch (_) {}
   }

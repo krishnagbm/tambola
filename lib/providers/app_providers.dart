@@ -13,6 +13,7 @@ import '../models/mpt_seat_otp.dart';
 import '../models/mpt_ticket.dart';
 import '../models/mpt_user.dart';
 import '../models/mpt_wallet.dart';
+import '../repositories/admin_reports_repository.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/game_repository.dart';
 import '../repositories/gameplay_repository.dart';
@@ -25,6 +26,9 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 });
 
 // Repositories
+final adminReportsRepositoryProvider = Provider<AdminReportsRepository>((ref) {
+  return AdminReportsRepository(ref.watch(supabaseClientProvider));
+});
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.watch(supabaseClientProvider));
 });
@@ -224,4 +228,16 @@ final gameSeatOtpsStreamProvider = StreamProvider.autoDispose.family<List<MptSea
 final activeBrandOffersProvider = FutureProvider.autoDispose<List<BrandOffer>>((ref) async {
   return ref.watch(gameRepositoryProvider).getActiveBrandOffers();
 });
+
+// Admin Role Check Provider
+final currentAdminRoleProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  ref.watch(currentUserProvider);
+  return ref.watch(adminReportsRepositoryProvider).checkAdminRole();
+});
+
+// Admin Reports Overview Data Provider
+final adminReportsOverviewProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+  return ref.watch(adminReportsRepositoryProvider).getReportsOverview();
+});
+
 

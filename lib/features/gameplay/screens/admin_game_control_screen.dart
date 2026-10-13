@@ -53,6 +53,9 @@ class _AdminGameControlScreenState
   Timer? _neuroWaveUiTimer;
   NeuroWavePhase? _lastNeuroPhase;
   bool _isAutoFinalizingGrandWinners = false;
+  int _all90GraceSecondsLeft = 0;
+  Timer? _all90GraceTimer;
+  bool _hasStartedAll90Grace = false;
 
   @override
   void initState() {
@@ -106,6 +109,7 @@ class _AdminGameControlScreenState
     _autoCallTimer?.cancel();
     _celebrationTimer?.cancel();
     _autoEndTimer?.cancel();
+    _all90GraceTimer?.cancel();
     super.dispose();
   }
 
@@ -146,7 +150,8 @@ class _AdminGameControlScreenState
       if (_celebrationSecondsLeft > 0 ||
           _isCalling ||
           _isAutoPilotPaused ||
-          _autoEndSecondsLeft > 0) {
+          _autoEndSecondsLeft > 0 ||
+          _all90GraceSecondsLeft > 0) {
         return;
       }
 
@@ -246,6 +251,45 @@ class _AdminGameControlScreenState
         );
       }
     } catch (_) {}
+  }
+
+  void _startAll90GraceCountdown() {
+    if (_hasStartedAll90Grace) return;
+    _hasStartedAll90Grace = true;
+    _stopAutoPilot();
+    _all90GraceSecondsLeft = 20;
+    _all90GraceTimer?.cancel();
+
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '⏳ All 90 numbers called! Final 20-second claim window started for players to claim remaining lines and Full House.',
+          ),
+          backgroundColor: AppTheme.secondaryColor,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+
+    _all90GraceTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_all90GraceSecondsLeft > 1) {
+        setState(() {
+          _all90GraceSecondsLeft--;
+        });
+      } else {
+        timer.cancel();
+        setState(() {
+          _all90GraceSecondsLeft = 0;
+        });
+        await _autoFinalizeGame();
+      }
+    });
   }
 
   void _handleCopyCode(String inviteCode) {
@@ -518,17 +562,19 @@ class _AdminGameControlScreenState
 
       if (num != null) {
         TambolaAudioCaller().announceNumber(num);
+        try {
+          final freshCalled = await ref
+              .read(gameplayRepositoryProvider)
+              .getCalledNumbers(widget.gameId);
+          if (freshCalled.length >= 90) {
+            _startAll90GraceCountdown();
+          }
+        } catch (_) {}
       } else {
         if (!mounted) return;
         _autoCallTimer?.cancel();
         setState(() => _isAutoPilotEnabled = false);
-        await ref.read(gameplayRepositoryProvider).endGame(widget.gameId);
-        ref.invalidate(gameStreamProvider(widget.gameId));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All 90 numbers have been called! Game completed.'),
-          ),
-        );
+        _startAll90GraceCountdown();
       }
     } catch (e) {
       if (!mounted) return;
@@ -1593,6 +1639,8 @@ class _AdminGameControlScreenState
                               children: [
                                 if (_celebrationSecondsLeft > 0)
                                   _buildCelebrationPauseBanner(),
+                                if (_all90GraceSecondsLeft > 0)
+                                  _buildAll90GraceBanner(),
                                 _buildCallerHeader(
                                   game,
                                   latest,
@@ -1688,6 +1736,8 @@ class _AdminGameControlScreenState
                                   children: [
                                     if (_celebrationSecondsLeft > 0)
                                       _buildCelebrationPauseBanner(),
+                                    if (_all90GraceSecondsLeft > 0)
+                                      _buildAll90GraceBanner(),
                                     _buildCallerHeader(
                                       game,
                                       latest,
@@ -1804,6 +1854,8 @@ class _AdminGameControlScreenState
                         ],
                         if (_celebrationSecondsLeft > 0)
                           _buildCelebrationPauseBanner(),
+                        if (_all90GraceSecondsLeft > 0)
+                          _buildAll90GraceBanner(),
                         _buildCallerHeader(
                           game,
                           latest,
@@ -2175,6 +2227,21 @@ class _AdminGameControlScreenState
     }
 
     if (allPrizesWon || isMaxNumbers) {
+      if (_all90GraceSecondsLeft > 0) {
+        return ElevatedButton.icon(
+          onPressed: _handleEndGame,
+          icon: const Icon(Icons.timer_outlined, size: 20, color: Colors.white),
+          label: Text(
+            'Final Claim Window Active (${_all90GraceSecondsLeft}s) • Conclude Now',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF59E0B),
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: verticalPadding),
+          ),
+        );
+      }
       return ElevatedButton.icon(
         onPressed: _handleEndGame,
         icon: Icon(Icons.flag_rounded, size: iconSize, color: Colors.white),
@@ -3620,6 +3687,88 @@ class _AdminGameControlScreenState
               visualDensity: VisualDensity.compact,
             ),
             child: const Text('Skip Pause', style: TextStyle(fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAll90GraceBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.hourglass_top_rounded,
+            color: Color(0xFFF59E0B),
+            size: 24,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'All 90 Numbers Called • Final Claim Window',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13.5,
+                        color: Color(0xFFF59E0B),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '${_all90GraceSecondsLeft}s Left',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.primaryDark,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                const Text(
+                  'Players have 20s to mark their final ball and submit any winning lines or Full House.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFFE2E8F0),
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: _handleEndGame,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentDanger,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: const Size(0, 32),
+              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            child: const Text('Conclude Now'),
           ),
         ],
       ),
