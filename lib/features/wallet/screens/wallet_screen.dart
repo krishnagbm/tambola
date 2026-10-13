@@ -22,6 +22,7 @@ class WalletScreen extends ConsumerStatefulWidget {
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
+  String _ledgerFilter = 'PAID';
   final ScrollController _ledgerScrollController = ScrollController();
 
   @override
@@ -658,6 +659,12 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ),
       error: (err, stack) => const SizedBox(),
       data: (txs) {
+        final paidTxs = txs.where((t) => t.amount != 0).toList();
+        final freeTxs = txs.where((t) => t.amount == 0).toList();
+        final displayedTxs = _ledgerFilter == 'PAID'
+            ? paidTxs
+            : (_ledgerFilter == 'FREE' ? freeTxs : txs);
+
         return Container(
           decoration: BoxDecoration(
             color: AppTheme.darkCard,
@@ -692,27 +699,109 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           border: Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.35)),
                         ),
                         child: Text(
-                          '${txs.length} ${txs.length == 1 ? 'entry' : 'entries'}',
+                          '${displayedTxs.length} of ${txs.length}',
                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF93C5FD)),
                         ),
                       ),
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildLedgerFilterChip(
+                        label: 'Credit Activity',
+                        count: paidTxs.length,
+                        icon: Icons.payments_outlined,
+                        isSelected: _ledgerFilter == 'PAID',
+                        onTap: () {
+                          setState(() => _ledgerFilter = 'PAID');
+                          if (_ledgerScrollController.hasClients) {
+                            _ledgerScrollController.jumpTo(0);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildLedgerFilterChip(
+                        label: 'Family Pack (0 Cr)',
+                        count: freeTxs.length,
+                        icon: Icons.family_restroom_rounded,
+                        isSelected: _ledgerFilter == 'FREE',
+                        onTap: () {
+                          setState(() => _ledgerFilter = 'FREE');
+                          if (_ledgerScrollController.hasClients) {
+                            _ledgerScrollController.jumpTo(0);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      _buildLedgerFilterChip(
+                        label: 'All Activity',
+                        count: txs.length,
+                        icon: Icons.list_alt_rounded,
+                        isSelected: _ledgerFilter == 'ALL',
+                        onTap: () {
+                          setState(() => _ledgerFilter = 'ALL');
+                          if (_ledgerScrollController.hasClients) {
+                            _ledgerScrollController.jumpTo(0);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const Divider(height: 1, color: Color(0xFF1E293B)),
-              if (txs.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              if (displayedTxs.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.history_toggle_off_rounded, size: 36, color: Color(0xFF64748B)),
-                        SizedBox(height: 10),
-                        Text(
-                          'No credit transactions recorded yet.',
-                          style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        Icon(
+                          _ledgerFilter == 'FREE'
+                              ? Icons.family_restroom_rounded
+                              : (_ledgerFilter == 'PAID'
+                                  ? Icons.payments_outlined
+                                  : Icons.history_toggle_off_rounded),
+                          size: 38,
+                          color: const Color(0xFF64748B),
                         ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _ledgerFilter == 'FREE'
+                              ? 'No free Family-pack games recorded.'
+                              : (_ledgerFilter == 'PAID'
+                                  ? (freeTxs.isNotEmpty
+                                      ? 'No paid credit activity yet.'
+                                      : 'No credit transactions recorded yet.')
+                                  : 'No credit transactions recorded yet.'),
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF94A3B8),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (_ledgerFilter == 'PAID' && freeTxs.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            '${freeTxs.length} free Family-pack ${freeTxs.length == 1 ? 'game is' : 'games are'} in the "Family Pack (0 Cr)" tab.',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            textAlign: TextAlign.center,
+                          ),
+                        ] else if (_ledgerFilter == 'FREE') ...[
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Games hosted for 1-5 players require 0 credits.',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -726,11 +815,19 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                     child: ListView.separated(
                       controller: _ledgerScrollController,
                       padding: const EdgeInsets.all(12),
-                      itemCount: txs.length,
+                      itemCount: displayedTxs.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
                       itemBuilder: (c, idx) {
-                        final tx = txs[idx];
+                        final tx = displayedTxs[idx];
+                        final isZero = tx.amount == 0;
                         final isPositive = tx.amount > 0;
+                        final Color statusColor = isZero
+                            ? const Color(0xFF38BDF8)
+                            : (isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger);
+                        final IconData statusIcon = isZero
+                            ? Icons.family_restroom_rounded
+                            : (isPositive ? Icons.add_circle : Icons.remove_circle);
+
                         return Card(
                           color: AppTheme.darkSurface,
                           margin: EdgeInsets.zero,
@@ -738,8 +835,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                           child: ListTile(
                             dense: true,
                             leading: Icon(
-                              isPositive ? Icons.add_circle : Icons.remove_circle,
-                              color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                              statusIcon,
+                              color: statusColor,
                               size: 22,
                             ),
                             title: Text(
@@ -754,7 +851,28 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                                   Formatters.formatShortDate(tx.createdAt),
                                   style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                                 ),
-                                if (isPositive && tx.expiresAt != null) ...[
+                                if (isZero) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF38BDF8).withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: const Color(0xFF38BDF8).withValues(alpha: 0.35),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Family Pack (1-5 Players) • Free',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF38BDF8),
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (isPositive && tx.expiresAt != null) ...[
                                   const SizedBox(height: 4),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -790,11 +908,13 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               ],
                             ),
                             trailing: Text(
-                              '${isPositive ? '+' : ''}${tx.amount} Credits',
+                              isZero
+                                  ? '0 Credits'
+                                  : '${isPositive ? '+' : ''}${tx.amount} Credits',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
-                                color: isPositive ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                                color: isZero ? const Color(0xFF94A3B8) : statusColor,
                               ),
                             ),
                           ),
@@ -807,6 +927,72 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLedgerFilterChip({
+    required String label,
+    required int count,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppTheme.primaryLight.withValues(alpha: 0.22)
+              : AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? AppTheme.primaryLight
+                : const Color(0xFF334155),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected ? AppTheme.primaryLight : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppTheme.primaryLight
+                    : const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
