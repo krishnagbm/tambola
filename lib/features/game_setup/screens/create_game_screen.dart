@@ -877,6 +877,108 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       return;
     }
 
+    // Final validation: Schedule Game & Autonomous Controls require a paid package (Small Party 6+ players or above)
+    if (_scheduledDateTime != null && _selectedCapacity <= 5) {
+      final shouldUpgrade = await showDialog<bool>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.workspace_premium_rounded, color: AppTheme.secondaryColor),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Paid Package Required',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Schedule Game & Autonomous Controls (Dabby Auto-Pilot, Quorum rules, & Latecomer Buffers) are exclusive to paid packages.',
+                style: TextStyle(fontSize: 13, color: Colors.white, height: 1.4),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.stars_rounded, color: AppTheme.secondaryColor, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Change to Small Party (6–15 Players • 15 Credits) to host with autonomous scheduling, or clear the schedule to launch an instant Free game.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFFE2E8F0), height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx, false);
+                setState(() {
+                  _scheduledDateTime = null;
+                  _dabbyScheduleConfig = null;
+                });
+                _saveDraft();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Schedule cleared. You can now launch an instant Free Family Pack game!'),
+                    backgroundColor: AppTheme.accentSuccess,
+                  ),
+                );
+              },
+              child: const Text('Clear Schedule & Play Free', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(ctx, true),
+              icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+              label: const Text('Change to Small Party (6–15)'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.black,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldUpgrade == true && mounted) {
+        final loadedTiers = ref.read(capacityTiersProvider).value;
+        String? smallPartyTierId;
+        if (loadedTiers != null && loadedTiers.isNotEmpty) {
+          try {
+            smallPartyTierId = loadedTiers.firstWhere((t) => t.maxPlayers == 15).id;
+          } catch (_) {}
+        }
+        _setCapacity(15, tierId: smallPartyTierId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Changed to Small Party (6–15 Players • 15 Credits). Click "Create Game" to proceed!'),
+            backgroundColor: AppTheme.accentSuccess,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       final activePrizes = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
@@ -4085,7 +4187,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 child: Text(
                   isScheduled
                       ? 'Scheduled: ${_formatDateTime(_scheduledDateTime!)}'
-                      : 'Scheduled Game Time (Optional)',
+                      : 'Schedule Game & Autonomous Controls',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.bold,
@@ -4093,16 +4195,60 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                   ),
                 ),
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.workspace_premium_rounded, size: 11, color: AppTheme.secondaryColor),
+                    SizedBox(width: 3),
+                    Text(
+                      'Paid Pack',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             !isScheduled
-                ? 'Play immediately on launch, or set a kickoff with Dabby Auto-Pilot & quorum rules.'
+                ? 'Configure start time and Dabby\'s automated lobby & quorum rules.'
                 : 'Dabby will orchestrate the lobby and kick off on auto-pilot.',
             style: const TextStyle(
               fontSize: 11.5,
               color: Color(0xFFA0AEC0),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E293B),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFF334155)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded, size: 13, color: AppTheme.secondaryColor),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Paid Pack Feature: Autonomous controls & quorum rules require Small Party (6+ players) or above.',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.3),
+                  ),
+                ),
+              ],
             ),
           ),
           if (isScheduled) ...[
@@ -4144,7 +4290,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _openScheduleDialog,
                   icon: Icon(isScheduled ? Icons.tune_rounded : Icons.access_time_rounded, size: 15),
-                  label: Text(isScheduled ? 'Configure Autonomous Rules ⚙️' : 'Set Date & Time'),
+                  label: Text(isScheduled ? 'Configure Autonomous Rules ⚙️' : 'Set Date, Time & Autonomous Controls'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.secondaryColor,
                     side: const BorderSide(color: AppTheme.secondaryColor),

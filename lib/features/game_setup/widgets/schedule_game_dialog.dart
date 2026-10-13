@@ -288,6 +288,29 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Paid Pack Feature Note Banner
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.35)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.workspace_premium_rounded, size: 16, color: AppTheme.secondaryColor),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Paid Pack Feature: Autonomous controls and scheduled kickoffs require a paid package (Small Party 6+ players or above).',
+                              style: TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), fontWeight: FontWeight.w500, height: 1.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     // Section A: Date & Time Picker
                     _buildDateTimeSection(),
                     const SizedBox(height: 20),
