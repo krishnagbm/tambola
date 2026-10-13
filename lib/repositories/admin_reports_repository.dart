@@ -50,8 +50,65 @@ class AdminReportsRepository {
       }
       return {};
     } catch (e) {
-      // If RPC fails (e.g. migration pending execution or access denied),
-      // rethrow with clear error
+      rethrow;
+    }
+  }
+
+  /// Toggle public visibility of a game in Recent Games / Hall of Fame
+  Future<bool> setGamePublicVisibility(String gameId, bool isVisible) async {
+    try {
+      final res = await _supabase.rpc('MPT_set_game_public_visibility', params: {
+        'p_game_id': gameId,
+        'p_is_visible': isVisible,
+      });
+      if (res is Map && res['success'] == true) {
+        return true;
+      }
+      return false;
+    } catch (_) {
+      // Direct update fallback if user has direct permission
+      try {
+        await _supabase
+            .from('MPT_games')
+            .update({'is_publicly_visible': isVisible})
+            .eq('id', gameId);
+        await _supabase
+            .from('MPT_game_archives')
+            .update({'is_publicly_visible': isVisible})
+            .eq('game_id', gameId);
+        return true;
+      } catch (e2) {
+        rethrow;
+      }
+    }
+  }
+
+  /// Bulk auto-hide all games that did not meet minimum quorum
+  Future<int> autoHideBelowQuorumGames({int minQuorum = 2}) async {
+    try {
+      final res = await _supabase.rpc('MPT_auto_hide_below_quorum_games', params: {
+        'p_min_quorum': minQuorum,
+      });
+      if (res is Map && res['hidden_games_count'] != null) {
+        return res['hidden_games_count'] as int;
+      }
+      return 0;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Fetch detailed game inspection statistics (players, claims, draws)
+  Future<Map<String, dynamic>> getAdminGameDetails(String gameId) async {
+    try {
+      final res = await _supabase.rpc('MPT_get_admin_game_details', params: {
+        'p_game_id': gameId,
+      });
+      if (res is Map<String, dynamic>) {
+        return res;
+      }
+      return {};
+    } catch (e) {
       rethrow;
     }
   }
