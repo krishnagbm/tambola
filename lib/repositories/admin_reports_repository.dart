@@ -172,4 +172,35 @@ class AdminReportsRepository {
       rethrow;
     }
   }
+
+  /// Grant promotional or marketing free credits to a selected host
+  Future<Map<String, dynamic>> grantCreditsToHost({
+    String? targetUserId,
+    String? targetEmail,
+    int credits = 300,
+    int validityDays = 30,
+    String reason = 'Marketing Promo (30 Days)',
+  }) async {
+    final params = {
+      if (targetUserId != null && targetUserId.isNotEmpty) 'p_target_user_id': targetUserId,
+      if (targetEmail != null && targetEmail.isNotEmpty) 'p_target_email': targetEmail,
+      'p_credits': credits,
+      'p_validity_days': validityDays,
+      'p_reason': reason,
+    };
+
+    try {
+      final res = await _supabase.rpc('MPT_admin_grant_credits', params: params);
+      if (res is Map<String, dynamic>) return res;
+    } catch (_) {}
+
+    try {
+      final res = await _supabase.rpc('mpt_admin_grant_credits', params: params);
+      if (res is Map<String, dynamic>) return res;
+    } catch (e) {
+      rethrow;
+    }
+
+    return {'success': false};
+  }
 }

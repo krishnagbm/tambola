@@ -151,7 +151,8 @@ BEGIN
                     ap.role,
                     ap.created_at,
                     (SELECT COUNT(*) FROM public."MPT_games" WHERE admin_user_id = ap.user_id) AS games_created_count,
-                    COALESCE(w.available_credits, 0) AS available_credits
+                    COALESCE(w.available_credits, 0) AS available_credits,
+                    w.credits_expire_at
                 FROM public."MPT_admin_profiles" ap
                 LEFT JOIN public."MPT_admin_wallets" w ON w.user_id = ap.user_id
                 ORDER BY ap.created_at DESC
@@ -466,4 +467,171 @@ BEGIN
 END;
 $$;
 GRANT EXECUTE ON FUNCTION public.mpt_auto_hide_below_quorum_games(INT) TO authenticated;
+
+-- 8. RPC: Admin Grant Free/Promotional Credits to Selected Host
+CREATE OR REPLACE FUNCTION public."MPT_admin_grant_credits"(
+    p_target_user_id UUID DEFAULT NULL,
+    p_target_email TEXT DEFAULT NULL,
+    p_credits INT DEFAULT 300,
+    p_validity_days INT DEFAULT 30,
+    p_reason TEXT DEFAULT 'Marketing Promo'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_admin_uid UUID;
+    v_admin_role TEXT;
+    v_target_user_id UUID := p_target_user_id;
+    v_target_email TEXT := TRIM(p_target_email);
+    v_target_name TEXT;
+    v_new_balance INT := 0;
+    v_expires_at TIMESTAMPTZ;
+    v_final_expiry TIMESTAMPTZ;
+BEGIN
+    v_admin_uid := auth.uid();
+    IF v_admin_uid IS NULL THEN
+        RAISE EXCEPTION 'AUTH_REQUIRED: Please sign in';
+    END IF;
+
+    SELECT role INTO v_admin_role
+    FROM public."MPT_admin_profiles"
+    WHERE user_id = v_admin_uid;
+
+    IF v_admin_role IS DISTINCT FROM 'ADMIN' THEN
+        RAISE EXCEPTION 'ACCESS_DENIED: Administrator privileges required';
+    END IF;
+
+    IF p_credits <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: Credits must be greater than zero';
+    END IF;
+
+    -- Resolve target user ID if only email is provided
+    IF v_target_user_id IS NULL AND v_target_email IS NOT NULL THEN
+        SELECT user_id INTO v_target_user_id
+        FROM public."MPT_admin_profiles"
+        WHERE LOWER(email) = LOWER(v_target_email)
+        LIMIT 1;
+
+        IF v_target_user_id IS NULL THEN
+            SELECT id INTO v_target_user_id
+            FROM auth.users
+            WHERE LOWER(email) = LOWER(v_target_email)
+            LIMIT 1;
+        END IF;
+
+        IF v_target_user_id IS NULL THEN
+            SELECT id INTO v_target_user_id
+            FROM public."MPT_users"
+            WHERE LOWER(email) = LOWER(v_target_email)
+            LIMIT 1;
+        END IF;
+    END IF;
+
+    IF v_target_user_id IS NULL THEN
+        RAISE EXCEPTION 'USER_NOT_FOUND: Could not find user with email %', v_target_email;
+    END IF;
+
+    -- Fetch or fallback email
+    IF v_target_email IS NULL OR v_target_email = '' THEN
+        SELECT email INTO v_target_email
+        FROM public."MPT_admin_profiles"
+        WHERE user_id = v_target_user_id;
+
+        IF v_target_email IS NULL THEN
+            SELECT email INTO v_target_email
+            FROM auth.users
+            WHERE id = v_target_user_id;
+        END IF;
+    END IF;
+
+    v_target_name := COALESCE(split_part(v_target_email, '@', 1), 'Host');
+
+    -- Ensure MPT_users profile exists
+    INSERT INTO public."MPT_users" (id, display_name, is_anonymous)
+    VALUES (v_target_user_id, v_target_name, FALSE)
+    ON CONFLICT (id) DO NOTHING;
+
+    -- Ensure MPT_admin_profiles exists
+    INSERT INTO public."MPT_admin_profiles" (user_id, email, role)
+    VALUES (v_target_user_id, COALESCE(v_target_email, 'unknown@dabhousie.com'), 'HOST')
+    ON CONFLICT (user_id) DO UPDATE
+    SET email = COALESCE(EXCLUDED.email, public."MPT_admin_profiles".email);
+
+    -- Calculate expiry timestamp based on validity days
+    v_expires_at := NOW() + (GREATEST(p_validity_days, 1) || ' days')::INTERVAL;
+
+    -- Upsert credits in MPT_admin_wallets
+    INSERT INTO public."MPT_admin_wallets" (
+        user_id,
+        available_credits,
+        credits_expire_at,
+        updated_at
+    )
+    VALUES (
+        v_target_user_id,
+        p_credits,
+        v_expires_at,
+        NOW()
+    )
+    ON CONFLICT (user_id) DO UPDATE
+    SET available_credits = public."MPT_admin_wallets".available_credits + EXCLUDED.available_credits,
+        credits_expire_at = GREATEST(COALESCE(public."MPT_admin_wallets".credits_expire_at, NOW()), v_expires_at),
+        updated_at = NOW()
+    RETURNING available_credits, credits_expire_at INTO v_new_balance, v_final_expiry;
+
+    -- Ledger record in MPT_credit_transactions
+    INSERT INTO public."MPT_credit_transactions" (
+        user_id,
+        type,
+        amount,
+        balance_after,
+        reference_id,
+        description
+    )
+    VALUES (
+        v_target_user_id,
+        'ADJUSTMENT',
+        p_credits,
+        v_new_balance,
+        'ADMIN_GRANT_' || v_admin_uid,
+        COALESCE(p_reason, 'Marketing Promo (' || p_validity_days || ' days validity)')
+    );
+
+    RETURN jsonb_build_object(
+        'success', TRUE,
+        'user_id', v_target_user_id,
+        'email', v_target_email,
+        'granted_credits', p_credits,
+        'new_balance', v_new_balance,
+        'expires_at', v_final_expiry,
+        'validity_days', p_validity_days
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public."MPT_admin_grant_credits"(UUID, TEXT, INT, INT, TEXT) TO authenticated;
+
+-- Lowercase alias for PostgREST:
+CREATE OR REPLACE FUNCTION public.mpt_admin_grant_credits(
+    p_target_user_id UUID DEFAULT NULL,
+    p_target_email TEXT DEFAULT NULL,
+    p_credits INT DEFAULT 300,
+    p_validity_days INT DEFAULT 30,
+    p_reason TEXT DEFAULT 'Marketing Promo'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN public."MPT_admin_grant_credits"(p_target_user_id, p_target_email, p_credits, p_validity_days, p_reason);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.mpt_admin_grant_credits(UUID, TEXT, INT, INT, TEXT) TO authenticated;
+
 

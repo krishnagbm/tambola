@@ -24,6 +24,7 @@ class _SuperAdminDashboardScreenState
   bool _hideBelowQuorum = false;
   String _visibilityFilter = 'ALL'; // 'ALL', 'PUBLIC', 'HIDDEN'
   String _searchQuery = '';
+  String _hostSearchQuery = '';
 
   @override
   void initState() {
@@ -1448,112 +1449,509 @@ class _SuperAdminDashboardScreenState
   }
 
   // ==========================================
-  // TAB 2: REGISTERED HOSTS
+  // TAB 2: REGISTERED HOSTS & CREDIT ACTIONS
   // ==========================================
   Widget _buildHostsTab(List hosts) {
-    if (hosts.isEmpty) {
-      return _buildEmptyTabState(
-        'No Host Profiles Found',
-        'Organizers who register with contact info or make purchases will appear here.',
-      );
-    }
+    final filteredHosts = hosts.where((item) {
+      final h = item as Map<String, dynamic>;
+      final email = (h['email'] as String? ?? '').toLowerCase();
+      final uid = (h['user_id'] as String? ?? '').toLowerCase();
+      if (_hostSearchQuery.isNotEmpty) {
+        final q = _hostSearchQuery.toLowerCase();
+        return email.contains(q) || uid.contains(q);
+      }
+      return true;
+    }).toList();
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: hosts.length,
-      separatorBuilder: (_, index) => const SizedBox(height: 10),
-      itemBuilder: (context, i) {
-        final h = hosts[i] as Map<String, dynamic>;
-        final role = h['role'] as String? ?? 'HOST';
-        final isAdmin = role.toUpperCase() == 'ADMIN';
-
-        return Card(
-          color: AppTheme.darkCard,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(
-              color: isAdmin ? AppTheme.secondaryColor.withValues(alpha: 0.5) : const Color(0xFF2E334D),
-            ),
+    return Column(
+      children: [
+        // Controls / Grant Promo Button
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: const BoxDecoration(
+            color: Color(0xFF131728),
+            border: Border(bottom: BorderSide(color: Color(0xFF2E334D))),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: isAdmin
-                      ? AppTheme.secondaryColor.withValues(alpha: 0.2)
-                      : AppTheme.primaryLight.withValues(alpha: 0.2),
-                  child: Icon(
-                    isAdmin ? Icons.shield_outlined : Icons.person,
-                    color: isAdmin ? AppTheme.secondaryColor : AppTheme.primaryLight,
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 38,
+                  child: TextField(
+                    onChanged: (val) => setState(() => _hostSearchQuery = val.trim()),
+                    style: const TextStyle(fontSize: 12.5, color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Search hosts by email or user ID...',
+                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      prefixIcon: const Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
+                      filled: true,
+                      fillColor: const Color(0xFF0F172A),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(color: Color(0xFF334155)),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                ),
+                onPressed: () => _showGrantCreditsDialog(),
+                icon: const Icon(Icons.card_giftcard, size: 16),
+                label: const Text(
+                  'Grant Promo Credits',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // List
+        Expanded(
+          child: filteredHosts.isEmpty
+              ? _buildEmptyTabState(
+                  'No Hosts Found',
+                  _hostSearchQuery.isNotEmpty
+                      ? 'No registered hosts match your search query.'
+                      : 'Organizers who register will appear here.',
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredHosts.length,
+                  separatorBuilder: (_, index) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) {
+                    final h = filteredHosts[i] as Map<String, dynamic>;
+                    final role = h['role'] as String? ?? 'HOST';
+                    final isAdmin = role.toUpperCase() == 'ADMIN';
+                    final credits = (h['available_credits'] as num?)?.toInt() ?? 0;
+                    final expiresAt = h['credits_expire_at'] as String?;
+
+                    return Card(
+                      color: AppTheme.darkCard,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: isAdmin ? AppTheme.secondaryColor.withValues(alpha: 0.5) : const Color(0xFF2E334D),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: isAdmin
+                                  ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                  : AppTheme.primaryLight.withValues(alpha: 0.2),
+                              child: Icon(
+                                isAdmin ? Icons.shield_outlined : Icons.person,
+                                color: isAdmin ? AppTheme.secondaryColor : AppTheme.primaryLight,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          h['email'] as String? ?? 'No Email',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: isAdmin
+                                              ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                              : Colors.white10,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          role.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: isAdmin ? AppTheme.secondaryColor : Colors.white70,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'User ID: ${h['user_id'] ?? ""}',
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontFamily: 'monospace',
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Wrap(
+                                    spacing: 12,
+                                    runSpacing: 4,
+                                    children: [
+                                      Text(
+                                        '🎮 ${h['games_created_count'] ?? 0} games created',
+                                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          '💳 $credits credits',
+                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                        ),
+                                      ),
+                                      if (expiresAt != null)
+                                        Text(
+                                          '⏳ Expires: ${Formatters.formatShortDate(DateTime.parse(expiresAt))}',
+                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Quick Action Button on Host Card
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppTheme.secondaryColor,
+                                side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              ),
+                              onPressed: () => _showGrantCreditsDialog(
+                                prefilledEmail: h['email'] as String?,
+                                prefilledUserId: h['user_id'] as String?,
+                                currentCredits: credits,
+                              ),
+                              icon: const Icon(Icons.add_circle_outline, size: 14),
+                              label: const Text('Add Credits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showGrantCreditsDialog({
+    String? prefilledEmail,
+    String? prefilledUserId,
+    int? currentCredits,
+  }) async {
+    final emailController = TextEditingController(text: prefilledEmail ?? '');
+    final creditsController = TextEditingController(text: '300');
+    final validityController = TextEditingController(text: '30');
+    final reasonController = TextEditingController(text: 'Marketing Promo (10 Hosts Launch)');
+    bool isSubmitting = false;
+    String? errorText;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) {
+            return Dialog(
+              backgroundColor: AppTheme.darkCard,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Header
                       Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              h['email'] as String? ?? 'No Email',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.card_giftcard, color: AppTheme.secondaryColor, size: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Grant Free / Promo Credits',
+                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Allocate promotional credits with custom validity',
+                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                                ),
+                              ],
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isAdmin
-                                  ? AppTheme.secondaryColor.withValues(alpha: 0.2)
-                                  : Colors.white10,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              role.toUpperCase(),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isAdmin ? AppTheme.secondaryColor : Colors.white70,
-                              ),
-                            ),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                            onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'User ID: ${h['user_id'] ?? ""}',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontFamily: 'monospace',
-                          color: Color(0xFF64748B),
+                      const SizedBox(height: 20),
+
+                      // Host Email
+                      const Text('Target Host Email:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: emailController,
+                        enabled: !isSubmitting,
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. host@gmail.com',
+                          hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          prefixIcon: const Icon(Icons.email_outlined, size: 16, color: Color(0xFF94A3B8)),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      if (currentCredits != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Current Balance: $currentCredits credits',
+                          style: const TextStyle(fontSize: 11, color: AppTheme.secondaryColor),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+
+                      // Credits Amount & Quick Chips
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '🎮 ${h['games_created_count'] ?? 0} games created  •  💳 ${h['available_credits'] ?? 0} credits',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          const Text('Credits to Grant:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70)),
+                          Row(
+                            children: [100, 300, 500, 1000].map((preset) {
+                              final isSelected = creditsController.text == preset.toString();
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: ChoiceChip(
+                                  label: Text('+$preset', style: TextStyle(fontSize: 10, color: isSelected ? Colors.black : Colors.white)),
+                                  selected: isSelected,
+                                  selectedColor: AppTheme.secondaryColor,
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                  onSelected: isSubmitting ? null : (_) {
+                                    setDialogState(() => creditsController.text = preset.toString());
+                                  },
+                                ),
+                              );
+                            }).toList(),
                           ),
-                          if (h['created_at'] != null)
-                            Text(
-                              Formatters.formatShortDate(DateTime.parse(h['created_at'])),
-                              style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: creditsController,
+                        enabled: !isSubmitting,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: '300',
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          prefixIcon: const Icon(Icons.monetization_on_outlined, size: 16, color: AppTheme.secondaryColor),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Validity in Days & Quick Chips
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Validity (Days):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70)),
+                          Row(
+                            children: [7, 15, 30, 60, 365].map((preset) {
+                              final isSelected = validityController.text == preset.toString();
+                              return Padding(
+                                padding: const EdgeInsets.only(left: 4),
+                                child: ChoiceChip(
+                                  label: Text('$preset d', style: TextStyle(fontSize: 10, color: isSelected ? Colors.black : Colors.white)),
+                                  selected: isSelected,
+                                  selectedColor: AppTheme.secondaryColor,
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                                  onSelected: isSubmitting ? null : (_) {
+                                    setDialogState(() => validityController.text = preset.toString());
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: validityController,
+                        enabled: !isSubmitting,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: '30',
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          prefixIcon: const Icon(Icons.timer_outlined, size: 16, color: Color(0xFF94A3B8)),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Reason / Note
+                      const Text('Campaign / Reason Note:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: reasonController,
+                        enabled: !isSubmitting,
+                        style: const TextStyle(fontSize: 13, color: Colors.white),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. Marketing Promo (10 Hosts Launch)',
+                          filled: true,
+                          fillColor: const Color(0xFF0F172A),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF334155))),
+                          prefixIcon: const Icon(Icons.campaign_outlined, size: 16, color: Color(0xFF94A3B8)),
+                        ),
+                      ),
+
+                      if (errorText != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.accentDanger.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppTheme.accentDanger.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(errorText!, style: const TextStyle(color: Colors.redAccent, fontSize: 11.5)),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+
+                      // Submit / Cancel
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: isSubmitting ? null : () => Navigator.pop(dialogCtx),
+                            child: const Text('Cancel', style: TextStyle(color: Colors.white60)),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.secondaryColor,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                             ),
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    final email = emailController.text.trim();
+                                    final credits = int.tryParse(creditsController.text.trim()) ?? 0;
+                                    final days = int.tryParse(validityController.text.trim()) ?? 30;
+                                    final reason = reasonController.text.trim();
+
+                                    if (email.isEmpty) {
+                                      setDialogState(() => errorText = 'Please enter a target host email');
+                                      return;
+                                    }
+                                    if (credits <= 0) {
+                                      setDialogState(() => errorText = 'Credits must be greater than 0');
+                                      return;
+                                    }
+
+                                    setDialogState(() {
+                                      isSubmitting = true;
+                                      errorText = null;
+                                    });
+
+                                    try {
+                                      final res = await ref.read(adminReportsRepositoryProvider).grantCreditsToHost(
+                                        targetEmail: email,
+                                        targetUserId: prefilledUserId,
+                                        credits: credits,
+                                        validityDays: days,
+                                        reason: reason.isNotEmpty ? reason : 'Marketing Promo',
+                                      );
+
+                                      if (res['success'] == true) {
+                                        if (ctx.mounted) {
+                                          Navigator.of(ctx).pop();
+                                        }
+                                        if (mounted) {
+                                          ref.invalidate(adminReportsOverviewProvider);
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              backgroundColor: AppTheme.accentSuccess,
+                                              content: Text('🎁 Successfully granted $credits credits to $email! (New balance: ${res['new_balance']} credits)'),
+                                              duration: const Duration(seconds: 4),
+                                            ),
+                                          );
+                                        }
+                                      } else {
+                                        setDialogState(() {
+                                          isSubmitting = false;
+                                          errorText = res['error'] ?? 'Failed to grant credits. Verify user exists.';
+                                        });
+                                      }
+                                    } catch (err) {
+                                      setDialogState(() {
+                                        isSubmitting = false;
+                                        errorText = 'Error: $err';
+                                      });
+                                    }
+                                  },
+                            icon: isSubmitting
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                                : const Icon(Icons.check_circle_outline, size: 16),
+                            label: Text(isSubmitting ? 'Granting...' : 'Grant Credits'),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
