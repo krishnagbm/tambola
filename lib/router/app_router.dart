@@ -100,6 +100,20 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/claims',
+      builder: (context, state) {
+        final gameId = state.uri.queryParameters['gameId'];
+        return OrganizerClaimsScreen(initialGameId: gameId);
+      },
+    ),
+    GoRoute(
+      path: '/organizer-claims',
+      builder: (context, state) {
+        final gameId = state.uri.queryParameters['gameId'];
+        return OrganizerClaimsScreen(initialGameId: gameId);
+      },
+    ),
+    GoRoute(
       path: '/rewards',
       builder: (context, state) => const RewardsScreen(),
     ),

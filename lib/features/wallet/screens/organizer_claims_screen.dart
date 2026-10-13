@@ -707,9 +707,15 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         OutlinedButton.icon(
-                          onPressed: () => context.go('/wallet'),
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/dashboard');
+                            }
+                          },
                           icon: const Icon(Icons.arrow_back_rounded, size: 16),
-                          label: const Text('Organizer Wallet'),
+                          label: const Text('Back'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFCBD5E1),
                             side: const BorderSide(color: Color(0xFF334155)),

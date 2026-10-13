@@ -1957,6 +1957,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onTap: () => context.push('/wallet'),
                   ),
                   const Divider(height: 1, color: Color(0xFF2E334D)),
+                  ListTile(
+                    leading: const Icon(Icons.redeem_rounded, color: AppTheme.secondaryColor),
+                    title: const Text('Organizer Prize Claims & Brand Gift Hub', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Review winner details across hosted games & allocate brand gifts', style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8))),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/wallet/claims'),
+                  ),
+                  const Divider(height: 1, color: Color(0xFF2E334D)),
                 ],
                 ListTile(
                   leading: const Icon(Icons.emoji_events_outlined, color: AppTheme.primaryLight),

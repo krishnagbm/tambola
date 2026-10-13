@@ -693,6 +693,21 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     ),
                   ),
                   const PopupMenuItem(
+                    value: 'claims',
+                    child: Row(
+                      children: [
+                        Icon(Icons.redeem_rounded, size: 18, color: AppTheme.secondaryColor),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Organizer Prize Claims & Brand Gift Hub',
+                            style: TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
                     value: 'signout',
                     child: Row(
                       children: [
@@ -710,6 +725,8 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     context.push('/rewards');
                   } else if (val == 'wallet') {
                     context.push('/wallet');
+                  } else if (val == 'claims') {
+                    context.push('/wallet/claims');
                   } else if (val == 'signout') {
                     _handleSignOut(context, ref);
                   }
