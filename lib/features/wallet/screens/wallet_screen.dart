@@ -746,9 +746,48 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               tx.description ?? tx.type,
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),
                             ),
-                            subtitle: Text(
-                              Formatters.formatShortDate(tx.createdAt),
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 2),
+                                Text(
+                                  Formatters.formatShortDate(tx.createdAt),
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                ),
+                                if (isPositive && tx.expiresAt != null) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: AppTheme.secondaryColor.withValues(alpha: 0.35),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(
+                                          Icons.timer_outlined,
+                                          size: 11,
+                                          color: AppTheme.secondaryColor,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Expires: ${Formatters.formatDate(tx.expiresAt!)}',
+                                          style: const TextStyle(
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.secondaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                             trailing: Text(
                               '${isPositive ? '+' : ''}${tx.amount} Credits',

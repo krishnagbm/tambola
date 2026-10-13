@@ -468,6 +468,10 @@ END;
 $$;
 GRANT EXECUTE ON FUNCTION public.mpt_auto_hide_below_quorum_games(INT) TO authenticated;
 
+-- Ensure expires_at exists on MPT_credit_transactions
+ALTER TABLE public."MPT_credit_transactions"
+ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+
 -- 8. RPC: Admin Grant Free/Promotional Credits to Selected Host
 CREATE OR REPLACE FUNCTION public."MPT_admin_grant_credits"(
     p_target_user_id UUID DEFAULT NULL,
@@ -582,14 +586,15 @@ BEGIN
         updated_at = NOW()
     RETURNING available_credits, credits_expire_at INTO v_new_balance, v_final_expiry;
 
-    -- Ledger record in MPT_credit_transactions
+    -- Ledger record in MPT_credit_transactions with expires_at
     INSERT INTO public."MPT_credit_transactions" (
         user_id,
         type,
         amount,
         balance_after,
         reference_id,
-        description
+        description,
+        expires_at
     )
     VALUES (
         v_target_user_id,
@@ -597,7 +602,8 @@ BEGIN
         p_credits,
         v_new_balance,
         'ADMIN_GRANT_' || v_admin_uid,
-        COALESCE(p_reason, 'Marketing Promo (' || p_validity_days || ' days validity)')
+        COALESCE(p_reason, 'Marketing Promo (' || p_validity_days || ' days validity)'),
+        v_expires_at
     );
 
     RETURN jsonb_build_object(
@@ -633,5 +639,14 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.mpt_admin_grant_credits(UUID, TEXT, INT, INT, TEXT) TO authenticated;
+
+-- Backfill expires_at for existing admin grants and purchases:
+UPDATE public."MPT_credit_transactions"
+SET expires_at = created_at + INTERVAL '30 days'
+WHERE type = 'ADJUSTMENT' AND reference_id LIKE 'ADMIN_GRANT_%' AND expires_at IS NULL;
+
+UPDATE public."MPT_credit_transactions"
+SET expires_at = created_at + INTERVAL '1 year'
+WHERE type IN ('PURCHASE', 'MOCK_PURCHASE') AND expires_at IS NULL;
 
 
