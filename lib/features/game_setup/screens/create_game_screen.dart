@@ -230,6 +230,24 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     return '250 + 75 = 325 Credits';
   }
 
+  String _getCapacityTierLabel(int maxPlayers) {
+    if (maxPlayers <= 5) return 'Family Pack (1–5 Players)';
+    if (maxPlayers <= 15) return 'Small Party (6–15 Players)';
+    if (maxPlayers <= 25) return 'Medium Group (16–25 Players)';
+    if (maxPlayers <= 50) return 'Large Group (26–50 Players)';
+    if (maxPlayers <= 100) return 'Club Event (51–100 Players)';
+    return 'Mega Event (101–250 Players)';
+  }
+
+  int _getCreditsForCapacity(int maxPlayers) {
+    if (maxPlayers <= 5) return 0;
+    if (maxPlayers <= 15) return 15;
+    if (maxPlayers <= 25) return 25;
+    if (maxPlayers <= 50) return 50;
+    if (maxPlayers <= 100) return 100;
+    return 250;
+  }
+
   DateTime? _scheduledDateTime;
   DabbyScheduleConfig? _dabbyScheduleConfig;
 
@@ -979,6 +997,156 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       return;
     }
 
+    final tierLabel = _getCapacityTierLabel(_selectedCapacity);
+    final creditsToChargeAtStart = _getCreditsForCapacity(_selectedCapacity);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Row(
+          children: [
+            Icon(Icons.rate_review_rounded, color: AppTheme.secondaryColor),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Confirm Game Setup',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Summary card
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _nameController.text.trim(),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(Icons.groups_rounded, size: 18, color: AppTheme.secondaryColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tierLabel,
+                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                              ),
+                              Text(
+                                'Capacity: $_selectedCapacity Seats funded',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_scheduledDateTime != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.alarm_on_rounded, size: 16, color: Color(0xFF38BDF8)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Kickoff: ${_formatDateTime(_scheduledDateTime!)}',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (_isPrivate) ...[
+                      const SizedBox(height: 8),
+                      const Row(
+                        children: [
+                          Icon(Icons.lock_rounded, size: 16, color: AppTheme.accentPartyPurple),
+                          SizedBox(width: 8),
+                          Text(
+                            'Private Party Mode (OTP Passcodes)',
+                            style: TextStyle(fontSize: 12, color: AppTheme.accentPartyPurple, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Credit deduction notice
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSuccess.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.35)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.credit_card_off_rounded, size: 18, color: AppTheme.accentSuccess),
+                        SizedBox(width: 8),
+                        Text(
+                          '0 Credits Deducted Now',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      creditsToChargeAtStart == 0
+                          ? 'This is a free Family Pack game. No credits are required now or at kickoff.'
+                          : 'Creating or scheduling this game is completely free! The $creditsToChargeAtStart credits will only be validated and deducted when the game officially starts in the lobby.',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Change Settings', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: const Icon(Icons.check_rounded, size: 16),
+            label: const Text('Confirm & Create'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.black,
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _isLoading = true);
     try {
       final activePrizes = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
@@ -1175,9 +1343,70 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                'Initial Funded Capacity: ${game.fundedCapacity} Seats (Overflow players will automatically join the Waiting List).',
-                style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+              // Group size summary card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkSurface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2E334D)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.groups_rounded, size: 20, color: AppTheme.secondaryColor),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getCapacityTierLabel(game.fundedCapacity),
+                            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            'Funded for ${game.fundedCapacity} seats (Overflow players join Waiting List)',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Credit deduction transparency card
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppTheme.accentSuccess.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.credit_card_off_rounded, size: 18, color: AppTheme.accentSuccess),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Credits Charged Now: 0 Credits',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            game.fundedCapacity <= 5
+                                ? 'Family Pack is free. Zero credits will be charged.'
+                                : 'No credits were deducted upon game creation. The required credits (${_getCreditsForCapacity(game.fundedCapacity)} Credits) will only be validated and charged when the game officially starts in the lobby.',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (brandApprovalMessage != null) ...[
                 const SizedBox(height: 12),
@@ -1247,6 +1476,65 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
+              TextButton.icon(
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (cCtx) => AlertDialog(
+                      backgroundColor: AppTheme.darkCard,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.cancel_outlined, color: AppTheme.accentDanger),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Cancel Game & Change Setup?',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: const Text(
+                        'This will cancel this game room. No credits have been charged. You can adjust your group size (e.g. from 250 to 15 players) or settings and create a new game immediately.',
+                        style: TextStyle(fontSize: 13, height: 1.4),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(cCtx, false),
+                          child: const Text('Keep Game', style: TextStyle(color: Color(0xFF94A3B8))),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(cCtx, true),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentDanger),
+                          child: const Text('Yes, Cancel Game'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true && mounted) {
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    try {
+                      await ref.read(gameRepositoryProvider).cancelGame(game.id);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Game cancelled. You can now adjust your group size or settings.'),
+                          backgroundColor: AppTheme.accentSuccess,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to cancel game: $e'), backgroundColor: AppTheme.accentDanger),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.cancel_outlined, size: 16, color: AppTheme.accentDanger),
+                label: const Text('Cancel Game & Change Setup', style: TextStyle(color: AppTheme.accentDanger, fontSize: 12)),
+              ),
               TextButton.icon(
                 onPressed: () => _handleCopyLink(game),
                 icon: const Icon(Icons.link, size: 16, color: AppTheme.primaryLight),
