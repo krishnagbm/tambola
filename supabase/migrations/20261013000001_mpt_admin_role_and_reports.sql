@@ -103,8 +103,8 @@ BEGIN
             'active_brand_offers', (SELECT COUNT(*) FROM public."MPT_brand_offers" WHERE status = 'ACTIVE'),
             'total_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals"),
             'pending_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals" WHERE status = 'PENDING'),
-            'total_payments_count', (SELECT COUNT(*) FROM public."MPT_payments" WHERE status = 'SUCCEEDED'),
-            'total_revenue_amount', (SELECT COALESCE(SUM(amount), 0) FROM public."MPT_payments" WHERE status = 'SUCCEEDED')
+            'total_payments_count', (SELECT COUNT(*) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed')),
+            'total_revenue_amount', (SELECT COALESCE(SUM(amount_usd), 0) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed'))
         ),
         'recent_games', COALESCE((
             SELECT jsonb_agg(g_row)
