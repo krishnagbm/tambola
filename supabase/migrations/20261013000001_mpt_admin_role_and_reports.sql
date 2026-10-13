@@ -428,3 +428,41 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public."MPT_get_admin_game_details"(UUID) TO authenticated;
+
+-- Lowercase aliases to guarantee compatibility across PostgREST schema cache configurations:
+CREATE OR REPLACE FUNCTION public.mpt_get_admin_game_details(p_game_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN public."MPT_get_admin_game_details"(p_game_id);
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.mpt_get_admin_game_details(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.mpt_set_game_public_visibility(p_game_id UUID, p_is_visible BOOLEAN)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN public."MPT_set_game_public_visibility"(p_game_id, p_is_visible);
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.mpt_set_game_public_visibility(UUID, BOOLEAN) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.mpt_auto_hide_below_quorum_games(p_min_quorum INT DEFAULT 2)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN public."MPT_auto_hide_below_quorum_games"(p_min_quorum);
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.mpt_auto_hide_below_quorum_games(INT) TO authenticated;
+
