@@ -387,6 +387,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const DabbyRapidPlayHeroCard(),
             const SizedBox(height: 14),
 
+            // Specialized Corporate & Event Organizers Card
+            const DabhousieCorporateUspCard(),
+            const SizedBox(height: 14),
+
             // 1. Two-Part Dashboard Arena:
             // Desktop: Side-by-side 2-column split (Left: Classic Bingo & Variants, Right: DabHousie™ Skill Arena & Levels)
             // Mobile/Tablet: Stacked cleanly
