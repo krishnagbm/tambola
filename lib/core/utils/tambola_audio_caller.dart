@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:tambola/core/utils/web_js_helper.dart'
+    if (dart.library.html) 'package:tambola/core/utils/web_js_helper_web.dart';
 
 class TambolaAudioCaller {
   static final TambolaAudioCaller _instance = TambolaAudioCaller._internal();
@@ -44,8 +46,8 @@ class TambolaAudioCaller {
       await _flutterTts.setVolume(1.0);
       await _flutterTts.setPitch(1.0);
 
-      // On iOS devices, configure the audio category to playback so speech plays
-      // even if the physical Ring/Silent switch is set to Silent.
+      // On native iOS devices, configure audio session category to playback
+      // so speech continues even if the physical Ring/Silent switch is set to Silent.
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
         await _flutterTts.setIosAudioCategory(
           IosTextToSpeechAudioCategory.playback,
@@ -66,16 +68,19 @@ class TambolaAudioCaller {
   /// Primes/unlocks audio on mobile user interaction
   Future<void> unlockAudio() async {
     isMuted = false;
+    if (kIsWeb) {
+      WebJsHelper.unlockAudioEngine();
+      return;
+    }
     await _initTts();
     try {
       await _flutterTts.stop();
     } catch (_) {}
   }
 
-  /// Announces the called number aloud
+  /// Announces the called number aloud (with synthesized chime on Web)
   Future<void> announceNumber(int number, {bool useNicknames = true}) async {
     if (isMuted) return;
-    await _initTts();
 
     String speechText;
     if (useNicknames && _nicknames.containsKey(number)) {
@@ -92,16 +97,38 @@ class TambolaAudioCaller {
       }
     }
 
+    if (kIsWeb) {
+      WebJsHelper.speakBallWeb(speechText);
+      return;
+    }
+
+    await _initTts();
     try {
-      // Clear any pending/stalled speech utterance so iOS / Web does not drop this call
+      // Clear any pending/stalled speech utterance so iOS / native does not drop this call
       await _flutterTts.stop();
       await _flutterTts.speak(speechText);
     } catch (_) {}
   }
 
-  Future<void> stop() async {
+  /// Immediate audible feedback when user toggles or tests audio
+  Future<void> testVoice() async {
+    isMuted = false;
+    if (kIsWeb) {
+      WebJsHelper.unlockAudioEngine();
+      WebJsHelper.speakBallWeb('Voice calling activated. Number 1');
+      return;
+    }
+    await _initTts();
     try {
-      await _flutterTts.stop();
+      await _flutterTts.speak('Voice calling activated');
     } catch (_) {}
+  }
+
+  Future<void> stop() async {
+    if (!kIsWeb) {
+      try {
+        await _flutterTts.stop();
+      } catch (_) {}
+    }
   }
 }

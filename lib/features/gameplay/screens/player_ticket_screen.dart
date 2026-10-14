@@ -891,20 +891,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               _voiceEnabled ? Icons.volume_up : Icons.volume_off,
               color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey,
             ),
-            tooltip: _voiceEnabled ? 'Voice Calling ON (Unmute phone on iOS)' : 'Voice Calling OFF',
+            tooltip: _voiceEnabled ? 'Voice Calling ON (Turn Silent Switch OFF on iPhone)' : 'Voice Calling OFF',
             onPressed: () async {
               final newState = !_voiceEnabled;
               setState(() => _voiceEnabled = newState);
               if (newState) {
                 if (kIsWeb) {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Voice Calling ON 🔊 Note: On iPhone/iPad, ensure the physical Silent switch is OFF and media volume is up.'),
-                      duration: Duration(seconds: 4),
+                      content: Text('🔊 Voice Calling ON! If silent: Turn OFF physical Silent Switch on left side of iPhone (hide orange line) & turn volume up.'),
+                      duration: Duration(seconds: 6),
                     ),
                   );
                 }
-                await TambolaAudioCaller().unlockAudio();
+                await TambolaAudioCaller().testVoice();
+              } else {
+                await TambolaAudioCaller().stop();
               }
               try {
                 final prefs = await SharedPreferences.getInstance();

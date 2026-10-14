@@ -61,39 +61,106 @@
     })();
   </script>
 
-  <!-- iOS Safari & Mobile Audio Autoplay Unblocker -->
+  <!-- iOS Safari & Mobile Audio Engine (Web Audio Chime + WebKit SpeechSynthesis) -->
   <script>
     (function() {
-      var unlocked = false;
-      function unlockMobileAudio() {
-        if (unlocked) return;
+      var audioCtx = null;
+      function getAudioContext() {
         try {
-          if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.resume();
-            var dummy = new SpeechSynthesisUtterance('.');
-            dummy.volume = 0.01;
-            dummy.rate = 10;
-            dummy.onend = function() {
-              window.speechSynthesis.cancel();
-            };
-            dummy.onerror = function() {
-              window.speechSynthesis.cancel();
-            };
-            window.speechSynthesis.speak(dummy);
-          }
-          var AudioCtx = window.AudioContext || window.webkitAudioContext;
-          if (AudioCtx) {
-            var ctx = new AudioCtx();
-            if (ctx.state === 'suspended') {
-              ctx.resume();
+          if (!audioCtx) {
+            var AudioClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioClass) {
+              audioCtx = new AudioClass();
             }
           }
-          unlocked = true;
-        } catch (e) {}
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+        } catch(e) {}
+        return audioCtx;
       }
-      window.addEventListener('touchstart', unlockMobileAudio, { once: true, passive: true });
-      window.addEventListener('click', unlockMobileAudio, { once: true, passive: true });
+
+      // Audible ball chime using Web Audio oscillator
+      window.playBallChime = function() {
+        try {
+          var ctx = getAudioContext();
+          if (!ctx) return;
+          var now = ctx.currentTime;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.exponentialRampToValueAtTime(880.00, now + 0.10); // A5
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.35, now + 0.03);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.33);
+        } catch(e) {}
+      };
+
+      // Retained utterance to prevent iOS WebKit garbage collection
+      window._dabActiveUtterance = null;
+      var speechTimeout = null;
+
+      window.speakBallWeb = function(text) {
+        try {
+          // 1. Play immediate audio chime
+          window.playBallChime();
+
+          if (!window.speechSynthesis) return;
+
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+
+          if (speechTimeout) {
+            clearTimeout(speechTimeout);
+            speechTimeout = null;
+          }
+
+          window.speechSynthesis.cancel();
+
+          // 70ms buffer to allow iOS WebKit speech engine to finish cancelation
+          speechTimeout = setTimeout(function() {
+            try {
+              if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+              }
+              var utter = new SpeechSynthesisUtterance(text);
+              utter.rate = 0.95;
+              utter.pitch = 1.0;
+              utter.volume = 1.0;
+              utter.lang = 'en-US';
+
+              window._dabActiveUtterance = utter;
+              utter.onend = function() {
+                window._dabActiveUtterance = null;
+              };
+              utter.onerror = function() {
+                window._dabActiveUtterance = null;
+              };
+
+              window.speechSynthesis.speak(utter);
+            } catch (err) {}
+          }, 70);
+        } catch(e) {}
+      };
+
+      function unlockMobileAudio() {
+        try {
+          getAudioContext();
+          if (window.speechSynthesis && window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        } catch(e) {}
+      }
+
+      window.unlockAudioEngine = unlockMobileAudio;
+      window.addEventListener('touchstart', unlockMobileAudio, { passive: true });
+      window.addEventListener('click', unlockMobileAudio, { passive: true });
     })();
   </script>
 
