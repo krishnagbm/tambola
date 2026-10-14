@@ -115,12 +115,12 @@ class TambolaAudioCaller {
     isMuted = false;
     if (kIsWeb) {
       WebJsHelper.unlockAudioEngine();
-      WebJsHelper.speakBallWeb('Voice calling activated. Number 1');
+      WebJsHelper.speakBallWeb('Voice calling enabled');
       return;
     }
     await _initTts();
     try {
-      await _flutterTts.speak('Voice calling activated');
+      await _flutterTts.speak('Voice calling enabled');
     } catch (_) {}
   }
 
