@@ -32,7 +32,7 @@ class PlayerTicketScreen extends ConsumerStatefulWidget {
 class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   final Set<int> _markedNumbers = {};
   bool _isClaiming = false;
-  bool _voiceEnabled = true;
+  bool _voiceEnabled = false;
   int _lastAnnouncedSeq = 0;
   bool _showCelebration = false;
   Timer? _finalGraceTimer;
@@ -56,7 +56,6 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     super.initState();
     WakeLockHelper.keepScreenOn();
     _loadSavedMarks();
-    _loadVoicePreference();
     _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
       if (!mounted) return;
       final game = ref.read(gameStreamProvider(widget.gameId)).value;
@@ -889,12 +888,15 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
           IconButton(
             icon: Icon(
               _voiceEnabled ? Icons.volume_up : Icons.volume_off,
-              color: _voiceEnabled ? AppTheme.secondaryColor : Colors.grey,
+              color: _voiceEnabled ? AppTheme.secondaryColor : Colors.white70,
             ),
-            tooltip: _voiceEnabled ? 'Voice Calling ON (Turn Silent Switch OFF on iPhone)' : 'Voice Calling OFF',
+            tooltip: _voiceEnabled
+                ? 'Voice Calling ON (Tap to Mute)'
+                : 'Tap to Unmute Voice Calling',
             onPressed: () async {
               final newState = !_voiceEnabled;
               setState(() => _voiceEnabled = newState);
+              TambolaAudioCaller().isMuted = !newState;
               if (newState) {
                 if (kIsWeb) {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();

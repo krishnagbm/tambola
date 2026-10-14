@@ -1466,10 +1466,16 @@ class _AdminGameControlScreenState
             ),
             tooltip: _isMuted ? 'Unmute Audio Caller' : 'Mute Audio Caller',
             onPressed: () {
+              final newMuted = !_isMuted;
               setState(() {
-                _isMuted = !_isMuted;
-                TambolaAudioCaller().isMuted = _isMuted;
+                _isMuted = newMuted;
+                TambolaAudioCaller().isMuted = newMuted;
               });
+              if (!newMuted) {
+                TambolaAudioCaller().testVoice();
+              } else {
+                TambolaAudioCaller().stop();
+              }
             },
           ),
           if (game != null)

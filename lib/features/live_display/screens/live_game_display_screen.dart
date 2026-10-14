@@ -299,10 +299,16 @@ class _LiveGameDisplayScreenState extends ConsumerState<LiveGameDisplayScreen> {
                 ),
                 tooltip: _isMuted ? 'Unmute Audio Caller' : 'Mute Audio Caller',
                 onPressed: () {
+                  final newMuted = !_isMuted;
                   setState(() {
-                    _isMuted = !_isMuted;
-                    TambolaAudioCaller().isMuted = _isMuted;
+                    _isMuted = newMuted;
+                    TambolaAudioCaller().isMuted = newMuted;
                   });
+                  if (!newMuted) {
+                    TambolaAudioCaller().testVoice();
+                  } else {
+                    TambolaAudioCaller().stop();
+                  }
                 },
               ),
               const SizedBox(width: 8),

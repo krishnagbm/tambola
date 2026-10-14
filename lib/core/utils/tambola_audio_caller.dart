@@ -10,7 +10,7 @@ class TambolaAudioCaller {
 
   final FlutterTts _flutterTts = FlutterTts();
   bool _isInitialized = false;
-  bool isMuted = false;
+  bool isMuted = true;
 
   static const Map<int, String> _nicknames = {
     1: 'Number 1. Single digit 1',
