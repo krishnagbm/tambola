@@ -180,6 +180,20 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse('${AppConfig.appBaseUrl}/why-dabhousie.html'),
+              webOnlyWindowName: '_self',
+            ),
+            child: const Text(
+              'Why DabHousie',
+              style: TextStyle(
+                color: Color(0xFF60A5FA),
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
           TextButton.icon(
             onPressed: () => launchUrl(
               Uri.parse('${AppConfig.appBaseUrl}/play-with-dabby.html'),
@@ -317,6 +331,19 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               launchUrl(Uri.parse(url), webOnlyWindowName: '_self');
             },
             itemBuilder: (ctx) => [
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/why-dabhousie.html',
+                child: const Row(
+                  children: [
+                    Icon(Icons.business_center_outlined, size: 16, color: Color(0xFF60A5FA)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Why DabHousie (For Teams & Events)',
+                      style: TextStyle(color: Color(0xFF60A5FA), fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: '${AppConfig.appBaseUrl}/play-with-dabby.html',
                 child: const Row(

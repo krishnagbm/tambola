@@ -25,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../widgets/dabby_rapid_play_hero_card.dart';
+import '../widgets/dabhousie_corporate_usp_card.dart';
 import '../../rewards/widgets/organizer_game_claims_dialog.dart';
 
 
@@ -515,6 +516,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
           // Fresh Hero Card: Play with Dabby Simulation
           const DabbyRapidPlayHeroCard(),
+          const SizedBox(height: 14),
+
+          // Specialized Corporate & Event Organizers Card
+          const DabhousieCorporateUspCard(),
           const SizedBox(height: 14),
 
           // Card 1: Got an Invite Code?
