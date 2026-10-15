@@ -1,6 +1,7 @@
 # Robots.txt for DabHousie (https://www.dabhousie.com)
 User-agent: *
 Allow: /
+Allow: /why-dabhousie.html
 Allow: /how-it-works.html
 Allow: /play-with-dabby.html
 Allow: /how-to-play-tambola.html
