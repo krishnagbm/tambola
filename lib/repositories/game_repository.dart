@@ -66,6 +66,12 @@ class GameRepository {
             gameId: game.id,
           ).catchError((_) => <String, dynamic>{'success': false});
         }
+        // Send alert email to contact@dabhousie.com so admin is notified immediately
+        _notifyAdminHostActivity(
+          gameName: game.name,
+          inviteCode: game.inviteCode,
+          actionType: 'Game Created (${game.initialFundedCapacity} players, ${isPrivate ? "Private Party" : "Public Event"})',
+        );
         return game;
       }
       throw Exception('Invalid response format when creating game');
@@ -558,6 +564,40 @@ class GameRepository {
     } catch (e) {
       return {'success': false, 'email': null, 'message': e.toString()};
     }
+  }
+
+  /// Sends automated temporary information alert to contact@dabhousie.com on host activity
+  void _notifyAdminHostActivity({
+    required String gameName,
+    required String inviteCode,
+    String actionType = 'Game Created',
+  }) {
+    try {
+      final user = _supabase.auth.currentUser;
+      final email = user?.email ?? '';
+      final displayName = user?.userMetadata?['name'] as String? ??
+          user?.userMetadata?['full_name'] as String? ??
+          'Organizer';
+      final payload = {
+        'action': 'notify_host_registration',
+        'host_email': email,
+        'host_name': displayName,
+        'game_name': gameName,
+        'invite_code': inviteCode,
+        'user_id': user?.id,
+        'action_type': actionType,
+      };
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/brand-approval',
+      );
+      http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .catchError((_) => http.Response('', 500));
+    } catch (_) {}
   }
 
   /// Submits brand approval request (DVAA) for corporate events and triggers automated SES email

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminReportsRepository {
@@ -41,18 +43,180 @@ class AdminReportsRepository {
     }
   }
 
-  /// Fetch full executive KPI metrics and reports data
+  /// Fetch full executive KPI metrics and reports data with automatic direct-table fallback
   Future<Map<String, dynamic>> getReportsOverview() async {
     try {
       final res = await _supabase.rpc('MPT_get_admin_reports_overview');
-      if (res is Map<String, dynamic>) {
+      if (res is Map<String, dynamic> && res.isNotEmpty) {
         return res;
       }
-      return {};
     } catch (e) {
-      rethrow;
+      // If RPC fails (e.g. migration pending, column mismatch, or permissions),
+      // we gracefully fall back to direct Supabase table queries so the dashboard never crashes!
+      try {
+        return await _getReportsOverviewFallback(e);
+      } catch (fallbackError) {
+        // If even direct table query fails, rethrow the original RPC error
+        rethrow;
+      }
     }
+    return await _getReportsOverviewFallback(null);
   }
+
+  /// Direct table query fallback when MPT_get_admin_reports_overview RPC is unavailable or encounters an error
+  Future<Map<String, dynamic>> _getReportsOverviewFallback([Object? rpcError]) async {
+    // 1. Fetch recent games
+    List<Map<String, dynamic>> recentGames = [];
+    int totalGamesCount = 0;
+    int activeGamesCount = 0;
+    int completedGamesCount = 0;
+    try {
+      final gamesRes = await _supabase
+          .from('MPT_games')
+          .select('*, MPT_admin_profiles(email), MPT_users(display_name)')
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      recentGames = (gamesRes as List).map((row) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final adminProfile = m['MPT_admin_profiles'] as Map?;
+        final userProfile = m['MPT_users'] as Map?;
+        m['host_identifier'] = adminProfile?['email'] ?? userProfile?['display_name'] ?? 'Unknown Host';
+        final cap = m['initial_funded_capacity'] as int? ?? 5;
+        if (cap <= 5) {
+          m['capacity_tier_name'] = 'Family Pack (1–5)';
+        } else if (cap <= 25) {
+          m['capacity_tier_name'] = 'Small Party (6–25)';
+        } else if (cap <= 50) {
+          m['capacity_tier_name'] = 'Standard Event (26–50)';
+        } else if (cap <= 100) {
+          m['capacity_tier_name'] = 'Large Gala (51–100)';
+        } else {
+          m['capacity_tier_name'] = 'Mega Event (101–250+)';
+        }
+        return m;
+      }).toList();
+
+      totalGamesCount = recentGames.length;
+      for (final g in recentGames) {
+        final s = (g['status'] as String? ?? '').toUpperCase();
+        if (s == 'COMPLETED') completedGamesCount++;
+        if (['OPEN', 'READY_TO_START', 'STARTING', 'IN_PROGRESS'].contains(s)) activeGamesCount++;
+      }
+    } catch (_) {
+      try {
+        final simpleGames = await _supabase.from('MPT_games').select().order('created_at', ascending: false).limit(50);
+        recentGames = List<Map<String, dynamic>>.from(simpleGames as List);
+        totalGamesCount = recentGames.length;
+      } catch (_) {}
+    }
+
+    // 2. Fetch recent hosts
+    List<Map<String, dynamic>> recentHosts = [];
+    try {
+      final hostsRes = await _supabase
+          .from('MPT_admin_profiles')
+          .select('*, MPT_admin_wallets(available_credits, credits_expire_at)')
+          .order('created_at', ascending: false)
+          .limit(50);
+      recentHosts = (hostsRes as List).map((row) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final wallet = m['MPT_admin_wallets'] as Map?;
+        m['available_credits'] = wallet?['available_credits'] ?? 0;
+        m['credits_expire_at'] = wallet?['credits_expire_at'];
+        return m;
+      }).toList();
+    } catch (_) {
+      try {
+        final simpleHosts = await _supabase.from('MPT_admin_profiles').select().order('created_at', ascending: false).limit(50);
+        recentHosts = List<Map<String, dynamic>>.from(simpleHosts as List);
+      } catch (_) {}
+    }
+
+    // 3. Fetch Stripe Payments Ledger
+    List<Map<String, dynamic>> recentPayments = await getPaymentsLedger();
+    num totalRevenue = 0;
+    for (final p in recentPayments) {
+      final st = (p['status']?.toString() ?? '').toLowerCase();
+      if (st == 'succeeded' || st == 'completed') {
+        final amt = p['amount_usd'];
+        if (amt is num) {
+          totalRevenue += amt;
+        } else if (amt != null) {
+          totalRevenue += num.tryParse(amt.toString()) ?? 0;
+        }
+      }
+    }
+
+    // 4. Fetch Users List
+    List<Map<String, dynamic>> recentUsers = await getRegisteredUsersList();
+
+    // 5. Fetch Brand Offers & Approvals
+    List<Map<String, dynamic>> brandOffers = [];
+    try {
+      final boRes = await _supabase.from('MPT_brand_offers').select().order('created_at', ascending: false).limit(40);
+      brandOffers = List<Map<String, dynamic>>.from(boRes as List);
+    } catch (_) {}
+
+    List<Map<String, dynamic>> brandApprovals = [];
+    try {
+      final baRes = await _supabase.from('MPT_brand_approvals').select().order('created_at', ascending: false).limit(40);
+      brandApprovals = List<Map<String, dynamic>>.from(baRes as List);
+    } catch (_) {}
+
+    // 6. Counts for tickets & claims
+    int totalTickets = 0;
+    try {
+      final ticketsRes = await _supabase.from('MPT_player_tickets').select('id').limit(1000);
+      totalTickets = (ticketsRes as List).length;
+    } catch (_) {}
+
+    int totalClaims = 0;
+    int approvedClaims = 0;
+    try {
+      final claimsRes = await _supabase.from('MPT_claims').select('id, status, prize_type').limit(100);
+      totalClaims = (claimsRes as List).length;
+      for (final c in claimsRes) {
+        if ((c['status'] as String? ?? '').toUpperCase() == 'APPROVED') approvedClaims++;
+      }
+    } catch (_) {}
+
+    return {
+      'is_fallback_mode': true,
+      'rpc_error': rpcError?.toString(),
+      'metrics': {
+        'total_registered_users': recentUsers.where((u) => u['is_anonymous'] != true).length,
+        'total_users': recentUsers.length,
+        'total_games': totalGamesCount,
+        'active_games': activeGamesCount,
+        'completed_games': completedGamesCount,
+        'total_tickets': totalTickets,
+        'total_claims': totalClaims,
+        'total_brand_offers': brandOffers.length,
+        'active_brand_offers': brandOffers.where((b) => (b['status'] as String? ?? '').toUpperCase() == 'ACTIVE').length,
+        'total_brand_approvals': brandApprovals.length,
+        'pending_brand_approvals': brandApprovals.where((a) => (a['status'] as String? ?? '').toUpperCase() == 'PENDING').length,
+        'total_payments_count': recentPayments.where((p) => ['succeeded', 'completed'].contains((p['status']?.toString() ?? '').toLowerCase())).length,
+        'total_revenue_amount': totalRevenue,
+      },
+      'recent_games': recentGames,
+      'recent_hosts': recentHosts,
+      'recent_payments': recentPayments,
+      'recent_users': recentUsers,
+      'tickets_claims_summary': {
+        'total_tickets': totalTickets,
+        'total_claims': totalClaims,
+        'approved_claims': approvedClaims,
+        'rejected_claims': 0,
+        'pending_claims': 0,
+        'claims_by_prize': [],
+        'top_games_by_tickets': [],
+      },
+      'brand_offers': brandOffers,
+      'brand_approvals': brandApprovals,
+    };
+  }
+
 
   /// Toggle public visibility of a game in Recent Games / Hall of Fame
   Future<bool> setGamePublicVisibility(String gameId, bool isVisible) async {
@@ -202,5 +366,74 @@ class AdminReportsRepository {
     }
 
     return {'success': false};
+  }
+
+  /// Direct query fallback for Stripe payments ledger
+  Future<List<Map<String, dynamic>>> getPaymentsLedger() async {
+    try {
+      final res = await _supabase
+          .from('MPT_payments')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(50);
+      return (res as List).map((row) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final ref = m['provider_ref']?.toString().toLowerCase() ?? '';
+        m['is_test_mode'] = ref.contains('_test_') || ref.startsWith('cs_test_') || ref.startsWith('pi_test_');
+        return m;
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Direct query fallback for registered users & players
+  Future<List<Map<String, dynamic>>> getRegisteredUsersList() async {
+    try {
+      final res = await _supabase
+          .from('MPT_users')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(50);
+      return List<Map<String, dynamic>>.from(res as List);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Notify super admin (contact@dabhousie.com) of new host registration or first game creation
+  Future<bool> notifyHostRegistration({
+    required String hostEmail,
+    String? hostName,
+    String? gameName,
+    String? inviteCode,
+    String? userId,
+    String? provider,
+    String? actionType,
+  }) async {
+    final payload = <String, dynamic>{
+      'action': 'notify_host_registration',
+      'host_email': hostEmail,
+    };
+    if (hostName != null) payload['host_name'] = hostName;
+    if (gameName != null) payload['game_name'] = gameName;
+    if (inviteCode != null) payload['invite_code'] = inviteCode;
+    if (userId != null) payload['user_id'] = userId;
+    if (provider != null) payload['provider'] = provider;
+    if (actionType != null) payload['action_type'] = actionType;
+
+    try {
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/brand-approval',
+      );
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
   }
 }

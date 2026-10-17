@@ -1743,3 +1743,114 @@ DabHousie Realtime Events — {BASE_URL}
         audit_email=AUDIT_EMAIL,
         from_display_name="DabHousie Events",
     )
+
+
+def send_host_registered_alert_email(
+    host_email: str,
+    host_name: Optional[str] = None,
+    game_name: Optional[str] = None,
+    invite_code: Optional[str] = None,
+    user_id: Optional[str] = None,
+    provider: Optional[str] = None,
+    action_type: str = "Host Registered / Game Created",
+) -> bool:
+    """
+    Sends an automated instant notification to contact@dabhousie.com whenever a new organizer/host
+    registers, signs in, or creates a game event, so the super admin doesn't need to manually check the admin page.
+    """
+    display_email = host_email or "No email provided"
+    display_name = host_name or "New Organizer"
+
+    subject = f"🎉 [Host Alert] New Host Activity: {display_name} ({display_email})"
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>New Host Activity Alert</title>
+</head>
+<body style="margin:0; padding:24px; background:#0b0f19; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; color:#e2e8f0;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; margin:0 auto; background:#161c2e; border:1px solid #2d3748; border-radius:14px; overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg, #0b3d91 0%, #1e1b4b 100%); padding:28px 24px; text-align:center; border-bottom:2px solid #38bdf8;">
+        <h1 style="margin:0; font-size:22px; color:#ffffff; font-weight:800; letter-spacing:0.5px;">DabHousie Executive Control</h1>
+        <p style="margin:6px 0 0 0; color:#38bdf8; font-size:13px; font-weight:600;">NEW HOST ACTIVITY NOTIFICATION</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:28px 24px;">
+        <p style="font-size:15px; color:#f8fafc; line-height:1.5; margin-top:0;">
+          A new host or organizer has registered on DabHousie. You are receiving this instant notification so you don't need to manually visit the Super Admin Reports page until new activity happens.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0f172a; border:1px solid #1e293b; border-radius:10px; margin:20px 0; padding:16px;">
+          <tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">Activity Type:</td>
+            <td align="right" style="padding:8px 12px; color:#10b981; font-weight:700; font-size:13px;">{action_type}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">Host Email:</td>
+            <td align="right" style="padding:8px 12px; color:#ffffff; font-weight:700; font-size:14px;">{display_email}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">Organizer Name:</td>
+            <td align="right" style="padding:8px 12px; color:#cbd5e1; font-size:13px;">{display_name}</td>
+          </tr>
+          {f'''<tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">Game Created:</td>
+            <td align="right" style="padding:8px 12px; color:#f59e0b; font-weight:700; font-size:13px;">{game_name} (Code: {invite_code or "---"})</td>
+          </tr>''' if game_name else ''}
+          {f'''<tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">Sign-in Provider:</td>
+            <td align="right" style="padding:8px 12px; color:#94a3b8; font-size:12px;">{provider}</td>
+          </tr>''' if provider else ''}
+          {f'''<tr>
+            <td style="padding:8px 12px; color:#94a3b8; font-size:13px;">User ID:</td>
+            <td align="right" style="padding:8px 12px; color:#64748b; font-family:monospace; font-size:11px;">{user_id}</td>
+          </tr>''' if user_id else ''}
+        </table>
+
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+          <tr>
+            <td align="center" bgcolor="#0b3d91" style="background-color:#0b3d91; border-radius:10px; padding:0;">
+              <a href="{BASE_URL}/#/super-admin" target="_blank" style="background-color:#0b3d91; color:#ffffff !important; display:block; font-size:15px; font-weight:bold; text-decoration:none; padding:15px 24px; border-radius:10px; text-align:center;">
+                Open Super Admin Reports &rarr;
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:16px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:11.5px; color:#64748b; line-height:1.5;">
+        DabHousie Executive Control Notification &bull; <a href="mailto:contact@dabhousie.com" style="color:#38bdf8; text-decoration:none;">contact@dabhousie.com</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""[DabHousie Host Activity Alert]
+
+A new host has registered or created a game on DabHousie:
+
+- Activity: {action_type}
+- Host Email: {display_email}
+- Organizer Name: {display_name}
+{f'- Game: {game_name} (Code: {invite_code})' if game_name else ''}
+{f'- Provider: {provider}' if provider else ''}
+{f'- User ID: {user_id}' if user_id else ''}
+
+View Super Admin Reports: {BASE_URL}/#/super-admin
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=AUDIT_EMAIL,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        audit_email=None,
+        from_display_name="DabHousie Host Alert",
+    )
+

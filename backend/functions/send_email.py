@@ -100,7 +100,39 @@ def handler(event, context):
                 }),
             }
 
-        # 4. Default to Private Party Passcodes Email
+        # 4. Host Registration Alert Notification (to contact@dabhousie.com)
+        if action in ("host_registered", "notify_host_registration", "new_host_alert"):
+            host_email = (
+                payload.get("host_email")
+                or payload.get("email")
+                or payload.get("to_email")
+                or ""
+            ).strip()
+
+            from email_ses import send_host_registered_alert_email
+
+            success = send_host_registered_alert_email(
+                host_email=host_email,
+                host_name=payload.get("host_name") or payload.get("display_name"),
+                game_name=payload.get("game_name"),
+                invite_code=payload.get("invite_code"),
+                user_id=payload.get("user_id"),
+                provider=payload.get("provider"),
+                action_type=payload.get("action_type") or "Host Registered / Game Created",
+            )
+            return {
+                "statusCode": 200 if success else 500,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({
+                    "success": success,
+                    "message": "Host registration alert successfully sent to contact@dabhousie.com" if success else "Failed to send host alert email",
+                }),
+            }
+
+        # 5. Default to Private Party Passcodes Email
         return privateparty_email.handler(event, context)
 
     except Exception as e:
