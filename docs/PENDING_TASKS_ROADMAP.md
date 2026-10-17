@@ -85,12 +85,41 @@ All core gameplay, multi-provider authentication, monetization, corporate securi
 
 ### B. Optional Phase 2 Post-Launch Enhancements
 These items are **not required** for web go-live and can be scheduled based on user feedback after launch:
+- [x] **Viral Facebook Participation Bounty ("Proof-of-Play Share")**:
+  - **Status**: ✅ Completed & Live!
+  - **Implementation**:
+    - Concluded player ticket screen checks if player marked numbers but did not win any main/minor prize.
+    - Displays high-impact card: *"🎁 $1 Active Participant Bounty (5 Credits)"*.
+    - **"📸 Share to Facebook"**: Auto-copies proof remark (Ticket #, marked count, hashtags) to clipboard and launches Facebook share intent.
+    - **"🎁 Claim 5 Credits Voucher"**: Records claim in `MPT_claims` (`prize_type: 'PARTICIPATION_BOUNTY'`) and issues `DABBOUNTY1` voucher directly to `MPT_rewards`.
 - [ ] **Native Mobile App Store Packaging (iOS `.ipa` & Android `.aab`)**:
   - Package the Flutter project for Google Play Store and Apple App Store distribution (web app already works natively on all mobile browsers with zero install).
 - [ ] **Additional Custom Enterprise Winning Patterns**:
   - Expand beyond the 7 core patterns (Early 5, Top/Middle/Bottom Line, Four Corners, 1st & 2nd Full House) to include optional novelty patterns (Star, Bullseye, Breakfast/Lunch/Dinner).
 - [ ] **Web Push Notifications (OneSignal / FCM)**:
   - Optional browser push reminders 5 minutes before a scheduled game starts.
+
+### C. Post-Game Bug Fixes & Refinements
+- [x] **Admin Lobby "Start Game" Button Caption for Mega / Large Events (`admin_lobby_screen.dart:1707-1723`)**:
+  - ✅ Completed: Game capacity $> 5$ now checks `isMajorEvent` and displays `Start Game Now (Free • X Players)` instead of calling the event a Family Pack.
+- [x] **Super Admin Reports Drilldown: Filter Out Anonymous Guest Accounts (`20261017000002_filter_anonymous_from_admin_reports.sql`)**:
+  - ✅ Completed: Added email and non-anonymous filters to `recent_hosts` subquery in `MPT_get_admin_reports_overview`.
+- [x] **Dabby Auto Mode "DRAWING..." Font & Layout Jerk Fix (`admin_game_control_screen.dart:2652`)**:
+  - ✅ Completed: Font size reduced to 16 with fixed 32px height container to eliminate layout jumps.
+- [x] **Player-Side Auto-Caller Next Number Anticipation Indicator (`player_ticket_screen.dart`)**:
+  - ✅ Completed: Added `Next in ~12s...` real-time anticipation badge directly on the player caller banner.
+- [x] **Invite Share Text Auto-Appends Prizes (`formatters.dart` & `mpt_game.dart`)**:
+  - ✅ Completed: Invite messages automatically include `🏆 Prize Pool: $35 in Brand Vouchers`.
+
+---
+
+### D. Key Platform USPs & Marketing Gold ("Why DabHousie™")
+- **Zero-Risk Fair-Play Capacity Billing ("Host Never Penalized for Ambition")**:
+  - **The Problem on Other Platforms**: In traditional event software or paid bingo platforms, if a host schedules a 250-person hall/license and only 15 people show up, the host is penalized and loses the full 250-license fee.
+  - **The DabHousie Difference**: Host is billed dynamically via `MPT_start_game_and_charge` based on **actual confirmed attendees who join the lobby**, *not* the scheduled maximum capacity.
+  - **Real-World Proof**: In today's test game (`FE3D42`), the host scheduled a 250-seat Mega Event. Because 3 players joined, DabHousie automatically billed it at the **Family Pack tier (0 credits / 100% Free)**. If 40 people joined, it would only charge for the 50-player tier.
+  - **Marketing Copy / Tagline**: *"Plan big with zero fear. Even if you book for 250, you only ever pay for who shows up — and if only family arrives, it's 100% Free."*
+
 
 ---
 

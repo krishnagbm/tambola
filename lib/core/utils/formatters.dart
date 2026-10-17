@@ -10,22 +10,29 @@ class Formatters {
     return DateFormat('MMM d, h:mm a').format(date.toLocal());
   }
 
-  /// Builds a player-facing invitation message including scheduled date/time if applicable
+  /// Builds a player-facing invitation message including scheduled date/time and prize pool if applicable
   static String buildGameInviteMessage({
     required String gameName,
     required String inviteCode,
     DateTime? scheduledAt,
+    double? totalPrizeBudget,
+    String? currencySymbol,
   }) {
     final link = '${AppConfig.appBaseUrl}/#/join/$inviteCode';
+    final prizeLine = (totalPrizeBudget != null && totalPrizeBudget > 0)
+        ? '🏆 Prize Pool: ${currencySymbol ?? '\$'}${totalPrizeBudget.toStringAsFixed(totalPrizeBudget.truncateToDouble() == totalPrizeBudget ? 0 : 2)} in Brand Vouchers\n'
+        : '';
     if (scheduledAt != null) {
       final timeFormatted = formatDate(scheduledAt);
       return '🎉 You are invited to play DabHousie in "$gameName"!\n\n'
           '📅 Scheduled Time: $timeFormatted\n'
-          '🔑 Invite Code: $inviteCode\n\n'
+          '🔑 Invite Code: $inviteCode\n'
+          '${prizeLine.isNotEmpty ? '$prizeLine\n' : ''}'
           '👉 Tap to reserve your seat & preview tickets:\n$link';
     } else {
       return '🎉 You are invited to play DabHousie in "$gameName"!\n\n'
-          '🔑 Invite Code: $inviteCode\n\n'
+          '🔑 Invite Code: $inviteCode\n'
+          '${prizeLine.isNotEmpty ? '$prizeLine\n' : ''}'
           '👉 Tap the link below to join directly in your browser:\n$link';
     }
   }

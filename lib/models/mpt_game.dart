@@ -60,11 +60,13 @@ class MptGame {
   /// Returns the effective scheduled time, checking scheduledAt and dabbyScheduleConfig
   DateTime? get effectiveScheduledAt => scheduledAt ?? dabbyScheduleConfig?.scheduledAt;
 
-  /// Player-facing invitation message formatted with schedule time and invite link
+  /// Player-facing invitation message formatted with schedule time, prize pool, and invite link
   String get inviteShareMessage => Formatters.buildGameInviteMessage(
         gameName: name,
         inviteCode: inviteCode,
         scheduledAt: effectiveScheduledAt,
+        totalPrizeBudget: totalPrizeBudget > 0 ? totalPrizeBudget : null,
+        currencySymbol: prizeGiftsConfig['_currency_symbol'] as String? ?? '\$',
       );
 
   FlashHousieConfig? get flashHousieConfig =>

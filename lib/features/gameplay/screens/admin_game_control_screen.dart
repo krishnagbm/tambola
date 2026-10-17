@@ -2641,26 +2641,31 @@ class _AdminGameControlScreenState
                           ],
                         ),
                         const SizedBox(height: 3),
-                        Text(
-                          isCelebrating
-                              ? '00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
-                              : isFlashRevealing
-                              ? '00:${neuroSecsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
-                              : _isAutoPilotPaused
-                              ? 'PAUSED'
-                              : _isCalling
-                              ? 'DRAWING...'
-                              : '00:${_countdownSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
-                          style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'monospace',
-                            letterSpacing: 1.5,
-                            color: isCelebrating || isFlashRevealing
-                                ? AppTheme.secondaryColor
-                                : _isAutoPilotPaused
-                                ? AppTheme.accentWarning
-                                : const Color(0xFF38BDF8),
+                        SizedBox(
+                          height: 32,
+                          child: Center(
+                            child: Text(
+                              isCelebrating
+                                  ? '00:${_celebrationSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
+                                  : isFlashRevealing
+                                  ? '00:${neuroSecsLeft.clamp(0, 99).toString().padLeft(2, '0')}'
+                                  : _isAutoPilotPaused
+                                  ? 'PAUSED'
+                                  : _isCalling
+                                  ? 'DRAWING...'
+                                  : '00:${_countdownSecondsLeft.clamp(0, 99).toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                fontSize: _isCalling ? 16 : 25,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
+                                letterSpacing: _isCalling ? 1.0 : 1.5,
+                                color: isCelebrating || isFlashRevealing
+                                    ? AppTheme.secondaryColor
+                                    : _isAutoPilotPaused
+                                    ? AppTheme.accentWarning
+                                    : const Color(0xFF38BDF8),
+                              ),
+                            ),
                           ),
                         ),
                       ],

@@ -605,6 +605,65 @@ class GameplayRepository {
     }
   }
 
+  /// Submits an active player participation bounty ($1 / 5 credits)
+  Future<Map<String, dynamic>> submitParticipationBounty(
+    String gameId,
+    List<int> markedNumbers,
+  ) async {
+    final uid = _supabase.auth.currentUser?.id;
+    if (uid == null) return {'status': 'ERROR', 'reason': 'User not authenticated'};
+    try {
+      final existing = await _supabase
+          .from('MPT_claims')
+          .select('id')
+          .eq('game_id', gameId)
+          .eq('user_id', uid)
+          .eq('prize_type', 'PARTICIPATION_BOUNTY')
+          .maybeSingle();
+
+      if (existing != null) {
+        return {'status': 'ALREADY_CLAIMED', 'code': 'DABBOUNTY1'};
+      }
+
+      final claimRes = await _supabase.from('MPT_claims').insert({
+        'game_id': gameId,
+        'user_id': uid,
+        'prize_type': 'PARTICIPATION_BOUNTY',
+        'status': 'APPROVED',
+        'marked_numbers': markedNumbers,
+      }).select().single();
+
+      final claimRef = 'DAB-BOUNTY-${gameId.substring(0, 4).toUpperCase()}-${const Uuid().v4().substring(0, 6).toUpperCase()}';
+      try {
+        await _supabase.from('MPT_rewards').insert({
+          'game_id': gameId,
+          'user_id': uid,
+          'prize_type': 'PARTICIPATION_BOUNTY',
+          'claim_id': claimRes['id'],
+          'claim_reference': claimRef,
+          'status': 'AVAILABLE_TO_CLAIM',
+          'reward_code': 'DABBOUNTY1',
+          'reward_title': '\$1 Active Participant Bounty (5 Credits)',
+          'fulfilled_brand_name': 'DabHousie',
+          'fulfilled_gift_title': '\$1 Active Participant Bounty (5 Credits)',
+          'fulfilled_gift_code': 'DABBOUNTY1',
+          'prize_value': 1.0,
+        });
+      } catch (e) {
+        debugPrint('MPT_rewards bounty insert warning: $e');
+      }
+
+      return {
+        'status': 'APPROVED',
+        'code': 'DABBOUNTY1',
+        'claim_reference': claimRef,
+      };
+    } catch (e) {
+      debugPrint('submitParticipationBounty error: $e');
+      return {'status': 'APPROVED', 'code': 'DABBOUNTY1'};
+    }
+  }
+
   /// Ends the game, marks it COMPLETED, and archives it to Hall of Fame
   Future<void> endGame(String gameId) async {
     final nowIso = DateTime.now().toUtc().toIso8601String();

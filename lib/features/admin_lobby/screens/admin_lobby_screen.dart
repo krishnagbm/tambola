@@ -1713,19 +1713,32 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       creditsNeeded = confirmedCount <= 5 ? 0 : 15;
     }
 
+    final isMajorEvent = game.fundedCapacity > 5;
     final isFree = creditsNeeded == 0;
     final String startButtonText;
-    if (isFree) {
-      if (isScheduled) {
-        startButtonText = isPassed ? 'Start Family Pack Game (Free)' : 'Start Family Pack Early (Free)';
+    if (isMajorEvent) {
+      if (isFree) {
+        startButtonText = isScheduled
+            ? (isPassed ? 'Start Game Now (Free • $confirmedCount Players)' : 'Start Game Early (Free • $confirmedCount Players)')
+            : 'Start Game (Free • $confirmedCount Players)';
       } else {
-        startButtonText = 'Start Family Pack Game (Free)';
+        startButtonText = isScheduled
+            ? (isPassed ? 'Start Game Now ($creditsNeeded Credits)' : 'Start Game Early ($creditsNeeded Credits)')
+            : 'Start Game ($creditsNeeded Credits)';
       }
     } else {
-      if (isScheduled) {
-        startButtonText = isPassed ? 'Start Game Now & Deduct Credits' : 'Start Game Early & Deduct Credits';
+      if (isFree) {
+        if (isScheduled) {
+          startButtonText = isPassed ? 'Start Family Pack Game (Free)' : 'Start Family Pack Early (Free)';
+        } else {
+          startButtonText = 'Start Family Pack Game (Free)';
+        }
       } else {
-        startButtonText = 'Start Game & Deduct Credits';
+        if (isScheduled) {
+          startButtonText = isPassed ? 'Start Game Now & Deduct Credits' : 'Start Game Early & Deduct Credits';
+        } else {
+          startButtonText = 'Start Game & Deduct Credits';
+        }
       }
     }
 

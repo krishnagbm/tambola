@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/live_display_helper.dart';
@@ -32,6 +34,7 @@ class PlayerTicketScreen extends ConsumerStatefulWidget {
 class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   final Set<int> _markedNumbers = {};
   bool _isClaiming = false;
+  bool _isClaimingBounty = false;
   bool _voiceEnabled = false;
   int _lastAnnouncedSeq = 0;
   bool _showCelebration = false;
@@ -56,10 +59,10 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     super.initState();
     WakeLockHelper.keepScreenOn();
     _loadSavedMarks();
-    _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 200), (_) {
+    _neuroWaveUiTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final game = ref.read(gameStreamProvider(widget.gameId)).value;
-      if (game?.isFlashHousie == true) {
+      if (game?.isInProgress == true || game?.isFlashHousie == true) {
         setState(() {});
       }
     });
@@ -71,16 +74,6 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     _finalGraceTimer?.cancel();
     WakeLockHelper.release();
     super.dispose();
-  }
-
-  Future<void> _loadVoicePreference() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getBool('player_voice_calling_enabled');
-      if (saved != null && mounted) {
-        setState(() => _voiceEnabled = saved);
-      }
-    } catch (_) {}
   }
 
   Set<int> _recalledForCycle(int cycleIndex) =>
@@ -639,6 +632,290 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  Future<void> _handleShareBountyToFacebook(MptTicket ticket, MptGame? game) async {
+    final gameTitle = game?.name ?? 'DabHousie';
+    final proofText = 'Played in $gameTitle with Ticket #${ticket.ticketNumber}! '
+        'Marked ${_markedNumbers.length} numbers. Tagging @DabHousie to claim my \$1 Participation Bonus! 🎟️ '
+        'Play free with brand prizes at https://www.dabhousie.com #DabHousie #Tambola #Housie';
+
+    await Clipboard.setData(ClipboardData(text: proofText));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('📋 Facebook proof remark copied to clipboard! Attach your ticket screenshot on Facebook.'),
+          backgroundColor: AppTheme.secondaryColor,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
+
+    final fbUrl = Uri.parse(
+      'https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.dabhousie.com&quote=${Uri.encodeComponent(proofText)}',
+    );
+    try {
+      await launchUrl(fbUrl, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
+  Future<void> _handleClaimBounty(MptTicket ticket, MptGame? game) async {
+    if (_isClaimingBounty) return;
+    setState(() => _isClaimingBounty = true);
+
+    try {
+      final res = await ref.read(gameplayRepositoryProvider).submitParticipationBounty(
+        widget.gameId,
+        _markedNumbers.toList(),
+      );
+
+      if (!mounted) return;
+      setState(() => _isClaimingBounty = false);
+
+      final code = res['code'] ?? 'DABBOUNTY1';
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.redeem_rounded, color: AppTheme.secondaryColor, size: 26),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Participation Bounty! 🎁',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Thank you for actively playing! Here is your \$1.00 DabHousie Credit Voucher:',
+                style: TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.secondaryColor),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'PROMO CODE',
+                      style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: Colors.white54, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      code,
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.secondaryColor, letterSpacing: 2),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Value: \$1.00 USD (5 DabHousie Hosting Credits)',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF38BDF8), fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '📌 To complete verification, post your ticket screenshot on Facebook tagging @DabHousie with #DabHousie. Use code DABBOUNTY1 to host your own game for free!',
+                style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: code));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Voucher code copied to clipboard!')),
+                );
+              },
+              child: const Text('Copy Code', style: TextStyle(color: AppTheme.secondaryColor, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.secondaryColor, foregroundColor: AppTheme.primaryDark),
+              child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) setState(() => _isClaimingBounty = false);
+    }
+  }
+
+  Widget _buildParticipationBountyCard(
+    MptTicket ticket,
+    MptGame? game,
+    List<MptClaim> claims,
+    String? currentUserId, {
+    bool isCompact = false,
+  }) {
+    if (game == null || (!game.isCompleted && game.status != 'COMPLETED')) {
+      return const SizedBox.shrink();
+    }
+    if (_markedNumbers.isEmpty) return const SizedBox.shrink();
+    final hasWonAnyPrize = claims.any(
+      (c) => c.userId == currentUserId && c.status == 'APPROVED' && c.prizeType != 'PARTICIPATION_BOUNTY',
+    );
+    if (hasWonAnyPrize) return const SizedBox.shrink();
+
+    final hasClaimedBounty = claims.any(
+      (c) => c.userId == currentUserId && c.prizeType == 'PARTICIPATION_BOUNTY',
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(isCompact ? 12 : 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+            blurRadius: 12,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.card_giftcard_rounded,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '\$1 Active Participant Bounty',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      '5 DabHousie Hosting Credits',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: hasClaimedBounty
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                      : AppTheme.secondaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: hasClaimedBounty
+                        ? AppTheme.accentSuccess
+                        : AppTheme.secondaryColor,
+                  ),
+                ),
+                child: Text(
+                  hasClaimedBounty ? 'CLAIMED ✅' : 'ELIGIBLE 🎁',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: hasClaimedBounty
+                        ? AppTheme.accentSuccess
+                        : AppTheme.secondaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'You marked ${_markedNumbers.length} numbers on Ticket #${ticket.ticketNumber}! Share your ticket snapshot to Facebook tagging @DabHousie to claim 5 free hosting credits (\$1 value).',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFCBD5E1),
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _handleShareBountyToFacebook(ticket, game),
+                icon: const Icon(Icons.share_rounded, size: 15),
+                label: const Text('Share to Facebook 📸'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1877F2),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _isClaimingBounty ? null : () => _handleClaimBounty(ticket, game),
+                icon: _isClaimingBounty
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.secondaryColor),
+                      )
+                    : const Icon(Icons.redeem_rounded, size: 15, color: AppTheme.secondaryColor),
+                label: Text(
+                  hasClaimedBounty ? 'View Voucher Code' : 'Claim 5 Credits',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppTheme.secondaryColor, width: 1.2),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showIncompletePatternDialog(String prizeType) {
     showDialog(
       context: context,
@@ -1032,6 +1309,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   : (calledNumbers.isNotEmpty
                         ? calledNumbers.last.number
                         : null);
+              final latestCalledAt = calledNumbers.isNotEmpty
+                  ? calledNumbers.last.calledAt
+                  : null;
               final calledSet = activeCycleSpec != null
                   ? activeCycleSpec.calledNumbers.toSet()
                   : calledNumbers.map((e) => e.number).toSet();
@@ -1168,6 +1448,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                           isCancelledOrNoWinners,
                                       context: context,
                                       isCompact: true,
+                                      latestCalledAt: latestCalledAt,
                                     ),
                                     if (flashConfig != null &&
                                         activeCycleSpec != null) ...[
@@ -1178,6 +1459,13 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                         isCompact: true,
                                       ),
                                     ],
+                                    _buildParticipationBountyCard(
+                                      ticket,
+                                      currentGame,
+                                      claimsStream.value ?? const [],
+                                      currentUserId,
+                                      isCompact: true,
+                                    ),
                                     const SizedBox(height: 8),
                                     _buildTicketMatrix(
                                       ticket,
@@ -1332,6 +1620,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                             isGameEnded: isGameEnded,
                             isCancelledOrNoWinners: isCancelledOrNoWinners,
                             context: context,
+                            latestCalledAt: latestCalledAt,
                           ),
                           const SizedBox(height: 10),
 
@@ -1357,6 +1646,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                             _buildRecentCallsBar(calledNumbers),
                             const SizedBox(height: 14),
                           ],
+
+                          _buildParticipationBountyCard(
+                            ticket,
+                            currentGame,
+                            claimsStream.value ?? const [],
+                            currentUserId,
+                          ),
+                          const SizedBox(height: 12),
 
                           // Interactive 3x9 Ticket (Preserved 3x9 layout for both Classic & FlashHousie)
                           _buildTicketMatrix(
@@ -1742,6 +2039,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     bool isCancelledOrNoWinners = false,
     BuildContext? context,
     bool isCompact = false,
+    DateTime? latestCalledAt,
   }) {
     if (isGameEnded) {
       final accentColor = isCancelledOrNoWinners
@@ -1904,6 +2202,47 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   ),
                 ),
               ),
+              if (!isGameEnded && latestNumber != null && latestCalledAt != null) ...[
+                Builder(
+                  builder: (_) {
+                    final elapsed = DateTime.now().difference(latestCalledAt).inSeconds;
+                    final secsLeft = (15 - elapsed).clamp(0, 15);
+                    return Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFF38BDF8).withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 11,
+                            color: Color(0xFF38BDF8),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            secsLeft > 0
+                                ? 'Next in ~${secsLeft}s'
+                                : 'Drawing next ball...',
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF38BDF8),
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
           Container(
