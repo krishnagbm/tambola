@@ -2118,7 +2118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: Column(
               children: [
                 InkWell(
-                  onTap: () => _launchURL(AppConfig.appBaseUrl),
+                  onTap: () => _launchURL('https://www.digitalappstudio.com/'),
                   child: const Text(
                     'Developed by Digital App Studio',
                     style: TextStyle(fontSize: 11, color: Color(0xFFA0AEC0), decoration: TextDecoration.underline),
