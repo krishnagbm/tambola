@@ -10,6 +10,7 @@ import json
 import math
 import os
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 
@@ -238,6 +239,10 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                     })
                     print(f"  [ SCHEDULER ] Autonomous kickoff for game {g.get('invite_code')} ({confirmed_count}/{quorum_count})")
 
+        # ── Step 2: 100% Autonomous Authoritative Cloud Calling ──────────────
+        # Call balls for any active in-progress autonomous games every 15 seconds
+        _auto_call_autonomous_games(sb, summary)
+
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -245,6 +250,101 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
         summary["error"] = str(e)
 
     return summary
+
+
+def _auto_call_autonomous_games(sb: Any, summary: Dict[str, Any]) -> None:
+    """
+    100% Autonomous Authoritative Cloud Caller for active in-progress games.
+    Ensures games configured with autonomous host or scheduled runs never wait
+    for a host browser to be open. Steps balls forward periodically (every ~15s).
+    """
+    try:
+        # Fetch active in-progress games
+        res = (
+            sb.from_("MPT_games")
+            .select("id, name, invite_code, status, prize_gifts_config")
+            .eq("status", "IN_PROGRESS")
+            .execute()
+        )
+        active_games = res.data or []
+        summary["active_games_evaluated"] = len(active_games)
+        if not active_games:
+            return
+
+        # Filter for autonomous enabled games
+        auto_games = []
+        for g in active_games:
+            p_gifts = g.get("prize_gifts_config") or {}
+            dabby_cfg = p_gifts.get("_dabby_orchestration") or {}
+            # Autonomous if explicitly enabled or if scheduled game
+            is_auto = dabby_cfg.get("autonomous_host_enabled", True)
+            if is_auto:
+                auto_games.append(g)
+
+        summary["autonomous_games_running"] = len(auto_games)
+        if not auto_games:
+            return
+
+        start_time = time.time()
+        # In a 60s Lambda window, step through up to 3 balls spaced 15s apart
+        for step in range(3):
+            # Safe cutoff before Lambda timeout expires
+            if time.time() - start_time > 40:
+                break
+
+            still_active = False
+            for g in auto_games:
+                game_id = g["id"]
+                code = g.get("invite_code")
+
+                # Check if Full House is already claimed and approved
+                claims_res = (
+                    sb.from_("MPT_claims")
+                    .select("id")
+                    .eq("game_id", game_id)
+                    .eq("claim_type", "FULL_HOUSE")
+                    .eq("status", "APPROVED")
+                    .limit(1)
+                    .execute()
+                )
+                if claims_res.data:
+                    # Conclude game
+                    sb.from_("MPT_games").update({
+                        "status": "COMPLETED",
+                        "completed_at": datetime.now(timezone.utc).isoformat(),
+                    }).eq("id", game_id).execute()
+                    print(f"  [ AUTONOMOUS CALLER ] Game {code} has Full House awarded. Game completed.")
+                    continue
+
+                # Authoritative server-side ball call via MPT_call_next_number RPC
+                try:
+                    call_res = sb.rpc("MPT_call_next_number", {"p_game_id": game_id}).execute()
+                    call_data = call_res.data
+                    if isinstance(call_data, dict):
+                        if call_data.get("game_completed"):
+                            print(f"  [ AUTONOMOUS CALLER ] Game {code} finished: {call_data.get('message')}")
+                        else:
+                            still_active = True
+                            num = call_data.get("number")
+                            seq = call_data.get("call_seq")
+                            print(f"  [ AUTONOMOUS CALLER ] Called ball #{seq}: {num} for {code}")
+                            summary.setdefault("numbers_called", []).append({
+                                "invite_code": code,
+                                "number": num,
+                                "seq": seq,
+                            })
+                except Exception as err:
+                    print(f"  [ AUTONOMOUS CALLER ] Ball call error for {code}: {err}")
+
+            if not still_active:
+                break
+
+            # Standard 15-second pacing between numbers
+            if step < 2:
+                time.sleep(15)
+
+    except Exception as e:
+        print(f"  [ AUTONOMOUS CALLER ] Auto caller exception: {e}")
 
 
 def _start_game(sb: Any, game_id: str) -> bool:

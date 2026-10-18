@@ -171,7 +171,8 @@ Resources:
     Properties:
       CodeUri: backend/
       Handler: functions.game_scheduler.handler
-      Description: Autonomous EventBridge worker to evaluate scheduled games for low-quorum alerts, auto-cancellation, and kickoff
+      Description: Autonomous EventBridge worker to evaluate scheduled games for low-quorum alerts, auto-cancellation, kickoff, and autonomous number calling
+      Timeout: 60
       Policies:
         - SESCrudPolicy:
             IdentityName: '*'

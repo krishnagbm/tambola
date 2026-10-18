@@ -1034,6 +1034,8 @@ class _SuperAdminDashboardScreenState
     final quorumMet = confirmedCount >= 2;
     final tierName = g['capacity_tier_name'] as String? ?? 'Cap: ${g['initial_funded_capacity'] ?? 25}';
     final gameId = g['id'] as String? ?? '';
+    final schedRaw = g['scheduled_at'];
+    final scheduledAt = schedRaw != null ? DateTime.tryParse(schedRaw.toString()) : null;
 
     return Card(
       color: AppTheme.darkCard,
@@ -1080,6 +1082,32 @@ class _SuperAdminDashboardScreenState
                     ],
                   ),
                 ),
+                if (scheduledAt != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.alarm_on_rounded, size: 12, color: AppTheme.secondaryColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          Formatters.formatShortDate(scheduledAt.toLocal()),
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.secondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
@@ -1215,7 +1243,72 @@ class _SuperAdminDashboardScreenState
 
                 Wrap(
                   spacing: 6,
+                  runSpacing: 4,
                   children: [
+                    // Host Lobby Button
+                    if (status != 'COMPLETED' && status != 'CANCELLED')
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                        ),
+                        onPressed: () => context.push('/admin-lobby/$gameId'),
+                        icon: const Icon(Icons.meeting_room, size: 13),
+                        label: const Text('Host Lobby', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+
+                    // Start Game / Live Caller Controls Button
+                    if (status == 'OPEN' || status == 'READY_TO_START')
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                        ),
+                        onPressed: () => context.push('/admin-control/$gameId?autopilot=true'),
+                        icon: const Icon(Icons.play_arrow_rounded, size: 14),
+                        label: const Text('Start Game', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      )
+                    else if (status == 'IN_PROGRESS')
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+                        ),
+                        onPressed: () => context.push('/admin-control/$gameId?autopilot=true'),
+                        icon: const Icon(Icons.sensors, size: 14),
+                        label: const Text('Live Controls', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+
+                    // TV Display
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      ),
+                      onPressed: () => context.push('/live-display/$gameId'),
+                      icon: const Icon(Icons.tv, size: 13),
+                      label: const Text('Live TV', style: TextStyle(fontSize: 11)),
+                    ),
+
+                    // Detailed Game Inspector Modal (Replacing "Status Screen")
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E293B),
+                        foregroundColor: Colors.white,
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      ),
+                      onPressed: () => _showGameInspectionDialog(context, g),
+                      icon: const Icon(Icons.analytics_outlined, size: 14, color: AppTheme.secondaryColor),
+                      label: const Text('Inspect Stats', style: TextStyle(fontSize: 11)),
+                    ),
+
                     // Visibility Toggle Button
                     TextButton.icon(
                       style: TextButton.styleFrom(
@@ -1235,30 +1328,6 @@ class _SuperAdminDashboardScreenState
                           color: isPubliclyVisible ? Colors.orangeAccent : const Color(0xFF38BDF8),
                         ),
                       ),
-                    ),
-
-                    // Detailed Game Inspector Modal (Replacing "Status Screen")
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E293B),
-                        foregroundColor: Colors.white,
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                      ),
-                      onPressed: () => _showGameInspectionDialog(context, g),
-                      icon: const Icon(Icons.analytics_outlined, size: 14, color: AppTheme.secondaryColor),
-                      label: const Text('Inspect Stats', style: TextStyle(fontSize: 11)),
-                    ),
-
-                    // TV Display
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      ),
-                      onPressed: () => context.push('/live-display/$gameId'),
-                      icon: const Icon(Icons.tv, size: 13),
-                      label: const Text('Live TV', style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),
@@ -1552,6 +1621,7 @@ class _SuperAdminDashboardScreenState
                             ),
                             Wrap(
                               spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 OutlinedButton.icon(
                                   onPressed: () {
@@ -1573,6 +1643,22 @@ class _SuperAdminDashboardScreenState
                                   icon: const Icon(Icons.meeting_room, size: 14),
                                   label: const Text('Host Lobby', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 ),
+                                if ((game['status'] ?? '').toString() != 'COMPLETED' && (game['status'] ?? '').toString() != 'CANCELLED')
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.accentSuccess,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(dialogCtx);
+                                      context.push('/admin-control/$gameId?autopilot=true');
+                                    },
+                                    icon: const Icon(Icons.play_arrow_rounded, size: 14),
+                                    label: Text(
+                                      (game['status'] ?? '').toString() == 'IN_PROGRESS' ? 'Live Controls' : 'Start Game',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                               ],
                             ),
                           ],
