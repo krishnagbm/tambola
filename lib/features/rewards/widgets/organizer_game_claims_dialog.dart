@@ -359,6 +359,56 @@ class _OrganizerGameClaimsDialogState
                             ),
                           ),
                         ),
+                        if (selectedMethod == '🎁 DabHousie Event Credits')
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppTheme.secondaryColor.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.secondaryColor.withValues(
+                                  alpha: 0.35,
+                                ),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 14,
+                                      color: AppTheme.secondaryColor,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'How DabHousie Credits work:',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.secondaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  reward.isGuest
+                                      ? '• Winner is currently a Guest without an account.\n• Provide a voucher/promo code (e.g. sponsored DABFREE10) in the note below. Once the winner signs in to host, they can redeem it for event hosting credits.'
+                                      : '• DabHousie Event Credits are hosting credits. Enter a promo code (e.g. DABFREE10) or reference note below for the player to use when hosting games.',
+                                  style: const TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFFCBD5E1),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 12),
 
                         // Settlement Note
@@ -379,7 +429,9 @@ class _OrganizerGameClaimsDialogState
                           ),
                           decoration: InputDecoration(
                             hintText:
-                                'e.g. Sent \$10 via Venmo / Handed cash in person / Gift code #...',
+                                selectedMethod == '🎁 DabHousie Event Credits'
+                                ? 'e.g. Voucher code DABFREE10 or credit promo code for winner'
+                                : 'e.g. Sent \$10 via Venmo / Handed cash in person / Gift code #...',
                             hintStyle: const TextStyle(
                               color: Color(0xFF64748B),
                               fontSize: 12,
