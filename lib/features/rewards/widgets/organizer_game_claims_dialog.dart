@@ -348,7 +348,43 @@ class _OrganizerGameClaimsDialogState
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
+
+                        // Winner Recognition / Verification Guidance Banner
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF1E293B,
+                            ).withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.verified_user_outlined,
+                                size: 14,
+                                color: AppTheme.secondaryColor,
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Winner Verification: Signed-in players show their email/account. Guest players match the Ticket # and Voucher Code shown on their winning ticket screen.',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFF94A3B8),
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
 
                         // List of Claims
                         Flexible(
@@ -475,7 +511,8 @@ class _OrganizerGameClaimsDialogState
                                                 ),
                                                 child: Text(
                                                   r.winnerEmail != null &&
-                                                          r.winnerEmail!
+                                                          r
+                                                              .winnerEmail!
                                                               .isNotEmpty
                                                       ? r.winnerEmail!
                                                       : (r.isGuest

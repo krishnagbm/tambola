@@ -162,12 +162,6 @@ class AuthRepository {
   /// Ensures an authentication session exists and syncs user profile
   Future<MptUser> initializeAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    var cachedName = prefs.getString(_prefKeyName);
-    if (cachedName == null || cachedName.trim().isEmpty || cachedName == 'My Name') {
-      cachedName = getRandomDefaultNickname();
-      await prefs.setString(_prefKeyName, cachedName);
-    }
-    var cachedAvatar = prefs.getString(_prefKeyAvatar) ?? 'avatar_lion';
 
     User? user = _supabase.auth.currentUser;
 
@@ -182,6 +176,12 @@ class AuthRepository {
           localId = const Uuid().v4();
           await prefs.setString(_prefKeyLocalUuid, localId);
         }
+        var cachedName = prefs.getString(_prefKeyName);
+        if (cachedName == null || cachedName.trim().isEmpty || cachedName == 'My Name') {
+          cachedName = getRandomDefaultNickname();
+          await prefs.setString(_prefKeyName, cachedName);
+        }
+        var cachedAvatar = prefs.getString(_prefKeyAvatar) ?? 'avatar_lion';
         return MptUser(
           id: localId,
           displayName: cachedName,
@@ -196,38 +196,103 @@ class AuthRepository {
     final isAnon = user?.isAnonymous ?? true;
     final email = user?.email;
     final metadata = user?.userMetadata ?? {};
-    
-    String? resolvedName;
-    if (metadata['full_name'] is String) {
-      resolvedName = metadata['full_name'] as String;
-    } else if (metadata['full_name'] is Map) {
-      final nameMap = metadata['full_name'] as Map;
-      final first = nameMap['firstName'] ?? '';
-      final last = nameMap['lastName'] ?? '';
-      resolvedName = '$first $last'.trim();
-    } else if (metadata['name'] is String) {
-      resolvedName = metadata['name'] as String;
-    } else if (metadata['custom_claims'] is Map && (metadata['custom_claims'] as Map)['name'] is String) {
-      resolvedName = (metadata['custom_claims'] as Map)['name'] as String;
-    }
-
-    if ((resolvedName == null || resolvedName.isEmpty) && email != null && email.isNotEmpty) {
-      resolvedName = email.split('@').first;
-    }
-
     final avatarUrl = metadata['avatar_url'] as String? ?? metadata['picture'] as String?;
     final provider = user?.appMetadata['provider'] as String? ?? (isAnon ? 'anonymous' : 'email');
 
-    if (!isAnon && resolvedName != null && resolvedName.isNotEmpty && (cachedName == 'My Name' || cachedName.isEmpty)) {
-      cachedName = resolvedName;
-      await prefs.setString(_prefKeyName, cachedName);
+    // 1. Check if user already has an established record in MPT_users table in the database
+    Map<String, dynamic>? existingDbUser;
+    if (user != null) {
+      try {
+        final data = await _supabase
+            .from('MPT_users')
+            .select()
+            .eq('id', user.id)
+            .maybeSingle();
+        if (data != null) {
+          existingDbUser = Map<String, dynamic>.from(data);
+        }
+      } catch (_) {}
     }
 
-    // Upsert user in MPT_users table via RPC or direct insert
+    // 2. Resolve display name in priority order:
+    //    Priority A: Existing saved name in DB (if not empty and not 'Player')
+    //    Priority B: Authenticated account name (Google full_name or email prefix)
+    //    Priority C: Locally cached preference name in SharedPreferences
+    //    Priority D: Unique random nickname fallback
+    String? resolvedName;
+    if (existingDbUser != null) {
+      final dbName = (existingDbUser['display_name'] as String?)?.trim();
+      if (dbName != null &&
+          dbName.isNotEmpty &&
+          dbName.toLowerCase() != 'player' &&
+          dbName.toLowerCase() != 'my name') {
+        resolvedName = dbName;
+      }
+    }
+
+    if (resolvedName == null || resolvedName.isEmpty) {
+      if (metadata['full_name'] is String) {
+        resolvedName = metadata['full_name'] as String;
+      } else if (metadata['full_name'] is Map) {
+        final nameMap = metadata['full_name'] as Map;
+        final first = nameMap['firstName'] ?? '';
+        final last = nameMap['lastName'] ?? '';
+        resolvedName = '$first $last'.trim();
+      } else if (metadata['name'] is String) {
+        resolvedName = metadata['name'] as String;
+      } else if (metadata['custom_claims'] is Map &&
+          (metadata['custom_claims'] as Map)['name'] is String) {
+        resolvedName = (metadata['custom_claims'] as Map)['name'] as String;
+      }
+
+      if ((resolvedName == null || resolvedName.isEmpty) &&
+          email != null &&
+          email.isNotEmpty) {
+        resolvedName = email.split('@').first;
+      }
+    }
+
+    if (resolvedName == null || resolvedName.isEmpty) {
+      final cached = prefs.getString(_prefKeyName)?.trim();
+      if (cached != null &&
+          cached.isNotEmpty &&
+          cached.toLowerCase() != 'my name' &&
+          cached.toLowerCase() != 'player') {
+        resolvedName = cached;
+      }
+    }
+
+    if (resolvedName == null || resolvedName.trim().isEmpty) {
+      resolvedName = getRandomDefaultNickname();
+    }
+    resolvedName = resolvedName.trim();
+
+    // 3. Resolve avatar in priority order:
+    String resolvedAvatar = 'avatar_lion';
+    if (existingDbUser != null &&
+        (existingDbUser['avatar'] as String?)?.isNotEmpty == true) {
+      resolvedAvatar = existingDbUser['avatar'] as String;
+    } else {
+      resolvedAvatar = prefs.getString(_prefKeyAvatar) ?? 'avatar_lion';
+    }
+
+    // 4. Save resolved profile to local preferences immediately
+    await prefs.setString(_prefKeyName, resolvedName);
+    await prefs.setString(_prefKeyAvatar, resolvedAvatar);
+    if (user != null) {
+      await prefs.setString('dabhousie_user_id', user.id);
+    }
+    await prefs.setString('dabhousie_user_name', resolvedName);
+    await prefs.setString('dabhousie_user_avatar', resolvedAvatar);
+    if (email != null && email.isNotEmpty) {
+      await prefs.setString('dabhousie_user_email', email);
+    }
+
+    // 5. Upsert user in MPT_users table via RPC
     try {
       final res = await _supabase.rpc('MPT_upsert_user', params: {
-        'p_display_name': cachedName,
-        'p_avatar': cachedAvatar,
+        'p_display_name': resolvedName,
+        'p_avatar': resolvedAvatar,
       });
       if (res != null && res is Map<String, dynamic>) {
         final mptUser = MptUser.fromJson({
@@ -237,14 +302,6 @@ class AuthRepository {
           'provider': provider,
           'is_anonymous': isAnon,
         });
-        await prefs.setString(_prefKeyName, mptUser.displayName);
-        await prefs.setString(_prefKeyAvatar, mptUser.avatar);
-        await prefs.setString('dabhousie_user_id', mptUser.id);
-        await prefs.setString('dabhousie_user_name', mptUser.displayName);
-        await prefs.setString('dabhousie_user_avatar', mptUser.avatar);
-        if (email != null && email.isNotEmpty) {
-          await prefs.setString('dabhousie_user_email', email);
-        }
         return mptUser;
       }
     } catch (_) {
@@ -253,8 +310,8 @@ class AuthRepository {
 
     final fallbackUser = MptUser(
       id: user?.id ?? const Uuid().v4(),
-      displayName: cachedName,
-      avatar: cachedAvatar,
+      displayName: resolvedName,
+      avatar: resolvedAvatar,
       avatarUrl: avatarUrl,
       email: email,
       provider: provider,
@@ -262,12 +319,6 @@ class AuthRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    await prefs.setString('dabhousie_user_id', fallbackUser.id);
-    await prefs.setString('dabhousie_user_name', fallbackUser.displayName);
-    await prefs.setString('dabhousie_user_avatar', fallbackUser.avatar);
-    if (email != null && email.isNotEmpty) {
-      await prefs.setString('dabhousie_user_email', email);
-    }
     return fallbackUser;
   }
 
