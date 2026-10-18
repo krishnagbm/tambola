@@ -929,7 +929,7 @@ class GameRepository {
         'invite_code': g.inviteCode,
         'scheduled_at_str': resolvedSchedStr,
         'grace_period_minutes': resolvedGrace,
-        'reason': reason ?? 'No participants joined during scheduled kickoff and grace waiting buffer.',
+        'reason': reason ?? 'No participants joined (or quorum unmet) during the 10-minute waiting window.',
       };
 
       final uri = Uri.parse(

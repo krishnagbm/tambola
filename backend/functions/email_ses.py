@@ -1636,7 +1636,11 @@ def send_low_quorum_decision_email(
                       </tr>
                       <tr>
                         <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Grace Period Buffer:</td>
-                        <td align="right" style="padding:6px 0; color:#38bdf8; font-size:13px; font-weight:600;">{grace_period_minutes} minutes buffer</td>
+                        <td align="right" style="padding:6px 0; color:#38bdf8; font-size:13px; font-weight:600;">{grace_period_minutes} minutes buffer (Elapsed)</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Auto-Cancellation:</td>
+                        <td align="right" style="padding:6px 0; color:#f87171; font-size:13px; font-weight:700;">At 10th minute from kickoff</td>
                       </tr>
                     </table>
                   </td>
@@ -1676,11 +1680,11 @@ def send_low_quorum_decision_email(
                 Closes the lobby, releases reserved seats, and notifies players. No organizer credits will be deducted.
               </div>
 
-              <!-- 10-Minute Response Window Notice -->
+              <!-- 10th Minute Response Window Notice -->
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1e293b; border-left:3px solid #38bdf8; border-radius:6px; margin-bottom:20px;">
                 <tr>
                   <td style="padding:10px 14px; font-size:12px; color:#cbd5e1; line-height:1.5;">
-                    ⏱️ <strong>10-Minute Response Buffer:</strong> Dabby will hold your lobby open for 10 minutes from this alert. If you do not launch or reschedule the event, Dabby will automatically cancel the game and refund all credits.
+                    ⏱️ <strong>Response Window (Auto-Cancellation at 10th Minute):</strong> The initial {grace_period_minutes}-minute waiting buffer has elapsed. Dabby will hold your lobby open until the 10th minute from your scheduled kickoff time. If you do not launch or reschedule the event by then, Dabby will automatically cancel the game at the 10th minute and no credits will be deducted.
                   </td>
                 </tr>
               </table>
@@ -1715,11 +1719,14 @@ def send_low_quorum_decision_email(
 
     text_content = f"""Hello {display_name},
 
-The scheduled start time for your event "{game_name}" (Code: {invite_code}) has arrived, but player attendance has not yet reached your configured quorum:
+The scheduled start time for your event "{game_name}" (Code: {invite_code}) has arrived and the {grace_period_minutes}-minute grace buffer has elapsed, but player attendance has not yet reached your configured quorum:
 
 - Players in Lobby: {confirmed_count} / {quorum_count} required
 - Scheduled Time: {sched_label}
-- Grace Period: {grace_period_minutes} minutes
+- Grace Period: {grace_period_minutes} minutes (Elapsed)
+- Auto-Cancellation: At 10th minute from scheduled kickoff if no response
+
+⏱️ Response Window Until 10th Minute: Dabby will hold your lobby open until the 10th minute from your scheduled start time. If you do not launch or reschedule the event by then, Dabby will automatically cancel the game at the 10th minute and no credits will be deducted.
 
 CHOOSE HOW TO PROCEED:
 
@@ -1766,7 +1773,7 @@ def send_scheduled_game_cancelled_email(
 
     display_name = organizer_name or "Event Organizer"
     sched_label = scheduled_at_str or "Scheduled Kickoff Time"
-    cancel_reason = reason or f"No participants joined the lobby during the scheduled start time and {grace_period_minutes}-minute waiting buffer."
+    cancel_reason = reason or "No participants joined the room during the scheduled start time and 10-minute waiting window."
     subject = f"ℹ️ Event Cancelled: '{game_name}' — 0 Credits Charged"
 
     organizer_url = f"{BASE_URL}/#/organizer"
@@ -1802,7 +1809,7 @@ def send_scheduled_game_cancelled_email(
                 Hello <strong>{display_name}</strong>,
               </p>
               <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
-                Your scheduled event <strong>"{game_name}"</strong> has been automatically cancelled because <strong>no participants joined</strong> the room during the scheduled kickoff time and the {grace_period_minutes}-minute waiting buffer.
+                Your scheduled event <strong>"{game_name}"</strong> has been automatically cancelled at the 10th minute because player quorum was not reached ({cancel_reason}) and no organizer action was received during the 10-minute window.
               </p>
 
               <!-- Safe Credit Notice Box -->

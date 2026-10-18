@@ -107,8 +107,8 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
 
             # ── Scenario A: Low Quorum at / after Kickoff ───────────────────
             if is_low_quorum:
-                # 1. Send decision email once
-                if not decision_email_sent_at:
+                # 1. Send decision email once AFTER grace period buffer (e.g. 3 minutes) has elapsed
+                if is_grace_passed and not decision_email_sent_at:
                     host_email = _get_host_email(sb, g.get("admin_user_id"))
                     if host_email:
                         # Format kickoff time label
@@ -138,24 +138,31 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                                 "confirmed": confirmed_count,
                                 "quorum": quorum_count,
                             })
-                            print(f"  [ SCHEDULER ] Sent decision email to {host_email} for game {g.get('invite_code')}")
+                            print(f"  [ SCHEDULER ] Sent decision email to {host_email} for game {g.get('invite_code')} after {grace_minutes}m buffer")
 
-                # 2. Check if grace period buffer has elapsed
-                if is_grace_passed:
-                    # User requirement: If even after the waiting buffer (3 minutes) no one has joined (0 participants),
-                    # cancel the event immediately and send a cancellation email to the host.
-                    if confirmed_count < 1:
+                # 2. Check if the 10th minute from scheduled kickoff has elapsed
+                cancel_deadline = sched_dt + timedelta(minutes=max(10, grace_minutes))
+                is_10th_minute_passed = now >= cancel_deadline
+
+                if is_10th_minute_passed:
+                    if confirmed_count < 1 or low_quorum_action == "AUTO_CANCEL":
                         sb.from_("MPT_games").update({
                             "status": "CANCELLED",
                             "is_publicly_visible": False,
                             "completed_at": now.isoformat(),
                         }).eq("id", g["id"]).execute()
 
+                        reason = (
+                            "No participants joined the room during the scheduled start time and 10-minute waiting window."
+                            if confirmed_count < 1
+                            else f"Player quorum was not reached ({confirmed_count}/{quorum_count} players) after 10-minute window."
+                        )
+
                         summary["games_cancelled"].append({
                             "invite_code": g.get("invite_code"),
-                            "reason": f"No participants joined after {grace_minutes}m waiting buffer. Event auto-cancelled.",
+                            "reason": reason,
                         })
-                        print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} after {grace_minutes}m buffer (0 participants).")
+                        print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} at 10th minute ({reason}).")
 
                         # Dispatch cancellation email to host
                         host_email = _get_host_email(sb, g.get("admin_user_id"))
@@ -169,55 +176,14 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                                 scheduled_at_str=sched_str,
                                 grace_period_minutes=grace_minutes,
                                 organizer_name="Event Organizer",
-                                reason=f"No participants joined the lobby during the scheduled start time and {grace_minutes}-minute waiting buffer.",
+                                reason=reason,
                             )
                             print(f"  [ SCHEDULER ] Sent cancellation email to {host_email} for game {g.get('invite_code')}")
 
-                    elif low_quorum_action == "AUTO_CANCEL":
-                        # If at least 1 player joined but below quorum:
-                        # Organizer is given a 10-minute decision response window before automatic cancellation occurs.
-                        can_auto_cancel = True
-                        if decision_email_sent_at:
-                            try:
-                                email_dt = datetime.fromisoformat(decision_email_sent_at.replace("Z", "+00:00"))
-                                cancel_deadline = email_dt + timedelta(minutes=10)
-                                if now < cancel_deadline:
-                                    can_auto_cancel = False
-                                    secs_left = int((cancel_deadline - now).total_seconds())
-                                    mins_left = max(1, math.ceil(secs_left / 60))
-                                    print(f"  [ SCHEDULER ] Waiting for organizer decision email response ({mins_left}m remaining) for game {g.get('invite_code')}")
-                            except Exception as parse_err:
-                                print(f"  [ SCHEDULER ] Could not parse decision_email_sent_at: {parse_err}")
-
-                        if can_auto_cancel:
-                            sb.from_("MPT_games").update({
-                                "status": "CANCELLED",
-                                "is_publicly_visible": False,
-                                "completed_at": now.isoformat(),
-                            }).eq("id", g["id"]).execute()
-
-                            summary["games_cancelled"].append({
-                                "invite_code": g.get("invite_code"),
-                                "reason": f"Low quorum ({confirmed_count}/{quorum_count}) with no organizer response after 10m window",
-                            })
-                            print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} due to unmet quorum and elapsed decision window")
-
-                            host_email = _get_host_email(sb, g.get("admin_user_id"))
-                            if host_email:
-                                sched_str = sched_dt.strftime("%b %d, %I:%M %p UTC")
-                                send_scheduled_game_cancelled_email(
-                                    to_email=host_email,
-                                    game_name=g.get("name") or "Scheduled Game",
-                                    game_id=g["id"],
-                                    invite_code=g.get("invite_code") or "",
-                                    scheduled_at_str=sched_str,
-                                    grace_period_minutes=grace_minutes,
-                                    organizer_name="Event Organizer",
-                                    reason=f"Player quorum was not reached ({confirmed_count}/{quorum_count} players).",
-                                )
-
                     elif low_quorum_action == "START_ANYWAY" and autonomous_enabled:
                         if confirmed_count >= 1:
+                            # Start anyway with current participants
+                            print(f"  [ SCHEDULER ] Launching game {g.get('invite_code')} with {confirmed_count} player(s) (START_ANYWAY).")
                             _start_game(sb, g["id"])
 
                             summary["games_launched"].append({

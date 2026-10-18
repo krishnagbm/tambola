@@ -32,8 +32,6 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   Timer? _scheduleTimer;
   bool _decisionEmailDispatched = false;
   int _extendedGraceMinutes = 0;
-  int _autoCancelCountdown = 60;
-  Timer? _autoCancelTimer;
   bool _autoCancelPaused = false;
   bool _checkedUrlAction = false;
 
@@ -48,7 +46,6 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   @override
   void dispose() {
     _scheduleTimer?.cancel();
-    _autoCancelTimer?.cancel();
     super.dispose();
   }
 
@@ -66,9 +63,6 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   void _handleExtendGraceBuffer() {
     setState(() {
       _extendedGraceMinutes += 5;
-      _autoCancelTimer?.cancel();
-      _autoCancelTimer = null;
-      _autoCancelCountdown = 60;
       _autoCancelPaused = false;
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +80,6 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleAutoCancel(MptGame game) async {
-    _autoCancelTimer?.cancel();
     if (_isProcessing || game.isCancelled) return;
     setState(() => _isProcessing = true);
     try {
@@ -94,7 +87,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       try {
         await ref.read(gameRepositoryProvider).sendScheduledGameCancelledEmail(
           gameId: widget.gameId,
-          reason: 'No participants joined the room during the scheduled start time and grace waiting buffer.',
+          reason: 'No participants joined (or quorum unmet) during the 10-minute waiting window.',
         );
       } catch (_) {}
       ref.invalidate(myHostedGamesProvider);
@@ -104,7 +97,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Scheduled event auto-cancelled due to zero participants. A notification was sent to your email.'),
+          content: Text('Scheduled event auto-cancelled at 10th minute due to unmet quorum. Notification sent to email.'),
           backgroundColor: AppTheme.accentWarning,
         ),
       );
@@ -123,7 +116,6 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleDirectLaunchAnyway(MptGame game, int confirmedCount, int walletCredits) async {
-    _autoCancelTimer?.cancel();
     if (confirmedCount < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1151,47 +1143,31 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       }
     }
 
-    // Auto dispatch decision email once if kickoff passed with low quorum (only for active/open games)
+    // Auto dispatch decision email once AFTER grace period buffer (e.g. 3 minutes) has elapsed with low quorum (only for active/open games)
     final decisionAlreadySent = (game.prizeGiftsConfig['_dabby_orchestration'] is Map) &&
         (game.prizeGiftsConfig['_dabby_orchestration']['decision_email_sent_at'] != null);
 
-    if (isKickoffPassed && isLowQuorum && !_decisionEmailDispatched && !_isProcessing && !game.isCancelled && !game.isCompleted && !decisionAlreadySent) {
+    if (isKickoffPassed && isGracePassed && isLowQuorum && !_decisionEmailDispatched && !_isProcessing && !game.isCancelled && !game.isCompleted && !decisionAlreadySent) {
       _decisionEmailDispatched = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _dispatchDecisionEmail(game, confirmedCount, quorumCount, gracePeriodMinutes);
       });
     }
 
-    // If grace buffer passed and 0 participants joined, auto-cancel immediately and email host
-    if (isKickoffPassed && isGracePassed && confirmedCount < 1 && !_isProcessing && !game.isCancelled && !game.isCompleted) {
+    // Auto-cancel at 10th minute from scheduled start time if low quorum / zero players and no organizer action taken
+    final autoCancelDeadline = effectiveSched.add(Duration(minutes: math.max(10, gracePeriodMinutes)));
+    final is10thMinutePassed = now.isAfter(autoCancelDeadline);
+    final remainingCancelSeconds = math.max(0, autoCancelDeadline.difference(now).inSeconds);
+    final remainingCancelMins = remainingCancelSeconds ~/ 60;
+    final remainingCancelSecs = remainingCancelSeconds % 60;
+    final cancelCountdownStr = '${remainingCancelMins}m ${remainingCancelSecs.toString().padLeft(2, '0')}s';
+
+    if (isKickoffPassed && is10thMinutePassed && isLowQuorum && (confirmedCount < 1 || config?.lowQuorumAction == 'AUTO_CANCEL') && !_autoCancelPaused && !_isProcessing && !game.isCancelled && !game.isCompleted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_isProcessing && !game.isCancelled && !game.isCompleted) {
           _handleAutoCancel(game);
         }
       });
-    }
-
-    // Start auto-cancel timer if grace passed with low quorum (and at least 1 player joined) and AUTO_CANCEL is configured
-    if (isKickoffPassed && isGracePassed && isLowQuorum && confirmedCount >= 1 && config?.lowQuorumAction == 'AUTO_CANCEL') {
-      if (_autoCancelTimer == null && !_autoCancelPaused && !_isProcessing && !game.isCancelled) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || _autoCancelTimer != null) return;
-          _autoCancelTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-            if (!mounted) {
-              timer.cancel();
-              return;
-            }
-            if (_autoCancelPaused) return;
-            if (_autoCancelCountdown > 1) {
-              setState(() => _autoCancelCountdown--);
-            } else {
-              timer.cancel();
-              _autoCancelTimer = null;
-              _handleAutoCancel(game);
-            }
-          });
-        });
-      }
     }
 
     // Autonomous kickoff if quorum reached, at least 1 confirmed player joined, and autonomous host enabled
@@ -1277,7 +1253,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                 ],
               ),
             ),
-            if (config?.lowQuorumAction == 'AUTO_CANCEL') ...[
+            if (config?.lowQuorumAction == 'AUTO_CANCEL' || confirmedCount < 1) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -1294,7 +1270,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                       child: Text(
                         _autoCancelPaused
                             ? 'Auto-Cancel Paused. Select an option below to proceed.'
-                            : 'Auto-Cancel in $_autoCancelCountdown seconds unless started or extended.',
+                            : 'Auto-Cancel at 10th minute in $cancelCountdownStr unless started or extended.',
                         style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFFFECDD3)),
                       ),
                     ),

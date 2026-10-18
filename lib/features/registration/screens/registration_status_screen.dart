@@ -778,11 +778,11 @@ class _ScheduledCountdownSectionState extends ConsumerState<ScheduledCountdownSe
         : graceMinutes * 60;
     final remainingGraceMinutes = (remainingGraceSeconds / 60).ceil();
 
-    // Auto-dispatch decision email if host is present at kickoff with low quorum (only for active/open games)
+    // Auto-dispatch decision email if host is present after grace period buffer (e.g. 3 mins) with low quorum (only for active/open games)
     final decisionAlreadySent = (widget.game?.prizeGiftsConfig['_dabby_orchestration'] is Map) &&
         (widget.game?.prizeGiftsConfig['_dabby_orchestration']['decision_email_sent_at'] != null);
 
-    if (widget.isHost && isPassed && isLowQuorum && widget.game != null && !widget.game!.isCancelled && !widget.game!.isCompleted && !decisionAlreadySent) {
+    if (widget.isHost && isPassed && isGracePassed && isLowQuorum && widget.game != null && !widget.game!.isCancelled && !widget.game!.isCompleted && !decisionAlreadySent) {
       _tryDispatchDecisionEmail(widget.game!.id, confirmedCount, quorumCount, graceMinutes);
     }
 
@@ -805,7 +805,14 @@ class _ScheduledCountdownSectionState extends ConsumerState<ScheduledCountdownSe
       countdownText = '⏳ Grace Buffer Active • ${remainingGraceMinutes}m remaining';
       timerColor = AppTheme.accentWarning;
     } else {
-      countdownText = '⚠️ Quorum Buffer Expired • Awaiting Host Decision';
+      final cancelMinutes = math.max(10, graceMinutes);
+      final remainingCancelSeconds = ((cancelMinutes * 60) - elapsedSeconds).clamp(0, cancelMinutes * 60);
+      final remaining10thMins = (remainingCancelSeconds / 60).ceil();
+      if (remainingCancelSeconds > 0) {
+        countdownText = '⚠️ Quorum Buffer Expired • Awaiting Host Decision (${remaining10thMins}m until auto-cancel)';
+      } else {
+        countdownText = '⚠️ Auto-Cancelling Event...';
+      }
       timerColor = AppTheme.accentDanger;
     }
 
