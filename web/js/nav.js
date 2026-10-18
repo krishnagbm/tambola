@@ -323,8 +323,140 @@
     });
   }
 
+  function injectNavDotsMenu() {
+    const navLeft = document.querySelector('.site-header .nav-left');
+    if (!navLeft || document.getElementById('nav-dots-container')) return;
+
+    const brand = navLeft.querySelector('.brand');
+    const dotsContainer = document.createElement('div');
+    dotsContainer.className = 'nav-dots-container';
+    dotsContainer.id = 'nav-dots-container';
+
+    const currentPath = window.location.pathname || '';
+
+    const navLinks = [
+      { href: '/why-dabhousie.html', icon: '🏢', text: 'Why DabHousie (For Teams & Events)', style: 'color:#60A5FA; font-weight:700;' },
+      { href: '/play-with-dabby.html', icon: '⚡', text: 'Play with Dabby (Practice)', style: 'color:#FACC15; font-weight:800;' },
+      { href: '/recent-games.html', icon: '🏆', text: 'Recent Games & Hall of Fame', style: 'color:var(--accent); font-weight:700;' },
+      { href: '/brand-partners.html', icon: '🤝', text: 'Brand Partners' },
+      { href: '/how-it-works.html', icon: '📖', text: 'How It Works' },
+      { href: '/pricing.html', icon: '🏷️', text: 'Pricing & Credit Packs' },
+      { divider: true },
+      { href: '/how-to-play-tambola.html', icon: '🎯', text: 'Tambola Guide (Jaldi 5 & Rules)' },
+      { href: '/how-to-play-housie.html', icon: '🎲', text: 'Housie Guide (Party Rules & Caller)' },
+      { href: '/90-ball-bingo.html', icon: '🎱', text: '90-Ball Bingo Guide (Standard Rules)' },
+      { href: '/skill-games-guide.html', icon: '🧠', text: 'Skill Games Guide (FlashHousie™)', style: 'color:#A78BFA;' },
+      { divider: true },
+      { href: '/join.html', icon: '🔑', text: 'Join a Game', style: 'color:var(--accent); font-weight:700;' },
+      { href: '/#/create-game', icon: '➕', text: 'Host a Game', style: 'color:#60A5FA; font-weight:700;' },
+    ];
+
+    let menuHtml = '';
+    navLinks.forEach(item => {
+      if (item.divider) {
+        menuHtml += '<div class="nav-divider"></div>';
+      } else {
+        const isActive = currentPath === item.href || (item.href === '/' && (currentPath === '/' || currentPath === '/index.html'));
+        const activeClass = isActive ? ' active' : '';
+        const customStyle = item.style ? ` style="${item.style}"` : '';
+        menuHtml += `<a href="${item.href}" class="${activeClass}"${customStyle}><span class="nav-item-icon">${item.icon}</span> ${item.text}</a>`;
+      }
+    });
+
+    dotsContainer.innerHTML = `
+      <button class="nav-dots-btn" id="nav-dots-toggle" aria-label="Site Navigation" title="Site Navigation">⋮</button>
+      <div class="nav-dots-dropdown" id="nav-dots-dropdown">
+        ${menuHtml}
+      </div>
+    `;
+
+    if (brand && brand.nextSibling) {
+      navLeft.insertBefore(dotsContainer, brand.nextSibling);
+    } else {
+      navLeft.appendChild(dotsContainer);
+    }
+
+    const toggleBtn = dotsContainer.querySelector('#nav-dots-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dotsContainer.classList.toggle('open');
+      });
+    }
+
+    dotsContainer.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        dotsContainer.classList.remove('open');
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!dotsContainer.contains(e.target)) {
+        dotsContainer.classList.remove('open');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dotsContainer.classList.remove('open');
+      }
+    });
+  }
+
+  function injectMobileBottomNav() {
+    if (document.querySelector('.mobile-bottom-nav')) return;
+    if (window.self !== window.top || document.body.classList.contains('embed-mode')) return;
+
+    const nav = document.createElement('nav');
+    nav.className = 'mobile-bottom-nav';
+    nav.setAttribute('aria-label', 'Mobile Navigation');
+
+    nav.innerHTML = `
+      <a href="/#/" class="mobile-bottom-item" id="bottom-nav-dashboard" title="Dashboard">
+        <div class="bottom-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        </div>
+        <span class="bottom-label">Dashboard</span>
+      </a>
+      <a href="/#/player" class="mobile-bottom-item" id="bottom-nav-player" title="Player">
+        <div class="bottom-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M22 10V6a2 2 0 0 0-2-2H4c-1.1 0-1.99.9-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z"/></svg>
+        </div>
+        <span class="bottom-label">Player</span>
+      </a>
+      <a href="/#/organizer" class="mobile-bottom-item" id="bottom-nav-organizer" title="Organizer">
+        <div class="bottom-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-1 7h-2v-2h2v2zm-2 4h-2v-2h2v2zm4 0h-2v-2h2v2zm0-4h-2v-2h2v2z"/></svg>
+        </div>
+        <span class="bottom-label">Organizer</span>
+      </a>
+      <a href="/#/profile" class="mobile-bottom-item" id="bottom-nav-profile" title="Profile">
+        <div class="bottom-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </div>
+        <span class="bottom-label">Profile</span>
+      </a>
+    `;
+
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#/player')) {
+      nav.querySelector('#bottom-nav-player')?.classList.add('active');
+    } else if (hash.startsWith('#/organizer')) {
+      nav.querySelector('#bottom-nav-organizer')?.classList.add('active');
+    } else if (hash.startsWith('#/profile')) {
+      nav.querySelector('#bottom-nav-profile')?.classList.add('active');
+    } else if (window.location.pathname === '/' || window.location.pathname === '/index.html' || hash === '#/') {
+      nav.querySelector('#bottom-nav-dashboard')?.classList.add('active');
+    }
+
+    document.body.appendChild(nav);
+  }
+
   function initNavAndLogos() {
     syncNavAuth();
+    injectNavDotsMenu();
+    injectMobileBottomNav();
     initDropdownMenus();
     document.querySelectorAll('img.org-logo-img').forEach((img) => {
       if (img.complete && img.naturalWidth > 0) {
