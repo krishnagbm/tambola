@@ -209,4 +209,40 @@ class WalletRepository {
     }
     return false;
   }
+
+  /// Redeems a prize voucher code for DabHousie Event Hosting Credits.
+  /// Verifies ownership against the original ticket holder.
+  Future<Map<String, dynamic>> redeemPrizeVoucher({
+    required String voucherCode,
+    int? ticketNumber,
+    String? inviteCode,
+  }) async {
+    final cleanCode = voucherCode.trim();
+    if (cleanCode.isEmpty) {
+      return {'success': false, 'error': 'Please enter a voucher code.'};
+    }
+
+    try {
+      final res = await _supabase.rpc(
+        'MPT_redeem_prize_voucher_for_credits',
+        params: {
+          'p_voucher_code': cleanCode,
+          'p_ticket_number': ticketNumber,
+          'p_invite_code': inviteCode?.trim().toUpperCase(),
+        },
+      );
+      if (res is Map) {
+        return Map<String, dynamic>.from(res);
+      }
+      return {'success': true, 'raw': res};
+    } catch (e) {
+      var errorMsg = e.toString();
+      if (errorMsg.contains('PostgrestException(message: ')) {
+        errorMsg = errorMsg.split('PostgrestException(message: ').last.split(', code:').first;
+      }
+      errorMsg = errorMsg.replaceAll(RegExp(r'^Exception:\s*'), '');
+      return {'success': false, 'error': errorMsg};
+    }
+  }
 }
+

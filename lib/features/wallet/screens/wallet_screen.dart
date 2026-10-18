@@ -22,11 +22,14 @@ class WalletScreen extends ConsumerStatefulWidget {
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _isProcessing = false;
+  bool _isRedeemingVoucher = false;
+  final TextEditingController _voucherCodeController = TextEditingController();
   String _ledgerFilter = 'PAID';
   final ScrollController _ledgerScrollController = ScrollController();
 
   @override
   void dispose() {
+    _voucherCodeController.dispose();
     _ledgerScrollController.dispose();
     super.dispose();
   }
@@ -67,6 +70,201 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     }
   }
 
+  Future<void> _handleRedeemVoucher({int? ticketNum, String? inviteCode}) async {
+    final code = _voucherCodeController.text.trim();
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your voucher code.'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isRedeemingVoucher = true);
+    try {
+      final res = await ref.read(walletRepositoryProvider).redeemPrizeVoucher(
+        voucherCode: code,
+        ticketNumber: ticketNum,
+        inviteCode: inviteCode,
+      );
+
+      if (res['success'] == true) {
+        _voucherCodeController.clear();
+        ref.invalidate(walletProvider);
+        ref.invalidate(creditTransactionsProvider);
+        if (!mounted) return;
+        final credits = res['credits_added'] ?? 50;
+        final prizeVal = res['prize_value'] ?? 10.0;
+        final gameName = res['game_name'] ?? 'Hosted Game';
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppTheme.darkCard,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Color(0xFF2E334D)),
+            ),
+            title: const Row(
+              children: [
+                Text('🎉 ', style: TextStyle(fontSize: 22)),
+                Text(
+                  'Voucher Claimed!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Successfully added $credits Hosting Credits (\$$prizeVal Value) from "$gameName" to your wallet!\n\nYou can now use these credits to host your own games with friends & family.',
+              style: const TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                child: const Text('Awesome!'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final err = res['error']?.toString() ?? 'Failed to redeem voucher';
+        if (err.contains('different player') || err.contains('OWNERSHIP_MISMATCH')) {
+          if (!mounted) return;
+          _showCrossDeviceVerificationDialog(code);
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err),
+              backgroundColor: AppTheme.accentDanger,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: AppTheme.accentDanger,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRedeemingVoucher = false);
+    }
+  }
+
+  void _showCrossDeviceVerificationDialog(String voucherCode) {
+    final ticketController = TextEditingController();
+    final inviteCodeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF2E334D)),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.security_rounded, color: AppTheme.secondaryColor, size: 22),
+            SizedBox(width: 8),
+            Text(
+              'Verify Ticket Ownership',
+              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This voucher was won on another device or guest session. To verify you are the ticket holder, please provide your winning ticket details:',
+              style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, height: 1.35),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: inviteCodeController,
+              textCapitalization: TextCapitalization.characters,
+              style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                labelText: 'Game Invite Code',
+                labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                hintText: 'e.g. FE3D42',
+                hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                filled: true,
+                fillColor: AppTheme.darkSurface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: ticketController,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                labelText: 'Ticket # (from your ticket screen)',
+                labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
+                hintText: 'e.g. 3',
+                hintStyle: const TextStyle(color: Color(0xFF64748B)),
+                filled: true,
+                fillColor: AppTheme.darkSurface,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final tNum = int.tryParse(ticketController.text.trim());
+              final inv = inviteCodeController.text.trim();
+              if (tNum == null || inv.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter both Ticket # and Game Invite Code'),
+                    backgroundColor: AppTheme.accentDanger,
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              _handleRedeemVoucher(ticketNum: tNum, inviteCode: inv);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Verify & Claim'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final walletState = ref.watch(walletProvider);
@@ -97,6 +295,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                   _buildBalanceCard(wallet),
                   const SizedBox(height: 20),
                   _buildPurchaseActions(),
+                  const SizedBox(height: 20),
+                  _buildRedeemVoucherSection(),
                   const SizedBox(height: 24),
                   _buildPricingTiersSection(tiersState),
                   const SizedBox(height: 24),
@@ -291,6 +491,145 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
       ),
     );
   }
+
+  Widget _buildRedeemVoucherSection() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF2E334D)),
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.secondaryColor.withValues(alpha: 0.08),
+            AppTheme.darkCard,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.confirmation_number_outlined,
+                  color: AppTheme.secondaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Redeem Prize Voucher',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'Won DabHousie Event Credits in a game? Enter your voucher code to claim hosting credits to your wallet.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFF94A3B8),
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _voucherCodeController,
+                  textCapitalization: TextCapitalization.characters,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'e.g. Dab-Housie-XXXX-XXXX',
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontFamily: 'sans-serif',
+                      fontWeight: FontWeight.normal,
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.darkSurface,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF334155)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF334155)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                onPressed: _isRedeemingVoucher ? null : () => _handleRedeemVoucher(),
+                icon: _isRedeemingVoucher
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(Icons.check_rounded, size: 16),
+                label: const Text('Claim'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 
   Widget _buildGuestAccountWarning() {
     return Container(
