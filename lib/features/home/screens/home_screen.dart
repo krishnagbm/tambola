@@ -269,12 +269,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String status = '';
     DateTime? createdAt;
     DateTime? startedAt;
+    DateTime? scheduledAt;
 
     if (g is MptGame) {
       if (g.isCompleted || g.isCancelled) return false;
       status = g.status;
       createdAt = g.createdAt;
       startedAt = g.startedAt;
+      scheduledAt = g.effectiveScheduledAt;
     } else if (g is Map) {
       status = (g['status'] ?? '').toString();
       if (status == 'COMPLETED' || status == 'CLOSED' || status == 'CANCELLED') return false;
@@ -287,6 +289,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return false;
           }
         }
+        final orch = prizeGifts['_dabby_orchestration'];
+        if (orch is Map && orch['scheduled_at'] != null) {
+          scheduledAt = DateTime.tryParse(orch['scheduled_at'].toString())?.toLocal();
+        }
+      }
+      if (scheduledAt == null && g['scheduled_at'] != null) {
+        scheduledAt = DateTime.tryParse(g['scheduled_at'].toString())?.toLocal();
       }
       if (g['created_at'] != null) createdAt = DateTime.tryParse(g['created_at'].toString());
       if (g['started_at'] != null) startedAt = DateTime.tryParse(g['started_at'].toString());
@@ -296,9 +305,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return false;
     }
 
-    // Stale games started > 3h ago or created > 12h ago are considered past history
     final now = DateTime.now();
     if (startedAt != null && now.difference(startedAt).inHours >= 3) return false;
+
+    // Scheduled games: valid until 3 hours past their scheduled kickoff time
+    if (scheduledAt != null) {
+      if (now.isBefore(scheduledAt)) return true;
+      if (now.difference(scheduledAt).inHours >= 3) return false;
+      return true;
+    }
+
+    // Unscheduled / instant games: created > 12h ago without starting are considered stale past history
     if (createdAt != null && now.difference(createdAt).inHours >= 12) return false;
 
     return true;
@@ -314,13 +331,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     AsyncValue<List<MptGame>> hostedState,
     AsyncValue<List<Map<String, dynamic>>> joinedState,
   ) {
-    // Only live or pending items appear; completed games move to history
-    final liveJoined = joinedState.value?.where((reg) {
+    // Only live or pending items appear; prioritize in-progress and nearest upcoming scheduled games
+    final pendingJoined = (joinedState.value?.where((reg) {
       final g = reg['game'] as Map<String, dynamic>? ?? {};
       return _isLiveOrPendingGame(g);
-    }).firstOrNull;
+    }).toList() ?? [])
+      ..sort((a, b) {
+        final ga = a['game'] as Map<String, dynamic>? ?? {};
+        final gb = b['game'] as Map<String, dynamic>? ?? {};
+        final statusA = (ga['status'] ?? '').toString();
+        final statusB = (gb['status'] ?? '').toString();
+        if (statusA == 'IN_PROGRESS' && statusB != 'IN_PROGRESS') return -1;
+        if (statusA != 'IN_PROGRESS' && statusB == 'IN_PROGRESS') return 1;
 
-    final liveHosted = hostedState.value?.where((g) => _isLiveOrPendingGame(g)).firstOrNull;
+        final schedA = ga['scheduled_at'] != null ? DateTime.tryParse(ga['scheduled_at'].toString()) : null;
+        final schedB = gb['scheduled_at'] != null ? DateTime.tryParse(gb['scheduled_at'].toString()) : null;
+        if (schedA != null && schedB != null) return schedA.compareTo(schedB);
+        if (schedA != null && schedB == null) return -1;
+        if (schedA == null && schedB != null) return 1;
+
+        return 0;
+      });
+    final liveJoined = pendingJoined.firstOrNull;
+
+    final pendingHosted = (hostedState.value?.where((g) => _isLiveOrPendingGame(g)).toList() ?? [])
+      ..sort((a, b) {
+        if (a.isInProgress && !b.isInProgress) return -1;
+        if (!a.isInProgress && b.isInProgress) return 1;
+
+        final aSched = a.effectiveScheduledAt;
+        final bSched = b.effectiveScheduledAt;
+        if (aSched != null && bSched != null) {
+          return aSched.compareTo(bSched);
+        }
+        if (aSched != null && bSched == null) return -1;
+        if (aSched == null && bSched != null) return 1;
+
+        return b.createdAt.compareTo(a.createdAt);
+      });
+    final liveHosted = pendingHosted.firstOrNull;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     if (isMobile) {
@@ -370,12 +419,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 context,
                 title: liveHosted.name,
                 isLive: !liveHosted.isOpen,
-                badgeText: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
-                badgeColor: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
-                icon: liveHosted.isOpen ? Icons.meeting_room_rounded : Icons.sensors_rounded,
+                badgeText: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
+                badgeColor: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
+                icon: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? Icons.access_time_filled : Icons.meeting_room_rounded) : Icons.sensors_rounded,
                 subtitle: liveHosted.isOpen
-                    ? (liveHosted.scheduledAt != null
-                        ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.scheduledAt!)} • Tap to manage lobby.'
+                    ? (liveHosted.effectiveScheduledAt != null
+                        ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.effectiveScheduledAt!)} • Tap to manage lobby.'
                         : 'Lobby Open • Waiting for players. Tap to manage lobby & invite.')
                     : 'You are hosting this live session. Tap to resume caller controls.',
                 onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
@@ -470,12 +519,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context,
               title: liveHosted.name,
               isLive: !liveHosted.isOpen,
-              badgeText: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
-              badgeColor: liveHosted.isOpen ? (liveHosted.scheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
-              icon: liveHosted.isOpen ? Icons.meeting_room_rounded : Icons.sensors_rounded,
+              badgeText: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? 'SCHEDULED' : 'HOST LOBBY') : 'HOSTING LIVE',
+              badgeColor: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? AppTheme.secondaryColor : AppTheme.primaryLight) : AppTheme.accentSuccess,
+              icon: liveHosted.isOpen ? (liveHosted.effectiveScheduledAt != null ? Icons.access_time_filled : Icons.meeting_room_rounded) : Icons.sensors_rounded,
               subtitle: liveHosted.isOpen
-                  ? (liveHosted.scheduledAt != null
-                      ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.scheduledAt!)} • Tap to manage lobby.'
+                  ? (liveHosted.effectiveScheduledAt != null
+                      ? 'Scheduled: ${Formatters.formatShortDate(liveHosted.effectiveScheduledAt!)} • Tap to manage lobby.'
                       : 'Lobby Open • Waiting for players. Tap to manage lobby & invite.')
                   : 'You are hosting this live session. Tap to resume controls.',
               onTap: () => context.push(liveHosted.isOpen ? '/admin-lobby/${liveHosted.id}' : '/admin-control/${liveHosted.id}'),
@@ -1335,6 +1384,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   return true;
                 }).toList();
 
+                if (_organizerFilter == 'ACTIVE' || _organizerFilter == 'LOBBY') {
+                  filtered.sort((a, b) {
+                    if (a.isInProgress && !b.isInProgress) return -1;
+                    if (!a.isInProgress && b.isInProgress) return 1;
+
+                    final aSched = a.effectiveScheduledAt;
+                    final bSched = b.effectiveScheduledAt;
+                    if (aSched != null && bSched != null) {
+                      return aSched.compareTo(bSched);
+                    }
+                    if (aSched != null && bSched == null) return -1;
+                    if (aSched == null && bSched != null) return 1;
+
+                    return b.createdAt.compareTo(a.createdAt);
+                  });
+                }
+
                 if (filtered.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(24),
@@ -1366,30 +1432,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     final isLive = game.isInProgress && isLiveOrPending;
                     final isLobby = game.isLobbyOpen && isLiveOrPending;
                     final isCancelled = game.isCancelled;
+                    final isScheduled = isLobby && game.effectiveScheduledAt != null;
 
                     Color statusColor = isLive
                         ? const Color(0xFF10B981)
-                        : isLobby
-                            ? const Color(0xFF38BDF8)
-                            : isCancelled
-                                ? const Color(0xFFEF4444)
-                                : const Color(0xFF94A3B8);
+                        : isScheduled
+                            ? AppTheme.secondaryColor
+                            : isLobby
+                                ? const Color(0xFF38BDF8)
+                                : isCancelled
+                                    ? const Color(0xFFEF4444)
+                                    : const Color(0xFF94A3B8);
 
                     Color statusBg = isLive
                         ? const Color(0xFF10B981).withValues(alpha: 0.18)
-                        : isLobby
-                            ? const Color(0xFF0284C7).withValues(alpha: 0.22)
-                            : isCancelled
-                                ? const Color(0xFFEF4444).withValues(alpha: 0.18)
-                                : const Color(0xFF475569).withValues(alpha: 0.25);
+                        : isScheduled
+                            ? AppTheme.secondaryColor.withValues(alpha: 0.22)
+                            : isLobby
+                                ? const Color(0xFF0284C7).withValues(alpha: 0.22)
+                                : isCancelled
+                                    ? const Color(0xFFEF4444).withValues(alpha: 0.18)
+                                    : const Color(0xFF475569).withValues(alpha: 0.25);
 
                     String statusLabel = isLive
                         ? '🟢 LIVE'
-                        : isLobby
-                            ? '🚪 LOBBY OPEN'
-                            : isCancelled
-                                ? '🚫 CANCELLED'
-                                : '🏁 CONCLUDED';
+                        : isScheduled
+                            ? '⏰ SCHEDULED'
+                            : isLobby
+                                ? '🚪 LOBBY OPEN'
+                                : isCancelled
+                                    ? '🚫 CANCELLED'
+                                    : '🏁 CONCLUDED';
 
                     return Card(
                       color: isLive ? AppTheme.accentSuccess.withValues(alpha: 0.08) : AppTheme.darkSurface,
