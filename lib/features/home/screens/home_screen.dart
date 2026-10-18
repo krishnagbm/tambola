@@ -26,6 +26,7 @@ import '../../../core/widgets/ad_banner_slot.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
 import '../widgets/dabby_rapid_play_hero_card.dart';
 import '../widgets/dabhousie_corporate_usp_card.dart';
+import '../widgets/knowledge_hub_section.dart';
 import '../../rewards/widgets/organizer_game_claims_dialog.dart';
 
 
@@ -2107,6 +2108,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 20),
+
+          // Player & Host Knowledge Hub / How-to Guides
+          const KnowledgeHubSection(),
+          const SizedBox(height: 24),
 
           // Company / App Info Footer
           Center(
