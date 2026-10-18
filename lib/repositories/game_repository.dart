@@ -185,7 +185,7 @@ class GameRepository {
         .update({
           'status': 'CANCELLED',
           'is_publicly_visible': false,
-          'completed_at': DateTime.now().toIso8601String(),
+          'completed_at': DateTime.now().toUtc().toIso8601String(),
         })
         .eq('id', gameId);
   }

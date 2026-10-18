@@ -778,8 +778,11 @@ class _ScheduledCountdownSectionState extends ConsumerState<ScheduledCountdownSe
         : graceMinutes * 60;
     final remainingGraceMinutes = (remainingGraceSeconds / 60).ceil();
 
-    // Auto-dispatch decision email if host is present at kickoff with low quorum
-    if (widget.isHost && isPassed && isLowQuorum && widget.game != null) {
+    // Auto-dispatch decision email if host is present at kickoff with low quorum (only for active/open games)
+    final decisionAlreadySent = (widget.game?.prizeGiftsConfig['_dabby_orchestration'] is Map) &&
+        (widget.game?.prizeGiftsConfig['_dabby_orchestration']['decision_email_sent_at'] != null);
+
+    if (widget.isHost && isPassed && isLowQuorum && widget.game != null && !widget.game!.isCancelled && !widget.game!.isCompleted && !decisionAlreadySent) {
       _tryDispatchDecisionEmail(widget.game!.id, confirmedCount, quorumCount, graceMinutes);
     }
 

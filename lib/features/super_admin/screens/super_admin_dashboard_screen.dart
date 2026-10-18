@@ -1631,19 +1631,19 @@ class _SuperAdminDashboardScreenState
                                   icon: const Icon(Icons.tv, size: 14),
                                   label: const Text('Live TV', style: TextStyle(fontSize: 11)),
                                 ),
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.secondaryColor,
-                                    foregroundColor: Colors.black,
+                                if ((game['status'] ?? '').toString() != 'COMPLETED' && (game['status'] ?? '').toString() != 'CANCELLED') ...[
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppTheme.secondaryColor,
+                                      foregroundColor: Colors.black,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(dialogCtx);
+                                      context.push('/admin-lobby/$gameId');
+                                    },
+                                    icon: const Icon(Icons.meeting_room, size: 14),
+                                    label: const Text('Host Lobby', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
-                                  onPressed: () {
-                                    Navigator.pop(dialogCtx);
-                                    context.push('/admin-lobby/$gameId');
-                                  },
-                                  icon: const Icon(Icons.meeting_room, size: 14),
-                                  label: const Text('Host Lobby', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                ),
-                                if ((game['status'] ?? '').toString() != 'COMPLETED' && (game['status'] ?? '').toString() != 'CANCELLED')
                                   ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppTheme.accentSuccess,
@@ -1659,6 +1659,7 @@ class _SuperAdminDashboardScreenState
                                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                           ],

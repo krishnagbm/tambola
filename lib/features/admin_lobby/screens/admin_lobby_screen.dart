@@ -1151,8 +1151,11 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       }
     }
 
-    // Auto dispatch decision email once if kickoff passed with low quorum
-    if (isKickoffPassed && isLowQuorum && !_decisionEmailDispatched && !_isProcessing) {
+    // Auto dispatch decision email once if kickoff passed with low quorum (only for active/open games)
+    final decisionAlreadySent = (game.prizeGiftsConfig['_dabby_orchestration'] is Map) &&
+        (game.prizeGiftsConfig['_dabby_orchestration']['decision_email_sent_at'] != null);
+
+    if (isKickoffPassed && isLowQuorum && !_decisionEmailDispatched && !_isProcessing && !game.isCancelled && !game.isCompleted && !decisionAlreadySent) {
       _decisionEmailDispatched = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _dispatchDecisionEmail(game, confirmedCount, quorumCount, gracePeriodMinutes);
@@ -1160,9 +1163,9 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     }
 
     // If grace buffer passed and 0 participants joined, auto-cancel immediately and email host
-    if (isKickoffPassed && isGracePassed && confirmedCount < 1 && !_isProcessing && !game.isCancelled) {
+    if (isKickoffPassed && isGracePassed && confirmedCount < 1 && !_isProcessing && !game.isCancelled && !game.isCompleted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_isProcessing && !game.isCancelled) {
+        if (mounted && !_isProcessing && !game.isCancelled && !game.isCompleted) {
           _handleAutoCancel(game);
         }
       });
