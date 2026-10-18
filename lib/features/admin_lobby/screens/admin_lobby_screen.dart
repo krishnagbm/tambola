@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,6 +91,12 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     setState(() => _isProcessing = true);
     try {
       await ref.read(gameRepositoryProvider).cancelGame(widget.gameId);
+      try {
+        await ref.read(gameRepositoryProvider).sendScheduledGameCancelledEmail(
+          gameId: widget.gameId,
+          reason: 'No participants joined the room during the scheduled start time and grace waiting buffer.',
+        );
+      } catch (_) {}
       ref.invalidate(myHostedGamesProvider);
       ref.invalidate(gameStreamProvider(widget.gameId));
       ref.invalidate(registrationsStreamProvider(widget.gameId));
@@ -97,7 +104,7 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Scheduled event auto-cancelled due to unmet player quorum.'),
+          content: Text('Scheduled event auto-cancelled due to zero participants. A notification was sent to your email.'),
           backgroundColor: AppTheme.accentWarning,
         ),
       );
@@ -117,6 +124,15 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
 
   Future<void> _handleDirectLaunchAnyway(MptGame game, int confirmedCount, int walletCredits) async {
     _autoCancelTimer?.cancel();
+    if (confirmedCount < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot start with 0 players. Waiting for participants to join! ⏳'),
+          backgroundColor: AppTheme.accentWarning,
+        ),
+      );
+      return;
+    }
     final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
     int creditsNeeded = 0;
     if (tiers.isNotEmpty) {
@@ -358,6 +374,15 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   }
 
   Future<void> _handleStartGame(MptGame game, int confirmedCount, int walletCredits) async {
+    if (confirmedCount < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('At least 1 player must be in the lobby to start the game! ⏳'),
+          backgroundColor: AppTheme.accentWarning,
+        ),
+      );
+      return;
+    }
     final tiers = ref.read(capacityTiersProvider).value ?? MptCapacityTier.defaultTiers;
     int creditsNeeded = 0;
     if (tiers.isNotEmpty) {
@@ -1106,14 +1131,14 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
   Widget _buildScheduleAndQuorumCard(MptGame game, int confirmedCount, int waitingCount, int walletCredits) {
     final effectiveSched = game.effectiveScheduledAt!;
     final config = game.dabbyScheduleConfig;
-    final quorumCount = config?.getQuorumCount(game.fundedCapacity) ?? 1;
+    final quorumCount = math.max(1, config?.getQuorumCount(game.fundedCapacity) ?? 1);
     final gracePeriodMinutes = (config?.gracePeriodMinutes ?? 5) + _extendedGraceMinutes;
     final graceEndTime = effectiveSched.add(Duration(minutes: gracePeriodMinutes));
     final now = DateTime.now();
 
     final isKickoffPassed = now.isAfter(effectiveSched);
     final isGracePassed = now.isAfter(graceEndTime);
-    final isLowQuorum = confirmedCount < quorumCount;
+    final isLowQuorum = confirmedCount < quorumCount || confirmedCount < 1;
 
     // Check query param action=cancel
     if (!_checkedUrlAction) {
@@ -1134,8 +1159,17 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       });
     }
 
-    // Start auto-cancel timer if grace passed with low quorum and AUTO_CANCEL is configured
-    if (isKickoffPassed && isGracePassed && isLowQuorum && config?.lowQuorumAction == 'AUTO_CANCEL') {
+    // If grace buffer passed and 0 participants joined, auto-cancel immediately and email host
+    if (isKickoffPassed && isGracePassed && confirmedCount < 1 && !_isProcessing && !game.isCancelled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isProcessing && !game.isCancelled) {
+          _handleAutoCancel(game);
+        }
+      });
+    }
+
+    // Start auto-cancel timer if grace passed with low quorum (and at least 1 player joined) and AUTO_CANCEL is configured
+    if (isKickoffPassed && isGracePassed && isLowQuorum && confirmedCount >= 1 && config?.lowQuorumAction == 'AUTO_CANCEL') {
       if (_autoCancelTimer == null && !_autoCancelPaused && !_isProcessing && !game.isCancelled) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || _autoCancelTimer != null) return;
@@ -1157,8 +1191,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
       }
     }
 
-    // Autonomous kickoff if quorum reached and autonomous host enabled
-    if (isKickoffPassed && !isLowQuorum && (config?.isAutonomousHostEnabled ?? true) && !_isProcessing && !game.isInProgress && !game.isCompleted && !game.isCancelled) {
+    // Autonomous kickoff if quorum reached, at least 1 confirmed player joined, and autonomous host enabled
+    if (isKickoffPassed && !isLowQuorum && confirmedCount >= 1 && (config?.isAutonomousHostEnabled ?? true) && !_isProcessing && !game.isInProgress && !game.isCompleted && !game.isCancelled) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !_isProcessing) {
           _handleDirectLaunchAnyway(game, confirmedCount, walletCredits);

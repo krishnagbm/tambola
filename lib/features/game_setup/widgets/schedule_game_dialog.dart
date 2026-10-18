@@ -22,8 +22,11 @@ class DabbyScheduleConfig {
     this.quorumCount,
   });
 
-  int getQuorumCount(int totalCapacity) =>
-      quorumCount ?? (totalCapacity * quorumPercentage).ceil();
+  int getQuorumCount(int totalCapacity) {
+    if (quorumCount != null && quorumCount! > 0) return quorumCount!;
+    final calculated = (totalCapacity * quorumPercentage).ceil();
+    return calculated > 0 ? calculated : 1;
+  }
 
   Map<String, dynamic> toJson({required int plannedCapacity}) => {
     'scheduled_at': scheduledAt.toUtc().toIso8601String(),
@@ -39,13 +42,14 @@ class DabbyScheduleConfig {
     'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     'autonomous_host_enabled': isAutonomousHostEnabled,
     'quorum_percentage': quorumPercentage,
-    'quorum_count': quorumCount,
+    'quorum_count': (quorumCount != null && quorumCount! > 0) ? quorumCount : null,
     'grace_period_minutes': gracePeriodMinutes,
     'low_quorum_action': lowQuorumAction,
     'auto_upgrade_on_waitlist': autoUpgradeOnWaitlist,
   };
 
   factory DabbyScheduleConfig.fromJson(Map<String, dynamic> json) {
+    final rawQuorum = (json['quorum_count'] as num?)?.toInt();
     return DabbyScheduleConfig(
       scheduledAt: json['scheduled_at'] != null
           ? (DateTime.tryParse(json['scheduled_at'].toString())?.toLocal() ?? DateTime.now())
@@ -55,7 +59,7 @@ class DabbyScheduleConfig {
       gracePeriodMinutes: (json['grace_period_minutes'] as num?)?.toInt() ?? 5,
       lowQuorumAction: (json['low_quorum_action'] as String?) ?? 'AUTO_CANCEL',
       autoUpgradeOnWaitlist: json['auto_upgrade_on_waitlist'] as bool? ?? true,
-      quorumCount: (json['quorum_count'] as num?)?.toInt(),
+      quorumCount: (rawQuorum != null && rawQuorum > 0) ? rawQuorum : null,
     );
   }
 
@@ -1117,10 +1121,14 @@ class _ScheduleGameDialogState extends State<ScheduleGameDialog> {
             ),
           ElevatedButton.icon(
             onPressed: () {
+              final resolvedQuorum = _quorumPercentage == 0.0
+                  ? 1
+                  : (_quorumPercentage * widget.plannedCapacity).ceil();
               final config = DabbyScheduleConfig(
                 scheduledAt: _selectedDateTime,
                 isAutonomousHostEnabled: _isAutonomousHostEnabled,
                 quorumPercentage: _quorumPercentage,
+                quorumCount: resolvedQuorum > 0 ? resolvedQuorum : 1,
                 gracePeriodMinutes: _gracePeriodMinutes,
                 lowQuorumAction: _lowQuorumAction,
                 autoUpgradeOnWaitlist: _autoUpgradeOnWaitlist,

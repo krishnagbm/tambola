@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -761,13 +762,13 @@ class _ScheduledCountdownSectionState extends ConsumerState<ScheduledCountdownSe
 
     final capacity = widget.game?.fundedCapacity ?? 10;
     final confirmedCount = widget.registrations.where((r) => r.isConfirmed).length;
-    final quorumCount = dabbyConfig?.getQuorumCount(capacity) ?? (capacity * 0.67).ceil();
+    final quorumCount = math.max(1, dabbyConfig?.getQuorumCount(capacity) ?? (capacity * 0.67).ceil());
     final graceMinutes = dabbyConfig?.gracePeriodMinutes ?? 5;
 
     final now = DateTime.now();
     final difference = scheduledAt.difference(now);
     final isPassed = difference.isNegative;
-    final isLowQuorum = confirmedCount < quorumCount;
+    final isLowQuorum = confirmedCount < quorumCount || confirmedCount < 1;
 
     final elapsedSeconds = isPassed ? now.difference(scheduledAt).inSeconds : 0;
     final elapsedMinutes = (elapsedSeconds / 60).floor();

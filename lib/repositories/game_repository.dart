@@ -877,4 +877,72 @@ class GameRepository {
       return false;
     }
   }
+
+  /// Dispatches an automated cancellation notification email to the host when a scheduled
+  /// event is cancelled because no players joined during kickoff and grace buffer.
+  Future<bool> sendScheduledGameCancelledEmail({
+    required String gameId,
+    String? targetEmail,
+    String? scheduledAtStr,
+    int? gracePeriodMinutes,
+    String? reason,
+  }) async {
+    try {
+      final g = await getGame(gameId);
+      final currentProfile = _supabase.auth.currentUser;
+      String hostEmail = (targetEmail ?? currentProfile?.email ?? '').trim();
+      if (hostEmail.isEmpty || !hostEmail.contains('@')) {
+        try {
+          final profileRow = await _supabase
+              .from('MPT_admin_profiles')
+              .select('email')
+              .eq('user_id', g.adminUserId)
+              .maybeSingle();
+          if (profileRow != null && profileRow['email'] != null) {
+            hostEmail = (profileRow['email'] as String).trim();
+          }
+        } catch (_) {}
+      }
+      if (hostEmail.isEmpty || !hostEmail.contains('@')) {
+        return false;
+      }
+
+      final organizerName =
+          currentProfile?.userMetadata?['name'] as String? ??
+          currentProfile?.userMetadata?['display_name'] as String? ??
+          'Event Organizer';
+
+      final resolvedGrace = gracePeriodMinutes ?? g.dabbyScheduleConfig?.gracePeriodMinutes ?? 3;
+      final resolvedSchedStr = scheduledAtStr ??
+          (g.effectiveScheduledAt != null
+              ? Formatters.formatShortDate(g.effectiveScheduledAt!)
+              : 'Scheduled Time');
+
+      final payload = {
+        'action': 'scheduled_game_cancelled',
+        'type': 'scheduled_game_cancelled',
+        'to_email': hostEmail,
+        'host_email': hostEmail,
+        'organizer_name': organizerName,
+        'game_id': g.id,
+        'game_name': g.name,
+        'invite_code': g.inviteCode,
+        'scheduled_at_str': resolvedSchedStr,
+        'grace_period_minutes': resolvedGrace,
+        'reason': reason ?? 'No participants joined during scheduled kickoff and grace waiting buffer.',
+      };
+
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/private-party',
+      );
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 }

@@ -100,6 +100,48 @@ def handler(event, context):
                 }),
             }
 
+        # 3b. Scheduled Game Cancelled Notification (due to zero participants)
+        if action in ("scheduled_game_cancelled", "game_cancelled_zero_players"):
+            to_email = (
+                payload.get("to_email")
+                or payload.get("host_email")
+                or payload.get("organizer_email")
+                or ""
+            ).strip()
+            if not to_email or "@" not in to_email:
+                return {
+                    "statusCode": 400,
+                    "headers": {
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*",
+                    },
+                    "body": json.dumps({"error": "Missing or invalid to_email."}),
+                }
+
+            from email_ses import send_scheduled_game_cancelled_email
+
+            success = send_scheduled_game_cancelled_email(
+                to_email=to_email,
+                game_name=payload.get("game_name") or "Scheduled Game",
+                game_id=payload.get("game_id") or "",
+                invite_code=payload.get("invite_code") or "",
+                scheduled_at_str=payload.get("scheduled_at_str"),
+                grace_period_minutes=int(payload.get("grace_period_minutes") or 3),
+                organizer_name=payload.get("organizer_name"),
+                reason=payload.get("reason"),
+            )
+            return {
+                "statusCode": 200 if success else 500,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({
+                    "success": success,
+                    "message": "Cancellation email dispatched" if success else "Failed to send email",
+                }),
+            }
+
         # 4. Host Registration Alert Notification (to contact@dabhousie.com)
         if action in ("host_registered", "notify_host_registration", "new_host_alert"):
             host_email = (

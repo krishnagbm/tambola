@@ -1745,6 +1745,170 @@ DabHousie Realtime Events — {BASE_URL}
     )
 
 
+def send_scheduled_game_cancelled_email(
+    to_email: str,
+    game_name: str,
+    game_id: str,
+    invite_code: str,
+    scheduled_at_str: Optional[str] = None,
+    grace_period_minutes: int = 3,
+    organizer_name: Optional[str] = None,
+    reason: Optional[str] = None,
+) -> bool:
+    """
+    Sends an automated notification to the event organizer when a scheduled game
+    is cancelled because no participants joined during the scheduled time and grace period.
+    Reassures the organizer that zero game credits were deducted.
+    """
+    if not to_email or "@" not in to_email:
+        print("  [ SES ] Invalid or missing recipient email for game cancellation.")
+        return False
+
+    display_name = organizer_name or "Event Organizer"
+    sched_label = scheduled_at_str or "Scheduled Kickoff Time"
+    cancel_reason = reason or f"No participants joined the lobby during the scheduled start time and {grace_period_minutes}-minute waiting buffer."
+    subject = f"ℹ️ Event Cancelled: '{game_name}' — 0 Credits Charged"
+
+    organizer_url = f"{BASE_URL}/#/organizer"
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DabHousie Event Cancelled</title>
+</head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#080c14; margin:0; padding:0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.6);">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding:28px 20px; text-align:center; border-bottom:3px solid #38bdf8;">
+              <a href="{BASE_URL}" target="_blank" style="text-decoration:none; display:inline-block;">
+                <img src="{BASE_URL}/dabhousie_horizontal_logo.png" alt="DabHousie" width="220" style="max-width:220px; height:auto; display:block; margin:0 auto 10px auto; border:0; outline:none;" />
+              </a>
+              <p style="margin:0 0 10px 0; color:#38bdf8; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px;">Dabby Autonomous Game Orchestration</p>
+              <h1 style="margin:0; color:#ffffff; font-size:22px; font-weight:800; letter-spacing:0.3px;">ℹ️ Scheduled Event Cancelled</h1>
+              <p style="margin:6px 0 0 0; color:#94a3b8; font-size:15px; font-weight:600;">{game_name}</p>
+            </td>
+          </tr>
+
+          <!-- Main Body -->
+          <tr>
+            <td style="padding:28px 24px;">
+              <p style="margin:0 0 14px 0; font-size:15px; color:#f1f5f9; line-height:1.5;">
+                Hello <strong>{display_name}</strong>,
+              </p>
+              <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
+                Your scheduled event <strong>"{game_name}"</strong> has been automatically cancelled because <strong>no participants joined</strong> the room during the scheduled kickoff time and the {grace_period_minutes}-minute waiting buffer.
+              </p>
+
+              <!-- Safe Credit Notice Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#064e3b; border:1px solid #10b981; border-radius:12px; margin-bottom:20px;">
+                <tr>
+                  <td style="padding:14px 18px; text-align:left;">
+                    <span style="font-size:18px; vertical-align:middle; margin-right:8px;">🛡️</span>
+                    <strong style="color:#a7f3d0; font-size:14px;">Host Credits Protected: 0 Credits Deducted</strong>
+                    <p style="margin:4px 0 0 0; color:#d1fae5; font-size:12.5px; line-height:1.5;">
+                      Because no game was started, your host credits remain 100% intact. Game credits are only deducted when a live event actually begins.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Details Card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0f172a; border:1px solid #334155; border-radius:12px; margin-bottom:24px;">
+                <tr>
+                  <td style="padding:16px 20px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Event Name:</td>
+                        <td align="right" style="padding:6px 0; color:#ffffff; font-size:14px; font-weight:700;">{game_name}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Invite Code:</td>
+                        <td align="right" style="padding:6px 0;"><span style="background:#334155; color:#e2e8f0; font-family:Courier,'Courier New',monospace; font-weight:700; font-size:13px; padding:2px 8px; border-radius:4px;">{invite_code} (Closed)</span></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Scheduled Kickoff:</td>
+                        <td align="right" style="padding:6px 0; color:#cbd5e1; font-size:13px;">{sched_label}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Attendance:</td>
+                        <td align="right" style="padding:6px 0; color:#f87171; font-size:13px; font-weight:700;">0 Players Joined</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:6px 0; color:#94a3b8; font-size:13px;">Status:</td>
+                        <td align="right" style="padding:6px 0; color:#94a3b8; font-size:13px; font-weight:600;">Cancelled (Expired)</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Call to Action -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
+                <tr>
+                  <td align="center" bgcolor="#0b3d91" style="background-color:#0b3d91; border-radius:10px; padding:0;">
+                    <a href="{organizer_url}" target="_blank" style="background-color:#0b3d91; color:#ffffff !important; display:block; font-size:15px; font-weight:bold; text-decoration:none; padding:15px 24px; border-radius:10px; text-align:center;">
+                      Go to Organizer Dashboard &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0 0; font-size:12.5px; color:#94a3b8; line-height:1.5; text-align:center;">
+                You can schedule a new game or host an on-demand game anytime at <a href="{BASE_URL}" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:18px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+              DabHousie Realtime Events &bull; <a href="{BASE_URL}" style="color:#38bdf8; text-decoration:none;">www.dabhousie.com</a><br>
+              Need assistance? Contact our team at <a href="mailto:{AUDIT_EMAIL}" style="color:#38bdf8; text-decoration:none;">{AUDIT_EMAIL}</a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+    text_content = f"""Hello {display_name},
+
+Your scheduled event "{game_name}" (Code: {invite_code}) has been automatically cancelled because no participants joined the room during the scheduled start time and the {grace_period_minutes}-minute waiting buffer.
+
+HOST CREDITS PROTECTED:
+- 0 credits were deducted. Your wallet balance is 100% intact.
+
+EVENT DETAILS:
+- Event: {game_name}
+- Invite Code: {invite_code} (Closed)
+- Scheduled Time: {sched_label}
+- Status: Cancelled (No players joined)
+
+You can schedule or launch a new game anytime from your Organizer Dashboard:
+{organizer_url}
+
+DabHousie Realtime Events — {BASE_URL}
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        audit_email=AUDIT_EMAIL,
+        from_display_name="DabHousie Events",
+    )
+
+
 def send_host_registered_alert_email(
     host_email: str,
     host_name: Optional[str] = None,

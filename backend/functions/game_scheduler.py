@@ -16,7 +16,7 @@ from typing import Dict, Any, List, Optional
 sys.path.insert(0, os.path.dirname(__file__))
 
 from db import get_supabase
-from email_ses import send_low_quorum_decision_email
+from email_ses import send_low_quorum_decision_email, send_scheduled_game_cancelled_email
 
 
 def evaluate_scheduled_games() -> Dict[str, Any]:
@@ -81,6 +81,9 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
             else:
                 quorum_count = int(quorum_count)
 
+            # HARD SAFEGUARD: Minimum quorum must ALWAYS be at least 1 player (playing with 0 participants makes no sense)
+            quorum_count = max(1, quorum_count)
+
             grace_minutes = int(dabby_config.get("grace_period_minutes") or 5)
             low_quorum_action = str(dabby_config.get("low_quorum_action") or "AUTO_CANCEL").upper()
             autonomous_enabled = dabby_config.get("autonomous_host_enabled", True)
@@ -96,7 +99,8 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
             )
             confirmed_count = reg_res.count or 0
 
-            is_low_quorum = confirmed_count < quorum_count
+            # Low quorum if below threshold OR if 0 players in room
+            is_low_quorum = confirmed_count < quorum_count or confirmed_count < 1
             grace_deadline = sched_dt + timedelta(minutes=grace_minutes)
             is_grace_passed = now >= grace_deadline
 
@@ -137,9 +141,40 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
 
                 # 2. Check if grace period buffer has elapsed
                 if is_grace_passed:
-                    if low_quorum_action == "AUTO_CANCEL":
-                        # CRITICAL: Organizer is guaranteed a 10-minute decision response window
-                        # once the decision email is dispatched before automatic cancellation occurs.
+                    # User requirement: If even after the waiting buffer (3 minutes) no one has joined (0 participants),
+                    # cancel the event immediately and send a cancellation email to the host.
+                    if confirmed_count < 1:
+                        sb.from_("MPT_games").update({
+                            "status": "CANCELLED",
+                            "is_publicly_visible": False,
+                            "completed_at": now.isoformat(),
+                        }).eq("id", g["id"]).execute()
+
+                        summary["games_cancelled"].append({
+                            "invite_code": g.get("invite_code"),
+                            "reason": f"No participants joined after {grace_minutes}m waiting buffer. Event auto-cancelled.",
+                        })
+                        print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} after {grace_minutes}m buffer (0 participants).")
+
+                        # Dispatch cancellation email to host
+                        host_email = _get_host_email(sb, g.get("admin_user_id"))
+                        if host_email:
+                            sched_str = sched_dt.strftime("%b %d, %I:%M %p UTC")
+                            send_scheduled_game_cancelled_email(
+                                to_email=host_email,
+                                game_name=g.get("name") or "Scheduled Game",
+                                game_id=g["id"],
+                                invite_code=g.get("invite_code") or "",
+                                scheduled_at_str=sched_str,
+                                grace_period_minutes=grace_minutes,
+                                organizer_name="Event Organizer",
+                                reason=f"No participants joined the lobby during the scheduled start time and {grace_minutes}-minute waiting buffer.",
+                            )
+                            print(f"  [ SCHEDULER ] Sent cancellation email to {host_email} for game {g.get('invite_code')}")
+
+                    elif low_quorum_action == "AUTO_CANCEL":
+                        # If at least 1 player joined but below quorum:
+                        # Organizer is given a 10-minute decision response window before automatic cancellation occurs.
                         can_auto_cancel = True
                         if decision_email_sent_at:
                             try:
@@ -166,18 +201,35 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                             })
                             print(f"  [ SCHEDULER ] Auto-cancelled game {g.get('invite_code')} due to unmet quorum and elapsed decision window")
 
-                    elif low_quorum_action == "START_ANYWAY" and autonomous_enabled:
-                        _start_game(sb, g["id"])
+                            host_email = _get_host_email(sb, g.get("admin_user_id"))
+                            if host_email:
+                                sched_str = sched_dt.strftime("%b %d, %I:%M %p UTC")
+                                send_scheduled_game_cancelled_email(
+                                    to_email=host_email,
+                                    game_name=g.get("name") or "Scheduled Game",
+                                    game_id=g["id"],
+                                    invite_code=g.get("invite_code") or "",
+                                    scheduled_at_str=sched_str,
+                                    grace_period_minutes=grace_minutes,
+                                    organizer_name="Event Organizer",
+                                    reason=f"Player quorum was not reached ({confirmed_count}/{quorum_count} players).",
+                                )
 
-                        summary["games_launched"].append({
-                            "invite_code": g.get("invite_code"),
-                            "reason": "START_ANYWAY low quorum action",
-                        })
-                        print(f"  [ SCHEDULER ] Launched game {g.get('invite_code')} anyway under START_ANYWAY policy")
+                    elif low_quorum_action == "START_ANYWAY" and autonomous_enabled:
+                        if confirmed_count >= 1:
+                            _start_game(sb, g["id"])
+
+                            summary["games_launched"].append({
+                                "invite_code": g.get("invite_code"),
+                                "reason": "START_ANYWAY low quorum action",
+                            })
+                            print(f"  [ SCHEDULER ] Launched game {g.get('invite_code')} anyway under START_ANYWAY policy")
+                        else:
+                            print(f"  [ SCHEDULER ] Cannot launch game {g.get('invite_code')} with 0 players even under START_ANYWAY")
 
             # ── Scenario B: Quorum Met at Kickoff ────────────────────────────
             else:
-                if autonomous_enabled:
+                if autonomous_enabled and confirmed_count >= 1:
                     _start_game(sb, g["id"])
 
                     summary["games_launched"].append({
