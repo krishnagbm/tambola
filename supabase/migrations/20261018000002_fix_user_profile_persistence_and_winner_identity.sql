@@ -184,7 +184,13 @@ BEGIN
                     ),
                     1
                 ),
-                'prize_value', r.prize_value,
+                'prize_value', COALESCE(
+                    r.prize_value,
+                    (g.prize_gifts_config->r.prize_type->>'prize_value')::NUMERIC,
+                    (g.prize_gifts_config->r.prize_type->>'retail_price')::NUMERIC,
+                    (arch.prize_gifts_config->r.prize_type->>'prize_value')::NUMERIC,
+                    (arch.prize_gifts_config->r.prize_type->>'retail_price')::NUMERIC
+                ),
                 'brand_offer_id', r.brand_offer_id,
                 'fulfilled_gift_title', r.fulfilled_gift_title,
                 'fulfilled_brand_name', r.fulfilled_brand_name,

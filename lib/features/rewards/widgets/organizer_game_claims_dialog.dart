@@ -46,7 +46,457 @@ class _OrganizerGameClaimsDialogState
   bool _isClosingAll = false;
   final Set<String> _closingIds = <String>{};
 
-  Future<void> _handleCloseSingle(MptReward reward) async {
+  Future<void> _openSettleClaimDialog(MptReward reward) async {
+    final defaultVal = (reward.prizeValue != null && reward.prizeValue! > 0)
+        ? (reward.prizeValue! % 1 == 0
+            ? reward.prizeValue!.toInt().toString()
+            : reward.prizeValue!.toString())
+        : '10';
+    final prizeController = TextEditingController(text: defaultVal);
+    final noteController = TextEditingController();
+    String selectedMethod = '💵 Direct Cash / Transfer';
+
+    final methods = [
+      '💵 Direct Cash / Transfer',
+      '📱 Venmo / Zelle / UPI',
+      '🎁 DabHousie Event Credits',
+      '🛍️ Amazon / Brand Gift Card',
+      '🏆 Physical Trophy / Goodie',
+    ];
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dlgContext) {
+        return StatefulBuilder(
+          builder: (context, setDlgState) {
+            return Dialog(
+              backgroundColor: AppTheme.darkCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: const BorderSide(color: Color(0xFF2E334D)),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header
+                        Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentSuccess.withValues(
+                                  alpha: 0.15,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.verified_rounded,
+                                color: AppTheme.accentSuccess,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Settle Prize Claim',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${Formatters.formatPrizeName(reward.prizeType)} • ${reward.winnerName ?? "Player"}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.secondaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                color: Color(0xFF94A3B8),
+                                size: 20,
+                              ),
+                              onPressed: () => Navigator.pop(dlgContext, false),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Divider(color: Color(0xFF2E334D), height: 1),
+                        const SizedBox(height: 14),
+
+                        // Winner Verification Badge
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E293B),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    Formatters.getAvatarEmoji(
+                                      reward.winnerAvatar ?? 'avatar_lion',
+                                    ),
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Winner: ${reward.winnerName ?? "Player"} (${reward.isGuest ? "Guest Player" : (reward.winnerEmail ?? "Registered")})',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  if (reward.ticketNumber != null)
+                                    Text(
+                                      'Ticket #${reward.ticketNumber}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF94A3B8),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Text(
+                                    'Voucher Code: ',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  Text(
+                                    reward.claimReference,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.secondaryColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Prize Value ($)
+                        const Text(
+                          'Prize Value (\$ / Credits)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: prizeController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(
+                              Icons.attach_money_rounded,
+                              color: AppTheme.accentSuccess,
+                              size: 18,
+                            ),
+                            hintText: '10.00',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF64748B),
+                            ),
+                            filled: true,
+                            fillColor: AppTheme.darkSurface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: AppTheme.accentSuccess,
+                              ),
+                            ),
+                          ),
+                          onChanged: (_) => setDlgState(() {}),
+                        ),
+                        const SizedBox(height: 6),
+                        // Quick chips for $5, $10, $15, $20, $25, $50
+                        Wrap(
+                          spacing: 6,
+                          children: ['5', '10', '15', '20', '25', '50'].map((
+                            val,
+                          ) {
+                            final isSel = prizeController.text.trim() == val;
+                            return InkWell(
+                              onTap: () {
+                                setDlgState(() {
+                                  prizeController.text = val;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSel
+                                      ? AppTheme.accentSuccess.withValues(
+                                          alpha: 0.25,
+                                        )
+                                      : const Color(0xFF1E293B),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: isSel
+                                        ? AppTheme.accentSuccess
+                                        : const Color(0xFF334155),
+                                  ),
+                                ),
+                                child: Text(
+                                  '\$$val',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSel
+                                        ? AppTheme.accentSuccess
+                                        : const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Fulfillment Method
+                        const Text(
+                          'Settlement Method',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.darkSurface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF334155)),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedMethod,
+                              dropdownColor: AppTheme.darkCard,
+                              isExpanded: true,
+                              icon: const Icon(
+                                Icons.arrow_drop_down,
+                                color: Color(0xFF94A3B8),
+                              ),
+                              items: methods.map((m) {
+                                return DropdownMenuItem(
+                                  value: m,
+                                  child: Text(
+                                    m,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setDlgState(() => selectedMethod = val);
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Settlement Note
+                        const Text(
+                          'Settlement Note / Voucher Details (Optional)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: noteController,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                          ),
+                          decoration: InputDecoration(
+                            hintText:
+                                'e.g. Sent \$10 via Venmo / Handed cash in person / Gift code #...',
+                            hintStyle: const TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 12,
+                            ),
+                            filled: true,
+                            fillColor: AppTheme.darkSurface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Platform Notice
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF1E293B)),
+                          ),
+                          child: const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                size: 14,
+                                color: Color(0xFF94A3B8),
+                              ),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'DabHousie verifies ticket wins. The host awards physical, cash, or voucher prizes directly to the winner, then marks this claim as Settled.',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFF94A3B8),
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Action Buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dlgContext, false),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(color: Color(0xFF94A3B8)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: () => Navigator.pop(dlgContext, true),
+                              icon: const Icon(
+                                Icons.check_circle_outline,
+                                size: 16,
+                              ),
+                              label: const Text('Mark as Settled'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.accentSuccess,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final parsedPrizeValue =
+        double.tryParse(prizeController.text.trim()) ??
+        reward.prizeValue ??
+        10.0;
+    final note = noteController.text.trim();
+
     setState(() => _closingIds.add(reward.id));
     try {
       await ref
@@ -55,6 +505,10 @@ class _OrganizerGameClaimsDialogState
             gameId: widget.gameId,
             rewardId: reward.id,
             claimId: reward.claimId,
+            prizeValue: parsedPrizeValue,
+            giftTitle: selectedMethod,
+            fulfillmentNote:
+                note.isNotEmpty ? note : 'Settled via $selectedMethod',
           );
       ref.invalidate(hostGameRewardsProvider(widget.gameId));
       ref.invalidate(organizerAllGamesClaimsProvider);
@@ -63,7 +517,7 @@ class _OrganizerGameClaimsDialogState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Marked ${Formatters.formatPrizeName(reward.prizeType)} (${reward.winnerName ?? "Player"}) as Claimed!',
+            'Settled ${Formatters.formatPrizeName(reward.prizeType)} (\$${parsedPrizeValue.toStringAsFixed(parsedPrizeValue % 1 == 0 ? 0 : 2)}) for ${reward.winnerName ?? "Player"}!',
           ),
           backgroundColor: AppTheme.accentSuccess,
         ),
@@ -72,7 +526,7 @@ class _OrganizerGameClaimsDialogState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to close claim: $e'),
+          content: Text('Failed to settle claim: $e'),
           backgroundColor: AppTheme.accentDanger,
         ),
       );
@@ -456,6 +910,38 @@ class _OrganizerGameClaimsDialogState
                                                   color: Colors.white,
                                                 ),
                                               ),
+                                              if (r.prizeValue != null &&
+                                                  r.prizeValue! > 0)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 1.5,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(
+                                                      0xFF10B981,
+                                                    ).withValues(alpha: 0.15),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          5,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: const Color(
+                                                        0xFF10B981,
+                                                      ).withValues(alpha: 0.45),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    '💰 \$${r.prizeValue!.toStringAsFixed(r.prizeValue! % 1 == 0 ? 0 : 2)} Value',
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Color(0xFF10B981),
+                                                    ),
+                                                  ),
+                                                ),
                                               Text(
                                                 '• ${r.winnerName ?? "Player"}',
                                                 style: const TextStyle(
@@ -559,7 +1045,7 @@ class _OrganizerGameClaimsDialogState
                                                   claimedStr != null) ...[
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  '• Claimed $claimedStr',
+                                                  '• Settled $claimedStr',
                                                   style: const TextStyle(
                                                     fontSize: 11,
                                                     color: Color(0xFF10B981),
@@ -582,6 +1068,19 @@ class _OrganizerGameClaimsDialogState
                                               ),
                                             ),
                                           ],
+                                          if (r.fulfillmentNote != null &&
+                                              r.fulfillmentNote!
+                                                  .trim()
+                                                  .isNotEmpty) ...[
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              '📝 ${r.fulfillmentNote}',
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Color(0xFF94A3B8),
+                                              ),
+                                            ),
+                                          ],
                                         ],
                                       ),
                                     ),
@@ -590,7 +1089,7 @@ class _OrganizerGameClaimsDialogState
                                       ElevatedButton.icon(
                                         onPressed: isClosing
                                             ? null
-                                            : () => _handleCloseSingle(r),
+                                            : () => _openSettleClaimDialog(r),
                                         icon: isClosing
                                             ? const SizedBox(
                                                 width: 12,
@@ -602,10 +1101,10 @@ class _OrganizerGameClaimsDialogState
                                                     ),
                                               )
                                             : const Icon(
-                                                Icons.check_circle_outline,
+                                                Icons.verified_outlined,
                                                 size: 15,
                                               ),
-                                        label: const Text('Close Claim'),
+                                        label: const Text('Settle Prize'),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor:
                                               AppTheme.accentSuccess,
@@ -640,9 +1139,12 @@ class _OrganizerGameClaimsDialogState
                                             ).withValues(alpha: 0.5),
                                           ),
                                         ),
-                                        child: const Text(
-                                          '✓ CLAIMED',
-                                          style: TextStyle(
+                                        child: Text(
+                                          r.prizeValue != null &&
+                                                  r.prizeValue! > 0
+                                              ? '✓ SETTLED (\$${r.prizeValue!.toStringAsFixed(r.prizeValue! % 1 == 0 ? 0 : 2)})'
+                                              : '✓ SETTLED',
+                                          style: const TextStyle(
                                             fontSize: 10.5,
                                             fontWeight: FontWeight.bold,
                                             color: Color(0xFF10B981),
