@@ -111,7 +111,8 @@
       justify-content: center;
     }
     body.embed-mode .rapid-caller-bar {
-      padding: 8px 16px;
+      padding: 10px 18px;
+      min-height: 60px;
       margin-bottom: 8px;
       border-radius: 16px;
     }
@@ -119,12 +120,15 @@
       width: 48px;
       height: 48px;
       font-size: 22px;
+      flex-shrink: 0;
     }
     body.embed-mode .call-instruction {
-      font-size: 15px;
+      font-size: 14.5px;
+      line-height: 1.25;
     }
     body.embed-mode .call-label {
       font-size: 10px;
+      line-height: 1.2;
     }
     body.embed-mode .ring-wrapper {
       width: 44px;
@@ -187,10 +191,12 @@
     .rapid-caller-bar {
       max-width: 1100px;
       width: 100%;
+      box-sizing: border-box;
       background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(30, 27, 75, 0.98) 100%);
       border: 2px solid rgba(239, 68, 68, 0.45);
-      border-radius: 24px;
-      padding: 12px 22px;
+      border-radius: 20px;
+      padding: 10px 20px;
+      min-height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -214,22 +220,23 @@
     .caller-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .ball-sphere {
-      width: 66px;
-      height: 66px;
+      width: 58px;
+      height: 58px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 30%, #ff4b4b 0%, #dc2626 50%, #991b1b 100%);
       color: #ffffff;
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 900;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 6px 20px rgba(220, 38, 38, 0.7), inset 0 3px 6px rgba(255, 255, 255, 0.6);
       transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      flex-shrink: 0;
     }
 
     .ball-sphere.pop {
@@ -245,24 +252,28 @@
     .call-meta {
       display: flex;
       flex-direction: column;
+      justify-content: center;
+      gap: 3px;
     }
 
     .call-label {
       font-size: 11px;
       font-weight: 800;
-      letter-spacing: 1px;
+      letter-spacing: 0.8px;
       text-transform: uppercase;
       color: #f87171;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
+      line-height: 1.2;
     }
 
     .call-instruction {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 900;
       color: #ffffff;
       letter-spacing: -0.3px;
+      line-height: 1.25;
     }
 
     .call-instruction span.highlight-num {
@@ -415,10 +426,10 @@
     /* 3x9 Grid Overlay matching the 27 cells inside DabHousie_Bingo_UI_Showcase_GrayButtons.png */
     .grid-overlay {
       position: absolute;
-      left: 20.68%;
-      top: 28.82%;
-      width: 76.98%;
-      height: 42.68%;
+      left: 21.8%;
+      top: 29.9%;
+      width: 74.8%;
+      height: 39.8%;
       display: grid;
       grid-template-columns: repeat(9, 1fr);
       grid-template-rows: repeat(3, 1fr);
@@ -433,7 +444,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: clamp(14px, 2.3vw, 34px);
+      font-size: clamp(14px, 2.3vw, 32px);
       font-weight: 900;
       color: #0f172a;
       cursor: pointer;
@@ -478,8 +489,13 @@
     .dab-stamp {
       display: none;
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 78%;
       height: 78%;
+      max-width: 60px;
+      max-height: 60px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #fef08a 0%, #facc15 65%, #eab308 100%);
       box-shadow: 0 2px 8px rgba(161, 98, 7, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.8);
@@ -500,8 +516,13 @@
     .missed-stamp {
       display: none;
       position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 82%;
       height: 82%;
+      max-width: 62px;
+      max-height: 62px;
       border-radius: 50%;
       border: 3px dashed #ef4444;
       background: rgba(239, 68, 68, 0.15);
@@ -1500,11 +1521,22 @@
           clearInterval(timerInterval);
           timerInterval = null;
         }
+
+        // Freeze countdown UI completely
         const urgencyEl = document.getElementById('timerUrgencyText');
+        const secondsEl = document.getElementById('timerSeconds');
+        const ringProgress = document.getElementById('ringProgress');
+        const urgentLine = document.getElementById('urgentLine');
         if (urgencyEl && gameStarted) {
           urgencyEl.innerText = '⏸️ Dabby Coaching...';
           urgencyEl.style.color = '#facc15';
         }
+        if (secondsEl) secondsEl.innerText = '⏸️';
+        if (ringProgress) {
+          ringProgress.style.strokeDashoffset = '0';
+          ringProgress.style.stroke = '#facc15';
+        }
+        if (urgentLine) urgentLine.style.transform = 'scaleX(1)';
 
         synth.cancel();
         const utter = new SpeechSynthesisUtterance(text);
@@ -1518,14 +1550,16 @@
           resumed = true;
           isDabbySpeaking = false;
           if (gameStarted && dabbedSet.size < 15) {
+            // Add full 5-second countdown grace period after Dabby finishes speaking
             resetTimer();
           }
         };
 
         utter.onend = resumeCalling;
         utter.onerror = resumeCalling;
-        // Fallback safety timeout if onend doesn't trigger
-        setTimeout(resumeCalling, 4000);
+        // Dynamic safety timeout: allow generous time for speech
+        const safetyDuration = Math.max(8000, text.length * 90);
+        setTimeout(resumeCalling, safetyDuration);
 
         synth.speak(utter);
       } catch (e) {
@@ -1554,6 +1588,40 @@
       MIDDLE_LINE: { name: 'Middle Line', total: 5, bonus: 200, solidClass: 'solid-midline' },
       BOTTOM_LINE: { name: 'Bottom Line', total: 5, bonus: 200, solidClass: 'solid-botline' },
       FULL_HOUSE: { name: 'Full Housie', total: 15, bonus: 500, solidClass: 'solid-fullhouse' }
+    };
+
+    // Distinct praise & coaching greetings for each specific claim
+    const CLAIM_PRAISE = {
+      EARLY_5: {
+        voice: "Lightning quick! You claimed Early 5 in record time! Superb start!",
+        banner: "⚡ LIGHTNING DAB! EARLY 5 CLAIMED!",
+        coach: "🎉 <strong>Lightning Fast!</strong> You secured <strong>Early 5</strong> for <strong>+150 bonus points</strong>! Exceptional speed!"
+      },
+      FOUR_CORNERS: {
+        voice: "Four Corners secured! Outstanding vision across your ticket!",
+        banner: "★ FOUR CORNERS SECURED!",
+        coach: "🎉 <strong>Sharp Eye!</strong> You locked in all <strong>Four Corners</strong> for <strong>+150 bonus points</strong>! Great focus!"
+      },
+      TOP_LINE: {
+        voice: "Top Line completed! Clean sweep across the first row!",
+        banner: "⚌ TOP LINE CONQUERED!",
+        coach: "🎉 <strong>Row 1 Conquered!</strong> You secured <strong>Top Line</strong> for <strong>+200 bonus points</strong>! Keep rolling!"
+      },
+      MIDDLE_LINE: {
+        voice: "Middle Line bagged! Right through the center of your ticket!",
+        banner: "⚌ MIDDLE LINE BAGGED!",
+        coach: "🎉 <strong>Bullseye!</strong> You secured <strong>Middle Line</strong> for <strong>+200 bonus points</strong>! Halfway to bingo glory!"
+      },
+      BOTTOM_LINE: {
+        voice: "Bottom Line locked in! All three lines conquered!",
+        banner: "▬ BOTTOM LINE LOCKED IN!",
+        coach: "🎉 <strong>Hat Trick!</strong> You secured <strong>Bottom Line</strong> for <strong>+200 bonus points</strong>! All lines are now secured!"
+      },
+      FULL_HOUSE: {
+        voice: "BINGO! Full Housie Champion! All fifteen numbers dabbed to perfection! Incredible game!",
+        banner: "🏆 FULL HOUSIE CHAMPION! BINGO!",
+        coach: "🏆 <strong>EXTRAORDINARY!</strong> You achieved <strong>Full Housie</strong> for <strong>+500 bonus points</strong>! Master reflex performance!"
+      }
     };
 
     let claimedPrizes = new Set();
@@ -1585,6 +1653,11 @@
       } else if (key === 'BOTTOM_LINE') {
         count = currentTicket[2].filter(n => n !== null && dabbedSet.has(n)).length;
       } else if (key === 'FULL_HOUSE') {
+        // Tournament rule: Full Housie requires Top Line, Middle Line, and Bottom Line to be claimed first!
+        const allLinesClaimed = claimedPrizes.has('TOP_LINE') && claimedPrizes.has('MIDDLE_LINE') && claimedPrizes.has('BOTTOM_LINE');
+        if (!allLinesClaimed) {
+          return { progress: dabbedSet.size, total, linesLocked: true };
+        }
         count = dabbedSet.size;
       }
       return { progress: count, total };
@@ -1600,16 +1673,24 @@
           btn.className = `claim-pill-btn state-solid ${cfg.solidClass}`;
           btn.title = `✅ ${cfg.name} Secured! (+${cfg.bonus} pts)`;
         } else {
-          const { progress, total } = getPatternProgress(key);
-          if (progress >= total && gameStarted) {
+          const { progress, total, linesLocked } = getPatternProgress(key);
+          if (progress >= total && gameStarted && !linesLocked) {
             // State 2: Flicker Eligible
             btn.className = 'claim-pill-btn state-flicker';
             btn.title = `⚡ ${cfg.name} Eligible! Tap now to claim!`;
           } else {
-            // State 1: Gray Initial / In-progress
+            // State 1: Gray Initial / In-progress / Locked
             btn.className = 'claim-pill-btn state-gray';
-            const needed = total - progress;
-            btn.title = `${cfg.name}: ${progress}/${total} dabbed (Need ${needed} more)`;
+            if (linesLocked) {
+              const missing = [];
+              if (!claimedPrizes.has('TOP_LINE')) missing.push('Top');
+              if (!claimedPrizes.has('MIDDLE_LINE')) missing.push('Middle');
+              if (!claimedPrizes.has('BOTTOM_LINE')) missing.push('Bottom');
+              btn.title = `Full Housie Locked: Claim ${missing.join(', ')} Line first!`;
+            } else {
+              const needed = total - progress;
+              btn.title = `${cfg.name}: ${progress}/${total} dabbed (Need ${needed} more)`;
+            }
           }
         }
       }
@@ -1623,21 +1704,42 @@
 
       if (claimedPrizes.has(key)) {
         showFeedback(`ℹ️ ALREADY CLAIMED!`, '#94a3b8');
-        speakDabbyCoach(`You already claimed ${cfg.name}! Keep working on remaining patterns.`);
+        speakDabbyCoach(`You already claimed ${cfg.name}! Focus on remaining patterns.`);
         return;
       }
 
-      const { progress, total } = getPatternProgress(key);
+      // Check Full Housie line prerequisite rule
+      if (key === 'FULL_HOUSE') {
+        const allLinesClaimed = claimedPrizes.has('TOP_LINE') && claimedPrizes.has('MIDDLE_LINE') && claimedPrizes.has('BOTTOM_LINE');
+        if (!allLinesClaimed) {
+          const missing = [];
+          if (!claimedPrizes.has('TOP_LINE')) missing.push('Top Line');
+          if (!claimedPrizes.has('MIDDLE_LINE')) missing.push('Middle Line');
+          if (!claimedPrizes.has('BOTTOM_LINE')) missing.push('Bottom Line');
 
-      if (progress >= total && gameStarted) {
+          if (btn) {
+            btn.classList.add('bogey');
+            setTimeout(() => btn.classList.remove('bogey'), 450);
+          }
+          showFeedback(`⚠️ CLAIM LINES FIRST!`, '#f59e0b');
+          setCoachMessage(`⚠️ <strong>Tournament Rule:</strong> You must secure all individual lines first! Please claim <strong>${missing.join(', ')}</strong> before claiming Full Housie.`);
+          speakDabbyCoach(`You must claim your lines first! Claim ${missing.join(' and ')} before calling Full Housie.`);
+          return;
+        }
+      }
+
+      const { progress, total, linesLocked } = getPatternProgress(key);
+
+      if (progress >= total && gameStarted && !linesLocked) {
         // VALID CLAIM!
+        const praise = CLAIM_PRAISE[key];
         claimedPrizes.add(key);
         score += cfg.bonus;
         updateScore();
         updateClaimsUI();
-        showFeedback(`🎉 ${cfg.name.toUpperCase()} CLAIMED! +${cfg.bonus}`, '#10b981');
-        setCoachMessage(`🎉 Splendid claim! You secured <strong>${cfg.name}</strong> for <strong>+${cfg.bonus} bonus points</strong>! Accurate and swift!`);
-        speakDabbyCoach(`Splendid claim! You secured ${cfg.name} for plus ${cfg.bonus} bonus points! Well done!`);
+        showFeedback(`${praise.banner} +${cfg.bonus}`, '#10b981');
+        setCoachMessage(praise.coach);
+        speakDabbyCoach(praise.voice);
 
         if (key === 'FULL_HOUSE') {
           checkCelebration();
