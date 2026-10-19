@@ -603,6 +603,296 @@
       line-height: 1.6;
     }
 
+    /* Voice toggle button in caller bar */
+    .btn-voice {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #facc15;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .btn-voice:hover {
+      background: rgba(51, 65, 85, 0.95);
+      transform: translateY(-1px);
+    }
+    .btn-voice.muted {
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* CLAIM TRAINING ARENA */
+    .claims-training-container {
+      max-width: 1100px;
+      width: 100%;
+      margin-top: 18px;
+      background: linear-gradient(180deg, #131929 0%, #0d121f 100%);
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 18px 20px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+      box-sizing: border-box;
+    }
+
+    .claims-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .claims-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      font-weight: 800;
+      font-size: 14.5px;
+    }
+
+    .claims-badge {
+      background: rgba(234, 179, 8, 0.18);
+      color: #facc15;
+      border: 1px solid rgba(234, 179, 8, 0.45);
+      font-size: 10.5px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+    }
+
+    .claims-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .claim-btn {
+      background: #172033;
+      border: 1.5px solid #28354e;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      cursor: pointer;
+      text-align: left;
+      position: relative;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select: none;
+      color: inherit;
+    }
+
+    .claim-btn:hover:not(.claimed) {
+      border-color: #facc15;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .claim-btn .claim-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 6px;
+    }
+
+    .claim-btn .claim-icon {
+      font-size: 20px;
+    }
+
+    .claim-btn .claim-status {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: #0f172a;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .claim-btn .claim-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .claim-btn .claim-progress {
+      font-size: 11.5px;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    /* Ready state (eligible to claim, pulsating) */
+    .claim-btn.ready {
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.22) 0%, rgba(16, 185, 129, 0.22) 100%);
+      border-color: #facc15;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.45);
+      animation: claimPulse 1.2s infinite alternate;
+    }
+
+    .claim-btn.ready .claim-status {
+      background: #facc15;
+      color: #000;
+      font-weight: 900;
+      animation: bounceTag 0.8s infinite alternate;
+    }
+
+    @keyframes claimPulse {
+      0% { transform: scale(0.99); box-shadow: 0 0 12px rgba(250, 204, 21, 0.3); }
+      100% { transform: scale(1.02); box-shadow: 0 0 24px rgba(250, 204, 21, 0.7); }
+    }
+
+    @keyframes bounceTag {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-2px); }
+    }
+
+    /* Claimed state */
+    .claim-btn.claimed {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: #10b981;
+      cursor: default;
+    }
+
+    .claim-btn.claimed .claim-status {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .claim-btn.claimed .claim-name {
+      color: #4ade80;
+    }
+
+    /* Bogey shake animation */
+    .claim-btn.bogey {
+      animation: bogeyShake 0.4s ease-in-out;
+      border-color: #ef4444 !important;
+      background: rgba(239, 68, 68, 0.2) !important;
+    }
+
+    @keyframes bogeyShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    /* Dabby Coach Live Speech Bubble */
+    .coach-speech-bubble {
+      background: #172138;
+      border: 1px solid #283756;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #cbd5e1;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .coach-avatar {
+      font-size: 26px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .coach-message strong {
+      color: #facc15;
+    }
+
+    /* Social Share Challenge Bar */
+    .social-challenge-bar {
+      max-width: 1100px;
+      width: 100%;
+      margin-top: 14px;
+      background: linear-gradient(135deg, #131b2e 0%, #0d1220 100%);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      box-sizing: border-box;
+    }
+
+    .social-challenge-text {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .social-challenge-text strong {
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .social-btns-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-social {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      color: #fff;
+    }
+
+    .btn-social.linkedin {
+      background: #0077b5;
+    }
+    .btn-social.linkedin:hover {
+      background: #006097;
+    }
+
+    .btn-social.facebook {
+      background: #1877f2;
+    }
+    .btn-social.facebook:hover {
+      background: #1464cc;
+    }
+
+    .btn-social.copy {
+      background: #1e293b;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    .btn-social.copy:hover {
+      background: #334155;
+      color: #facc15;
+    }
+
+    /* Embed Mode Clean Overrides */
+    body.embed-mode .site-header,
+    body.embed-mode footer,
+    body.embed-mode .game-seo-intro,
+    body.embed-mode .game-seo-features {
+      display: none !important;
+    }
+
     @media (max-width: 768px) {
       .game-page-container {
         padding: 4px 8px 12px;
@@ -816,8 +1106,11 @@
         <div class="timer-alert-text" id="timerUrgencyText">Next call in 5s</div>
       </div>
 
-      <!-- Live Score & Refresh Ticket -->
+      <!-- Live Score, Refresh Ticket & Audio Toggle -->
       <div class="caller-right">
+        <button class="btn-voice" id="btnVoiceToggle" onclick="toggleVoiceSpeech()" title="Toggle voice caller and coaching audio">
+          🔊 Voice: ON
+        </button>
         <div class="score-badge">
           <span>⚡</span>
           <span id="scoreText">0 Dabs</span>
@@ -865,6 +1158,102 @@
 
       <!-- Centered Feedback Bubble over the Ticket Area -->
       <div class="feedback-float" id="feedbackFloat"></div>
+    </div>
+
+    <!-- REAL-TIME CLAIMS TRAINING CONSOLE -->
+    <div class="claims-training-container">
+      <div class="claims-header">
+        <div class="claims-title">
+          <span>🎯</span>
+          <span>Claim Training Arena • Tap When Ready!</span>
+        </div>
+        <div class="claims-subtitle">
+          Practice claiming winning patterns without triggering a "Bogey". Dabby coaches you live with audio feedback!
+        </div>
+      </div>
+
+      <!-- Live Claims Grid (6 Standard Tambola Winning Patterns) -->
+      <div class="claims-grid" id="claimsGrid">
+        <button class="claim-btn" id="claim-EARLY_5" onclick="attemptClaim('EARLY_5')">
+          <div class="claim-top-row">
+            <span class="claim-icon">⚡</span>
+            <span class="claim-status" id="status-EARLY_5">0/5</span>
+          </div>
+          <div class="claim-name">Early 5</div>
+          <div class="claim-progress" id="progress-EARLY_5">Any 5 numbers</div>
+        </button>
+
+        <button class="claim-btn" id="claim-FOUR_CORNERS" onclick="attemptClaim('FOUR_CORNERS')">
+          <div class="claim-top-row">
+            <span class="claim-icon">📐</span>
+            <span class="claim-status" id="status-FOUR_CORNERS">0/4</span>
+          </div>
+          <div class="claim-name">4 Corners</div>
+          <div class="claim-progress" id="progress-FOUR_CORNERS">Top &amp; bottom ends</div>
+        </button>
+
+        <button class="claim-btn" id="claim-TOP_LINE" onclick="attemptClaim('TOP_LINE')">
+          <div class="claim-top-row">
+            <span class="claim-icon">🥇</span>
+            <span class="claim-status" id="status-TOP_LINE">0/5</span>
+          </div>
+          <div class="claim-name">Top Line</div>
+          <div class="claim-progress" id="progress-TOP_LINE">Row 1 (5 numbers)</div>
+        </button>
+
+        <button class="claim-btn" id="claim-MIDDLE_LINE" onclick="attemptClaim('MIDDLE_LINE')">
+          <div class="claim-top-row">
+            <span class="claim-icon">🥈</span>
+            <span class="claim-status" id="status-MIDDLE_LINE">0/5</span>
+          </div>
+          <div class="claim-name">Middle Line</div>
+          <div class="claim-progress" id="progress-MIDDLE_LINE">Row 2 (5 numbers)</div>
+        </button>
+
+        <button class="claim-btn" id="claim-BOTTOM_LINE" onclick="attemptClaim('BOTTOM_LINE')">
+          <div class="claim-top-row">
+            <span class="claim-icon">🥉</span>
+            <span class="claim-status" id="status-BOTTOM_LINE">0/5</span>
+          </div>
+          <div class="claim-name">Bottom Line</div>
+          <div class="claim-progress" id="progress-BOTTOM_LINE">Row 3 (5 numbers)</div>
+        </button>
+
+        <button class="claim-btn" id="claim-FULL_HOUSE" onclick="attemptClaim('FULL_HOUSE')">
+          <div class="claim-top-row">
+            <span class="claim-icon">🏆</span>
+            <span class="claim-status" id="status-FULL_HOUSE">0/15</span>
+          </div>
+          <div class="claim-name">Full Housie</div>
+          <div class="claim-progress" id="progress-FULL_HOUSE">All 15 numbers</div>
+        </button>
+      </div>
+
+      <!-- Coach Dabby Live Speech & Rule Guidance -->
+      <div class="coach-speech-bubble" id="coachSpeechBubble">
+        <div class="coach-avatar">👩‍🏫</div>
+        <div class="coach-message" id="coachMessage">
+          <strong>Dabby (Your Coach):</strong> Welcome to Claim Training! Dab called numbers on your ticket. When you complete a pattern, hit its button above to claim. Beware: claiming early is a "Bogey"!
+        </div>
+      </div>
+    </div>
+
+    <!-- VIRAL CHALLENGE & SOCIAL SHARING BAR -->
+    <div class="social-challenge-bar">
+      <div class="social-challenge-text">
+        <strong>🚀 Standalone Practice &amp; Social Challenge:</strong> Share your reflex score or challenge colleagues &amp; friends on LinkedIn and Facebook!
+      </div>
+      <div class="social-btns-group">
+        <button class="btn-social linkedin" onclick="shareOnLinkedIn()" title="Share on LinkedIn">
+          <span>💼</span> Share on LinkedIn
+        </button>
+        <button class="btn-social facebook" onclick="shareOnFacebook()" title="Share on Facebook">
+          <span>🌐</span> Share on Facebook
+        </button>
+        <button class="btn-social copy" onclick="copyChallengeLink()" title="Copy link">
+          <span id="copyIcon">📋</span> <span id="copyText">Copy Link</span>
+        </button>
+      </div>
     </div>
 
     <!-- Educational Guide & DabHousie Mechanics Section (Hidden in modal embed mode) -->
@@ -959,6 +1348,239 @@
     let consecutiveMisses = 0;
     const MAX_CONSECUTIVE_MISSES = 15;
     let uncalledPool = [];
+
+    // ==========================================
+    // DUAL-VOICE ENGINE (DABBY FEMALE COACH + MALE CALLER)
+    // ==========================================
+    let speechEnabled = true;
+    const synth = ('speechSynthesis' in window) ? window.speechSynthesis : null;
+    let femaleVoice = null;
+    let maleVoice = null;
+
+    function initVoices() {
+      if (!synth) return;
+      const voices = synth.getVoices();
+      if (!voices || voices.length === 0) return;
+
+      // Natural English female voice for Dabby Coach
+      const femaleKeywords = /female|woman|zira|jenny|samantha|karen|victoria|moira|fiona|susan|aria|ava|hazel|catherine|stephanie/i;
+      femaleVoice = voices.find(v => v.lang.startsWith('en') && femaleKeywords.test(v.name)) ||
+                    voices.find(v => v.lang.startsWith('en') && !/male|man|david|mark|daniel|alex|george|oliver|guy|tom|fred|richard/i.test(v.name)) ||
+                    voices[0];
+
+      // English male voice for Number Calling
+      const maleKeywords = /male|man|david|mark|daniel|alex|george|oliver|guy|tom|fred|richard|james|brian/i;
+      maleVoice = voices.find(v => v.lang.startsWith('en') && maleKeywords.test(v.name)) ||
+                  voices.find(v => v.lang.startsWith('en') && v !== femaleVoice) ||
+                  voices[0];
+    }
+
+    if (synth) {
+      synth.onvoiceschanged = initVoices;
+      initVoices();
+    }
+
+    function toggleVoiceSpeech() {
+      speechEnabled = !speechEnabled;
+      const btn = document.getElementById('btnVoiceToggle');
+      if (btn) {
+        if (speechEnabled) {
+          btn.innerText = '🔊 Voice: ON';
+          btn.classList.remove('muted');
+          speakDabbyCoach("Voice audio enabled. Let's practice!");
+        } else {
+          btn.innerText = '🔇 Voice: OFF';
+          btn.classList.add('muted');
+          if (synth) synth.cancel();
+        }
+      }
+    }
+
+    function speakNumberCaller(num) {
+      if (!speechEnabled || !synth) return;
+      try {
+        synth.cancel();
+        const utter = new SpeechSynthesisUtterance(`Number ${num}`);
+        utter.rate = 1.05;
+        utter.pitch = 0.92; // Resonant male pitch
+        if (maleVoice) utter.voice = maleVoice;
+        synth.speak(utter);
+      } catch (e) {
+        console.warn('Caller speech failed:', e);
+      }
+    }
+
+    function speakDabbyCoach(text) {
+      if (!speechEnabled || !synth) return;
+      try {
+        synth.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1.02;
+        utter.pitch = 1.25; // Warm, natural female pitch
+        if (femaleVoice) utter.voice = femaleVoice;
+        synth.speak(utter);
+      } catch (e) {
+        console.warn('Coach speech failed:', e);
+      }
+    }
+
+    function setCoachMessage(html) {
+      const msgEl = document.getElementById('coachMessage');
+      if (msgEl) {
+        msgEl.innerHTML = `<strong>Dabby (Your Coach):</strong> ${html}`;
+      }
+    }
+
+    // ==========================================
+    // CLAIM TRAINING CONFIGURATION & EVALUATION
+    // ==========================================
+    const CLAIM_CONFIG = {
+      EARLY_5: { name: 'Early 5', total: 5, bonus: 150 },
+      FOUR_CORNERS: { name: '4 Corners', total: 4, bonus: 150 },
+      TOP_LINE: { name: 'Top Line', total: 5, bonus: 200 },
+      MIDDLE_LINE: { name: 'Middle Line', total: 5, bonus: 200 },
+      BOTTOM_LINE: { name: 'Bottom Line', total: 5, bonus: 200 },
+      FULL_HOUSE: { name: 'Full Housie', total: 15, bonus: 500 }
+    };
+
+    let claimedPrizes = new Set();
+
+    function getCornerNumbers() {
+      if (!currentTicket || currentTicket.length < 3) return [];
+      const r0 = currentTicket[0];
+      const r2 = currentTicket[2];
+      const c1 = r0.find(n => n !== null);
+      const c2 = [...r0].reverse().find(n => n !== null);
+      const c3 = r2.find(n => n !== null);
+      const c4 = [...r2].reverse().find(n => n !== null);
+      return [c1, c2, c3, c4].filter(n => n !== undefined && n !== null);
+    }
+
+    function getPatternProgress(key) {
+      if (!currentTicket || currentTicket.length < 3) return { progress: 0, total: CLAIM_CONFIG[key].total };
+      const total = CLAIM_CONFIG[key].total;
+      let count = 0;
+      if (key === 'EARLY_5') {
+        count = Math.min(5, dabbedSet.size);
+      } else if (key === 'FOUR_CORNERS') {
+        const corners = getCornerNumbers();
+        count = corners.filter(n => dabbedSet.has(n)).length;
+      } else if (key === 'TOP_LINE') {
+        count = currentTicket[0].filter(n => n !== null && dabbedSet.has(n)).length;
+      } else if (key === 'MIDDLE_LINE') {
+        count = currentTicket[1].filter(n => n !== null && dabbedSet.has(n)).length;
+      } else if (key === 'BOTTOM_LINE') {
+        count = currentTicket[2].filter(n => n !== null && dabbedSet.has(n)).length;
+      } else if (key === 'FULL_HOUSE') {
+        count = dabbedSet.size;
+      }
+      return { progress: count, total };
+    }
+
+    function updateClaimsUI() {
+      for (const key of Object.keys(CLAIM_CONFIG)) {
+        const btn = document.getElementById(`claim-${key}`);
+        const statusEl = document.getElementById(`status-${key}`);
+        const progressEl = document.getElementById(`progress-${key}`);
+        if (!btn || !statusEl || !progressEl) continue;
+
+        if (claimedPrizes.has(key)) {
+          btn.className = 'claim-btn claimed';
+          statusEl.innerText = 'CLAIMED';
+          progressEl.innerText = '✅ Secured!';
+        } else {
+          const { progress, total } = getPatternProgress(key);
+          if (progress >= total) {
+            btn.className = 'claim-btn ready';
+            statusEl.innerText = 'READY!';
+            progressEl.innerText = '⚡ Tap to Claim!';
+          } else {
+            btn.className = 'claim-btn';
+            statusEl.innerText = `${progress}/${total}`;
+            const needed = total - progress;
+            progressEl.innerText = `Need ${needed} more`;
+          }
+        }
+      }
+    }
+
+    function attemptClaim(key) {
+      const cfg = CLAIM_CONFIG[key];
+      if (!cfg) return;
+
+      const btn = document.getElementById(`claim-${key}`);
+
+      if (claimedPrizes.has(key)) {
+        setCoachMessage(`You already secured the <strong>${cfg.name}</strong> prize for this ticket! Focus on the remaining patterns.`);
+        speakDabbyCoach(`You already claimed ${cfg.name}! Keep working on remaining patterns.`);
+        return;
+      }
+
+      const { progress, total } = getPatternProgress(key);
+
+      if (progress >= total) {
+        // VALID CLAIM!
+        claimedPrizes.add(key);
+        score += cfg.bonus;
+        updateScore();
+        updateClaimsUI();
+        showFeedback(`🎉 ${cfg.name.toUpperCase()} CLAIMED! +${cfg.bonus}`, '#10b981');
+        setCoachMessage(`🎉 Splendid claim! You secured <strong>${cfg.name}</strong> for <strong>+${cfg.bonus} bonus points</strong>! Accurate and swift!`);
+        speakDabbyCoach(`Splendid claim! You secured ${cfg.name} for plus ${cfg.bonus} bonus points! Well done!`);
+
+        if (key === 'FULL_HOUSE') {
+          checkCelebration();
+        }
+      } else {
+        // BOGEY CLAIM (False claim)
+        const needed = total - progress;
+        score = Math.max(0, score - 25);
+        updateScore();
+
+        if (btn) {
+          btn.classList.add('bogey');
+          setTimeout(() => btn.classList.remove('bogey'), 450);
+        }
+
+        showFeedback(`⚠️ BOGEY CLAIM! -25`, '#ef4444');
+        setCoachMessage(`⚠️ <strong>Bogey Alert!</strong> You called <strong>${cfg.name}</strong> too early. You still need <strong>${needed} more dab${needed > 1 ? 's' : ''}</strong>! In competitive Tambola, false claims penalize your standing. Keep scanning!`);
+        speakDabbyCoach(`Bogey claim! You still need ${needed} more numbers for ${cfg.name}. Check your ticket before claiming!`);
+      }
+    }
+
+    // ==========================================
+    // VIRAL SOCIAL CHALLENGE SHARING
+    // ==========================================
+    function shareOnLinkedIn() {
+      const shareUrl = encodeURIComponent('https://dabhousie.com/play-with-dabby.html');
+      const shareText = encodeURIComponent(`Can you beat my Tambola rapid-dab reflex score of ${score} pts on DabHousie? Free instant practice arena with authentic 3x9 tickets!`);
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}&text=${shareText}`, '_blank', 'width=620,height=580,noopener,noreferrer');
+    }
+
+    function shareOnFacebook() {
+      const shareUrl = encodeURIComponent('https://dabhousie.com/play-with-dabby.html');
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`, '_blank', 'width=620,height=520,noopener,noreferrer');
+    }
+
+    function copyChallengeLink() {
+      const url = 'https://dabhousie.com/play-with-dabby.html';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          const txt = document.getElementById('copyText');
+          const ico = document.getElementById('copyIcon');
+          if (txt) txt.innerText = 'Copied!';
+          if (ico) ico.innerText = '✅';
+          setTimeout(() => {
+            if (txt) txt.innerText = 'Copy Link';
+            if (ico) ico.innerText = '📋';
+          }, 2000);
+        }).catch(() => {
+          showFeedback('Link copied: ' + url, '#cbd5e1');
+        });
+      } else {
+        showFeedback('Link: ' + url, '#cbd5e1');
+      }
+    }
 
     function randInt(min, max) {
       return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -1175,6 +1797,7 @@
         score += 100;
         showFeedback('⚡ PERFECT DAB! +100', '#10b981');
         updateScore();
+        updateClaimsUI();
         checkCelebration();
 
         if (dabbedSet.size < 15) {
@@ -1189,6 +1812,7 @@
         score += 50;
         showFeedback('⏱️ DELAYED DAB! +50', '#facc15');
         updateScore();
+        updateClaimsUI();
         checkCelebration();
       } else {
         cellEl.style.transform = 'translateX(5px)';
@@ -1244,6 +1868,9 @@
       currentCalledNumber = pick;
       calledNumbersList.push(pick);
 
+      // Speak number with male caller voice
+      speakNumberCaller(pick);
+
       const ballSphere = document.getElementById('currentBallSphere');
       ballSphere.innerText = pick;
       ballSphere.classList.remove('pop');
@@ -1262,6 +1889,7 @@
         }
       }
 
+      updateClaimsUI();
       resetTimer();
     }
 
@@ -1491,14 +2119,17 @@
       consecutiveMisses = 0;
       currentTicket = generateAuthenticTambolaTicket();
       dabbedSet.clear();
+      claimedPrizes.clear();
       calledNumbersList = [];
       score = 0;
       updateScore();
+      setCoachMessage("Welcome to Claim Training! Dab numbers as they're called. When you complete a pattern, hit its button immediately to claim! Beware of Bogeys!");
 
       const code = randInt(100000, 999999);
       document.getElementById('gameCodeDisplay').innerText = `Game Code: ${code}`;
 
       renderTicket();
+      updateClaimsUI();
       callNextNumber();
     }
 
