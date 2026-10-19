@@ -1251,10 +1251,10 @@
         🏆 FULL HOUSE BINGO! • ALL 15 NUMBERS DABBED! 🎉
       </div>
 
-      <!-- Game Over / Inactivity Banner -->
-      <div class="game-over-banner" id="gameOverBanner" style="display: none; position: absolute; top: 12%; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.96); border: 2px solid #ef4444; color: #fff; padding: 16px 24px; border-radius: 20px; z-index: 70; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.85); width: 88%; max-width: 480px; box-sizing: border-box;">
-        <div style="font-size: clamp(20px, 3.5vw, 26px); font-weight: 900; color: #f87171; margin-bottom: 4px;">⏰ TIME'S UP!</div>
-        <div style="font-size: clamp(12px, 2vw, 14px); color: #cbd5e1; margin-bottom: 14px; line-height: 1.4;" id="gameOverReason">Game paused due to 15 missed calls.</div>
+      <!-- Game Over / Victory Modal Banner -->
+      <div class="game-over-banner" id="gameOverBanner" style="display: none; position: absolute; top: 12%; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.96); border: 2px solid #ef4444; color: #fff; padding: 18px 24px; border-radius: 20px; z-index: 70; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.85); width: 88%; max-width: 480px; box-sizing: border-box; transition: all 0.3s ease;">
+        <div id="gameOverTitle" style="font-size: clamp(20px, 3.5vw, 26px); font-weight: 900; color: #f87171; margin-bottom: 6px;">⏰ TIME'S UP!</div>
+        <div id="gameOverReason" style="font-size: clamp(12.5px, 2vw, 14px); color: #cbd5e1; margin-bottom: 16px; line-height: 1.45;">Game paused due to 15 missed calls.</div>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
           <button onclick="document.getElementById('gameOverBanner').style.display='none'" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 999px; cursor: pointer;">
             ✕ Dismiss
@@ -1499,11 +1499,57 @@
       }
     }
 
+    // Speech Synthesis Management with Chromium GC Protection & Audio-Tail Buffering
+    let activeSpeechToken = 0;
+    let coachSpeechTimeout = null;
+    let coachAudioTailTimeout = null;
+    window._activeUtterances = [];
+
+    // Periodic keep-alive for Chrome SpeechSynthesizer engine
+    setInterval(() => {
+      if (synth && synth.paused) {
+        try { synth.resume(); } catch (e) {}
+      }
+    }, 3000);
+
+    function freezeCountdownUI(statusText = '⏸️ Dabby Speaking...') {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      const ringProgress = document.getElementById('ringProgress');
+      const urgentLine = document.getElementById('urgentLine');
+      const secondsEl = document.getElementById('timerSeconds');
+      const urgencyText = document.getElementById('timerUrgencyText');
+      const callerBar = document.getElementById('callerBar');
+
+      if (callerBar) callerBar.classList.remove('urgent');
+      if (secondsEl) secondsEl.innerText = '⏸️';
+      if (urgencyText) {
+        urgencyText.innerText = statusText;
+        urgencyText.style.color = '#facc15';
+      }
+      if (ringProgress) {
+        ringProgress.style.strokeDashoffset = '0';
+        ringProgress.style.stroke = '#facc15';
+      }
+      if (urgentLine) {
+        urgentLine.style.transition = 'none';
+        urgentLine.style.transform = 'scaleX(1)';
+      }
+    }
+
     function speakNumberCaller(num) {
       if (!speechEnabled || !synth || isDabbySpeaking) return;
       try {
+        if (synth.paused) synth.resume();
         synth.cancel();
+        if (synth.paused) synth.resume();
+
         const utter = new SpeechSynthesisUtterance(`Number ${num}`);
+        window._activeUtterances.push(utter);
+        if (window._activeUtterances.length > 6) window._activeUtterances.shift();
+
         utter.rate = 1.05;
         utter.pitch = 0.92; // Resonant male pitch
         if (maleVoice) utter.voice = maleVoice;
@@ -1513,83 +1559,108 @@
       }
     }
 
-    function speakDabbyCoach(text) {
-      if (!speechEnabled || !synth) return;
+    function speakDabbyCoach(text, onComplete) {
+      if (!speechEnabled || !synth) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
+
       try {
-        // While Dabby speaks, caller must wait and timer must pause
+        const currentToken = ++activeSpeechToken;
         isDabbySpeaking = true;
-        if (timerInterval) {
-          clearInterval(timerInterval);
-          timerInterval = null;
+
+        freezeCountdownUI('⏸️ Dabby Speaking...');
+
+        if (coachSpeechTimeout) {
+          clearTimeout(coachSpeechTimeout);
+          coachSpeechTimeout = null;
+        }
+        if (coachAudioTailTimeout) {
+          clearTimeout(coachAudioTailTimeout);
+          coachAudioTailTimeout = null;
         }
 
-        // Freeze countdown UI completely
-        const urgencyEl = document.getElementById('timerUrgencyText');
-        const secondsEl = document.getElementById('timerSeconds');
-        const ringProgress = document.getElementById('ringProgress');
-        const urgentLine = document.getElementById('urgentLine');
-        if (urgencyEl && gameStarted) {
-          urgencyEl.innerText = '⏸️ Dabby Coaching...';
-          urgencyEl.style.color = '#facc15';
-        }
-        if (secondsEl) secondsEl.innerText = '⏸️';
-        if (ringProgress) {
-          ringProgress.style.strokeDashoffset = '0';
-          ringProgress.style.stroke = '#facc15';
-        }
-        if (urgentLine) urgentLine.style.transform = 'scaleX(1)';
-
+        if (synth.paused) synth.resume();
         synth.cancel();
+        if (synth.paused) synth.resume();
+
         const utter = new SpeechSynthesisUtterance(text);
-        utter.rate = 1.0;
+        window._activeUtterances.push(utter); // Prevent Chromium garbage collection mid-speech
+        if (window._activeUtterances.length > 6) window._activeUtterances.shift();
+
+        utter.rate = 0.98; // Natural conversational cadence
         utter.pitch = 1.25; // Warm, natural female pitch
         if (femaleVoice) utter.voice = femaleVoice;
 
-        let resumed = false;
-        const resumeCalling = () => {
-          if (resumed) return;
-          resumed = true;
-          isDabbySpeaking = false;
+        let finished = false;
+        const finishSpeech = () => {
+          if (finished) return;
+          finished = true;
 
-          // If Full Housie was claimed, game is finished with victory celebration
-          if (claimedPrizes.has('FULL_HOUSE')) {
-            return;
+          if (coachSpeechTimeout) {
+            clearTimeout(coachSpeechTimeout);
+            coachSpeechTimeout = null;
           }
 
-          // If there are still unclaimed eligible prizes waiting, pause and prompt player
-          const pending = getUnclaimedEligiblePrizes();
-          if (pending.length > 0) {
-            handlePostDabFlow(false);
-            return;
-          }
+          // If another speech took over, do not execute stale callbacks
+          if (currentToken !== activeSpeechToken) return;
 
-          // If all 15 dabbed, update claims UI to see if Full Housie unlocked now
-          if (dabbedSet.size >= 15) {
-            updateClaimsUI();
-            const pendingNow = getUnclaimedEligiblePrizes();
-            if (pendingNow.length > 0) {
-              handlePostDabFlow(false);
+          // 500ms audio-tail padding: Chrome often fires onend before the audio card finishes the last word.
+          // Padding prevents cutting off the end of words like "Early 5"!
+          coachAudioTailTimeout = setTimeout(() => {
+            if (currentToken !== activeSpeechToken) return;
+            isDabbySpeaking = false;
+
+            if (typeof onComplete === 'function') {
+              onComplete();
               return;
             }
-          }
 
-          // Otherwise resume calling numbers with full countdown grace period
-          if (gameStarted && dabbedSet.size < 15) {
-            resetTimer();
-          }
+            if (claimedPrizes.has('FULL_HOUSE')) {
+              return;
+            }
+
+            // Check if any claim is still pending
+            const pending = getUnclaimedEligiblePrizes();
+            if (pending.length > 0) {
+              promptPendingClaims(pending);
+              return;
+            }
+
+            // If all 15 dabbed, check if Full Housie unlocked now
+            if (dabbedSet.size >= 15) {
+              updateClaimsUI();
+              const pendingNow = getUnclaimedEligiblePrizes();
+              if (pendingNow.length > 0) {
+                promptPendingClaims(pendingNow);
+                return;
+              }
+            }
+
+            // Otherwise resume calling numbers with full 5-second countdown grace period
+            if (gameStarted && dabbedSet.size < 15) {
+              resetTimer();
+            }
+          }, 500);
         };
 
-        utter.onend = resumeCalling;
-        utter.onerror = resumeCalling;
-        // Dynamic safety timeout: allow generous time for speech
-        const safetyDuration = Math.max(8000, text.length * 90);
-        setTimeout(resumeCalling, safetyDuration);
+        utter.onend = finishSpeech;
+        utter.onerror = (e) => {
+          if (currentToken !== activeSpeechToken) return;
+          finishSpeech();
+        };
+
+        // Generous safety duration (12s minimum) so speech never hangs
+        const safetyDuration = Math.max(12000, text.length * 120);
+        coachSpeechTimeout = setTimeout(finishSpeech, safetyDuration);
 
         synth.speak(utter);
       } catch (e) {
         console.warn('Coach speech failed:', e);
         isDabbySpeaking = false;
-        if (gameStarted && dabbedSet.size < 15) {
+        if (typeof onComplete === 'function') {
+          onComplete();
+        } else if (gameStarted && dabbedSet.size < 15) {
           resetTimer();
         }
       }
@@ -2153,6 +2224,56 @@
       }
     }
 
+    function promptPendingClaims(pending) {
+      if (!pending || pending.length === 0) return;
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      if (dabNextCallTimeout) {
+        clearTimeout(dabNextCallTimeout);
+        dabNextCallTimeout = null;
+      }
+
+      const isFullHousie = pending.some(u => u.key === 'FULL_HOUSE');
+      if (isFullHousie) {
+        freezeCountdownUI('🏆 TAP FULL HOUSIE!');
+        const urgencyEl = document.getElementById('timerUrgencyText');
+        if (urgencyEl) {
+          urgencyEl.innerText = '🏆 TAP FULL HOUSIE!';
+          urgencyEl.style.color = '#facc15';
+        }
+        const instructionEl = document.getElementById('callInstruction');
+        if (instructionEl) {
+          instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">ALL 15 DABBED!</span> Tap flashing <span style="color:#facc15; font-weight:900;">FULL HOUSIE</span> below!`;
+        }
+        setCoachMessage(`🏆 <strong>TICKET COMPLETED!</strong> All 15 numbers dabbed and all lines secured! Tap the flashing <strong>Full Housie</strong> button below to claim your victory!`);
+
+        speakDabbyCoach(`All fifteen numbers dabbed! Tap the flashing Full Housie button below to claim your victory!`);
+        return;
+      }
+
+      // Other claims (Early 5, Corners, Lines)
+      freezeCountdownUI('⚡ CLAIM READY!');
+      const prizeNames = pending.map(u => u.name).join(' & ');
+      const instructionEl = document.getElementById('callInstruction');
+      if (instructionEl) {
+        instructionEl.innerHTML = `⚡ <span style="color:#facc15; font-weight:900;">CLAIM READY!</span> Tap flashing <span style="color:#facc15; font-weight:900;">${prizeNames}</span> below!`;
+      }
+      const urgencyEl = document.getElementById('timerUrgencyText');
+      if (urgencyEl) {
+        urgencyEl.innerText = '⚡ CLAIM READY!';
+        urgencyEl.style.color = '#facc15';
+      }
+
+      setCoachMessage(`⚡ <strong>Claim Unlocked!</strong> You completed <strong>${prizeNames}</strong>! Tap the flashing button below to secure your bonus points!`);
+
+      if (!isDabbySpeaking) {
+        speakDabbyCoach(`Claim ready! Tap the flashing ${prizeNames} button below to secure your prize!`);
+      }
+    }
+
     function handlePostDabFlow(isCurrentBall) {
       if (dabNextCallTimeout) {
         clearTimeout(dabNextCallTimeout);
@@ -2161,34 +2282,7 @@
 
       const unclaimed = getUnclaimedEligiblePrizes();
       if (unclaimed.length > 0) {
-        // Player has an eligible claim ready!
-        // Pause timer so player has ample time to click the flashing claim button!
-        if (timerInterval) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-        }
-
-        const prizeNames = unclaimed.map(u => u.name).join(' & ');
-        const instructionEl = document.getElementById('callInstruction');
-        if (instructionEl) {
-          instructionEl.innerHTML = `⚡ <span style="color:#facc15; font-weight:900;">CLAIM READY!</span> Tap flashing <span style="color:#facc15; font-weight:900;">${prizeNames}</span> below!`;
-        }
-        const urgencyEl = document.getElementById('timerUrgencyText');
-        if (urgencyEl) {
-          urgencyEl.innerText = '⚡ CLAIM READY!';
-          urgencyEl.style.color = '#facc15';
-        }
-        const ringProgress = document.getElementById('ringProgress');
-        if (ringProgress) {
-          ringProgress.style.strokeDashoffset = '0';
-          ringProgress.style.stroke = '#facc15';
-        }
-
-        setCoachMessage(`⚡ <strong>Claim Unlocked!</strong> You completed <strong>${prizeNames}</strong>! Tap the flashing button below to secure your bonus points!`);
-
-        if (!isDabbySpeaking) {
-          speakDabbyCoach(`Claim ready! Tap the flashing ${prizeNames} button below to secure your prize!`);
-        }
+        promptPendingClaims(unclaimed);
         return;
       }
 
@@ -2200,9 +2294,20 @@
           if (!claimedPrizes.has('MIDDLE_LINE')) missing.push('Middle Line');
           if (!claimedPrizes.has('BOTTOM_LINE')) missing.push('Bottom Line');
           if (missing.length > 0) {
+            freezeCountdownUI('⚡ CLAIM LINES FIRST');
             const instructionEl = document.getElementById('callInstruction');
             if (instructionEl) {
               instructionEl.innerHTML = `⚠️ <span style="color:#f59e0b; font-weight:800;">ALL 15 DABBED!</span> Claim ${missing.join(', ')} first!`;
+            }
+            setCoachMessage(`⚠️ <strong>Almost There!</strong> All 15 numbers dabbed! Tap and claim your <strong>${missing.join(', ')}</strong> first, then claim Full Housie!`);
+            speakDabbyCoach(`All fifteen numbers dabbed! Claim your lines first, then claim Full Housie!`);
+            return;
+          } else {
+            updateClaimsUI();
+            const pendingNow = getUnclaimedEligiblePrizes();
+            if (pendingNow.length > 0) {
+              promptPendingClaims(pendingNow);
+              return;
             }
           }
         }
@@ -2230,7 +2335,7 @@
           if (gameStarted && dabbedSet.size < 15 && !isDabbySpeaking) {
             const pending = getUnclaimedEligiblePrizes();
             if (pending.length > 0) {
-              handlePostDabFlow(false);
+              promptPendingClaims(pending);
             } else {
               callNextNumber();
             }
@@ -2239,27 +2344,57 @@
       }
     }
 
-    function triggerGameOver(reason) {
+    function triggerGameOver(reason, isTimeout = true) {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
+      if (dabNextCallTimeout) {
+        clearTimeout(dabNextCallTimeout);
+        dabNextCallTimeout = null;
+      }
 
       const overBanner = document.getElementById('gameOverBanner');
+      const overTitle = document.getElementById('gameOverTitle');
       const overReason = document.getElementById('gameOverReason');
-      if (overReason) overReason.innerText = reason;
+
+      if (isTimeout) {
+        if (overTitle) {
+          overTitle.innerText = "⏰ TIME'S UP!";
+          overTitle.style.color = '#f87171';
+          overTitle.style.textShadow = 'none';
+        }
+        if (overBanner) {
+          overBanner.style.borderColor = '#ef4444';
+          overBanner.style.boxShadow = '0 15px 40px rgba(0,0,0,0.85)';
+          overBanner.style.background = 'rgba(15, 23, 42, 0.96)';
+        }
+      } else {
+        if (overTitle) {
+          overTitle.innerText = "🎱 GAME COMPLETED!";
+          overTitle.style.color = '#60a5fa';
+          overTitle.style.textShadow = 'none';
+        }
+        if (overBanner) {
+          overBanner.style.borderColor = '#3b82f6';
+          overBanner.style.boxShadow = '0 15px 40px rgba(0,0,0,0.85)';
+          overBanner.style.background = 'rgba(15, 23, 42, 0.96)';
+        }
+      }
+
+      if (overReason) overReason.innerHTML = reason;
       if (overBanner) overBanner.style.display = 'block';
 
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
         instructionEl.innerHTML = `<span style="color:#f87171">Game Over</span> • Tap Play Again when ready`;
       }
-      document.getElementById('timerUrgencyText').innerText = 'Paused';
+      document.getElementById('timerUrgencyText').innerText = 'Finished';
     }
 
     function callNextNumber() {
       if (!gameStarted || dabbedSet.size >= 15 || isDabbySpeaking) return;
 
       if (uncalledPool.length === 0) {
-        triggerGameOver('All 90 numbers have been called!');
+        triggerGameOver(`All 90 numbers have been called! Final Score: <strong style="color:#facc15;">${score} Points</strong>.`, false);
         return;
       }
 
@@ -2317,23 +2452,26 @@
         timerInterval = null;
       }
       if (isDabbySpeaking) {
-        const urgencyEl = document.getElementById('timerUrgencyText');
-        if (urgencyEl) {
-          urgencyEl.innerText = '⏸️ Dabby Coaching...';
-          urgencyEl.style.color = '#facc15';
-        }
+        freezeCountdownUI('⏸️ Dabby Speaking...');
         return;
       }
       if (!gameStarted || dabbedSet.size >= 15) return;
 
       timeLeft = CALL_DURATION_SEC;
+      const urgentLine = document.getElementById('urgentLine');
+      if (urgentLine) {
+        urgentLine.style.transition = 'transform 0.1s linear';
+      }
       updateTimerUI();
 
       const startTime = Date.now();
       const endTime = startTime + (CALL_DURATION_SEC * 1000);
 
       timerInterval = setInterval(() => {
-        if (isDabbySpeaking) return;
+        if (isDabbySpeaking) {
+          freezeCountdownUI('⏸️ Dabby Speaking...');
+          return;
+        }
 
         const now = Date.now();
         const diff = (endTime - now) / 1000;
@@ -2352,7 +2490,7 @@
           }
 
           if (consecutiveMisses >= MAX_CONSECUTIVE_MISSES) {
-            triggerGameOver('You missed 15 calls in a row without dabbing.');
+            triggerGameOver('Game paused due to 15 missed calls without dabbing.', true);
             return;
           }
 
@@ -2418,9 +2556,23 @@
       if (badge) badge.style.display = 'block';
 
       const overBanner = document.getElementById('gameOverBanner');
+      const overTitle = document.getElementById('gameOverTitle');
       const overReason = document.getElementById('gameOverReason');
-      if (overReason) overReason.innerText = `Full Housie Champion! Final Score: ${score} Points!`;
-      if (overBanner) overBanner.style.display = 'block';
+
+      if (overTitle) {
+        overTitle.innerText = "🎉 CONGRATULATIONS CHAMPION!";
+        overTitle.style.color = '#facc15';
+        overTitle.style.textShadow = '0 0 15px rgba(250, 204, 21, 0.5)';
+      }
+      if (overBanner) {
+        overBanner.style.borderColor = '#facc15';
+        overBanner.style.boxShadow = '0 0 50px rgba(250, 204, 21, 0.45)';
+        overBanner.style.background = 'linear-gradient(135deg, rgba(30, 27, 75, 0.98), rgba(15, 23, 42, 0.98))';
+        overBanner.style.display = 'block';
+      }
+      if (overReason) {
+        overReason.innerHTML = `🏆 <strong>Full Housie Completed!</strong> Outstanding rapid-dab reflexes! Final Score: <strong style="color:#facc15;">${score} Points</strong>.`;
+      }
 
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
@@ -2555,11 +2707,26 @@
     function initPracticeArena() {
       gameStarted = false;
       isDabbySpeaking = false;
+      activeSpeechToken++;
+      if (coachSpeechTimeout) {
+        clearTimeout(coachSpeechTimeout);
+        coachSpeechTimeout = null;
+      }
+      if (coachAudioTailTimeout) {
+        clearTimeout(coachAudioTailTimeout);
+        coachAudioTailTimeout = null;
+      }
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
       if (dabNextCallTimeout) {
         clearTimeout(dabNextCallTimeout);
         dabNextCallTimeout = null;
+      }
+      if (synth) {
+        try {
+          if (synth.paused) synth.resume();
+          synth.cancel();
+        } catch (e) {}
       }
 
       const badge = document.getElementById('victoryBadge');
