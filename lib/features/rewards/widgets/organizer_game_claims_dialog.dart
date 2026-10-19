@@ -483,7 +483,7 @@ class _OrganizerGameClaimsDialogState
                               SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  'DabHousie verifies ticket wins. The host awards physical, cash, or voucher prizes directly to the winner, then marks this claim as Settled.',
+                                  'DabHousie verifies winning ticket claims and does not distribute prizes or collect commissions. Prize fulfillment is completely the host\'s responsibility. Transaction references or notes are optional and recorded solely for host records.',
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     color: Color(0xFF94A3B8),

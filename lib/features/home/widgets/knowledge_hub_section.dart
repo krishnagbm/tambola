@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 
+class GuideStepItem {
+  final String? title;
+  final String description;
+
+  const GuideStepItem({
+    this.title,
+    required this.description,
+  });
+}
+
 enum GuideCategory {
   cash,
   brandGifts,
@@ -86,7 +96,7 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'How-to workflows for prize claims, payouts & auto-calling',
+                        'How-to workflows for prize fulfillment, reward claims & auto-calling',
                         style: TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
                       ),
                     ],
@@ -104,7 +114,7 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
               children: [
                 _buildCategoryChip(
                   GuideCategory.cash,
-                  '💵 Cash & Mobile Pay',
+                  '🤝 Prize Fulfillment',
                   const Color(0xFF10B981),
                 ),
                 const SizedBox(width: 8),
@@ -292,39 +302,87 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
   }
 
   // ==========================================
-  // 1. CASH & MOBILE PAY GUIDE
+  // 1. HOST PRIZE FULFILLMENT GUIDE
   // ==========================================
   Widget _buildCashGuide(BuildContext context) {
     if (_isHostPerspective) {
       return _buildGuideCard(
-        title: 'Settling with Cash / Venmo / Zelle / UPI',
-        subtitle: 'When awarding cash or direct mobile money transfers to winners',
+        title: 'Host Prize Fulfillment Guide',
+        subtitle: 'For cash awards, gift cards, merchant vouchers, and other event rewards.',
         accentColor: const Color(0xFF10B981),
         steps: const [
-          'Open "Organizer Prize Claims & Brand Gift Hub" or click "Settle" from your game lobby.',
-          'Review the winning player name, ticket number, and prize won (e.g., Full Housie \$10).',
-          'Ask the winner for their payment handle (Venmo @handle, Zelle phone/email, or UPI ID) and cross-verify their Ticket # and Prize Voucher Code.',
-          'Send the payment directly via your mobile banking or payment app.',
-          'In DabHousie, select "Direct Cash / UPI / Venmo / Zelle", enter the transaction reference or note, and tap "Mark Settled & Complete".',
+          GuideStepItem(
+            title: 'Step 1 — Open Your Prize Claims',
+            description:
+                'Open "Organizer Prize Claims & Brand Gift Hub" or use the existing entry point in the game lobby.',
+          ),
+          GuideStepItem(
+            title: 'Step 2 — Verify the Claim',
+            description:
+                "Review the winning player's display name, ticket number, prize won, and applicable claim conditions before approving the claim.",
+          ),
+          GuideStepItem(
+            title: 'Step 3 — Choose Your Fulfillment Method',
+            description:
+                'Fulfill the prize according to the event rules and applicable organizational policies. Options may include merchant vouchers, gift cards, approved rewards, or direct payment where appropriate.',
+          ),
+          GuideStepItem(
+            title: 'Step 4 — Deliver the Prize',
+            description:
+                "Arrange prize delivery or payment directly with the verified winner using the host's approved process. Retain any necessary transaction reference or fulfillment record.",
+          ),
+          GuideStepItem(
+            title: 'Step 5 — Update the Claim Status',
+            description:
+                'Use the existing settlement workflow. Select the appropriate fulfillment method, enter a reference or note where applicable, and mark the claim as fulfilled only after the prize has actually been delivered.',
+          ),
         ],
-        tipText: '💡 Zero commissions! DabHousie does not touch player cash prize transactions, so 100% of your payout reaches the winner directly.',
-        actionLabel: 'Open Organizer Prize Claims',
+        infoPanelTitle: 'Host-Controlled Prize Fulfillment',
+        infoPanelText:
+            'The host determines prize eligibility, reward value, approval, and delivery. DabHousie provides tools to manage prize claims and track fulfillment. The host remains responsible for fulfilling prizes in accordance with applicable rules and organizational policies.',
+        responsibilityNote:
+            'Hosts are responsible for establishing prize terms before an event, verifying claims, and ensuring prize fulfillment complies with applicable laws and organizational policies. DabHousie provides event-management and claim-tracking tools and does not itself fulfill host-awarded prizes.',
+        actionLabel: 'Organizer Prize Claims & Brand Gift Hub',
         actionIcon: Icons.receipt_long_rounded,
         onAction: () => context.push('/wallet/claims'),
       );
     } else {
       return _buildGuideCard(
-        title: 'Receiving Cash / Venmo / Zelle / UPI Payouts',
-        subtitle: 'How to claim and receive your cash prize from the game host',
+        title: 'Receiving Event Prizes & Rewards',
+        subtitle: 'How to claim and receive your reward from the event host',
         accentColor: const Color(0xFF10B981),
         steps: const [
-          'When Dabby announces your win, tap your winning ticket or go to "My Rewards & Vouchers".',
-          'Locate your unique 8-character Prize Voucher Code and your 6-digit Ticket Number.',
-          'Share your Venmo handle, Zelle email/phone, UPI ID, or meet in-person for cash.',
-          'Provide your Ticket Number & Voucher Code to the host so they can verify the win against their game records.',
-          'Once the host completes the transfer, your claim will be marked as "Settled" in your Rewards history.',
+          GuideStepItem(
+            title: 'Step 1 — Open Your Rewards',
+            description:
+                'When Dabby announces your win, tap your winning ticket or go to "My Rewards & Vouchers".',
+          ),
+          GuideStepItem(
+            title: 'Step 2 — Locate Verification Details',
+            description:
+                'Locate your unique 8-character Prize Voucher Code and your 6-digit Ticket Number.',
+          ),
+          GuideStepItem(
+            title: 'Step 3 — Provide Fulfillment Details',
+            description:
+                'Share your preferred fulfillment details (direct payment handle, voucher preference, or in-person delivery) with the host.',
+          ),
+          GuideStepItem(
+            title: 'Step 4 — Verify with Organizer',
+            description:
+                'Provide your Ticket Number & Voucher Code to the host so they can verify the win against their game records.',
+          ),
+          GuideStepItem(
+            title: 'Step 5 — Claim Settled',
+            description:
+                'Once the host completes fulfillment, your claim will be marked as "Settled" in your Rewards history.',
+          ),
         ],
-        tipText: '🔒 Keep your Voucher Code safe! It confirms your win ownership in case you played as a guest or on a shared device.',
+        infoPanelTitle: 'Host Fulfillment Responsibility',
+        infoPanelText:
+            'Prizes are fulfilled directly by your event host according to their established event rules. DabHousie provides verification and claim-tracking tools.',
+        responsibilityNote:
+            'DabHousie does not hold funds or distribute prizes. All prize fulfillments are handled directly by the event host.',
         actionLabel: 'View My Rewards & Vouchers',
         actionIcon: Icons.emoji_events_outlined,
         onAction: () => context.push('/rewards'),
@@ -503,8 +561,11 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
     required String title,
     required String subtitle,
     required Color accentColor,
-    required List<String> steps,
-    required String tipText,
+    required List<dynamic> steps,
+    String? tipText,
+    String? infoPanelTitle,
+    String? infoPanelText,
+    String? responsibilityNote,
     required String actionLabel,
     required IconData actionIcon,
     required VoidCallback onAction,
@@ -562,7 +623,7 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
           // Steps list
           for (int i = 0; i < steps.length; i++) ...[
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: 11),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -586,46 +647,121 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      steps[i],
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        color: Color(0xFFE2E8F0),
-                        height: 1.4,
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final step = steps[i];
+                        if (step is GuideStepItem) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (step.title != null) ...[
+                                Text(
+                                  step.title!,
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                              ],
+                              Text(
+                                step.description,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFCBD5E1),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        return Text(
+                          step.toString(),
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: Color(0xFFE2E8F0),
+                            height: 1.4,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
 
-          // Tip Box
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1B2236),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFF2E3B5B)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    tipText,
+          // Information Panel or Tip Box
+          if (infoPanelTitle != null && infoPanelText != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161E31),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF28354E)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 15,
+                        color: accentColor,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        infoPanelTitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    infoPanelText,
                     style: const TextStyle(
                       fontSize: 11.5,
                       color: Color(0xFFCBD5E1),
-                      height: 1.35,
+                      height: 1.4,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ] else if (tipText != null) ...[
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B2236),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF2E3B5B)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      tipText,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFFCBD5E1),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
 
           // Action CTA
           SizedBox(
@@ -647,6 +783,40 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
               ),
             ),
           ),
+
+          // Responsibility Note (if provided)
+          if (responsibilityNote != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F1422),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF1E2638)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    size: 13,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      responsibilityNote,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFF94A3B8),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
