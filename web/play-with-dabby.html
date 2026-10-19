@@ -426,17 +426,18 @@
     /* 3x9 Grid Overlay matching the 27 cells inside DabHousie_Bingo_UI_Showcase_GrayButtons.png */
     .grid-overlay {
       position: absolute;
-      left: 21.8%;
-      top: 29.9%;
-      width: 74.8%;
-      height: 39.8%;
+      left: 23.20%;
+      top: 30.24%;
+      width: 73.47%;
+      height: 38.90%;
       display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      column-gap: 0;
-      row-gap: 0;
+      grid-template-columns: 83fr 84fr 84fr 84fr 83fr 83fr 82fr 75fr 72fr;
+      grid-template-rows: 75fr 77fr 75fr;
+      column-gap: calc(11 / 817 * 100%);
+      row-gap: calc(10 / 247 * 100%);
       padding: 0;
       z-index: 10;
+      box-sizing: border-box;
     }
 
     .overlay-cell {
@@ -449,8 +450,11 @@
       color: #0f172a;
       cursor: pointer;
       user-select: none;
-      border-radius: 12%;
+      border-radius: 10px;
       transition: transform 0.15s ease, background-color 0.2s ease;
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
     }
 
     .overlay-cell.empty {
@@ -492,20 +496,25 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 78%;
-      height: 78%;
-      max-width: 60px;
-      max-height: 60px;
+      width: 82%;
+      height: 82%;
+      max-width: 62px;
+      max-height: 62px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #fef08a 0%, #facc15 65%, #eab308 100%);
       box-shadow: 0 2px 8px rgba(161, 98, 7, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.8);
       z-index: 1;
+      pointer-events: none;
     }
 
     .overlay-cell span.num {
       position: relative;
       z-index: 2;
       transition: color 0.15s ease;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .overlay-cell.dabbed span.num {
@@ -519,23 +528,24 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 82%;
-      height: 82%;
-      max-width: 62px;
-      max-height: 62px;
+      width: 84%;
+      height: 84%;
+      max-width: 64px;
+      max-height: 64px;
       border-radius: 50%;
       border: 3px dashed #ef4444;
       background: rgba(239, 68, 68, 0.15);
       z-index: 1;
+      pointer-events: none;
     }
     .overlay-cell.missed .missed-stamp {
       display: block;
     }
 
     @keyframes dabPop {
-      0% { transform: scale(0.2); opacity: 0; }
-      80% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(1); opacity: 1; }
+      0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+      80% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
     }
 
     .feedback-float {
