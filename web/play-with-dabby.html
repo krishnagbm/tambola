@@ -1550,8 +1550,31 @@
           if (resumed) return;
           resumed = true;
           isDabbySpeaking = false;
+
+          // If Full Housie was claimed, game is finished with victory celebration
+          if (claimedPrizes.has('FULL_HOUSE')) {
+            return;
+          }
+
+          // If there are still unclaimed eligible prizes waiting, pause and prompt player
+          const pending = getUnclaimedEligiblePrizes();
+          if (pending.length > 0) {
+            handlePostDabFlow(false);
+            return;
+          }
+
+          // If all 15 dabbed, update claims UI to see if Full Housie unlocked now
+          if (dabbedSet.size >= 15) {
+            updateClaimsUI();
+            const pendingNow = getUnclaimedEligiblePrizes();
+            if (pendingNow.length > 0) {
+              handlePostDabFlow(false);
+              return;
+            }
+          }
+
+          // Otherwise resume calling numbers with full countdown grace period
           if (gameStarted && dabbedSet.size < 15) {
-            // Add full 5-second countdown grace period after Dabby finishes speaking
             resetTimer();
           }
         };
@@ -1591,39 +1614,109 @@
       FULL_HOUSE: { name: 'Full Housie', total: 15, bonus: 500, solidClass: 'solid-fullhouse' }
     };
 
-    // Distinct praise & coaching greetings for each specific claim
-    const CLAIM_PRAISE = {
-      EARLY_5: {
-        voice: "Lightning quick! You claimed Early 5 in record time! Superb start!",
-        banner: "⚡ LIGHTNING DAB! EARLY 5 CLAIMED!",
-        coach: "🎉 <strong>Lightning Fast!</strong> You secured <strong>Early 5</strong> for <strong>+150 bonus points</strong>! Exceptional speed!"
+    function pickRandom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    // Dynamic, varied praise & coaching greetings for claims
+    const PRAISE_OPTIONS = {
+      EARLY_5: [
+        "Lightning quick! You claimed Early Five in record time! Superb start!",
+        "Early Five secured! Rapid reflexes right out of the gate!",
+        "Five fast dabs! Early Five is yours! Keep that awesome momentum going!"
+      ],
+      FOUR_CORNERS: [
+        "Four Corners secured! Outstanding vision across all four edges!",
+        "Sharp eye! You locked in all Four Corners! Magnificent focus!",
+        "Four Corners claimed! Perfect radar across your ticket!"
+      ],
+      LINE_FIRST: {
+        TOP_LINE: [
+          "Top Line completed! Clean sweep across the first row!",
+          "Top Line locked in! Fantastic start across the top deck!",
+          "Row one cleared! Top Line is officially yours!"
+        ],
+        MIDDLE_LINE: [
+          "Middle Line bagged! Right through the center of your ticket!",
+          "Middle Line secured! Superb precision across the center row!",
+          "Center row cleared! Middle Line is in the bag!"
+        ],
+        BOTTOM_LINE: [
+          "Bottom Line secured! Clean sweep across the bottom row!",
+          "Bottom Line locked in! Great focus on the lower deck!",
+          "Row three cleared! Bottom Line is officially yours!"
+        ]
       },
-      FOUR_CORNERS: {
-        voice: "Four Corners secured! Outstanding vision across your ticket!",
-        banner: "★ FOUR CORNERS SECURED!",
-        coach: "🎉 <strong>Sharp Eye!</strong> You locked in all <strong>Four Corners</strong> for <strong>+150 bonus points</strong>! Great focus!"
+      LINE_SECOND: {
+        TOP_LINE: [
+          "Top Line completed! That's two lines in the bag, just one line left to go!",
+          "Top Line secured! Two lines completed on your ticket! Keep the momentum going!"
+        ],
+        MIDDLE_LINE: [
+          "Middle Line bagged! That's two lines in the bag, just one more line to go!",
+          "Center row locked in! That makes two lines secured! Superb play!"
+        ],
+        BOTTOM_LINE: [
+          "Bottom Line secured! That's two lines in the bag, just one line left to go!",
+          "Bottom Line locked in! Two lines completed on your ticket! Excellent pace!"
+        ]
       },
-      TOP_LINE: {
-        voice: "Top Line completed! Clean sweep across the first row!",
-        banner: "⚌ TOP LINE CONQUERED!",
-        coach: "🎉 <strong>Row 1 Conquered!</strong> You secured <strong>Top Line</strong> for <strong>+200 bonus points</strong>! Keep rolling!"
-      },
-      MIDDLE_LINE: {
-        voice: "Middle Line bagged! Right through the center of your ticket!",
-        banner: "⚌ MIDDLE LINE BAGGED!",
-        coach: "🎉 <strong>Bullseye!</strong> You secured <strong>Middle Line</strong> for <strong>+200 bonus points</strong>! Halfway to bingo glory!"
-      },
-      BOTTOM_LINE: {
-        voice: "Bottom Line locked in! All three lines conquered!",
-        banner: "▬ BOTTOM LINE LOCKED IN!",
-        coach: "🎉 <strong>Hat Trick!</strong> You secured <strong>Bottom Line</strong> for <strong>+200 bonus points</strong>! All lines are now secured!"
-      },
-      FULL_HOUSE: {
-        voice: "BINGO! Full Housie Champion! All fifteen numbers dabbed to perfection! Incredible game!",
-        banner: "🏆 FULL HOUSIE CHAMPION! BINGO!",
-        coach: "🏆 <strong>EXTRAORDINARY!</strong> You achieved <strong>Full Housie</strong> for <strong>+500 bonus points</strong>! Master reflex performance!"
-      }
+      ALL_LINES_CONQUERED: [
+        "Incredible! That completes all three lines across your ticket! You are in prime position for Full Housie!",
+        "Phenomenal sweep! All three lines conquered! Get ready for Full Housie!",
+        "Hat trick! All three lines secured! Magnificent ticket management!"
+      ],
+      FULL_HOUSE: [
+        "BINGO! Full Housie Champion! All fifteen numbers dabbed to perfection! Incredible game!",
+        "FULL HOUSIE VICTORY! Every single number conquered! You are a true DabHousie master!",
+        "BINGO! Full Housie secured! Outstanding speed, accuracy, and reflex mastery!"
+      ]
     };
+
+    function getPraiseForClaim(key, linesClaimedCount) {
+      const cfg = CLAIM_CONFIG[key];
+      if (key === 'EARLY_5') {
+        return {
+          voice: pickRandom(PRAISE_OPTIONS.EARLY_5),
+          banner: "⚡ EARLY 5 CLAIMED!",
+          coach: "🎉 <strong>Lightning Fast!</strong> You secured <strong>Early 5</strong> for <strong>+150 bonus points</strong>! Exceptional speed!"
+        };
+      }
+      if (key === 'FOUR_CORNERS') {
+        return {
+          voice: pickRandom(PRAISE_OPTIONS.FOUR_CORNERS),
+          banner: "★ FOUR CORNERS SECURED!",
+          coach: "🎉 <strong>Sharp Eye!</strong> You locked in all <strong>Four Corners</strong> for <strong>+150 bonus points</strong>! Great focus!"
+        };
+      }
+      if (key === 'FULL_HOUSE') {
+        return {
+          voice: pickRandom(PRAISE_OPTIONS.FULL_HOUSE),
+          banner: "🏆 FULL HOUSIE CHAMPION! BINGO!",
+          coach: "🏆 <strong>EXTRAORDINARY!</strong> You achieved <strong>Full Housie</strong> for <strong>+500 bonus points</strong>! Master reflex performance!"
+        };
+      }
+      // Top, Middle, Bottom Line
+      if (linesClaimedCount === 3) {
+        return {
+          voice: pickRandom(PRAISE_OPTIONS.ALL_LINES_CONQUERED),
+          banner: "🏆 ALL 3 LINES CONQUERED!",
+          coach: `🎉 <strong>Triple Crown!</strong> All three lines secured on your ticket for <strong>+200 bonus points</strong>! Now push for Full Housie!`
+        };
+      }
+      if (linesClaimedCount === 2) {
+        return {
+          voice: pickRandom(PRAISE_OPTIONS.LINE_SECOND[key]),
+          banner: `⚌ ${cfg.name.toUpperCase()} SECURED!`,
+          coach: `🎉 <strong>Two Lines Down!</strong> You claimed <strong>${cfg.name}</strong> for <strong>+200 bonus points</strong>! Only one line remaining before Full Housie!`
+        };
+      }
+      return {
+        voice: pickRandom(PRAISE_OPTIONS.LINE_FIRST[key]),
+        banner: `⚌ ${cfg.name.toUpperCase()} SECURED!`,
+        coach: `🎉 <strong>First Line In!</strong> You secured <strong>${cfg.name}</strong> for <strong>+200 bonus points</strong>! Great start across your ticket!`
+      };
+    }
 
     let claimedPrizes = new Set();
 
@@ -1662,6 +1755,19 @@
         count = dabbedSet.size;
       }
       return { progress: count, total };
+    }
+
+    function getUnclaimedEligiblePrizes() {
+      const eligible = [];
+      for (const [key, cfg] of Object.entries(CLAIM_CONFIG)) {
+        if (!claimedPrizes.has(key)) {
+          const { progress, total, linesLocked } = getPatternProgress(key);
+          if (progress >= total && !linesLocked) {
+            eligible.push({ key, name: cfg.name, bonus: cfg.bonus });
+          }
+        }
+      }
+      return eligible;
     }
 
     function updateClaimsUI() {
@@ -1733,17 +1839,27 @@
 
       if (progress >= total && gameStarted && !linesLocked) {
         // VALID CLAIM!
-        const praise = CLAIM_PRAISE[key];
+        if (dabNextCallTimeout) {
+          clearTimeout(dabNextCallTimeout);
+          dabNextCallTimeout = null;
+        }
+
         claimedPrizes.add(key);
         score += cfg.bonus;
         updateScore();
         updateClaimsUI();
+
+        // Calculate how many lines are claimed now to ensure appropriate praise
+        const linesClaimedCount = ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE'].filter(k => claimedPrizes.has(k)).length;
+        const praise = getPraiseForClaim(key, linesClaimedCount);
+
         showFeedback(`${praise.banner} +${cfg.bonus}`, '#10b981');
         setCoachMessage(praise.coach);
         speakDabbyCoach(praise.voice);
 
+        // Full Housie celebration ONLY triggers when the player actually claims Full Housie!
         if (key === 'FULL_HOUSE') {
-          checkCelebration();
+          triggerFullHousieVictory();
         }
       } else {
         // BOGEY CLAIM (False claim)
@@ -1999,6 +2115,8 @@
       }
     }
 
+    let dabNextCallTimeout = null;
+
     function onCellClicked(val, cellEl) {
       if (!gameStarted) {
         showFeedback('👉 Tap Start Practice first!', '#facc15');
@@ -2016,11 +2134,7 @@
         showFeedback('⚡ PERFECT DAB! +100', '#10b981');
         updateScore();
         updateClaimsUI();
-        checkCelebration();
-
-        if (dabbedSet.size < 15) {
-          callNextNumber();
-        }
+        handlePostDabFlow(true);
       } else if (calledNumbersList.includes(val)) {
         dabbedSet.add(val);
         consecutiveMisses = 0;
@@ -2031,11 +2145,97 @@
         showFeedback('⏱️ DELAYED DAB! +50', '#facc15');
         updateScore();
         updateClaimsUI();
-        checkCelebration();
+        handlePostDabFlow(false);
       } else {
         cellEl.style.transform = 'translateX(5px)';
         setTimeout(() => { cellEl.style.transform = ''; }, 150);
         showFeedback('⏳ NOT CALLED YET!', '#f87171');
+      }
+    }
+
+    function handlePostDabFlow(isCurrentBall) {
+      if (dabNextCallTimeout) {
+        clearTimeout(dabNextCallTimeout);
+        dabNextCallTimeout = null;
+      }
+
+      const unclaimed = getUnclaimedEligiblePrizes();
+      if (unclaimed.length > 0) {
+        // Player has an eligible claim ready!
+        // Pause timer so player has ample time to click the flashing claim button!
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        const prizeNames = unclaimed.map(u => u.name).join(' & ');
+        const instructionEl = document.getElementById('callInstruction');
+        if (instructionEl) {
+          instructionEl.innerHTML = `⚡ <span style="color:#facc15; font-weight:900;">CLAIM READY!</span> Tap flashing <span style="color:#facc15; font-weight:900;">${prizeNames}</span> below!`;
+        }
+        const urgencyEl = document.getElementById('timerUrgencyText');
+        if (urgencyEl) {
+          urgencyEl.innerText = '⚡ CLAIM READY!';
+          urgencyEl.style.color = '#facc15';
+        }
+        const ringProgress = document.getElementById('ringProgress');
+        if (ringProgress) {
+          ringProgress.style.strokeDashoffset = '0';
+          ringProgress.style.stroke = '#facc15';
+        }
+
+        setCoachMessage(`⚡ <strong>Claim Unlocked!</strong> You completed <strong>${prizeNames}</strong>! Tap the flashing button below to secure your bonus points!`);
+
+        if (!isDabbySpeaking) {
+          speakDabbyCoach(`Claim ready! Tap the flashing ${prizeNames} button below to secure your prize!`);
+        }
+        return;
+      }
+
+      // If all 15 numbers are dabbed and no claims are ready (e.g. lines still pending before Full Housie)
+      if (dabbedSet.size >= 15) {
+        if (!claimedPrizes.has('FULL_HOUSE')) {
+          const missing = [];
+          if (!claimedPrizes.has('TOP_LINE')) missing.push('Top Line');
+          if (!claimedPrizes.has('MIDDLE_LINE')) missing.push('Middle Line');
+          if (!claimedPrizes.has('BOTTOM_LINE')) missing.push('Bottom Line');
+          if (missing.length > 0) {
+            const instructionEl = document.getElementById('callInstruction');
+            if (instructionEl) {
+              instructionEl.innerHTML = `⚠️ <span style="color:#f59e0b; font-weight:800;">ALL 15 DABBED!</span> Claim ${missing.join(', ')} first!`;
+            }
+          }
+        }
+        return;
+      }
+
+      // If the dab was on the current ball, provide a 1.5s visual satisfaction delay
+      // before calling the next number instead of jumping instantly into the countdown
+      if (isCurrentBall) {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        const urgencyEl = document.getElementById('timerUrgencyText');
+        if (urgencyEl) {
+          urgencyEl.innerText = 'Good Dab!';
+          urgencyEl.style.color = '#10b981';
+        }
+        const instructionEl = document.getElementById('callInstruction');
+        if (instructionEl) {
+          instructionEl.innerHTML = `✅ <span style="color:#10b981; font-weight:700;">Number Dabbed!</span> Next call coming up...`;
+        }
+
+        dabNextCallTimeout = setTimeout(() => {
+          if (gameStarted && dabbedSet.size < 15 && !isDabbySpeaking) {
+            const pending = getUnclaimedEligiblePrizes();
+            if (pending.length > 0) {
+              handlePostDabFlow(false);
+            } else {
+              callNextNumber();
+            }
+          }
+        }, 1500);
       }
     }
 
@@ -2204,24 +2404,40 @@
       document.getElementById('scoreText').innerText = `${score} Pts • ${dabbedSet.size}/15`;
     }
 
-    function checkCelebration() {
-      if (dabbedSet.size === 15) {
+    function triggerFullHousieVictory() {
+      if (timerInterval) {
         clearInterval(timerInterval);
-        document.getElementById('callInstruction').innerHTML = '🏆 Full House Bingo! All 15 Dabbed!';
-        
-        const badge = document.getElementById('victoryBadge');
-        if (badge) badge.style.display = 'block';
+        timerInterval = null;
+      }
+      if (dabNextCallTimeout) {
+        clearTimeout(dabNextCallTimeout);
+        dabNextCallTimeout = null;
+      }
 
-        launchCanvasCelebration();
+      const badge = document.getElementById('victoryBadge');
+      if (badge) badge.style.display = 'block';
 
-        // Track Full House victory in GA4
-        if (typeof gtag === 'function') {
-          gtag('event', 'game_complete', {
-            'event_category': 'Dabby_Rapid_Play',
-            'event_label': 'Full_House_Victory',
-            'value': score
-          });
-        }
+      const overBanner = document.getElementById('gameOverBanner');
+      const overReason = document.getElementById('gameOverReason');
+      if (overReason) overReason.innerText = `Full Housie Champion! Final Score: ${score} Points!`;
+      if (overBanner) overBanner.style.display = 'block';
+
+      const instructionEl = document.getElementById('callInstruction');
+      if (instructionEl) {
+        instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">FULL HOUSIE BINGO!</span> Congratulations Champion!`;
+      }
+      document.getElementById('timerUrgencyText').innerText = 'Victory!';
+      document.getElementById('timerSeconds').innerText = '🏆';
+
+      launchCanvasCelebration();
+
+      // Track Full House victory in GA4
+      if (typeof gtag === 'function') {
+        gtag('event', 'game_complete', {
+          'event_category': 'Dabby_Rapid_Play',
+          'event_label': 'Full_House_Victory',
+          'value': score
+        });
       }
     }
 
@@ -2341,6 +2557,10 @@
       isDabbySpeaking = false;
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = null;
+      if (dabNextCallTimeout) {
+        clearTimeout(dabNextCallTimeout);
+        dabNextCallTimeout = null;
+      }
 
       const badge = document.getElementById('victoryBadge');
       if (badge) badge.style.display = 'none';
