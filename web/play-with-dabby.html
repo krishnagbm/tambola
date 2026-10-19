@@ -725,48 +725,39 @@
       box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
     }
 
-    /* 2. STATE FLICKER (Eligible to Claim! Golden pulsating rays animation matching Early-5-Flicker.png & Showcase-4.png) */
+    /* 2. STATE FLICKER (Eligible to Claim! Smooth in-place golden flash) */
     .claim-pill-btn.state-flicker {
       opacity: 1 !important;
       background: linear-gradient(180deg, #ffc300 0%, #ff9e00 50%, #e85d04 100%) !important;
       border: 2px solid #ffffff !important;
       color: #ffffff !important;
-      box-shadow: 0 0 20px #ffb703, 0 0 35px rgba(251, 133, 0, 0.85), inset 0 0 8px rgba(255, 255, 255, 0.85) !important;
-      animation: claimFlickerPulse 0.65s infinite alternate !important;
       cursor: pointer;
+      animation: buttonFlashPulse 0.65s ease-in-out infinite alternate !important;
     }
     .claim-pill-btn.state-flicker .pill-content {
       color: #ffffff !important;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
     }
     .claim-pill-btn.state-flicker .pill-rays {
-      position: absolute;
-      top: -6px;
-      left: -8px;
-      right: -8px;
-      bottom: -6px;
-      border-radius: 999px;
-      border: 2px dashed rgba(255, 235, 59, 0.9);
-      animation: rotateRays 5s linear infinite;
-      pointer-events: none;
+      display: none !important;
     }
 
-    @keyframes claimFlickerPulse {
+    @keyframes buttonFlashPulse {
       0% {
-        transform: scale(0.97);
+        transform: scale(0.98);
         filter: brightness(1.0);
-        box-shadow: 0 0 14px #ffb703, 0 0 24px rgba(251, 133, 0, 0.7);
+        box-shadow: 0 0 10px #ffb703, 0 0 18px rgba(251, 133, 0, 0.5), inset 0 0 4px rgba(255, 255, 255, 0.5);
+      }
+      50% {
+        transform: scale(1.015);
+        filter: brightness(1.25);
+        box-shadow: 0 0 22px #ffd166, 0 0 38px rgba(255, 183, 3, 0.85), inset 0 0 10px rgba(255, 255, 255, 0.9);
       }
       100% {
-        transform: scale(1.035);
-        filter: brightness(1.22);
-        box-shadow: 0 0 28px #ffd166, 0 0 46px rgba(255, 183, 3, 0.95);
+        transform: scale(1.03);
+        filter: brightness(1.45);
+        box-shadow: 0 0 32px #ffffff, 0 0 52px rgba(255, 195, 0, 0.95), inset 0 0 15px rgba(255, 255, 255, 1);
       }
-    }
-
-    @keyframes rotateRays {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
     }
 
     /* 3. STATE SOLID (Claimed! Solid vibrant colors matching DabHousie Bingo UI Showcase-4.png) */
