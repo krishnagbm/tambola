@@ -631,52 +631,39 @@
       border-color: rgba(255, 255, 255, 0.1);
     }
 
-    /* SLEEK COMPACT CLAIM TRAINING TOOLBAR */
-    .claims-training-container {
-      max-width: 1100px;
+    /* TICKET BOTTOM CLAIMS OVERLAY (Hangs over bottom 28% of banner, covering 4 static icons) */
+    .ticket-bottom-claims-overlay {
+      position: absolute;
+      left: 0;
+      bottom: 0;
       width: 100%;
-      margin-top: 8px;
-      margin-bottom: 4px;
-      background: transparent;
-      border: none;
-      padding: 0;
-      box-shadow: none;
-      box-sizing: border-box;
-      flex-shrink: 0 !important;
-    }
-
-    .claims-header-compact {
+      height: 28%;
+      background: linear-gradient(180deg, rgba(11, 16, 38, 0.94) 0%, rgba(15, 23, 42, 0.98) 100%);
+      border-top: 2px solid rgba(250, 204, 21, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 4px 10px 5px;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: space-between;
-      margin-bottom: 4px;
-      padding: 0 4px;
+      box-sizing: border-box;
+      z-index: 25;
     }
 
-    .claims-mini-title {
-      font-size: 10.5px;
-      font-weight: 800;
-      letter-spacing: 0.6px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .claims-grid {
+    .claims-overlay-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 6px;
-      margin-bottom: 4px;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 3px 6px;
+      flex: 1;
+      margin-bottom: 3px;
     }
 
     .claim-btn {
-      background: #172033;
-      border: 1.5px solid #28354e;
-      border-radius: 10px;
-      padding: 5px 8px;
-      height: 38px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1.5px solid rgba(51, 65, 85, 0.9);
+      border-radius: 8px;
+      padding: 2px 8px;
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -694,7 +681,7 @@
     .claim-btn:hover:not(.claimed) {
       border-color: #facc15;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
     }
 
     .claim-left {
@@ -706,13 +693,13 @@
     }
 
     .claim-btn .claim-icon {
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1;
       flex-shrink: 0;
     }
 
     .claim-btn .claim-name {
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
       color: #fff;
       white-space: nowrap;
@@ -721,10 +708,10 @@
     }
 
     .claim-btn .claim-status {
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 5px;
+      padding: 1.5px 5px;
+      border-radius: 4px;
       background: #0f172a;
       color: #94a3b8;
       text-transform: uppercase;
@@ -735,9 +722,9 @@
 
     /* Ready state (eligible to claim, pulsating) */
     .claim-btn.ready {
-      background: linear-gradient(135deg, rgba(234, 179, 8, 0.35) 0%, rgba(16, 185, 129, 0.35) 100%);
+      background: linear-gradient(135deg, rgba(234, 179, 8, 0.4) 0%, rgba(16, 185, 129, 0.4) 100%);
       border-color: #facc15;
-      box-shadow: 0 0 16px rgba(250, 204, 21, 0.6);
+      box-shadow: 0 0 14px rgba(250, 204, 21, 0.7);
       animation: claimPulse 1.1s infinite alternate;
     }
 
@@ -754,7 +741,7 @@
 
     /* Claimed state */
     .claim-btn.claimed {
-      background: rgba(16, 185, 129, 0.14);
+      background: rgba(16, 185, 129, 0.16);
       border-color: #10b981;
       cursor: default;
     }
@@ -783,23 +770,23 @@
 
     /* Dabby Coach Live Speech Ticker */
     .coach-speech-bubble {
-      background: rgba(23, 33, 56, 0.85);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 999px;
-      padding: 4px 12px;
+      padding: 2px 10px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       color: #cbd5e1;
-      font-size: 11px;
-      line-height: 1.35;
-      margin-top: 4px;
+      font-size: 10px;
+      line-height: 1.25;
       box-sizing: border-box;
       max-width: 100%;
+      height: 20px;
     }
 
     .coach-avatar {
-      font-size: 15px;
+      font-size: 13px;
       line-height: 1;
       flex-shrink: 0;
     }
@@ -811,6 +798,105 @@
     }
 
     .coach-message strong {
+      color: #facc15;
+    }
+
+    /* First-Time Visitor Start Practice Overlay */
+    .game-start-modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 16, 38, 0.85);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      box-sizing: border-box;
+    }
+
+    .start-card {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 75, 0.98) 100%);
+      border: 2px solid rgba(250, 204, 21, 0.55);
+      border-radius: 20px;
+      padding: 18px 24px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.85);
+      box-sizing: border-box;
+    }
+
+    .start-badge {
+      display: inline-block;
+      background: rgba(250, 204, 21, 0.15);
+      color: #facc15;
+      border: 1px solid rgba(250, 204, 21, 0.4);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .start-title {
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .start-subtitle {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .start-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-start-play {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      font-size: 14.5px;
+      font-weight: 900;
+      padding: 9px 26px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.5);
+      transition: all 0.2s ease;
+      width: 100%;
+      max-width: 260px;
+    }
+    .btn-start-play:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.7);
+    }
+
+    .btn-voice-pref {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-voice-pref:hover {
+      background: rgba(51, 65, 85, 0.9);
       color: #facc15;
     }
 
@@ -886,11 +972,18 @@
       color: #facc15;
     }
 
-    /* Embed Mode Clean Overrides */
+    /* Embed Mode Clean Overrides (Strictly No Vertical Scrollbar) */
     body.embed-mode {
-      overflow-y: auto !important;
-      overflow-x: hidden !important;
+      overflow: hidden !important;
+      height: 100vh !important;
+      max-height: 100vh !important;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       background: #0b1026 !important;
+      padding: 0;
+      margin: 0;
     }
 
     body.embed-mode .site-header,
@@ -902,51 +995,54 @@
     }
 
     body.embed-mode .game-page-container {
-      padding: 6px 10px 10px;
-      max-width: 940px;
-      justify-content: flex-start;
-      height: auto;
+      width: 100%;
+      max-width: 860px;
+      height: 100%;
+      max-height: 100vh;
+      padding: 4px 8px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      overflow: hidden !important;
     }
 
     body.embed-mode .rapid-caller-bar {
-      padding: 6px 12px;
-      margin-bottom: 8px;
+      padding: 5px 12px;
+      margin-bottom: 6px;
       border-radius: 14px;
       flex-shrink: 0 !important;
+      max-height: 50px;
     }
 
     body.embed-mode .ball-sphere {
-      width: 44px;
-      height: 44px;
-      font-size: 20px;
+      width: 40px;
+      height: 40px;
+      font-size: 19px;
     }
 
     body.embed-mode .call-instruction {
-      font-size: 14px;
+      font-size: 13.5px;
     }
 
     body.embed-mode .ring-wrapper {
-      width: 38px;
-      height: 38px;
+      width: 34px;
+      height: 34px;
     }
 
     body.embed-mode .timer-seconds-text {
-      font-size: 13px;
+      font-size: 12px;
     }
 
     body.embed-mode .banner-wrapper {
       width: 100%;
-      flex-shrink: 0 !important;
+      max-width: min(820px, calc((100vh - 70px) * 1.5));
+      max-height: calc(100vh - 70px);
       aspect-ratio: 1536 / 1024 !important;
-      min-height: 280px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-      margin-bottom: 6px;
-    }
-
-    body.embed-mode .claims-training-container {
-      margin-top: 6px;
-      margin-bottom: 4px;
-      flex-shrink: 0 !important;
+      margin-bottom: 0;
+      flex-shrink: 1;
     }
 
     @media (max-width: 768px) {
@@ -1183,8 +1279,8 @@
 
       <!-- Live Score, Refresh Ticket & Audio Toggle -->
       <div class="caller-right">
-        <button class="btn-voice" id="btnVoiceToggle" onclick="toggleVoiceSpeech()" title="Toggle voice caller and coaching audio">
-          🔊 Voice: ON
+        <button class="btn-voice muted" id="btnVoiceToggle" onclick="toggleVoiceSpeech()" title="Toggle voice caller and coaching audio">
+          🔇 Voice: OFF
         </button>
         <div class="score-badge">
           <span>⚡</span>
@@ -1202,6 +1298,26 @@
     <!-- Mascot 3x9 Ticket Banner Playground -->
     <div class="banner-wrapper">
       <img src="/DabMascot_3x9_Empty_Perfect.png" class="banner-bg-img" alt="DabHousie 90-Ball Bingo 3x9 Mascot Ticket">
+
+      <!-- Practice Arena Intro / Start Modal (Waits for User Click) -->
+      <div class="game-start-modal-overlay" id="startOverlay">
+        <div class="start-card">
+          <span class="start-badge">⚡ INSTANT PRACTICE ARENA</span>
+          <h2 class="start-title">Play with Dabby</h2>
+          <p class="start-subtitle">
+            Take your time to inspect your ticket! When ready, tap <strong>Start Practice</strong>.
+            Dab called numbers within 5 seconds and claim winning combinations (Early 5, Corners, Lines, Full House) as soon as they glow!
+          </p>
+          <div class="start-actions">
+            <button class="btn-start-play" onclick="userStartGame()">
+              🚀 Start Practice Now
+            </button>
+            <button class="btn-voice-pref" id="btnStartVoicePref" onclick="toggleVoiceSpeech()">
+              🔇 Voice Audio: OFF (Tap to Enable)
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Non-blocking Fireworks & Balloons Canvas over the ticket -->
       <canvas id="celebrationCanvas"></canvas>
@@ -1233,76 +1349,66 @@
 
       <!-- Centered Feedback Bubble over the Ticket Area -->
       <div class="feedback-float" id="feedbackFloat"></div>
-    </div>
 
-    <!-- COMPACT REAL-TIME CLAIMS TRAINING TOOLBAR -->
-    <div class="claims-training-container">
-      <div class="claims-header-compact">
-        <span class="claims-mini-title">🎯 Claim Training • Tap Glowing Button When Ready!</span>
-      </div>
+      <!-- TICKET BOTTOM CLAIMS OVERLAY (Hangs over bottom 28% of banner, covering 4 static icons) -->
+      <div class="ticket-bottom-claims-overlay">
+        <!-- 6 Claim Buttons in 2 Rows x 3 Columns -->
+        <div class="claims-overlay-grid" id="claimsGrid">
+          <button class="claim-btn" id="claim-EARLY_5" onclick="attemptClaim('EARLY_5')" title="Early 5: Any 5 dabbed numbers">
+            <div class="claim-left">
+              <span class="claim-icon">⚡</span>
+              <span class="claim-name">Early 5</span>
+            </div>
+            <span class="claim-status" id="status-EARLY_5">0/5</span>
+          </button>
 
-      <!-- Live Claims Grid (6 Standard Winning Patterns in a sleek ribbon) -->
-      <div class="claims-grid" id="claimsGrid">
-        <button class="claim-btn" id="claim-EARLY_5" onclick="attemptClaim('EARLY_5')" title="Early 5: Any 5 dabbed numbers">
-          <div class="claim-left">
-            <span class="claim-icon">⚡</span>
-            <span class="claim-name">Early 5</span>
+          <button class="claim-btn" id="claim-FOUR_CORNERS" onclick="attemptClaim('FOUR_CORNERS')" title="4 Corners: Top & bottom edge corners">
+            <div class="claim-left">
+              <span class="claim-icon">📐</span>
+              <span class="claim-name">Corners</span>
+            </div>
+            <span class="claim-status" id="status-FOUR_CORNERS">0/4</span>
+          </button>
+
+          <button class="claim-btn" id="claim-TOP_LINE" onclick="attemptClaim('TOP_LINE')" title="Top Line: All 5 numbers in Row 1">
+            <div class="claim-left">
+              <span class="claim-icon">🥇</span>
+              <span class="claim-name">Top Line</span>
+            </div>
+            <span class="claim-status" id="status-TOP_LINE">0/5</span>
+          </button>
+
+          <button class="claim-btn" id="claim-MIDDLE_LINE" onclick="attemptClaim('MIDDLE_LINE')" title="Middle Line: All 5 numbers in Row 2">
+            <div class="claim-left">
+              <span class="claim-icon">🥈</span>
+              <span class="claim-name">Mid Line</span>
+            </div>
+            <span class="claim-status" id="status-MIDDLE_LINE">0/5</span>
+          </button>
+
+          <button class="claim-btn" id="claim-BOTTOM_LINE" onclick="attemptClaim('BOTTOM_LINE')" title="Bottom Line: All 5 numbers in Row 3">
+            <div class="claim-left">
+              <span class="claim-icon">🥉</span>
+              <span class="claim-name">Bot Line</span>
+            </div>
+            <span class="claim-status" id="status-BOTTOM_LINE">0/5</span>
+          </button>
+
+          <button class="claim-btn" id="claim-FULL_HOUSE" onclick="attemptClaim('FULL_HOUSE')" title="Full Housie: All 15 numbers on ticket">
+            <div class="claim-left">
+              <span class="claim-icon">🏆</span>
+              <span class="claim-name">Full House</span>
+            </div>
+            <span class="claim-status" id="status-FULL_HOUSE">0/15</span>
+          </button>
+        </div>
+
+        <!-- Coach Dabby Live Speech Ticker -->
+        <div class="coach-speech-bubble" id="coachSpeechBubble">
+          <span class="coach-avatar">👩‍🏫</span>
+          <div class="coach-message" id="coachMessage">
+            <strong>Dabby:</strong> Tap "Start Practice Now" when ready!
           </div>
-          <span class="claim-status" id="status-EARLY_5">0/5</span>
-          <span class="claim-progress" id="progress-EARLY_5" style="display:none;"></span>
-        </button>
-
-        <button class="claim-btn" id="claim-FOUR_CORNERS" onclick="attemptClaim('FOUR_CORNERS')" title="4 Corners: Top & bottom edge corners">
-          <div class="claim-left">
-            <span class="claim-icon">📐</span>
-            <span class="claim-name">Corners</span>
-          </div>
-          <span class="claim-status" id="status-FOUR_CORNERS">0/4</span>
-          <span class="claim-progress" id="progress-FOUR_CORNERS" style="display:none;"></span>
-        </button>
-
-        <button class="claim-btn" id="claim-TOP_LINE" onclick="attemptClaim('TOP_LINE')" title="Top Line: All 5 numbers in Row 1">
-          <div class="claim-left">
-            <span class="claim-icon">🥇</span>
-            <span class="claim-name">Top Line</span>
-          </div>
-          <span class="claim-status" id="status-TOP_LINE">0/5</span>
-          <span class="claim-progress" id="progress-TOP_LINE" style="display:none;"></span>
-        </button>
-
-        <button class="claim-btn" id="claim-MIDDLE_LINE" onclick="attemptClaim('MIDDLE_LINE')" title="Middle Line: All 5 numbers in Row 2">
-          <div class="claim-left">
-            <span class="claim-icon">🥈</span>
-            <span class="claim-name">Mid Line</span>
-          </div>
-          <span class="claim-status" id="status-MIDDLE_LINE">0/5</span>
-          <span class="claim-progress" id="progress-MIDDLE_LINE" style="display:none;"></span>
-        </button>
-
-        <button class="claim-btn" id="claim-BOTTOM_LINE" onclick="attemptClaim('BOTTOM_LINE')" title="Bottom Line: All 5 numbers in Row 3">
-          <div class="claim-left">
-            <span class="claim-icon">🥉</span>
-            <span class="claim-name">Bot Line</span>
-          </div>
-          <span class="claim-status" id="status-BOTTOM_LINE">0/5</span>
-          <span class="claim-progress" id="progress-BOTTOM_LINE" style="display:none;"></span>
-        </button>
-
-        <button class="claim-btn" id="claim-FULL_HOUSE" onclick="attemptClaim('FULL_HOUSE')" title="Full Housie: All 15 numbers on ticket">
-          <div class="claim-left">
-            <span class="claim-icon">🏆</span>
-            <span class="claim-name">Full House</span>
-          </div>
-          <span class="claim-status" id="status-FULL_HOUSE">0/15</span>
-          <span class="claim-progress" id="progress-FULL_HOUSE" style="display:none;"></span>
-        </button>
-      </div>
-
-      <!-- Coach Dabby Live Speech Ticker -->
-      <div class="coach-speech-bubble" id="coachSpeechBubble">
-        <span class="coach-avatar">👩‍🏫</span>
-        <div class="coach-message" id="coachMessage">
-          <strong>Dabby:</strong> Welcome! Dab called numbers. Tap glowing button when complete to claim!
         </div>
       </div>
     </div>
@@ -1421,7 +1527,9 @@
     // ==========================================
     // DUAL-VOICE ENGINE (DABBY FEMALE COACH + MALE CALLER)
     // ==========================================
-    let speechEnabled = true;
+    let speechEnabled = false; // Audio OFF by default as requested
+    let gameStarted = false;   // Waits for user to press Start Practice button
+    let isDabbySpeaking = false;
     const synth = ('speechSynthesis' in window) ? window.speechSynthesis : null;
     let femaleVoice = null;
     let maleVoice = null;
@@ -1452,21 +1560,32 @@
     function toggleVoiceSpeech() {
       speechEnabled = !speechEnabled;
       const btn = document.getElementById('btnVoiceToggle');
-      if (btn) {
-        if (speechEnabled) {
+      const startVoiceBtn = document.getElementById('btnStartVoicePref');
+      if (speechEnabled) {
+        if (btn) {
           btn.innerText = '🔊 Voice: ON';
           btn.classList.remove('muted');
-          speakDabbyCoach("Voice audio enabled. Let's practice!");
-        } else {
+        }
+        if (startVoiceBtn) {
+          startVoiceBtn.innerText = '🔊 Voice Audio: ON (Tap to Mute)';
+          startVoiceBtn.style.color = '#10b981';
+        }
+        speakDabbyCoach("Voice audio enabled. Let's practice!");
+      } else {
+        if (btn) {
           btn.innerText = '🔇 Voice: OFF';
           btn.classList.add('muted');
-          if (synth) synth.cancel();
         }
+        if (startVoiceBtn) {
+          startVoiceBtn.innerText = '🔇 Voice Audio: OFF (Tap to Enable)';
+          startVoiceBtn.style.color = '#94a3b8';
+        }
+        if (synth) synth.cancel();
       }
     }
 
     function speakNumberCaller(num) {
-      if (!speechEnabled || !synth) return;
+      if (!speechEnabled || !synth || isDabbySpeaking) return;
       try {
         synth.cancel();
         const utter = new SpeechSynthesisUtterance(`Number ${num}`);
@@ -1482,14 +1601,45 @@
     function speakDabbyCoach(text) {
       if (!speechEnabled || !synth) return;
       try {
+        // While Dabby speaks, caller must wait and timer must pause
+        isDabbySpeaking = true;
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        const urgencyEl = document.getElementById('timerUrgencyText');
+        if (urgencyEl && gameStarted) {
+          urgencyEl.innerText = '👩‍🏫 Dabby Speaking...';
+        }
+
         synth.cancel();
         const utter = new SpeechSynthesisUtterance(text);
         utter.rate = 1.02;
         utter.pitch = 1.25; // Warm, natural female pitch
         if (femaleVoice) utter.voice = femaleVoice;
+
+        let resumed = false;
+        const resumeCalling = () => {
+          if (resumed) return;
+          resumed = true;
+          isDabbySpeaking = false;
+          if (gameStarted && dabbedSet.size < 15) {
+            resetTimer();
+          }
+        };
+
+        utter.onend = resumeCalling;
+        utter.onerror = resumeCalling;
+        // Fallback safety timeout if onend doesn't trigger
+        setTimeout(resumeCalling, 4500);
+
         synth.speak(utter);
       } catch (e) {
         console.warn('Coach speech failed:', e);
+        isDabbySpeaking = false;
+        if (gameStarted && dabbedSet.size < 15) {
+          resetTimer();
+        }
       }
     }
 
@@ -1551,23 +1701,23 @@
         const btn = document.getElementById(`claim-${key}`);
         const statusEl = document.getElementById(`status-${key}`);
         const progressEl = document.getElementById(`progress-${key}`);
-        if (!btn || !statusEl || !progressEl) continue;
+        if (!btn || !statusEl) continue;
 
         if (claimedPrizes.has(key)) {
           btn.className = 'claim-btn claimed';
           statusEl.innerText = 'CLAIMED';
-          progressEl.innerText = '✅ Secured!';
+          if (progressEl) progressEl.innerText = '✅ Secured!';
         } else {
           const { progress, total } = getPatternProgress(key);
           if (progress >= total) {
             btn.className = 'claim-btn ready';
             statusEl.innerText = 'CLAIM!';
-            progressEl.innerText = '⚡ Tap to Claim!';
+            if (progressEl) progressEl.innerText = '⚡ Tap to Claim!';
           } else {
             btn.className = 'claim-btn';
             statusEl.innerText = `${progress}/${total}`;
             const needed = total - progress;
-            progressEl.innerText = `Need ${needed} more`;
+            if (progressEl) progressEl.innerText = `Need ${needed} more`;
           }
         }
       }
@@ -1855,6 +2005,10 @@
     }
 
     function onCellClicked(val, cellEl) {
+      if (!gameStarted) {
+        showFeedback('👉 Tap Start Practice first!', '#facc15');
+        return;
+      }
       if (dabbedSet.has(val)) return;
 
       if (val === currentCalledNumber) {
@@ -1907,7 +2061,7 @@
     }
 
     function callNextNumber() {
-      if (dabbedSet.size >= 15) return;
+      if (!gameStarted || dabbedSet.size >= 15 || isDabbySpeaking) return;
 
       if (uncalledPool.length === 0) {
         triggerGameOver('All 90 numbers have been called!');
@@ -2172,12 +2326,19 @@
       animate();
     }
 
-    function startNewGame() {
-      clearInterval(timerInterval);
+    function initPracticeArena() {
+      gameStarted = false;
+      isDabbySpeaking = false;
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
+
       const badge = document.getElementById('victoryBadge');
       if (badge) badge.style.display = 'none';
       const overBanner = document.getElementById('gameOverBanner');
       if (overBanner) overBanner.style.display = 'none';
+      const startOverlay = document.getElementById('startOverlay');
+      if (startOverlay) startOverlay.style.display = 'flex';
+
       const canvas = document.getElementById('celebrationCanvas');
       if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -2192,14 +2353,34 @@
       calledNumbersList = [];
       score = 0;
       updateScore();
-      setCoachMessage("Welcome to Claim Training! Dab numbers as they're called. When you complete a pattern, hit its button immediately to claim! Beware of Bogeys!");
 
       const code = randInt(100000, 999999);
       document.getElementById('gameCodeDisplay').innerText = `Game Code: ${code}`;
+      document.getElementById('currentBallSphere').innerText = '--';
+      document.getElementById('callInstruction').innerHTML = 'Tap <span style="color:#10b981;font-weight:900;">"Start Practice Now"</span> when ready!';
+      document.getElementById('timerSeconds').innerText = '5';
+      document.getElementById('timerUrgencyText').innerText = 'Ready to Practice';
 
       renderTicket();
       updateClaimsUI();
+      setCoachMessage("Welcome to Practice! Review your ticket above. When you are ready, tap 'Start Practice Now' to start the number caller!");
+    }
+
+    function userStartGame() {
+      const startOverlay = document.getElementById('startOverlay');
+      if (startOverlay) startOverlay.style.display = 'none';
+
+      gameStarted = true;
+      setCoachMessage("Practice started! Listen for the called numbers and dab your ticket before time runs out.");
       callNextNumber();
+      if (speechEnabled) {
+        speakDabbyCoach("Let's practice! Watch the caller and dab quickly.");
+      }
+    }
+
+    function startNewGame() {
+      initPracticeArena();
+      userStartGame();
     }
 
     function toggleMobileNav() {
@@ -2212,8 +2393,8 @@
       document.body.classList.add('embed-mode');
     }
 
-    // Launch game on page load
-    startNewGame();
+    // Launch game on page load (waits for user to click Start Practice)
+    initPracticeArena();
   </script>
   <script src="/js/nav.js"></script>
 </body>
