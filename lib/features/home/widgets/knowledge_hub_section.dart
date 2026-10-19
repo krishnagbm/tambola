@@ -341,7 +341,7 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
         infoPanelText:
             'The host determines prize eligibility, reward value, approval, and delivery. DabHousie provides tools to manage prize claims and track fulfillment. The host remains responsible for fulfilling prizes in accordance with applicable rules and organizational policies.',
         responsibilityNote:
-            'Hosts are responsible for establishing prize terms before an event, verifying claims, and ensuring prize fulfillment complies with applicable laws and organizational policies. DabHousie provides event-management and claim-tracking tools and does not itself fulfill host-awarded prizes.',
+            "Hosts are responsible for prize terms, claim approval, and fulfillment in accordance with applicable laws and organizational policies. DabHousie provides claim-tracking tools and does not fulfill prizes on the host's behalf.",
         actionLabel: 'Organizer Prize Claims & Brand Gift Hub',
         actionIcon: Icons.receipt_long_rounded,
         onAction: () => context.push('/wallet/claims'),
@@ -365,7 +365,7 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
           GuideStepItem(
             title: 'Step 3 — Provide Fulfillment Details',
             description:
-                'Share your preferred fulfillment details (direct payment handle, voucher preference, or in-person delivery) with the host.',
+                'Coordinate your preferred eligible reward or delivery method with the host. Share payment details only when needed for the agreed fulfillment method.',
           ),
           GuideStepItem(
             title: 'Step 4 — Verify with Organizer',
@@ -799,17 +799,17 @@ class _KnowledgeHubSectionState extends State<KnowledgeHubSection> {
                 children: [
                   const Icon(
                     Icons.info_outline_rounded,
-                    size: 13,
+                    size: 14,
                     color: Color(0xFF94A3B8),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 7),
                   Expanded(
                     child: Text(
                       responsibilityNote,
                       style: const TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11.2,
                         color: Color(0xFF94A3B8),
-                        height: 1.35,
+                        height: 1.38,
                       ),
                     ),
                   ),

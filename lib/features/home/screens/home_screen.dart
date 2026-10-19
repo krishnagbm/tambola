@@ -437,7 +437,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const DabbyRapidPlayHeroCard(),
             const SizedBox(height: 14),
 
-            // Specialized Corporate & Event Organizers Card
+            // Dual-Audience Cards (Family & Friends + Corporate & Event Hosts)
             const DabhousieCorporateUspCard(),
             const SizedBox(height: 14),
 
@@ -572,7 +572,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const DabbyRapidPlayHeroCard(),
           const SizedBox(height: 14),
 
-          // Specialized Corporate & Event Organizers Card
+          // Dual-Audience Cards (Family & Friends + Corporate & Event Hosts)
           const DabhousieCorporateUspCard(),
           const SizedBox(height: 14),
 
