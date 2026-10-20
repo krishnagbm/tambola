@@ -279,6 +279,19 @@ class AdminReportsRepository {
     return 0;
   }
 
+  /// Resolves the canonical capacity tier UUID based on participant count (from small groups up to 2,500+ corporate events)
+  static String resolveTierIdForCapacity(int capacity) {
+    if (capacity > 1000) return '2a7955e1-6932-43b1-84b1-0675d182db26'; // Coliseum / Global (1001–2500)
+    if (capacity > 500) return 'c7b9ff1e-3ba0-4a8d-98c4-e0360335391b';  // Enterprise Gala (501–1000)
+    if (capacity > 250) return '38978e8f-f5f3-40b3-80e2-9c31c2b04d02';  // Corporate League (251–500)
+    if (capacity > 100) return '0c195125-d897-4d0e-a4d0-12e39f77c991';  // Mega Event (101–250)
+    if (capacity > 50) return '0f17fc07-73ae-467e-a633-af23393551c6';   // Club Event (51–100)
+    if (capacity > 25) return '2ef3dd77-c46b-44af-845b-2f3218c01fc7';   // Large Group (26–50)
+    if (capacity > 15) return 'ea70e992-453e-424d-83da-89593891890e';   // Medium Group (16–25)
+    if (capacity > 5) return 'b1537315-9c05-4060-8b82-69fea1edbed0';    // Small Party (6–15)
+    return '866e5a68-ca8c-4d75-8634-0d06c1bec120';                      // Family Pack (1–5)
+  }
+
   /// Default standardized promotional prize gifts config ($35 Pool: DABFREE5 for 5 minor lines, DABFREE10 for Full House)
   static Map<String, dynamic> getDefaultPromotionalPrizeGifts() {
     return {
@@ -470,8 +483,8 @@ class AdminReportsRepository {
         'name': g['name'] ?? 'DabHousie Promotional Event 🏆',
         'invite_code': code,
         'status': 'OPEN',
-        'planned_capacity_tier_id':
-            g['planned_capacity_tier_id'] ?? '0c195125-d897-4d0e-a4d0-12e39f77c991',
+        'planned_capacity_tier_id': g['planned_capacity_tier_id'] ??
+            resolveTierIdForCapacity((g['capacity'] as int?) ?? 250),
         'initial_funded_capacity': g['capacity'] ?? 250,
         'funded_capacity': g['capacity'] ?? 250,
         if (scheduledAt != null) ...{'scheduled_at': scheduledAt},

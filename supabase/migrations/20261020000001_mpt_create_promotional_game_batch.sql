@@ -57,7 +57,24 @@ BEGIN
         v_name := COALESCE(v_game->>'name', 'DabHousie Promotional Event 🏆');
         v_scheduled_at := (v_game->>'scheduled_at')::TIMESTAMPTZ;
         v_capacity := COALESCE((v_game->>'capacity')::INT, 250);
-        v_tier_id := COALESCE((v_game->>'planned_capacity_tier_id')::UUID, '0c195125-d897-4d0e-a4d0-12e39f77c991'::UUID);
+
+        -- Resolve capacity tier dynamically if not explicitly specified
+        IF (v_game->>'planned_capacity_tier_id') IS NOT NULL THEN
+            v_tier_id := (v_game->>'planned_capacity_tier_id')::UUID;
+        ELSE
+            SELECT id INTO v_tier_id
+            FROM public."MPT_capacity_tiers"
+            WHERE v_capacity BETWEEN min_players AND max_players
+            ORDER BY display_order ASC
+            LIMIT 1;
+
+            IF v_tier_id IS NULL THEN
+                SELECT id INTO v_tier_id
+                FROM public."MPT_capacity_tiers"
+                ORDER BY max_players DESC
+                LIMIT 1;
+            END IF;
+        END IF;
         v_admin_id := COALESCE((v_game->>'admin_user_id')::UUID, v_uid);
         v_budget := COALESCE((v_game->>'total_prize_budget')::NUMERIC, 35.00);
         v_is_public := COALESCE((v_game->>'is_publicly_visible')::BOOLEAN, TRUE);

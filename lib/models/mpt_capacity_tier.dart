@@ -63,12 +63,36 @@ class MptCapacityTier {
       displayOrder: 4,
     ),
     MptCapacityTier(
-      id: '467bdb1d-daf5-4138-88ef-7a9272e8d6b9',
+      id: '0c195125-d897-4d0e-a4d0-12e39f77c991',
       name: 'Mega Event (101–250 Players)',
       minPlayers: 101,
       maxPlayers: 250,
       creditsRequired: 250,
-      displayOrder: 5,
+      displayOrder: 6,
+    ),
+    MptCapacityTier(
+      id: '38978e8f-f5f3-40b3-80e2-9c31c2b04d02',
+      name: 'Corporate League (251–500 Players)',
+      minPlayers: 251,
+      maxPlayers: 500,
+      creditsRequired: 500,
+      displayOrder: 7,
+    ),
+    MptCapacityTier(
+      id: 'c7b9ff1e-3ba0-4a8d-98c4-e0360335391b',
+      name: 'Enterprise Gala (501–1000 Players)',
+      minPlayers: 501,
+      maxPlayers: 1000,
+      creditsRequired: 1000,
+      displayOrder: 8,
+    ),
+    MptCapacityTier(
+      id: '2a7955e1-6932-43b1-84b1-0675d182db26',
+      name: 'Coliseum / Global (1001–2500 Players)',
+      minPlayers: 1001,
+      maxPlayers: 2500,
+      creditsRequired: 2500,
+      displayOrder: 9,
     ),
   ];
 }
