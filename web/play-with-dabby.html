@@ -164,14 +164,33 @@
       font-size: 11px;
     }
 
+    body.embed-mode .caller-right {
+      gap: 6px;
+    }
+
+    body.embed-mode .btn-voice {
+      padding: 5px 8px !important;
+      font-size: 11px !important;
+      min-width: 96px !important;
+    }
+
     body.embed-mode .score-badge {
-      padding: 5px 12px;
-      font-size: 12px;
+      padding: 5px 8px !important;
+      font-size: 11.5px !important;
+      min-width: 108px !important;
+      gap: 4px;
+    }
+
+    body.embed-mode .btn-share-top {
+      padding: 5px 8px !important;
+      font-size: 11px !important;
+      white-space: nowrap;
     }
 
     body.embed-mode .btn-new {
-      padding: 5px 12px;
-      font-size: 12px;
+      padding: 5px 10px !important;
+      font-size: 11.5px !important;
+      white-space: nowrap;
     }
 
     body.embed-mode .banner-wrapper {
@@ -447,6 +466,8 @@
       font-weight: 800;
       cursor: pointer;
       transition: all 0.2s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .btn-new:hover {
@@ -1551,8 +1572,8 @@
         <button class="btn-share-top" onclick="triggerTicketShare()" title="Share ticket & score to Instagram, WhatsApp, Facebook, X">
           📸 Share
         </button>
-        <button class="btn-new" onclick="startNewGame()">
-          🎲 New Ticket
+        <button class="btn-new" onclick="startNewGame()" title="Get new practice ticket">
+          🎲 Refresh
         </button>
       </div>
 
@@ -2549,7 +2570,8 @@
         ctx.font = '800 12px Inter, system-ui, sans-serif';
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
         ctx.textAlign = 'center';
-        ctx.fillText(`DabHousie Rapid Practice • Score: ${score} Pts • https://dabhousie.com/play-with-dabby.html`, 1112 / 2, 635 * 0.975);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`DabHousie Rapid Practice • Score: ${score} Pts • https://dabhousie.com/play-with-dabby.html`, 1112 / 2, 626);
         ctx.restore();
 
         canvas.toBlob(blob => {
