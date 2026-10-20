@@ -136,13 +136,19 @@
     }
 
     body.embed-mode .call-instruction {
-      font-size: 14.5px;
+      font-size: 13.5px;
       line-height: 1.25;
+      display: block;
+    }
+
+    body.embed-mode .call-instruction span.highlight-num {
+      padding: 1px 5px;
+      font-size: 13.5px;
+      min-width: 24px;
     }
 
     body.embed-mode .call-label {
-      font-size: 10px;
-      line-height: 1.2;
+      display: none !important;
     }
 
     body.embed-mode .ring-wrapper {
@@ -290,21 +296,12 @@
       display: flex;
       flex-direction: column;
       justify-content: center;
-      gap: 3px;
+      gap: 0;
       min-height: 44px;
     }
 
     .call-label {
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      text-transform: uppercase;
-      color: #f87171;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      line-height: 1.2;
-      white-space: nowrap;
+      display: none !important;
     }
 
     .call-instruction {
@@ -314,17 +311,51 @@
       letter-spacing: -0.3px;
       line-height: 1.25;
       min-height: 38px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      display: block;
     }
 
     .call-instruction span.highlight-num {
       color: #facc15;
-      background: rgba(250, 204, 21, 0.15);
-      padding: 0 8px;
+      background: rgba(250, 204, 21, 0.2);
+      padding: 1px 6px;
+      margin: 0 2px;
       border-radius: 6px;
-      border: 1px solid rgba(250, 204, 21, 0.3);
+      border: 1px solid rgba(250, 204, 21, 0.45);
+      display: inline-block;
+      width: auto;
+      min-width: 26px;
+      text-align: center;
+      line-height: 1.15;
+      vertical-align: baseline;
+      box-sizing: border-box;
+    }
+
+    /* Share Button in Caller Bar */
+    .btn-share-top {
+      background: rgba(250, 204, 21, 0.12);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      color: #facc15;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .btn-share-top:hover {
+      background: rgba(250, 204, 21, 0.25);
+      transform: translateY(-1px);
+    }
+
+    body.embed-mode .btn-share-top {
+      padding: 4px 10px;
+      font-size: 11.5px;
     }
 
     /* Timer */
@@ -1023,6 +1054,180 @@
       color: #facc15;
     }
 
+    /* Ticket Snapshot & Social Share Modal */
+    .share-modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      box-sizing: border-box;
+      animation: fadeInModal 0.2s ease-out;
+    }
+
+    @keyframes fadeInModal {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .share-modal-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      border-radius: 20px;
+      padding: 16px 20px;
+      max-width: 560px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 94vh;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+
+    .share-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .share-modal-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: #facc15;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .share-modal-close {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #cbd5e1;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .share-modal-preview {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #000;
+      position: relative;
+      aspect-ratio: 1112 / 635;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .share-modal-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .share-caption-box textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      color: #e2e8f0;
+      font-size: 12px;
+      padding: 8px 10px;
+      box-sizing: border-box;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.4;
+    }
+
+    .share-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .share-act-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      color: #fff;
+    }
+
+    .share-act-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+
+    .btn-act-copy {
+      background: rgba(250, 204, 21, 0.2);
+      border: 1px solid rgba(250, 204, 21, 0.5);
+      color: #facc15;
+    }
+
+    .btn-act-download {
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      color: #60a5fa;
+    }
+
+    .btn-act-native {
+      background: rgba(168, 85, 247, 0.2);
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      color: #c084fc;
+    }
+
+    .btn-act-wa {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+
+    .btn-act-x {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #e2e8f0;
+    }
+
+    .btn-act-fb {
+      background: rgba(37, 99, 235, 0.25);
+      border: 1px solid rgba(37, 99, 235, 0.5);
+      color: #93c5fd;
+    }
+
+    .share-toast {
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      color: #10b981;
+      min-height: 18px;
+    }
+
     /* Embed Mode Clean Overrides (Strictly No Vertical Scrollbar) */
     body.embed-mode {
       overflow: hidden !important;
@@ -1343,6 +1548,9 @@
           <span>⚡</span>
           <span id="scoreText">0 Dabs</span>
         </div>
+        <button class="btn-share-top" onclick="triggerTicketShare()" title="Share ticket & score to Instagram, WhatsApp, Facebook, X">
+          📸 Share
+        </button>
         <button class="btn-new" onclick="startNewGame()">
           🎲 New Ticket
         </button>
@@ -1378,6 +1586,10 @@
           <button onclick="document.getElementById('gameOverBanner').style.display='none'"
             style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 999px; cursor: pointer;">
             ✕ Dismiss
+          </button>
+          <button onclick="triggerTicketShare()"
+            style="background: #facc15; color: #000; border: none; font-weight: 900; font-size: 13.5px; padding: 8px 18px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+            📸 Share Ticket
           </button>
           <button onclick="startNewGame()"
             style="background: #10b981; color: #000; border: none; font-weight: 900; font-size: 14px; padding: 8px 22px; border-radius: 999px; cursor: pointer;">
@@ -1559,6 +1771,43 @@
           <span id="copyIcon">📋</span> <span id="copyText">Copy Link</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- TICKET SNAPSHOT & SOCIAL SHARE MODAL -->
+  <div id="shareTicketModal" class="share-modal-backdrop" style="display: none;" onclick="if(event.target===this)closeShareModal()">
+    <div class="share-modal-card">
+      <div class="share-modal-header">
+        <div class="share-modal-title">📸 Share Your DabHousie Ticket</div>
+        <button class="share-modal-close" onclick="closeShareModal()">✕</button>
+      </div>
+      <div class="share-modal-preview">
+        <img id="shareTicketPreviewImg" alt="DabHousie Ticket Snapshot" />
+      </div>
+      <div class="share-caption-box">
+        <textarea id="shareCaptionInput" readonly rows="2"></textarea>
+      </div>
+      <div class="share-actions-grid">
+        <button class="share-act-btn btn-act-copy" onclick="copySnapshotImage()" id="btnCopyImage" title="Copy image to clipboard to paste in Instagram, Facebook, or WhatsApp">
+          <span>📋</span> Copy Image
+        </button>
+        <button class="share-act-btn btn-act-download" onclick="downloadSnapshotImage()" title="Download high-res PNG image">
+          <span>📥</span> Download PNG
+        </button>
+        <button class="share-act-btn btn-act-native" onclick="nativeShareSnapshot()" id="btnNativeShare" title="Open native share dialog (Instagram, Messages, etc.)">
+          <span>📲</span> Share to Apps
+        </button>
+        <button class="share-act-btn btn-act-wa" onclick="shareToPlatform('whatsapp')" title="Share to WhatsApp">
+          <span>💬</span> WhatsApp
+        </button>
+        <button class="share-act-btn btn-act-x" onclick="shareToPlatform('twitter')" title="Share on X (Twitter)">
+          <span>𝕏</span> X (Twitter)
+        </button>
+        <button class="share-act-btn btn-act-fb" onclick="shareToPlatform('facebook')" title="Share on Facebook">
+          <span>📘</span> Facebook
+        </button>
+      </div>
+      <div id="shareToastMsg" class="share-toast"></div>
     </div>
   </div>
 
@@ -2132,6 +2381,299 @@
       } else {
         showFeedback('Link: ' + url, '#cbd5e1');
       }
+    }
+
+    // ==========================================
+    // TICKET SNAPSHOT GENERATOR & SOCIAL SHARE
+    // ==========================================
+    let cachedSnapshotBlob = null;
+    let cachedSnapshotDataUrl = null;
+
+    function generateTicketSnapshot(callback) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1112;
+      canvas.height = 635;
+      const ctx = canvas.getContext('2d');
+
+      const bgImg = new Image();
+      bgImg.crossOrigin = 'anonymous';
+      bgImg.onload = function() {
+        // 1. Draw base showcase image
+        ctx.drawImage(bgImg, 0, 0, 1112, 635);
+
+        // 2. Draw Game Code text
+        const codeEl = document.getElementById('gameCodeDisplay');
+        const codeText = codeEl ? codeEl.innerText : 'Game Code: DabHousie';
+        ctx.font = '800 13px Inter, system-ui, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'right';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(codeText, 1112 * (1 - 0.045), 635 * 0.23);
+        ctx.shadowBlur = 0;
+
+        // 3. Draw Grid cells matching .grid-overlay
+        const gridX = 1112 * 0.2320;
+        const gridY = 635 * 0.3024;
+        const gridW = 1112 * 0.7347;
+        const gridH = 635 * 0.3890;
+
+        const colFrs = [83, 84, 84, 84, 83, 83, 82, 75, 72];
+        const totalColFr = 730;
+        const colGap = 11;
+        const totalColGaps = colGap * 8;
+        const availW = gridW - totalColGaps;
+
+        const colWidths = colFrs.map(fr => (fr / totalColFr) * availW);
+        const colLefts = [];
+        let curX = gridX;
+        for (let c = 0; c < 9; c++) {
+          colLefts.push(curX);
+          curX += colWidths[c] + colGap;
+        }
+
+        const rowFrs = [75, 77, 75];
+        const totalRowFr = 227;
+        const rowGap = 10;
+        const totalRowGaps = rowGap * 2;
+        const availH = gridH - totalRowGaps;
+
+        const rowHeights = rowFrs.map(fr => (fr / totalRowFr) * availH);
+        const rowTops = [];
+        let curY = gridY;
+        for (let r = 0; r < 3; r++) {
+          rowTops.push(curY);
+          curY += rowHeights[r] + rowGap;
+        }
+
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (!currentTicket || !currentTicket[r]) continue;
+            const val = currentTicket[r][c];
+            if (!val || val === 0) continue;
+
+            const cx = colLefts[c] + colWidths[c] / 2;
+            const cy = rowTops[r] + rowHeights[r] / 2;
+            const radius = Math.min(colWidths[c], rowHeights[r]) * 0.43;
+
+            const isDabbed = dabbedSet.has(val);
+            const isMissed = !isDabbed && calledNumbersList.includes(val);
+
+            if (isDabbed) {
+              const grad = ctx.createRadialGradient(cx - radius * 0.3, cy - radius * 0.3, radius * 0.1, cx, cy, radius);
+              grad.addColorStop(0, '#fef08a');
+              grad.addColorStop(0.65, '#facc15');
+              grad.addColorStop(1, '#eab308');
+
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.fillStyle = grad;
+              ctx.shadowColor = 'rgba(161, 98, 7, 0.45)';
+              ctx.shadowBlur = 6;
+              ctx.shadowOffsetY = 2;
+              ctx.fill();
+              ctx.restore();
+
+              ctx.font = '900 24px Inter, system-ui, sans-serif';
+              ctx.fillStyle = '#713f12';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(val.toString(), cx, cy + 1);
+            } else if (isMissed) {
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+              ctx.strokeStyle = '#ef4444';
+              ctx.lineWidth = 3;
+              ctx.setLineDash([4, 4]);
+              ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+              ctx.fill();
+              ctx.stroke();
+              ctx.restore();
+
+              ctx.font = '900 24px Inter, system-ui, sans-serif';
+              ctx.fillStyle = '#ef4444';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(val.toString(), cx, cy + 1);
+            } else {
+              ctx.font = '900 25px Inter, system-ui, sans-serif';
+              ctx.fillStyle = '#0f172a';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(val.toString(), cx, cy + 1);
+            }
+          }
+        }
+
+        // 4. Draw Claims overlay on top of gray buttons
+        const claimsConfig = [
+          { key: 'EARLY_FIVE', name: 'Early 5', color: '#10b981', x: 1112 * 0.0863, y: 635 * 0.7843, w: 1112 * 0.2338, h: 635 * 0.0709 },
+          { key: 'CORNERS', name: 'Four Corners', color: '#ea580c', x: 1112 * 0.3408, y: 635 * 0.7843, w: 1112 * 0.2338, h: 635 * 0.0709 },
+          { key: 'TOP_LINE', name: 'Top Line', color: '#8b5cf6', x: 1112 * 0.5953, y: 635 * 0.7843, w: 1112 * 0.2338, h: 635 * 0.0709 },
+          { key: 'MIDDLE_LINE', name: 'Middle Line', color: '#2563eb', x: 1112 * 0.0863, y: 635 * 0.8693, w: 1112 * 0.2338, h: 635 * 0.0709 },
+          { key: 'BOTTOM_LINE', name: 'Bottom Line', color: '#db2777', x: 1112 * 0.3408, y: 635 * 0.8693, w: 1112 * 0.2338, h: 635 * 0.0709 },
+          { key: 'FULL_HOUSE', name: 'Full Housie', color: '#059669', x: 1112 * 0.5953, y: 635 * 0.8693, w: 1112 * 0.2338, h: 635 * 0.0709 }
+        ];
+
+        claimsConfig.forEach(claim => {
+          if (claimedPrizes.has(claim.key)) {
+            ctx.save();
+            ctx.beginPath();
+            const r = claim.h / 2;
+            if (ctx.roundRect) {
+              ctx.roundRect(claim.x, claim.y, claim.w, claim.h, r);
+            } else {
+              ctx.arc(claim.x + r, claim.y + r, r, Math.PI / 2, Math.PI * 1.5);
+              ctx.arc(claim.x + claim.w - r, claim.y + r, r, Math.PI * 1.5, Math.PI / 2);
+              ctx.closePath();
+            }
+            ctx.fillStyle = claim.color;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 3;
+            ctx.fill();
+            ctx.restore();
+
+            ctx.font = '900 13.5px Inter, system-ui, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`✓ ${claim.name}`, claim.x + claim.w / 2, claim.y + claim.h / 2);
+          }
+        });
+
+        // 5. Watermark badge at bottom
+        ctx.save();
+        ctx.font = '800 12px Inter, system-ui, sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.textAlign = 'center';
+        ctx.fillText(`DabHousie Rapid Practice • Score: ${score} Pts • https://dabhousie.com/play-with-dabby.html`, 1112 / 2, 635 * 0.975);
+        ctx.restore();
+
+        canvas.toBlob(blob => {
+          cachedSnapshotBlob = blob;
+          cachedSnapshotDataUrl = canvas.toDataURL('image/png');
+          if (callback) callback({ canvas, blob, dataUrl: cachedSnapshotDataUrl });
+        }, 'image/png');
+      };
+      bgImg.src = '/DabHousie_Bingo_UI_Showcase_GrayButtons.png';
+    }
+
+    function getShareText() {
+      const codeEl = document.getElementById('gameCodeDisplay');
+      const code = codeEl ? codeEl.innerText : '';
+      return `⚡ Can you beat my rapid-dab score of ${score} pts on DabHousie? Played 90-Ball Bingo (${code})! Play free:`;
+    }
+
+    window.triggerTicketShare = function(platform) {
+      if (platform === 'whatsapp') {
+        const text = encodeURIComponent(`${getShareText()} https://dabhousie.com/play-with-dabby.html`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+        return;
+      }
+      if (platform === 'twitter') {
+        const text = encodeURIComponent(getShareText());
+        const url = encodeURIComponent('https://dabhousie.com/play-with-dabby.html');
+        window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=620,height=520');
+        return;
+      }
+      if (platform === 'facebook') {
+        const url = encodeURIComponent('https://dabhousie.com/play-with-dabby.html');
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=620,height=520');
+        return;
+      }
+
+      // Open snapshot share modal
+      const modal = document.getElementById('shareTicketModal');
+      const previewImg = document.getElementById('shareTicketPreviewImg');
+      const captionInput = document.getElementById('shareCaptionInput');
+      const toast = document.getElementById('shareToastMsg');
+      if (toast) toast.innerText = '';
+
+      if (captionInput) {
+        captionInput.value = `${getShareText()} https://dabhousie.com/play-with-dabby.html`;
+      }
+      if (modal) modal.style.display = 'flex';
+
+      generateTicketSnapshot(res => {
+        if (previewImg) previewImg.src = res.dataUrl;
+      });
+    };
+
+    function closeShareModal() {
+      const modal = document.getElementById('shareTicketModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function copySnapshotImage() {
+      const toast = document.getElementById('shareToastMsg');
+      if (!cachedSnapshotBlob) {
+        generateTicketSnapshot(res => copySnapshotImage());
+        return;
+      }
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': cachedSnapshotBlob })
+        ]).then(() => {
+          if (toast) toast.innerText = '✅ Ticket image copied to clipboard! Paste directly into Instagram, Facebook, or WhatsApp.';
+          setTimeout(() => { if (toast) toast.innerText = ''; }, 4500);
+        }).catch(err => {
+          copyChallengeLink();
+          if (toast) toast.innerText = '✅ Share link copied to clipboard!';
+        });
+      } else {
+        copyChallengeLink();
+        if (toast) toast.innerText = '✅ Share link copied to clipboard!';
+      }
+    }
+
+    function downloadSnapshotImage() {
+      if (!cachedSnapshotDataUrl) {
+        generateTicketSnapshot(res => downloadSnapshotImage());
+        return;
+      }
+      const a = document.createElement('a');
+      a.href = cachedSnapshotDataUrl;
+      a.download = `DabHousie_Bingo_Ticket_${score}pts.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      const toast = document.getElementById('shareToastMsg');
+      if (toast) toast.innerText = '📥 Ticket image downloaded successfully!';
+      setTimeout(() => { if (toast) toast.innerText = ''; }, 3000);
+    }
+
+    function nativeShareSnapshot() {
+      const toast = document.getElementById('shareToastMsg');
+      if (!cachedSnapshotBlob) {
+        generateTicketSnapshot(res => nativeShareSnapshot());
+        return;
+      }
+      const file = new File([cachedSnapshotBlob], `DabHousie_Ticket_${score}pts.png`, { type: 'image/png' });
+      const shareData = {
+        title: 'DabHousie 90-Ball Bingo Ticket',
+        text: getShareText(),
+        url: 'https://dabhousie.com/play-with-dabby.html',
+        files: [file]
+      };
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share(shareData).catch(() => {});
+      } else if (navigator.share) {
+        navigator.share({
+          title: 'DabHousie 90-Ball Bingo Ticket',
+          text: getShareText(),
+          url: 'https://dabhousie.com/play-with-dabby.html'
+        }).catch(() => {});
+      } else {
+        copySnapshotImage();
+      }
+    }
+
+    function shareToPlatform(platform) {
+      triggerTicketShare(platform);
     }
 
     function randInt(min, max) {

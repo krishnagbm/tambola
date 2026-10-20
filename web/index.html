@@ -449,6 +449,89 @@
         closeBtn.style.cursor = 'pointer';
         closeBtn.onclick = window.closeDabbyModal;
 
+        var shareBtn = document.createElement('button');
+        shareBtn.innerHTML = '📸 Share Ticket';
+        shareBtn.title = 'Share ticket & reflex score on WhatsApp, Instagram, Facebook, X';
+        shareBtn.style.color = '#facc15';
+        shareBtn.style.fontSize = '12px';
+        shareBtn.style.fontWeight = '700';
+        shareBtn.style.background = 'rgba(250, 204, 21, 0.15)';
+        shareBtn.style.border = '1px solid rgba(250, 204, 21, 0.4)';
+        shareBtn.style.borderRadius = '6px';
+        shareBtn.style.padding = '4px 10px';
+        shareBtn.style.cursor = 'pointer';
+        shareBtn.style.display = 'inline-flex';
+        shareBtn.style.alignItems = 'center';
+        shareBtn.style.gap = '4px';
+        shareBtn.onclick = function() {
+          try {
+            if (frame && frame.contentWindow && frame.contentWindow.triggerTicketShare) {
+              frame.contentWindow.triggerTicketShare();
+            }
+          } catch(e) { console.error(e); }
+        };
+
+        var waBtn = document.createElement('button');
+        waBtn.innerHTML = '💬 WhatsApp';
+        waBtn.title = 'Share on WhatsApp';
+        waBtn.style.color = '#34d399';
+        waBtn.style.fontSize = '12px';
+        waBtn.style.fontWeight = '700';
+        waBtn.style.background = 'rgba(52, 211, 153, 0.12)';
+        waBtn.style.border = '1px solid rgba(52, 211, 153, 0.35)';
+        waBtn.style.borderRadius = '6px';
+        waBtn.style.padding = '4px 8px';
+        waBtn.style.cursor = 'pointer';
+        waBtn.onclick = function() {
+          try {
+            if (frame && frame.contentWindow && frame.contentWindow.triggerTicketShare) {
+              frame.contentWindow.triggerTicketShare('whatsapp');
+            }
+          } catch(e) { console.error(e); }
+        };
+
+        var xBtn = document.createElement('button');
+        xBtn.innerHTML = '𝕏 Share';
+        xBtn.title = 'Share on X (Twitter)';
+        xBtn.style.color = '#e2e8f0';
+        xBtn.style.fontSize = '12px';
+        xBtn.style.fontWeight = '700';
+        xBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+        xBtn.style.border = '1px solid rgba(255, 255, 255, 0.22)';
+        xBtn.style.borderRadius = '6px';
+        xBtn.style.padding = '4px 8px';
+        xBtn.style.cursor = 'pointer';
+        xBtn.onclick = function() {
+          try {
+            if (frame && frame.contentWindow && frame.contentWindow.triggerTicketShare) {
+              frame.contentWindow.triggerTicketShare('twitter');
+            }
+          } catch(e) { console.error(e); }
+        };
+
+        var fbBtn = document.createElement('button');
+        fbBtn.innerHTML = '📘 Facebook';
+        fbBtn.title = 'Share on Facebook';
+        fbBtn.style.color = '#60a5fa';
+        fbBtn.style.fontSize = '12px';
+        fbBtn.style.fontWeight = '700';
+        fbBtn.style.background = 'rgba(96, 165, 250, 0.12)';
+        fbBtn.style.border = '1px solid rgba(96, 165, 250, 0.35)';
+        fbBtn.style.borderRadius = '6px';
+        fbBtn.style.padding = '4px 8px';
+        fbBtn.style.cursor = 'pointer';
+        fbBtn.onclick = function() {
+          try {
+            if (frame && frame.contentWindow && frame.contentWindow.triggerTicketShare) {
+              frame.contentWindow.triggerTicketShare('facebook');
+            }
+          } catch(e) { console.error(e); }
+        };
+
+        actions.appendChild(shareBtn);
+        actions.appendChild(waBtn);
+        actions.appendChild(xBtn);
+        actions.appendChild(fbBtn);
         actions.appendChild(fullPageBtn);
         actions.appendChild(closeBtn);
         topBar.appendChild(title);
