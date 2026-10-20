@@ -285,14 +285,70 @@
 
     @media (max-width: 768px) {
       #dabby-modal-overlay {
-        padding: 4px;
-        background-color: rgba(11, 16, 38, 0.70);
+        padding: 6px 4px;
+        background-color: rgba(11, 16, 38, 0.75);
       }
       #dabby-modal-wrap {
-        max-width: 100%;
-        height: auto;
+        width: 100%;
+        max-width: 520px;
+        height: min(94vh, 420px);
+        max-height: 94vh;
+        border-radius: 16px;
+      }
+      #dabby-modal-topbar {
+        padding: 6px 10px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        max-height: 38px !important;
+        box-sizing: border-box !important;
+        flex-wrap: nowrap !important;
+      }
+      .dabby-modal-title-box {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .dabby-modal-main-title {
+        font-size: 13.5px !important;
+      }
+      .dabby-modal-sub {
+        display: none !important;
+      }
+      .dabby-modal-actions {
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+      }
+      .dabby-btn-social {
+        display: none !important;
+      }
+      .share-btn-text, .fullpage-btn-text {
+        display: none !important;
+      }
+      .dabby-btn-share {
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        gap: 0 !important;
+      }
+      .dabby-btn-fullpage {
+        padding: 4px 8px !important;
+        font-size: 13px !important;
+      }
+      .dabby-btn-close {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 13px !important;
+      }
+    }
+
+    @media (max-height: 480px) and (orientation: landscape) {
+      #dabby-modal-wrap {
+        height: 96vh;
         max-height: 96vh;
-        border-radius: 14px;
+        max-width: 760px;
+      }
+      #dabby-modal-topbar {
+        height: 34px !important;
+        padding: 4px 8px !important;
       }
     }
   </style>
@@ -409,6 +465,7 @@
         wrap.id = 'dabby-modal-wrap';
 
         var topBar = document.createElement('div');
+        topBar.id = 'dabby-modal-topbar';
         topBar.style.display = 'flex';
         topBar.style.alignItems = 'center';
         topBar.style.justifyContent = 'space-between';
@@ -418,26 +475,35 @@
         topBar.style.flexShrink = '0';
 
         var title = document.createElement('div');
-        title.innerHTML = '<span style="color:#facc15;font-weight:900;font-size:15px;">⚡ Play with Dabby</span> <span style="color:#94a3b8;font-size:12px;margin-left:8px;">• 90-Ball Bingo Rapid Practice</span>';
+        title.className = 'dabby-modal-title-box';
+        title.innerHTML = '<span class="dabby-modal-main-title" style="color:#facc15;font-weight:900;font-size:15px;">⚡ Play with Dabby</span> <span class="dabby-modal-sub" style="color:#94a3b8;font-size:12px;margin-left:8px;">• 90-Ball Bingo Rapid Practice</span>';
         
         var actions = document.createElement('div');
+        actions.className = 'dabby-modal-actions';
         actions.style.display = 'flex';
         actions.style.alignItems = 'center';
         actions.style.gap = '10px';
 
         var fullPageBtn = document.createElement('a');
+        fullPageBtn.className = 'dabby-btn-fullpage';
         fullPageBtn.href = '/play-with-dabby.html';
         fullPageBtn.target = '_blank';
-        fullPageBtn.innerText = '⤢ Open Full Page';
+        fullPageBtn.innerHTML = '⤢ <span class="fullpage-btn-text">Open Full Page</span>';
+        fullPageBtn.title = 'Open Full Page';
         fullPageBtn.style.color = '#cbd5e1';
         fullPageBtn.style.fontSize = '12px';
         fullPageBtn.style.textDecoration = 'none';
         fullPageBtn.style.padding = '4px 10px';
         fullPageBtn.style.border = '1px solid rgba(255,255,255,0.2)';
         fullPageBtn.style.borderRadius = '6px';
+        fullPageBtn.style.display = 'inline-flex';
+        fullPageBtn.style.alignItems = 'center';
+        fullPageBtn.style.gap = '4px';
 
         var closeBtn = document.createElement('button');
+        closeBtn.className = 'dabby-btn-close';
         closeBtn.innerHTML = '✕';
+        closeBtn.title = 'Close Practice Arena';
         closeBtn.style.background = 'rgba(239, 68, 68, 0.2)';
         closeBtn.style.border = '1px solid rgba(239, 68, 68, 0.4)';
         closeBtn.style.color = '#f87171';
@@ -450,7 +516,8 @@
         closeBtn.onclick = window.closeDabbyModal;
 
         var shareBtn = document.createElement('button');
-        shareBtn.innerHTML = '📸 Share Ticket';
+        shareBtn.className = 'dabby-btn-share';
+        shareBtn.innerHTML = '📸 <span class="share-btn-text">Share Ticket</span>';
         shareBtn.title = 'Share ticket & reflex score on WhatsApp, Instagram, Facebook, X';
         shareBtn.style.color = '#facc15';
         shareBtn.style.fontSize = '12px';
@@ -472,6 +539,7 @@
         };
 
         var waBtn = document.createElement('button');
+        waBtn.className = 'dabby-btn-social dabby-btn-wa';
         waBtn.innerHTML = '💬 WhatsApp';
         waBtn.title = 'Share on WhatsApp';
         waBtn.style.color = '#34d399';
@@ -491,6 +559,7 @@
         };
 
         var xBtn = document.createElement('button');
+        xBtn.className = 'dabby-btn-social dabby-btn-x';
         xBtn.innerHTML = '𝕏 Share';
         xBtn.title = 'Share on X (Twitter)';
         xBtn.style.color = '#e2e8f0';
@@ -510,6 +579,7 @@
         };
 
         var fbBtn = document.createElement('button');
+        fbBtn.className = 'dabby-btn-social dabby-btn-fb';
         fbBtn.innerHTML = '📘 Facebook';
         fbBtn.title = 'Share on Facebook';
         fbBtn.style.color = '#60a5fa';

@@ -1322,87 +1322,184 @@
       flex-shrink: 1;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
+      .game-page-container {
+        padding: 4px 8px 12px;
+      }
+      .caller-left {
+        min-width: 0 !important;
+        flex: 1 1 auto;
+      }
+    }
+
+    /* Mobile Portrait / Compact Viewport Layout (<= 640px) */
+    @media (max-width: 640px) {
       .site-header {
-        padding: 8px 12px;
+        padding: 6px 10px;
       }
 
       .game-page-container {
-        padding: 4px 6px 14px;
+        padding: 4px 6px 10px;
         width: 100%;
         max-width: 100vw;
         box-sizing: border-box;
-        overflow-x: hidden;
+      }
+
+      body.embed-mode .game-page-container {
+        padding: 4px 6px 6px;
+        justify-content: flex-start;
+        height: 100%;
       }
 
       .game-seo-intro {
-        display: none;
-      }
-
-      .rapid-caller-bar {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        padding: 4px 8px !important;
-        margin-bottom: 6px !important;
-        max-height: 48px !important;
-        border-radius: 12px !important;
-        gap: 6px !important;
-      }
-
-      .caller-left {
-        gap: 6px !important;
-      }
-
-      .ball-sphere {
-        width: 36px !important;
-        height: 36px !important;
-        font-size: 16px !important;
-      }
-
-      .call-label {
         display: none !important;
       }
 
-      .call-instruction {
+      /* 2-Row Sleek Mobile Caller Bar */
+      .rapid-caller-bar,
+      body.embed-mode .rapid-caller-bar {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 6px 8px !important;
+        margin-bottom: 6px !important;
+        min-height: unset !important;
+        max-height: unset !important;
+        height: auto !important;
+        border-radius: 14px !important;
+        gap: 4px 6px !important;
+      }
+
+      /* Row 1 Left: Ball + Call Instructions */
+      .caller-left,
+      body.embed-mode .caller-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        max-width: calc(100% - 105px) !important;
+        order: 1 !important;
+      }
+
+      .ball-sphere,
+      body.embed-mode .ball-sphere {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 17px !important;
+        flex-shrink: 0 !important;
+      }
+
+      .call-meta {
+        min-height: unset !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+      }
+
+      .call-label,
+      body.embed-mode .call-label {
+        display: none !important;
+      }
+
+      .call-instruction,
+      body.embed-mode .call-instruction {
+        font-size: 11.5px !important;
+        line-height: 1.2 !important;
+        max-width: 100% !important;
+        min-height: unset !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-break: break-word !important;
+      }
+
+      .call-instruction span.highlight-num,
+      body.embed-mode .call-instruction span.highlight-num {
+        font-size: 11.5px !important;
+        padding: 1px 4px !important;
+        min-width: 20px !important;
+      }
+
+      /* Row 1 Right: Start Button or Live Countdown */
+      .timer-center,
+      body.embed-mode .timer-center {
+        flex-shrink: 0 !important;
+        order: 2 !important;
+        margin-left: auto !important;
+      }
+
+      .btn-start-countdown-area,
+      body.embed-mode .btn-start-countdown-area {
+        padding: 6px 10px !important;
         font-size: 11px !important;
-        max-width: 120px !important;
+        font-weight: 800 !important;
         white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-
-      .btn-start-countdown-area {
-        padding: 5px 12px !important;
-        font-size: 11px !important;
-      }
-
-      .caller-right {
         gap: 4px !important;
       }
 
-      .btn-voice {
-        padding: 4px 7px !important;
-        font-size: 10px !important;
+      .countdown-group {
+        gap: 4px !important;
       }
 
-      .score-badge {
-        padding: 4px 7px !important;
-        font-size: 10px !important;
+      .ring-wrapper,
+      body.embed-mode .ring-wrapper {
+        width: 32px !important;
+        height: 32px !important;
       }
 
-      .btn-new {
-        padding: 4px 7px !important;
-        font-size: 10px !important;
+      .timer-seconds-text,
+      body.embed-mode .timer-seconds-text {
+        font-size: 12px !important;
       }
 
-      .banner-wrapper {
+      .timer-alert-text,
+      body.embed-mode .timer-alert-text {
+        display: none !important;
+      }
+
+      /* Row 2: Secondary Controls across 100% width */
+      .caller-right,
+      body.embed-mode .caller-right {
+        width: 100% !important;
+        order: 3 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 5px !important;
+        margin-top: 3px !important;
+        padding-top: 4px !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+      }
+
+      .btn-voice,
+      body.embed-mode .btn-voice,
+      .score-badge,
+      body.embed-mode .score-badge,
+      .btn-share-top,
+      body.embed-mode .btn-share-top,
+      .btn-new,
+      body.embed-mode .btn-new {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding: 4px 3px !important;
+        font-size: 10.5px !important;
+        justify-content: center !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+      }
+
+      .banner-wrapper,
+      body.embed-mode .banner-wrapper {
         width: 100% !important;
         max-width: 100% !important;
+        max-height: unset !important;
         border-radius: 14px !important;
         aspect-ratio: 1112 / 635 !important;
         margin: 0 auto !important;
+        flex-shrink: 0 !important;
       }
 
       .social-challenge-bar {
@@ -1411,54 +1508,20 @@
 
       .victory-badge-banner {
         top: 6%;
-        padding: 8px 14px;
-        font-size: 11px;
-        letter-spacing: 0px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      body.embed-mode .game-page-container {
-        padding: 4px 6px;
-        justify-content: flex-start;
-      }
-
-      body.embed-mode .rapid-caller-bar {
-        padding: 4px 6px;
-        gap: 4px 6px;
-        margin-bottom: 4px;
-        border-radius: 12px;
-        max-height: 44px;
-      }
-
-      body.embed-mode .ball-sphere {
-        width: 32px;
-        height: 32px;
-        font-size: 15px;
-      }
-
-      body.embed-mode .call-instruction {
+        padding: 6px 12px;
         font-size: 11px;
       }
 
-      body.embed-mode .ring-wrapper {
-        width: 30px;
-        height: 30px;
+      .game-over-banner {
+        top: 6% !important;
+        width: 94% !important;
+        padding: 12px 14px !important;
+        border-radius: 16px !important;
       }
 
-      body.embed-mode .timer-seconds-text {
-        font-size: 10px;
-      }
-
-      body.embed-mode .caller-right {
-        gap: 3px;
-      }
-
-      body.embed-mode .score-badge,
-      body.embed-mode .btn-new,
-      body.embed-mode .btn-voice {
-        padding: 2px 6px;
-        font-size: 10px;
+      .share-modal-card {
+        padding: 12px 14px !important;
+        border-radius: 16px !important;
       }
     }
   </style>
