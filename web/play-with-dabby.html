@@ -246,6 +246,10 @@
       display: flex;
       align-items: center;
       gap: 14px;
+      flex: 1 1 340px;
+      min-width: 280px;
+      max-width: 420px;
+      overflow: hidden;
     }
 
     .ball-sphere {
@@ -287,6 +291,7 @@
       flex-direction: column;
       justify-content: center;
       gap: 3px;
+      min-height: 44px;
     }
 
     .call-label {
@@ -299,14 +304,19 @@
       align-items: center;
       gap: 5px;
       line-height: 1.2;
+      white-space: nowrap;
     }
 
     .call-instruction {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 900;
       color: #ffffff;
       letter-spacing: -0.3px;
       line-height: 1.25;
+      min-height: 38px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .call-instruction span.highlight-num {
@@ -322,6 +332,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
+      flex-shrink: 0;
     }
 
     .ring-wrapper {
@@ -376,6 +387,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
 
     .score-badge {
@@ -388,7 +400,10 @@
       font-weight: 800;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 6px;
+      min-width: 135px;
+      box-sizing: border-box;
     }
 
     .btn-new {
@@ -703,9 +718,12 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 5px;
       transition: all 0.2s ease;
       user-select: none;
+      min-width: 110px;
+      box-sizing: border-box;
     }
 
     .btn-voice:hover {
@@ -1290,7 +1308,7 @@
         <div class="call-meta">
           <span class="call-label">🔥 90-BALL BINGO CALLER • DAB NOW!</span>
           <div class="call-instruction" id="callInstruction">
-            Find and Dab <span class="highlight-num" id="highlightNum">--</span>!
+            Inspect your ticket below.<br> Tap <span style="color:#10b981;font-weight:900;">"Start Practice"</span> when ready!
           </div>
         </div>
       </div>
@@ -2379,7 +2397,7 @@
         }
         const instructionEl = document.getElementById('callInstruction');
         if (instructionEl) {
-          instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">ALL 15 DABBED!</span> Tap flashing <span style="color:#facc15; font-weight:900;">FULL HOUSIE</span> below!`;
+          instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">ALL 15 DABBED!</span><br>Tap flashing <span style="color:#facc15; font-weight:900;">FULL HOUSIE</span> below!`;
         }
         setCoachMessage(`🏆 <strong>TICKET COMPLETED!</strong> All 15 numbers dabbed and all lines secured! Tap the flashing <strong>Full Housie</strong> button below to claim your victory!`);
 
@@ -2392,7 +2410,7 @@
       const prizeNames = pending.map(u => u.name).join(' & ');
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
-        instructionEl.innerHTML = `⚡ <span style="color:#facc15; font-weight:900;">CLAIM READY!</span> Tap flashing <span style="color:#facc15; font-weight:900;">${prizeNames}</span> below!`;
+        instructionEl.innerHTML = `⚡ <span style="color:#facc15; font-weight:900;">CLAIM READY!</span><br>Tap flashing <span style="color:#facc15; font-weight:900;">${prizeNames}</span> below!`;
       }
       const urgencyEl = document.getElementById('timerUrgencyText');
       if (urgencyEl) {
@@ -2430,7 +2448,7 @@
             freezeCountdownUI('⚡ CLAIM LINES FIRST');
             const instructionEl = document.getElementById('callInstruction');
             if (instructionEl) {
-              instructionEl.innerHTML = `⚠️ <span style="color:#f59e0b; font-weight:800;">ALL 15 DABBED!</span> Claim ${missing.join(', ')} first!`;
+              instructionEl.innerHTML = `⚠️ <span style="color:#f59e0b; font-weight:800;">ALL 15 DABBED!</span><br>Claim <span style="color:#facc15;">${missing.join(', ')}</span> first!`;
             }
             setCoachMessage(`⚠️ <strong>Almost There!</strong> All 15 numbers dabbed! Tap and claim your <strong>${missing.join(', ')}</strong> first, then claim Full Housie!`);
             speakDabbyCoach(`All fifteen numbers dabbed! Claim your lines first, then claim Full Housie!`);
@@ -2461,7 +2479,7 @@
         }
         const instructionEl = document.getElementById('callInstruction');
         if (instructionEl) {
-          instructionEl.innerHTML = `✅ <span style="color:#10b981; font-weight:700;">Number Dabbed!</span> Next call coming up...`;
+          instructionEl.innerHTML = `✅ <span style="color:#10b981; font-weight:700;">Number Dabbed!</span><br><span style="font-size:13.5px; color:#10b981;">Next call coming up...</span>`;
         }
 
         dabNextCallTimeout = setTimeout(() => {
@@ -2518,7 +2536,7 @@
 
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
-        instructionEl.innerHTML = `<span style="color:#f87171">Game Over</span> • Tap Play Again when ready`;
+        instructionEl.innerHTML = `<span style="color:#f87171">Game Over</span><br><span style="font-size:13.5px; opacity:0.85;">Tap Play Again when ready</span>`;
       }
       document.getElementById('timerUrgencyText').innerText = 'Finished';
     }
@@ -2567,11 +2585,11 @@
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
         if (isOnTicket) {
-          instructionEl.innerHTML = `🔥 ON YOUR TICKET! Click <span class="highlight-num">${pick}</span>!`;
+          instructionEl.innerHTML = `🔥 ON YOUR TICKET!<br>Click <span class="highlight-num">${pick}</span> now!`;
           const cell = document.getElementById(`cell-${pick}`);
           if (cell) cell.classList.add('is-called');
         } else {
-          instructionEl.innerHTML = `Called Ball <span class="highlight-num">${pick}</span> (Check Ticket)`;
+          instructionEl.innerHTML = `Called Ball <span class="highlight-num">${pick}</span><br><span style="font-size:13.5px; opacity:0.85;">(Check your ticket)</span>`;
         }
       }
 
@@ -2709,7 +2727,7 @@
 
       const instructionEl = document.getElementById('callInstruction');
       if (instructionEl) {
-        instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">FULL HOUSIE BINGO!</span> Congratulations Champion!`;
+        instructionEl.innerHTML = `🏆 <span style="color:#facc15; font-weight:900;">FULL HOUSIE BINGO!</span><br>Congratulations Champion!`;
       }
       document.getElementById('timerUrgencyText').innerText = 'Victory!';
       document.getElementById('timerSeconds').innerText = '🏆';
@@ -2891,7 +2909,7 @@
       const code = randInt(100000, 999999);
       document.getElementById('gameCodeDisplay').innerText = `Game Code: ${code}`;
       document.getElementById('currentBallSphere').innerText = '--';
-      document.getElementById('callInstruction').innerHTML = 'Inspect your ticket below. Tap <span style="color:#10b981;font-weight:900;">"Start Practice"</span> when ready!';
+      document.getElementById('callInstruction').innerHTML = 'Inspect your ticket below.<br> Tap <span style="color:#10b981;font-weight:900;">"Start Practice"</span> when ready!';
       document.getElementById('timerSeconds').innerText = '5';
       document.getElementById('timerUrgencyText').innerText = 'Ready to Practice';
 
