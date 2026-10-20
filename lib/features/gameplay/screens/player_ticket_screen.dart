@@ -733,6 +733,16 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             ],
           ),
           actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.facebook, size: 16, color: Color(0xFF1877F2)),
+              onPressed: () {
+                launchUrl(
+                  Uri.parse('https://www.facebook.com/dabhousie'),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              label: const Text('@DabHousie', style: TextStyle(color: Color(0xFF38BDF8), fontSize: 12)),
+            ),
             TextButton(
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: code));

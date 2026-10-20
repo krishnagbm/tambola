@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -276,6 +277,252 @@ class AdminReportsRepository {
       } catch (_) {}
     }
     return 0;
+  }
+
+  /// Default standardized promotional prize gifts config ($35 Pool: DABFREE5 for 5 minor lines, DABFREE10 for Full House)
+  static Map<String, dynamic> getDefaultPromotionalPrizeGifts() {
+    return {
+      'TOP_LINE': {
+        'emoji': '🎟️',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': 'c2d53003-6f75-4191-b7dd-413cf02e038a',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE5',
+        'prize_value': 5,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 5,
+        'product_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      'EARLY_FIVE': {
+        'emoji': '🎟️',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': 'c2d53003-6f75-4191-b7dd-413cf02e038a',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE5',
+        'prize_value': 5,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 5,
+        'product_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      'FULL_HOUSE': {
+        'emoji': '🎁',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': '5a5b8d5b-c6fa-4507-a6fa-32174db5d28b',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$10 Free Party Pack Credit Voucher (Row Line Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE10',
+        'prize_value': 10,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 10,
+        'product_title': r'$10 Free Party Pack Credit Voucher (Row Line Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      'BOTTOM_LINE': {
+        'emoji': '🎟️',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': 'c2d53003-6f75-4191-b7dd-413cf02e038a',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE5',
+        'prize_value': 5,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 5,
+        'product_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      'MIDDLE_LINE': {
+        'emoji': '🎟️',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': 'c2d53003-6f75-4191-b7dd-413cf02e038a',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE5',
+        'prize_value': 5,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 5,
+        'product_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      'FOUR_CORNERS': {
+        'emoji': '🎟️',
+        'currency': 'USD',
+        'currency_symbol': r'$',
+        'offer_id': 'c2d53003-6f75-4191-b7dd-413cf02e038a',
+        'brand_name': 'DabHousie',
+        'gift_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'offer_type': 'PROMO_CODE',
+        'promo_code': 'DABFREE5',
+        'prize_value': 5,
+        'product_url': 'https://www.dabhousie.com/pricing.html',
+        'brand_domain': 'dabhousie.com',
+        'retail_price': 5,
+        'product_title': r'$5 Free Game Credit Voucher (Early-5 / Corner Prize)',
+        'target_region': 'Global',
+        'brand_logo_url': null,
+        'organizer_price': 0,
+        'product_image_url': null,
+        'is_custom_host_offer': false,
+      },
+      '_currency_code': 'USD',
+      '_currency_symbol': r'$',
+    };
+  }
+
+  /// Batch-create promotional or festival games with standardized prize pools and autonomous Dabby orchestration
+  Future<Map<String, dynamic>> createPromotionalGameBatch({
+    required List<Map<String, dynamic>> games,
+    bool incrementBrandOffers = true,
+  }) async {
+    // 1. Try server-side RPC first
+    try {
+      final res = await _supabase.rpc('MPT_create_promotional_game_batch', params: {
+        'p_games': games,
+        'p_increment_brand_offers': incrementBrandOffers,
+      });
+      if (res is Map<String, dynamic> && res['success'] == true) {
+        return res;
+      }
+    } catch (_) {
+      try {
+        final res = await _supabase.rpc('mpt_create_promotional_game_batch', params: {
+          'p_games': games,
+          'p_increment_brand_offers': incrementBrandOffers,
+        });
+        if (res is Map<String, dynamic> && res['success'] == true) {
+          return res;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Direct Supabase Table Insert Fallback
+    final user = _supabase.auth.currentUser;
+    final adminId = user?.id ?? '7abfb521-c7ff-4e9b-84f6-a38d018bda75';
+    final List<Map<String, dynamic>> createdGames = [];
+
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    final random = math.Random();
+
+    for (final g in games) {
+      String code = (g['invite_code'] as String?)?.trim().toUpperCase() ?? '';
+      if (code.length < 6) {
+        code = List.generate(6, (_) => chars[random.nextInt(chars.length)]).join();
+      }
+
+      final scheduledAt = g['scheduled_at'] as String?;
+      final prizeGifts = Map<String, dynamic>.from(
+        (g['prize_gifts_config'] as Map?) ?? getDefaultPromotionalPrizeGifts(),
+      );
+
+      if (scheduledAt != null && scheduledAt.isNotEmpty) {
+        final utcIso = DateTime.parse(scheduledAt).toUtc().toIso8601String();
+        prizeGifts['_dabby_orchestration'] = {
+          'autonomous_host_enabled': true,
+          'scheduled_at': utcIso,
+          'low_quorum_action': 'AUTO_CANCEL',
+          'quorum_count': 1,
+          'quorum_percentage': 0,
+          'grace_period_minutes': 3,
+          'auto_upgrade_on_waitlist': true,
+        };
+      }
+
+      final payload = <String, dynamic>{
+        'admin_user_id': g['admin_user_id'] ?? adminId,
+        'name': g['name'] ?? 'DabHousie Promotional Event 🏆',
+        'invite_code': code,
+        'status': 'OPEN',
+        'planned_capacity_tier_id':
+            g['planned_capacity_tier_id'] ?? '0c195125-d897-4d0e-a4d0-12e39f77c991',
+        'initial_funded_capacity': g['capacity'] ?? 250,
+        'funded_capacity': g['capacity'] ?? 250,
+        if (scheduledAt != null) ...{'scheduled_at': scheduledAt},
+        'prizes_config': g['prizes_config'] ?? [
+          'EARLY_FIVE',
+          'TOP_LINE',
+          'MIDDLE_LINE',
+          'BOTTOM_LINE',
+          'FOUR_CORNERS',
+          'FULL_HOUSE'
+        ],
+        'prize_gifts_config': prizeGifts,
+        'total_prize_budget': g['total_prize_budget'] ?? 35.00,
+        'is_private': false,
+        'is_publicly_visible': g['is_publicly_visible'] ?? true,
+        'minor_prize_policy': g['minor_prize_policy'] ?? 'ONE_MINOR_PER_PLAYER',
+      };
+
+      final inserted = await _supabase
+          .from('MPT_games')
+          .insert(payload)
+          .select()
+          .single();
+
+      createdGames.add(Map<String, dynamic>.from(inserted));
+    }
+
+    // Increment brand offer counters if requested
+    if (incrementBrandOffers && createdGames.isNotEmpty) {
+      try {
+        final offersRes = await _supabase
+            .from('MPT_brand_offers')
+            .select('id, promo_code, games_assigned_count')
+            .filter('promo_code', 'in', '("DABFREE5","DABFREE10")');
+        for (final o in offersRes as List) {
+          final promo = o['promo_code'];
+          final inc = (promo == 'DABFREE5' ? 5 : 1) * createdGames.length;
+          final curr = (o['games_assigned_count'] as int?) ?? 0;
+          await _supabase
+              .from('MPT_brand_offers')
+              .update({'games_assigned_count': curr + inc})
+              .eq('id', o['id']);
+        }
+      } catch (_) {}
+    }
+
+    return {
+      'success': true,
+      'count': createdGames.length,
+      'created_games': createdGames,
+    };
   }
 
   /// Fetch detailed game inspection statistics (players, claims, draws)

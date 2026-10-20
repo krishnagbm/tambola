@@ -6,10 +6,14 @@ import '../../../core/theme/app_theme.dart';
 class DashboardFooter extends StatelessWidget {
   const DashboardFooter({super.key});
 
-  Future<void> _launchURL(String url) async {
+  Future<void> _launchURL(String url, {bool isExternal = false}) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, webOnlyWindowName: '_self');
+      await launchUrl(
+        uri,
+        mode: isExternal ? LaunchMode.externalApplication : LaunchMode.platformDefault,
+        webOnlyWindowName: isExternal ? '_blank' : '_self',
+      );
     }
   }
 
@@ -169,7 +173,34 @@ class DashboardFooter extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
+            // Official Social Channels Bar
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 8,
+              children: [
+                _buildSocialChip(
+                  label: 'LinkedIn',
+                  icon: Icons.business_center,
+                  brandColor: const Color(0xFF0A66C2),
+                  url: 'https://www.linkedin.com/company/dabhousie/',
+                ),
+                _buildSocialChip(
+                  label: 'YouTube',
+                  icon: Icons.play_circle_fill,
+                  brandColor: const Color(0xFFFF0000),
+                  url: 'https://www.youtube.com/@DabHousie',
+                ),
+                _buildSocialChip(
+                  label: 'Facebook',
+                  icon: Icons.facebook,
+                  brandColor: const Color(0xFF1877F2),
+                  url: 'https://www.facebook.com/dabhousie',
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             InkWell(
               onTap: () => _launchURL('${AppConfig.appBaseUrl}/terms-conditions.html#intellectual-property'),
               child: const Column(
@@ -197,6 +228,44 @@ class DashboardFooter extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialChip({
+    required String label,
+    required IconData icon,
+    required Color brandColor,
+    required String url,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _launchURL(url, isExternal: true),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF334155), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: brandColor),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFFCBD5E1),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

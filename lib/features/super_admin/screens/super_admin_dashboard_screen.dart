@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/app_providers.dart';
+import '../widgets/create_promotional_series_dialog.dart';
 
 class SuperAdminDashboardScreen extends ConsumerStatefulWidget {
   const SuperAdminDashboardScreen({super.key});
@@ -145,6 +146,14 @@ class _SuperAdminDashboardScreenState
         );
       }
     }
+  }
+
+  void _showCreatePromotionalSeriesDialog(List<dynamic> games) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => CreatePromotionalSeriesDialog(existingGames: games),
+    );
   }
 
   @override
@@ -905,6 +914,21 @@ class _SuperAdminDashboardScreenState
                     ),
                   ),
                   const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD97706),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => _showCreatePromotionalSeriesDialog(games),
+                    icon: const Icon(Icons.celebration, size: 15),
+                    label: const Text(
+                      'Create Promo Series 🏆',
+                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF334155),
