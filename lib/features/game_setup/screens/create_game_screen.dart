@@ -1698,8 +1698,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                       _buildGroupSizeSection(),
                                       const SizedBox(height: 16),
                                       _buildSchedulePicker(),
-                                      const SizedBox(height: 14),
-                                      _buildFreeToPlayPolicyCard(),
                                     ],
                                   ),
                                 ),
@@ -1713,6 +1711,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                       _buildWinnerEligibilitySection(),
                                       const SizedBox(height: 10),
                                       _buildCustomPatternsCallout(),
+                                      const SizedBox(height: 14),
+                                      _buildFreeToPlayPolicyCard(),
                                     ],
                                   ),
                                 ),
@@ -4245,76 +4245,148 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   Widget _buildTiersList(List<MptCapacityTier> tiers) {
     if (tiers.isEmpty) return _buildStaticCapacityOptions();
 
-    // Default to the first tier if unset
+    // Default to the first tier if unset (ensure self-serve default is <= 250)
     if (_selectedTierId == null && tiers.isNotEmpty) {
-      _selectedTierId = tiers.first.id;
-      _selectedCapacity = tiers.first.maxPlayers;
+      final defaultTier = tiers.firstWhere(
+        (t) => t.maxPlayers <= 250,
+        orElse: () => tiers.first,
+      );
+      _selectedTierId = defaultTier.id;
+      _selectedCapacity = defaultTier.maxPlayers;
     }
 
     return Column(
       children: [
         ...tiers.map((tier) {
-          final isSelected = _selectedTierId == tier.id ||
+          final isCorporate = tier.maxPlayers > 250;
+          final isSelected = !isCorporate && (_selectedTierId == tier.id ||
               (_selectedTierId == null && _selectedCapacity == tier.maxPlayers) ||
-              (_selectedCapacity == tier.maxPlayers);
+              (_selectedCapacity == tier.maxPlayers));
           final breakdownText = _getPrivateCreditBreakdownText(tier.maxPlayers);
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: InkWell(
-              onTap: () => _setCapacity(tier.maxPlayers, tierId: tier.id),
+              onTap: () {
+                if (isCorporate) {
+                  CorporateInquiryDialog.show(
+                    context,
+                    initialTopic: 'Corporate Capacity Plan (${tier.name})',
+                  );
+                } else {
+                  _setCapacity(tier.maxPlayers, tierId: tier.id);
+                }
+              },
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.primaryColor.withValues(alpha: 0.15) : AppTheme.darkSurface,
+                  color: isCorporate
+                      ? Colors.white.withValues(alpha: 0.02)
+                      : (isSelected
+                          ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                          : AppTheme.darkSurface),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? AppTheme.primaryColor : const Color(0xFF2E334D),
+                    color: isCorporate
+                        ? const Color(0xFF2E334D).withValues(alpha: 0.5)
+                        : (isSelected
+                            ? AppTheme.primaryColor
+                            : const Color(0xFF2E334D)),
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(tier.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            if (_isPrivate) ...[
-                              const SizedBox(width: 6),
-                              const Icon(Icons.lock_outline, size: 13, color: AppTheme.accentPartyPurple),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  tier.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: isCorporate
+                                        ? const Color(0xFF94A3B8)
+                                        : Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (_isPrivate && !isCorporate) ...[
+                                const SizedBox(width: 6),
+                                const Icon(Icons.lock_outline, size: 13, color: AppTheme.accentPartyPurple),
+                              ],
                             ],
-                          ],
-                        ),
-                        Text(
-                          _isPrivate
-                              ? '${tier.minPlayers}–${tier.maxPlayers} Seats • $breakdownText (Private OTP)'
-                              : (tier.creditsRequired == 0
-                                  ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
-                                  : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: (!_isPrivate && tier.creditsRequired == 0)
-                                ? FontWeight.bold
-                                : (_isPrivate ? FontWeight.w600 : FontWeight.normal),
-                            color: _isPrivate
-                                ? AppTheme.accentPartyPurple
-                                : (tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isCorporate
+                                ? 'Special Corporate Pack • Dedicated concurrency (Contact DabHousie)'
+                                : (_isPrivate
+                                    ? '${tier.minPlayers}–${tier.maxPlayers} Seats • $breakdownText (Private OTP)'
+                                    : (tier.creditsRequired == 0
+                                        ? '${tier.minPlayers}–${tier.maxPlayers} Players • Free (0 Credits)*'
+                                        : '${tier.minPlayers}–${tier.maxPlayers} Players • ${tier.creditsRequired} Credits')),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isCorporate
+                                  ? FontWeight.w500
+                                  : ((!_isPrivate && tier.creditsRequired == 0)
+                                      ? FontWeight.bold
+                                      : (_isPrivate ? FontWeight.w600 : FontWeight.normal)),
+                              color: isCorporate
+                                  ? const Color(0xFF64748B)
+                                  : (_isPrivate
+                                      ? AppTheme.accentPartyPurple
+                                      : (tier.creditsRequired == 0 ? AppTheme.accentSuccess : AppTheme.secondaryColor)),
+                              fontStyle: isCorporate ? FontStyle.italic : FontStyle.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    if (isCorporate)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.35),
                           ),
                         ),
-                      ],
-                    ),
-                    Radio<String>(
-                      value: tier.id,
-                      groupValue: isSelected ? tier.id : null,
-                      activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
-                      onChanged: (val) {
-                        if (val != null) _setCapacity(tier.maxPlayers, tierId: val);
-                      },
-                    ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.contact_mail_outlined, size: 13, color: AppTheme.secondaryColor),
+                            SizedBox(width: 5),
+                            Text(
+                              'Contact Us',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.secondaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Radio<String>(
+                        value: tier.id,
+                        groupValue: isSelected ? tier.id : null,
+                        activeColor: _isPrivate ? AppTheme.accentPartyPurple : AppTheme.primaryColor,
+                        onChanged: (val) {
+                          if (val != null) _setCapacity(tier.maxPlayers, tierId: val);
+                        },
+                      ),
                   ],
                 ),
               ),

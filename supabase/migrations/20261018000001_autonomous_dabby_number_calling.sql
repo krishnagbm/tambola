@@ -55,7 +55,7 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM public."MPT_claims"
         WHERE game_id = p_game_id 
-          AND claim_type = 'FULL_HOUSE' 
+          AND prize_type = 'FULL_HOUSE' 
           AND status = 'APPROVED'
     ) THEN
         UPDATE public."MPT_games"

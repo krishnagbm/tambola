@@ -58,6 +58,7 @@ class GameplayRepository {
         return (res['number'] as num).toInt();
       }
     } catch (e) {
+      debugPrint('MPT_call_next_number RPC failed: $e');
       final errStr = e.toString().toUpperCase();
       // If RPC failed due to game state (e.g. not in progress, cancelled, completed)
       // or auth/permission error, rethrow directly so callers see the true reason
@@ -67,7 +68,8 @@ class GameplayRepository {
           errStr.contains('COMPLETED') ||
           errStr.contains('NOT_AUTHORIZED') ||
           errStr.contains('P0001') ||
-          errStr.contains('42501')) {
+          errStr.contains('42501') ||
+          errStr.contains('42703')) {
         rethrow;
       }
 
