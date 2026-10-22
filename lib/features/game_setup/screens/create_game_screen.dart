@@ -3723,7 +3723,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           const SizedBox(height: 6),
           const Text(
             '• 🎮 Active Players Rule: If under 5 players, all prizes are open to everyone (no stranded prizes).\n'
-            '• 🌟 5+ Players Rule: Max 1 Bonus (Early 5 or Corners) + 1 Row Line + 1 Full House per player.\n'
+            '• 🌟 5+ Players Rule: Max 1 Row Line per player (spreads rows fairly); Early 5, Corners & Full House remain open to all.\n'
             '• 🏆 Full House is ALWAYS open to ALL players so everyone stays engaged until the finale.',
             style: TextStyle(
               fontSize: 11,
@@ -3767,7 +3767,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               DropdownMenuItem(
                 value: 'ONE_LINE_PLUS_BONUS',
                 child: Text(
-                  '⭐ Smart Dynamic (Recommended): 1 Bonus + 1 Row + Full House',
+                  '⭐ Smart Dynamic (Recommended): Max 1 Row Line • Early 5, Corners & Full House Open',
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

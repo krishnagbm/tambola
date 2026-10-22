@@ -435,21 +435,14 @@ class DirectPlayer {
           return;
         }
 
-        // B. Enforce Dynamic Prize Eligibility (1 Bonus, 1 Row, 1 Housie if 5+ players)
-        if (prizeId !== 'FULL_HOUSE' && prizeId !== 'SECOND_FULL_HOUSE') {
+        // B. Enforce Dynamic Prize Eligibility: Max 1 Row Line per player; Early 5 & Corners are open
+        if (['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE'].includes(prizeId)) {
           const myWins = await this.fetchApi(
             `/rest/v1/MPT_claims?game_id=eq.${this.gameId}&user_id=eq.${this.userId}&status=eq.APPROVED&select=prize_type`
           );
           const approvedPrizes = (myWins || []).map(w => w.prize_type);
-          const isRowLine = ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE'].includes(prizeId);
-          const isBonus = ['EARLY_FIVE', 'EARLY_5', 'FOUR_CORNERS'].includes(prizeId);
-
-          if (isRowLine && approvedPrizes.some(p => ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE'].includes(p))) {
+          if (approvedPrizes.some(p => ['TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE'].includes(p))) {
             this.log(`⚠️ Claim "${prizeName}" REJECTED: Player ${this.id} (${this.name}) already won a Row Line (Max 1 Row Line per player).`);
-            return;
-          }
-          if (isBonus && approvedPrizes.some(p => ['EARLY_FIVE', 'EARLY_5', 'FOUR_CORNERS'].includes(p))) {
-            this.log(`⚠️ Claim "${prizeName}" REJECTED: Player ${this.id} (${this.name}) already won a Bonus prize (Max 1 Bonus per player).`);
             return;
           }
         }

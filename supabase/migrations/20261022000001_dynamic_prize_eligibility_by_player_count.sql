@@ -235,6 +235,7 @@ BEGIN
         -- If active players are 5 or more and policy is not UNLIMITED, enforce fair distribution:
         IF v_player_count >= 5 AND v_policy <> 'UNLIMITED' THEN
             IF v_policy IN ('ONE_LINE_PLUS_BONUS', 'DYNAMIC_BALANCED') THEN
+                -- Row Lines: Max 1 Row Line per player (Top, Middle, OR Bottom) to spread row prizes fairly
                 IF p_prize_type IN ('TOP_LINE', 'MIDDLE_LINE', 'BOTTOM_LINE') AND EXISTS (
                     SELECT 1 FROM public."MPT_claims"
                     WHERE game_id = p_game_id
@@ -244,20 +245,11 @@ BEGIN
                 ) THEN
                     RETURN jsonb_build_object(
                         'status', 'REJECTED',
-                        'reason', 'Host Rule (5+ players): Max 1 Row Line prize per player! You are still eligible for Bonus & Full House prizes 🏆'
-                    );
-                ELSIF p_prize_type IN ('EARLY_FIVE', 'EARLY_5', 'FOUR_CORNERS') AND EXISTS (
-                    SELECT 1 FROM public."MPT_claims"
-                    WHERE game_id = p_game_id
-                      AND user_id = v_uid
-                      AND prize_type IN ('EARLY_FIVE', 'EARLY_5', 'FOUR_CORNERS')
-                      AND status = 'APPROVED'
-                ) THEN
-                    RETURN jsonb_build_object(
-                        'status', 'REJECTED',
-                        'reason', 'Host Rule (5+ players): Max 1 Bonus prize (Early 5 or Corners) per player! You are still eligible for Row Lines & Full House 🏆'
+                        'reason', 'Host Rule (5+ players): Max 1 Row Line prize per player! You are still eligible for Full House 🏆'
                     );
                 END IF;
+                -- Note: EARLY_FIVE and FOUR_CORNERS are independent milestones open to all players!
+                -- A player who wins Early 5 can also win Four Corners (and vice-versa).
             ELSIF v_policy = 'ONE_MINOR_PER_PLAYER' THEN
                 IF EXISTS (
                     SELECT 1 FROM public."MPT_claims"
