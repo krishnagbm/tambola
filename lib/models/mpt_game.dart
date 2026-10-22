@@ -108,7 +108,7 @@ class MptGame {
       prizesConfig: parsePrizes(json['prizes_config']),
       totalPrizeBudget: (json['total_prize_budget'] as num?)?.toDouble() ?? 0.0,
       prizeGiftsConfig: parsePrizeGifts(json['prize_gifts_config']),
-      minorPrizePolicy: json['minor_prize_policy'] as String? ?? 'ONE_MINOR_PER_PLAYER',
+      minorPrizePolicy: json['minor_prize_policy'] as String? ?? 'ONE_LINE_PLUS_BONUS',
       stateVersion: json['state_version'] as int? ?? 1,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']).toLocal() : DateTime.now(),
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']).toLocal() : DateTime.now(),

@@ -57,7 +57,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   final Map<String, TextEditingController> _prizeValueControllers = {};
   final Map<String, BrandOffer> _selectedPrizeGifts = {};
   String _selectedCurrencyCode = 'USD';
-  String _minorPrizePolicy = 'ONE_MINOR_PER_PLAYER';
+  String _minorPrizePolicy = 'ONE_LINE_PLUS_BONUS';
   bool _enableOrgBranding = false;
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
@@ -3722,17 +3722,18 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            '• 🏆 1st Full House is ALWAYS open to ALL players (so nobody logs off early!).\n'
-            '• 🥈 2nd Full House is open to ALL players except the 1st Full House winner.',
+            '• 🎮 Active Players Rule: If under 5 players, all prizes are open to everyone (no stranded prizes).\n'
+            '• 🌟 5+ Players Rule: Max 1 Bonus (Early 5 or Corners) + 1 Row Line + 1 Full House per player.\n'
+            '• 🏆 Full House is ALWAYS open to ALL players so everyone stays engaged until the finale.',
             style: TextStyle(
               fontSize: 11,
               color: Color(0xFFA7F3D0),
-              height: 1.4,
+              height: 1.45,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Minor Prizes (Early 5, Corners & Row Lines) Policy:',
+            'Prize Eligibility Policy:',
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
@@ -3764,23 +3765,23 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             ),
             items: const [
               DropdownMenuItem(
-                value: 'ONE_MINOR_PER_PLAYER',
+                value: 'ONE_LINE_PLUS_BONUS',
                 child: Text(
-                  'Max 1 Minor Prize per Player + Full House (Spreads Winners)',
+                  '⭐ Smart Dynamic (Recommended): 1 Bonus + 1 Row + Full House',
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               DropdownMenuItem(
-                value: 'ONE_LINE_PLUS_BONUS',
+                value: 'ONE_MINOR_PER_PLAYER',
                 child: Text(
-                  'Max 1 Row Line + 1 Bonus (Early 5/Corners) + Full House',
+                  'Strict: Max 1 Minor Prize per Player + Full House',
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               DropdownMenuItem(
                 value: 'UNLIMITED',
                 child: Text(
-                  'Unlimited Minor Prizes per Player + Full House',
+                  'Casual: Unlimited Minor Prizes per Player + Full House',
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

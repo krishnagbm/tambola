@@ -66,3 +66,5 @@ app.*.map.json
 node_modules/
 **/node_modules/
 tests/multiplayer/screenshots/
+tests/multiplayer/reports/
+scratch/

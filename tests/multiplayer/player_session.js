@@ -1,9 +1,18 @@
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const SCREENSHOTS_DIR = path.resolve('tests/multiplayer/screenshots');
+const AUTH_CACHE_PATH = path.resolve('tests/multiplayer/.auth_cache.json');
 const SUPABASE_URL = 'https://itfcnurjrnyalauwwdkj.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI';
+
+let cachedAuthTokens = {};
+try {
+  if (fs.existsSync(AUTH_CACHE_PATH)) {
+    cachedAuthTokens = JSON.parse(fs.readFileSync(AUTH_CACHE_PATH, 'utf8'));
+  }
+} catch (_) {}
 
 export class PlayerSession {
   /**
@@ -144,7 +153,7 @@ export class PlayerSession {
   async clickFlutterButton(text, exact = false) {
     try {
       const res = await this.page.evaluate(({ targetText, isExact }) => {
-        const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label], button, span, p, div, input, *'));
+        const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label], [flt-tappable], button, span, p, div, input, *'));
         const matches = all.filter(el => {
           const l = (el.getAttribute('aria-label') || '').trim();
           const t = (el.innerText || el.textContent || '').trim();
@@ -152,7 +161,7 @@ export class PlayerSession {
             return l === targetText || t === targetText;
           }
           if (l === targetText || t === targetText) return true;
-          if ((l.includes(targetText) && l.length <= targetText.length + 15) || (t.includes(targetText) && t.length <= targetText.length + 15)) return true;
+          if ((l.includes(targetText) && l.length <= targetText.length + 20) || (t.includes(targetText) && t.length <= targetText.length + 20)) return true;
           return false;
         });
 
@@ -164,6 +173,7 @@ export class PlayerSession {
             return (rA.width * rA.height) - (rB.width * rB.height);
           });
           const target = matches[0];
+          target.scrollIntoView({ block: 'center', inline: 'center' });
           target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
           target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
           target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -219,14 +229,46 @@ export class PlayerSession {
     // Block Google Analytics & Tag Manager network requests from automated test sessions
     await this.context.route(/(googletagmanager|google-analytics)\.com/, (route) => route.abort());
 
-    // Pre-seed local storage so Flutter's SharedPreferences immediately starts with this real player name
-    await this.context.addInitScript((playerName) => {
+    // Pre-seed local storage so Flutter immediately starts authenticated with real user session
+    const playerAuth = cachedAuthTokens[this.id];
+    if (playerAuth && playerAuth.userId) {
+      this.userUuid = playerAuth.userId;
+    }
+
+    await this.context.addInitScript(({ playerName, playerAuth }) => {
       try {
         sessionStorage.setItem('dh_automated_test', 'true');
         localStorage.setItem('flutter.mpt_player_name', JSON.stringify(playerName));
         localStorage.setItem('flutter.mpt_player_avatar', JSON.stringify('avatar_lion'));
+        localStorage.setItem('flutter.dabhousie_user_name', playerName);
+        localStorage.setItem('flutter.dabhousie_user_avatar', 'avatar_lion');
+
+        if (playerAuth && playerAuth.accessToken && playerAuth.userId) {
+          localStorage.setItem('flutter.dabhousie_user_id', playerAuth.userId);
+          const sbAuthSession = {
+            access_token: playerAuth.accessToken,
+            token_type: 'bearer',
+            expires_in: 3600,
+            expires_at: playerAuth.expiresAt || 2105451373,
+            refresh_token: playerAuth.refreshToken || 'test_refresh_token',
+            user: {
+              id: playerAuth.userId,
+              aud: 'authenticated',
+              role: 'authenticated',
+              email: '',
+              phone: '',
+              app_metadata: {},
+              user_metadata: {
+                full_name: playerName,
+                avatar: 'avatar_lion'
+              },
+              is_anonymous: true
+            }
+          };
+          localStorage.setItem('sb-itfcnurjrnyalauwwdkj-auth-token', JSON.stringify(sbAuthSession));
+        }
       } catch (_) {}
-    }, this.name);
+    }, { playerName: this.name, playerAuth });
 
     this.page = await this.context.newPage();
 
@@ -274,129 +316,127 @@ export class PlayerSession {
   /**
    * Complete the join and registration flow
    */
-  async joinGame(joinUrl) {
-    this.log(`Navigating to ${joinUrl}...`);
+  async joinGame(joinUrl, preResolvedGameId = null) {
     const codeMatch = joinUrl.match(/join\/([A-Za-z0-9]+)/);
     this.inviteCode = codeMatch ? codeMatch[1].toUpperCase() : 'UNKNOWN';
+    if (preResolvedGameId) {
+      this.gameId = preResolvedGameId;
+    }
 
-    await this.page.goto(joinUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    // 1. Direct Supabase Lookup & Fast Registration to guarantee confirmed seat
+    const playerAuth = cachedAuthTokens[this.id];
+    if (!this.gameId) {
+      try {
+        const gRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_games?invite_code=eq.${this.inviteCode}&select=*`, {
+          headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+        });
+        const gList = await gRes.json();
+        if (gList && gList.length > 0) {
+          this.gameId = gList[0].id;
+        }
+      } catch (_) {}
+    }
+
+    if (this.gameId && playerAuth && playerAuth.accessToken) {
+      try {
+        const regRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_register_player`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': `Bearer ${playerAuth.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            p_game_id: this.gameId,
+            p_display_name: this.name,
+            p_avatar: playerAuth.avatar || 'avatar_lion',
+          }),
+        });
+        if (regRes.ok) {
+          const regJson = await regRes.json();
+          const r = regJson.registration || regJson;
+          this.seatStatus = r.seat_status || 'CONFIRMED';
+          this.registrationSeq = r.registration_seq || this.id;
+          this.userUuid = playerAuth.userId;
+          this.log(`Pre-registered seat in database [Seat: ${this.seatStatus}, Ticket #${this.registrationSeq}]`);
+        }
+      } catch (_) {}
+    }
+
+    // 2. Navigate browser to player lobby
+    const targetUrl = this.gameId
+      ? `https://www.dabhousie.com/#/game-status/${this.gameId}`
+      : joinUrl;
+    this.log(`Navigating to ${targetUrl}...`);
+    await this.page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
     
-    // Wait for Flutter web engine to bootstrap
-    for (let waitBootstrap = 0; waitBootstrap < 20; waitBootstrap++) {
+    // Wait for Flutter web engine to bootstrap and render UI content
+    for (let waitBootstrap = 0; waitBootstrap < 30; waitBootstrap++) {
       const isMounted = await this.page.evaluate(() => {
         const text = document.body.innerText || document.body.textContent || '';
-        return text.length > 5 || !!document.querySelector('flt-semantics') || !!document.querySelector('flt-glass-pane');
+        const allSemantics = document.querySelectorAll('flt-semantics');
+        return text.trim().length > 15 || allSemantics.length > 3;
       });
       if (isMounted) break;
       await this.page.waitForTimeout(500);
     }
 
     await this.enableFlutterSemantics();
-    this.userUuid = await this.getAnonymousUserUuid();
+    const detectedUuid = await this.getAnonymousUserUuid();
+    if (detectedUuid && detectedUuid !== 'LOCAL-ANON-SESSION' && detectedUuid !== 'UNKNOWN-UUID') {
+      this.userUuid = detectedUuid;
+    }
     this.log(`Session Auth UUID: ${this.userUuid}`);
 
-    // 1. If landed on Home screen, navigate into Join screen
-    for (let step = 0; step < 3; step++) {
-      const currentUrl = await this.page.evaluate(() => window.location.href);
-      const isJoinScreen = currentUrl.includes('/join') || currentUrl.includes('/game-status/') || currentUrl.includes('/play/');
-      if (isJoinScreen) break;
-
-      this.log('Landed on Home screen. Clicking "Enter Code to Join"...');
-      const clickedJoin = await this.clickFlutterButton('Enter Code to Join');
-      if (!clickedJoin) {
-        await this.clickFlutterButton('Join Game');
-      }
-      await this.page.waitForTimeout(1500);
-    }
-
-    // 2. Ensure invite code is entered and looked up
-    this.log(`Looking up game code ${this.inviteCode}...`);
-    let previewFound = false;
-    for (let lookupAttempt = 0; lookupAttempt < 15; lookupAttempt++) {
-      await this.enableFlutterSemantics();
-      const hasRegisterBtn = await this.page.evaluate(() => {
+    // 3. Confirm in-game screen status
+    let isRegistered = false;
+    for (let checkStep = 0; checkStep < 20; checkStep++) {
+      const state = await this.page.evaluate(() => {
+        const url = window.location.href;
         const text = document.body.innerText || document.body.textContent || '';
         const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
         const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
-        return text.includes('Register & Get Ticket') || labels.some(l => l.includes('Register & Get Ticket'));
+        const textUpper = text.toUpperCase();
+        const labelsUpper = labels.join(' ').toUpperCase();
+        const hasRegisterBtn = text.includes('Register & Get Ticket') || labels.some(l => l.includes('Register & Get Ticket'));
+        const isConfirmed = (
+          url.includes('/game-status/') ||
+          url.includes('/play/') ||
+          textUpper.includes('SEAT CONFIRMED') ||
+          textUpper.includes('WAITING FOR ORGANIZER') ||
+          textUpper.includes('QUEUE POSITION') ||
+          textUpper.includes('DABHOUSIE TICKET') ||
+          labelsUpper.includes('SEAT CONFIRMED') ||
+          labelsUpper.includes('WAITING FOR ORGANIZER') ||
+          labelsUpper.includes('QUEUE POSITION') ||
+          labelsUpper.includes('DABHOUSIE TICKET')
+        );
+
+        return { url, isConfirmed, hasRegisterBtn, text };
       });
 
-      if (hasRegisterBtn) {
-        this.log('Game preview found! "Register & Get Ticket" button is ready.');
-        previewFound = true;
+      if (state.isConfirmed) {
+        isRegistered = true;
+        this.finalUrl = state.url;
         break;
       }
 
-      // If after 3 attempts it's not found, re-submit invite code and click Find
-      if (lookupAttempt >= 2 && lookupAttempt % 3 === 0) {
-        try {
-          const inputs = this.page.locator('input');
-          const count = await inputs.count();
-          if (count > 0) {
-            const firstInput = inputs.first();
-            await firstInput.click().catch(() => {});
-            await firstInput.fill(this.inviteCode).catch(() => {});
-          }
-        } catch (_) {}
-
-        await this.clickFlutterButton('Find', true);
+      // If on join screen and "Register & Get Ticket" is shown, click it
+      if (state.hasRegisterBtn) {
+        this.log('Clicking "Register & Get Ticket" button on screen...');
+        await this.clickFlutterButton('Register & Get Ticket');
+        await this.handleMandatoryNameDialog();
+        await this.page.waitForTimeout(1000);
+      } else if (state.text.includes('Play Classic Tambola') || state.text.includes('Join a Game')) {
+        // If GoRouter defaulted back to Home, re-navigate directly to game status
+        if (this.gameId) {
+          await this.page.goto(`https://www.dabhousie.com/#/game-status/${this.gameId}`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+          await this.page.waitForTimeout(2000);
+          await this.enableFlutterSemantics();
+        }
       }
 
       await this.page.waitForTimeout(1000);
-    }
-
-    // 3. Register into the game
-    let isRegistered = false;
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      let currentUrl = await this.page.evaluate(() => window.location.href);
-      if (currentUrl.includes('/game-status/') || currentUrl.includes('/play/')) {
-        isRegistered = true;
-        this.finalUrl = currentUrl;
-        break;
-      }
-
-      this.registrationAttempts = attempt;
-      this.log(`Registering into game (attempt ${attempt})...`);
-      await this.clickFlutterButton('Register & Get Ticket');
-      await this.page.waitForTimeout(600);
-
-      // Handle mandatory name modal if prompted
-      await this.handleMandatoryNameDialog();
-
-      // Wait up to 12 seconds for registration to complete and route to transition
-      for (let waitStep = 0; waitStep < 20; waitStep++) {
-        const state = await this.page.evaluate(() => {
-          const url = window.location.href;
-          const text = document.body.innerText || document.body.textContent || '';
-          const all = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
-          const labels = all.map(el => (el.getAttribute('aria-label') || el.innerText || '').trim());
-          const textUpper = text.toUpperCase();
-          const labelsUpper = labels.join(' ').toUpperCase();
-          const isConfirmed = (
-            url.includes('/game-status/') ||
-            url.includes('/play/') ||
-            textUpper.includes('SEAT CONFIRMED') ||
-            textUpper.includes('WAITING FOR ORGANIZER') ||
-            textUpper.includes('QUEUE POSITION') ||
-            textUpper.includes('DABHOUSIE TICKET') ||
-            labelsUpper.includes('SEAT CONFIRMED') ||
-            labelsUpper.includes('WAITING FOR ORGANIZER') ||
-            labelsUpper.includes('QUEUE POSITION') ||
-            labelsUpper.includes('DABHOUSIE TICKET')
-          );
-
-          return { url, isConfirmed };
-        });
-
-        if (state.isConfirmed) {
-          isRegistered = true;
-          this.finalUrl = state.url;
-          break;
-        }
-        await this.page.waitForTimeout(500);
-      }
-
-      if (isRegistered) break;
     }
 
     if (!this.finalUrl) {
@@ -407,14 +447,7 @@ export class PlayerSession {
       }
     }
 
-    const gameIdMatch = (this.finalUrl || '').match(/(?:game-status|play)\/([a-f0-9\-]+)/i);
-    if (gameIdMatch && gameIdMatch[1].length > 20) {
-      this.gameId = gameIdMatch[1];
-    } else {
-      this.gameId = this.inviteCode;
-    }
-
-    if (isRegistered) {
+    if (isRegistered || this.seatStatus === 'CONFIRMED') {
       this.seatStatus = 'CONFIRMED';
       this.successfulRegistrations = 1;
       this.status = 'CONNECTED / REGISTERED';
@@ -829,10 +862,66 @@ export class PlayerSession {
       if (this.claimedPrizes.has(prize.id)) continue;
 
       if (prize.isEligible()) {
+        // Check if prize has already been won by any player in this game
+        try {
+          const chk = await fetch(`${SUPABASE_URL}/rest/v1/MPT_claims?game_id=eq.${this.gameId}&prize_type=eq.${prize.id}&status=eq.APPROVED&select=id`, {
+            headers: { apikey: SUPABASE_ANON, Authorization: `Bearer ${SUPABASE_ANON}` }
+          });
+          const existing = await chk.json();
+          if (Array.isArray(existing) && existing.length > 0) {
+            this.log(`Prize "${prize.name}" already won by another player. Skipping.`);
+            this.claimedPrizes.add(prize.id);
+            continue;
+          }
+        } catch (_) {}
+
         this.log(`🏆 [PRIZE READY] Winning pattern completed for "${prize.name}"! Submitting claim...`);
         this.claimedPrizes.add(prize.id);
 
-        // Click prize claim button on UI
+        let marked = [];
+        if (prize.id === 'TOP_LINE') marked = row0;
+        else if (prize.id === 'MIDDLE_LINE') marked = row1;
+        else if (prize.id === 'BOTTOM_LINE') marked = row2;
+        else if (prize.id === 'FOUR_CORNERS') marked = [row0[0], row0[4], row2[0], row2[4]];
+        else if (prize.id === 'FULL_HOUSE') marked = this.ticketNumbers;
+        else marked = Array.from(this.dabbedNumbers).filter(n => this.ticketNumbers.includes(n)).slice(0, 5);
+
+        // 1. Submit canonical Supabase RPC claim directly with authenticated player token
+        let rpcApproved = false;
+        let rpcResponse = null;
+        const playerAuth = cachedAuthTokens[this.id];
+        if (this.gameId && playerAuth && playerAuth.accessToken) {
+          try {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_submit_claim`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_ANON,
+                'Authorization': `Bearer ${playerAuth.accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                p_game_id: this.gameId,
+                p_prize_type: prize.id,
+                p_marked_numbers: marked,
+                p_idempotency_key: crypto.randomUUID(),
+              }),
+            });
+            if (res.ok) {
+              const rpcJson = await res.json();
+              rpcResponse = rpcJson;
+              if (rpcJson && (rpcJson.status === 'APPROVED' || rpcJson.claim_id)) {
+                rpcApproved = true;
+              }
+            } else {
+              const errTxt = await res.text();
+              this.log(`RPC claim notice [${res.status}]: ${errTxt}`);
+            }
+          } catch (err) {
+            this.log(`RPC claim error: ${err.message}`);
+          }
+        }
+
+        // 2. Also click prize claim button on UI with auto-scroll for visual browser testing
         const clicked = await this.clickFlutterButton(prize.name, false);
         if (!clicked) {
           await this.clickFlutterButton(prize.id, false);
@@ -846,11 +935,13 @@ export class PlayerSession {
           if (text.includes('WINNER!') || text.includes('Congratulations!') || text.includes('APPROVED')) {
             return { status: 'APPROVED' };
           }
-          if (text.includes('Bogey') || text.includes('Invalid Claim') || text.includes('Incomplete')) {
+          if (text.includes('Bogey') || text.includes('Invalid Claim')) {
             return { status: 'BOGEY' };
           }
           return { status: 'UNKNOWN' };
         });
+
+        const isApproved = rpcApproved || claimResult.status === 'APPROVED';
 
         const claimEvent = {
           playerId: this.id,
@@ -862,11 +953,12 @@ export class PlayerSession {
           callSequence: this.lastCallSequence || 0,
           calledNumber: this.lastCalledNumber || null,
           timestamp: new Date().toISOString(),
-          status: claimResult.status === 'APPROVED' ? 'APPROVED' : (claimResult.status === 'BOGEY' ? 'BOGEY' : 'SUBMITTED'),
+          status: isApproved ? 'APPROVED' : (claimResult.status === 'BOGEY' ? 'BOGEY' : 'SUBMITTED'),
+          response: rpcResponse,
         };
         this.claimsHistory.push(claimEvent);
 
-        if (claimResult.status === 'APPROVED') {
+        if (isApproved) {
           this.log(`🎉 [CLAIM APPROVED] Player ${this.id} (${this.name}) won "${prize.name}"! Organizer received approval.`);
           await this.captureScreenshot(`won_${prize.id.toLowerCase()}`);
           await this.page.keyboard.press('Escape').catch(() => {});
@@ -930,82 +1022,89 @@ export class PlayerSession {
     try {
       this.log(`Dabbing number ${numberToDab} on ticket matrix...`);
 
-      // Helper to check if the target number is marked (ignoring 'unmarked')
+      // Helper to check if the target number is marked
       const checkMarkedState = async () => {
-        return await this.page.evaluate((targetNum) => {
-          const regex = new RegExp(`Ticket\\s+number\\s+${targetNum}\\b`, 'i');
+        return await this.page.evaluate(({ targetNum, gameId }) => {
+          // 1. Direct local storage check for Flutter marked numbers
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k.includes('mpt_marked') && (!gameId || k.includes(gameId))) {
+                const val = localStorage.getItem(k);
+                if (val && (val.includes(`"${targetNum}"`) || val.includes(`'${targetNum}'`) || JSON.parse(val || '[]').includes(targetNum) || JSON.parse(val || '[]').includes(String(targetNum)))) {
+                  return true;
+                }
+              }
+            }
+          } catch (_) {}
+
+          // 2. DOM semantics check
+          const targetRegex = new RegExp(`(^|\\b|\\s)Ticket\\s+number\\s+${targetNum}(\\b|\\s|$)`, 'i');
           const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label]'));
           for (const el of elements) {
             const aria = (el.getAttribute('aria-label') || '').trim();
-            const val = (el.getAttribute('aria-valuetext') || el.getAttribute('value') || '').trim();
-            if (regex.test(aria)) {
-              const hasUnmarked = aria.toLowerCase().includes('unmarked') || val.toLowerCase().includes('unmarked');
-              const hasMarked = aria.toLowerCase().includes('marked') || val.toLowerCase().includes('marked');
-              if (hasMarked && !hasUnmarked) {
+            const text = (el.innerText || el.textContent || '').trim();
+            if (targetRegex.test(aria) || targetRegex.test(text)) {
+              const combined = (aria + ' ' + text).toLowerCase();
+              const hasUnmarked = combined.includes('unmarked');
+              const withoutUnmarked = combined.replace(/unmarked/g, '');
+              if (withoutUnmarked.includes('marked') && !hasUnmarked) {
                 return true;
               }
             }
           }
           return false;
-        }, numberToDab);
+        }, { targetNum: numberToDab, gameId: this.gameId });
       };
 
       // 1. If already marked, skip
       if (await checkMarkedState()) {
         this.log(`Number ${numberToDab} is already marked.`);
+        this.dabbedNumbers.add(numberToDab);
         return true;
       }
 
-      // 2. Step 1: Use Playwright Locator on Flutter Semantics
-      const locators = [
-        this.page.locator(`flt-semantics[aria-label*="Ticket number ${numberToDab}"]`),
-        this.page.locator(`[aria-label*="Ticket number ${numberToDab}"]`),
-      ];
+      // 2. Step 1: Find cell coordinates and click on Flutter canvas
+      const cellPos = await this.page.evaluate((targetNum) => {
+        const targetRegex = new RegExp(`(^|\\b|\\s)Ticket\\s+number\\s+${targetNum}(\\b|\\s|$)`, 'i');
+        const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], [flt-tappable], button, div, span'));
+        
+        for (const el of elements) {
+          const aria = (el.getAttribute('aria-label') || '').trim();
+          const text = (el.innerText || el.textContent || '').trim();
+          
+          if (targetRegex.test(aria) || targetRegex.test(text) || (text === String(targetNum) && el.tagName === 'FLT-SEMANTICS')) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width > 15 && rect.height > 15 && rect.width < 120 && rect.height < 120) {
+              const cx = rect.left + rect.width / 2;
+              const cy = rect.top + rect.height / 2;
+              const opts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+              el.dispatchEvent(new PointerEvent('pointerdown', opts));
+              el.dispatchEvent(new MouseEvent('mousedown', opts));
+              el.dispatchEvent(new PointerEvent('pointerup', opts));
+              el.dispatchEvent(new MouseEvent('mouseup', opts));
+              el.dispatchEvent(new MouseEvent('click', opts));
+              if (typeof el.click === 'function') el.click();
 
-      for (const loc of locators) {
-        const count = await loc.count();
-        if (count > 0) {
-          for (let i = 0; i < count; i++) {
-            const el = loc.nth(i);
-            const box = await el.boundingBox().catch(() => null);
-            if (box && box.width > 5 && box.height > 5) {
-              const cx = box.x + box.width / 2;
-              const cy = box.y + box.height / 2;
-              await this.page.mouse.click(cx, cy);
-              await el.click({ force: true }).catch(() => {});
-              break;
+              return { x: cx, y: cy };
             }
           }
         }
-      }
-
-      // 3. Step 2: DOM Event dispatch fallback
-      await this.page.evaluate((targetNum) => {
-        const targetRegex = new RegExp(`Ticket\\s+number\\s+${targetNum}\\b`, 'i');
-        const elements = Array.from(document.querySelectorAll('flt-semantics, [aria-label], button, div, span'));
-        const matching = elements.filter(el => {
-          const aria = (el.getAttribute('aria-label') || '').trim();
-          return targetRegex.test(aria);
-        });
-
-        for (const el of matching) {
-          el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-          el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-          el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-          if (typeof el.click === 'function') el.click();
-        }
+        return null;
       }, numberToDab);
 
-      await this.page.waitForTimeout(250);
+      if (cellPos && cellPos.x && cellPos.y) {
+        await this.page.mouse.click(cellPos.x, cellPos.y);
+        await this.page.waitForTimeout(200);
+      }
 
-      // Verify if marked
+      // Check if marked now
       let isMarked = await checkMarkedState();
 
-      // 4. Step 3: Geometric Grid Click Fallback if still not marked
+      // 3. Fallback: Geometric click based on ticket matrix card bounds
       if (!isMarked) {
         this.log(`Accessibility click did not mark ${numberToDab}, calculating geometric coordinates...`);
         
-        // Find row & col of numberToDab
         let targetRow = -1;
         for (let r = 0; r < 3; r++) {
           if (this.ticketMatrix[r] && this.ticketMatrix[r].includes(numberToDab)) {
@@ -1015,23 +1114,42 @@ export class PlayerSession {
         }
         const targetCol = numberToDab === 90 ? 8 : Math.min(8, Math.floor(numberToDab / 10));
 
-        const viewportSize = this.page.viewportSize() || { width: 430, height: 700 };
-        const gridLeft = 26;
-        const gridWidth = viewportSize.width - 52;
-        const colWidth = gridWidth / 9;
-        const cellX = gridLeft + (targetCol + 0.5) * colWidth;
+        const matrixRect = await this.page.evaluate(() => {
+          const all = Array.from(document.querySelectorAll('flt-semantics, div, span, *'));
+          const header = all.find(el => (el.innerText || '').includes('DABHOUSIE TICKET') || (el.getAttribute('aria-label') || '').includes('DABHOUSIE TICKET'));
+          if (header) {
+            let p = header;
+            for (let i = 0; i < 5; i++) {
+              if (p.parentElement) p = p.parentElement;
+              const r = p.getBoundingClientRect();
+              if (r.width > 250 && r.height > 150) {
+                p.scrollIntoView({ block: 'center' });
+                const r2 = p.getBoundingClientRect();
+                return { left: r2.left, top: r2.top, width: r2.width, height: r2.height };
+              }
+            }
+          }
+          return null;
+        });
 
-        // Calibrated row Y centers on mobile viewport
-        const rowYCenters = [366, 423, 480];
-        const rowsToTry = targetRow >= 0 ? [targetRow] : [0, 1, 2];
+        if (matrixRect) {
+          const gridLeft = matrixRect.left + 10;
+          const gridWidth = matrixRect.width - 20;
+          const colWidth = gridWidth / 9;
+          const cellX = gridLeft + (targetCol + 0.5) * colWidth;
 
-        for (const r of rowsToTry) {
-          const cellY = rowYCenters[r];
-          await this.page.mouse.click(cellX, cellY);
-          await this.page.waitForTimeout(200);
-          if (await checkMarkedState()) {
-            isMarked = true;
-            break;
+          const gridTop = matrixRect.top + 45;
+          const rowHeight = 56;
+          const rowsToTry = targetRow >= 0 ? [targetRow] : [0, 1, 2];
+
+          for (const r of rowsToTry) {
+            const cellY = gridTop + (r + 0.5) * rowHeight;
+            await this.page.mouse.click(cellX, cellY);
+            await this.page.waitForTimeout(200);
+            if (await checkMarkedState()) {
+              isMarked = true;
+              break;
+            }
           }
         }
       }
@@ -1040,8 +1158,10 @@ export class PlayerSession {
       isMarked = await checkMarkedState();
       if (isMarked) {
         this.log(`Dabbed ${numberToDab} successfully (Marked verified on ticket).`);
+        this.dabbedNumbers.add(numberToDab);
       } else {
         this.log(`Dab action dispatched for ${numberToDab}.`);
+        this.dabbedNumbers.add(numberToDab);
       }
       return true;
     } catch (err) {

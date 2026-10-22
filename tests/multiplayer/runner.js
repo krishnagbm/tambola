@@ -143,7 +143,23 @@ Options:
       ],
     });
 
-    // 2. Connect and register players into game room
+    // 2. Resolve game ID upfront from Supabase
+    let resolvedGameId = null;
+    try {
+      const gRes = await fetch(`https://itfcnurjrnyalauwwdkj.supabase.co/rest/v1/MPT_games?invite_code=eq.${options.gameCode.toUpperCase()}&select=id,status,name,funded_capacity`, {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0ZmNudXJqcm55YWxhdXd3ZGtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzYwOTExNjEsImV4cCI6MjA1MTY2NzE2MX0.Rjfu9AEmNZJAEUVUDEj6GTC41HZPx1AiiVoMZTBEOOI'
+        }
+      });
+      const gList = await gRes.json();
+      if (gList && gList.length > 0) {
+        resolvedGameId = gList[0].id;
+        console.log(`[ROOM] Resolved game "${gList[0].name}" [UUID: ${resolvedGameId}, Capacity: ${gList[0].funded_capacity}]`);
+      }
+    } catch (_) {}
+
+    // 3. Connect and register players into game room
     console.log('\n[CONNECTING] Connecting and registering players into game room...');
     const joinResults = [];
 
@@ -163,13 +179,13 @@ Options:
 
       const tStart = Date.now();
       try {
-        const res = await player.joinGame(options.joinUrl);
+        const res = await player.joinGame(options.joinUrl, resolvedGameId);
         player.registrationTimeMs = Date.now() - tStart;
         joinResults.push({ status: res ? 'fulfilled' : 'rejected' });
       } catch (err) {
         joinResults.push({ status: 'rejected', reason: err });
       }
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 600));
     }
 
     const successfulJoins = players.filter((p, idx) => 

@@ -293,7 +293,7 @@ class _CreatePromotionalSeriesDialogState
           'prize_gifts_config': giftsCopy,
           'total_prize_budget': _budget,
           'is_publicly_visible': _isPubliclyVisible,
-          'minor_prize_policy': 'ONE_MINOR_PER_PLAYER',
+          'minor_prize_policy': 'ONE_LINE_PLUS_BONUS',
         });
       } else {
         // Multi series
@@ -331,7 +331,7 @@ class _CreatePromotionalSeriesDialogState
             'prize_gifts_config': giftsCopy,
             'total_prize_budget': _budget,
             'is_publicly_visible': _isPubliclyVisible,
-            'minor_prize_policy': 'ONE_MINOR_PER_PLAYER',
+            'minor_prize_policy': 'ONE_LINE_PLUS_BONUS',
           });
         }
       }

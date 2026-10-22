@@ -424,8 +424,29 @@ class DirectPlayer {
         timestamp: new Date().toISOString(),
       });
     } catch (rpcErr) {
-      // 2. Direct table insert fallback
+      // 2. Direct table insert fallback (Strict validation parity with server SQL function)
       try {
+        // A. Verify if prize was already won by another player
+        const existingWins = await this.fetchApi(
+          `/rest/v1/MPT_claims?game_id=eq.${this.gameId}&prize_type=eq.${prizeId}&status=eq.APPROVED&select=id`
+        );
+        if (existingWins && existingWins.length > 0) {
+          this.log(`⚠️ Claim "${prizeName}" REJECTED: Prize already won by another player.`);
+          return;
+        }
+
+        // B. Enforce ONE_MINOR_PER_PLAYER policy
+        if (prizeId !== 'FULL_HOUSE' && prizeId !== 'SECOND_FULL_HOUSE') {
+          const myWins = await this.fetchApi(
+            `/rest/v1/MPT_claims?game_id=eq.${this.gameId}&user_id=eq.${this.userId}&status=eq.APPROVED&select=prize_type`
+          );
+          const hasMinorWin = (myWins || []).some(w => w.prize_type !== 'FULL_HOUSE' && w.prize_type !== 'SECOND_FULL_HOUSE');
+          if (hasMinorWin) {
+            this.log(`⚠️ Claim "${prizeName}" REJECTED: Player ${this.id} (${this.name}) already won a minor prize (Max 1 minor per player).`);
+            return;
+          }
+        }
+
         const insertRes = await this.fetchApi('/rest/v1/MPT_claims', {
           method: 'POST',
           body: JSON.stringify({

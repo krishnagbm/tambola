@@ -500,7 +500,7 @@ class AdminReportsRepository {
         'total_prize_budget': g['total_prize_budget'] ?? 35.00,
         'is_private': false,
         'is_publicly_visible': g['is_publicly_visible'] ?? true,
-        'minor_prize_policy': g['minor_prize_policy'] ?? 'ONE_MINOR_PER_PLAYER',
+        'minor_prize_policy': g['minor_prize_policy'] ?? 'ONE_LINE_PLUS_BONUS',
       };
 
       final inserted = await _supabase
