@@ -204,10 +204,12 @@ ${
 | :--- | :--- | :--- | :--- | :--- | :--- |
 ${verifiedClaims
   .map(
-    c =>
-      `| **${c.playerName}** (P${c.playerId}) | \`${c.prizeName || c.prizeId}\` | Ball #${c.callSequence} (Num: ${c.calledNumber || 'N/A'}) | **${c.status}** | ${
-        c.mathematicallyValid ? '✅ Valid at call' : '⚠️ Invalid/Bogey'
-      } | ${c.matchedNumbersCount} / 15 marked |`
+    c => {
+      const statusBadge = c.status === 'APPROVED' ? '🏆 **APPROVED (WINNER)**' : `⚠️ **REJECTED** (${c.response?.reason || c.reason || 'Already Won'})`;
+      return `| **${c.playerName}** (P${c.playerId}) | \`${c.prizeName || c.prizeId}\` | Ball #${c.callSequence} (Num: ${c.calledNumber || 'N/A'}) | ${statusBadge} | ${
+        c.mathematicallyValid ? '✅ Pattern verified' : '⚠️ Incomplete pattern'
+      } | ${c.matchedNumbersCount} / 15 marked |`;
+    }
   )
   .join('\n')}`
 }

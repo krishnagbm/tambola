@@ -867,6 +867,278 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
     );
   }
 
+  Widget _buildCallingModeBadge(MptGame game) {
+    final isQuick = game.isQuickDabby;
+    final badgeColor = isQuick ? AppTheme.secondaryColor : const Color(0xFF38BDF8);
+
+    return InkWell(
+      onTap: () => _showChangeCallingModeDialog(game),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: badgeColor.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: badgeColor.withValues(alpha: 0.5),
+            width: 0.9,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isQuick ? Icons.bolt_rounded : Icons.casino_outlined,
+              size: 13,
+              color: badgeColor,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isQuick ? 'QUICK DABBY ⚡' : 'CLASSIC 1–90',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                color: badgeColor,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 14,
+              color: badgeColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showChangeCallingModeDialog(MptGame game) {
+    String selectedMode = game.callingMode;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.speed_rounded, color: AppTheme.secondaryColor),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Select Calling Mode',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Choose the draw engine before calling begins:',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                ),
+                const SizedBox(height: 12),
+
+                // Option 1: Classic Game
+                _buildCallingModeRadioTile(
+                  isSelected: selectedMode == 'CLASSIC',
+                  title: 'Classic Game (1–90)',
+                  badgeText: 'Default',
+                  icon: Icons.casino_outlined,
+                  description: 'Traditional 90-ball calling drawn randomly from the complete 1–90 pool.',
+                  onTap: () {
+                    setDialogState(() => selectedMode = 'CLASSIC');
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Option 2: Quick Dabby
+                _buildCallingModeRadioTile(
+                  isSelected: selectedMode == 'QUICK_DABBY',
+                  title: 'Quick Dabby ⚡',
+                  badgeText: 'Fast Play',
+                  badgeColor: AppTheme.secondaryColor,
+                  icon: Icons.bolt_rounded,
+                  description: 'Draws only from numbers on participating tickets to eliminate idle waiting time.',
+                  onTap: () {
+                    setDialogState(() => selectedMode = 'QUICK_DABBY');
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Quick Dabby may reduce calling time by up to 50% for smaller groups. Player tickets and prize claims remain 100% fair and identical.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                if (selectedMode != game.callingMode) {
+                  try {
+                    await ref
+                        .read(gameRepositoryProvider)
+                        .updateCallingMode(game.id, selectedMode);
+                    ref.invalidate(gameStreamProvider(game.id));
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          selectedMode == 'QUICK_DABBY'
+                              ? '⚡ Switched to Quick Dabby mode!'
+                              : '🎯 Switched to Classic 90-ball calling mode!',
+                        ),
+                        backgroundColor: AppTheme.accentSuccess,
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update calling mode: $e'),
+                        backgroundColor: AppTheme.accentDanger,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Save Selection'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCallingModeRadioTile({
+    required bool isSelected,
+    required String title,
+    required String description,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? badgeText,
+    Color? badgeColor,
+  }) {
+    final effectiveColor = badgeColor ?? AppTheme.secondaryColor;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? effectiveColor.withValues(alpha: 0.12)
+              : Colors.white.withValues(alpha: 0.03),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected
+                ? effectiveColor
+                : Colors.white.withValues(alpha: 0.12),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isSelected ? effectiveColor : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: effectiveColor.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: effectiveColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF94A3B8),
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected ? effectiveColor : const Color(0xFF64748B),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGameHeaderCard(MptGame game) {
     final effectiveSched = game.effectiveScheduledAt;
 
@@ -901,8 +1173,10 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
                 ),
                 Wrap(
                   spacing: 6,
+                  runSpacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    _buildCallingModeBadge(game),
                     if (effectiveSched != null)
                       InkWell(
                         onTap: () => _handleReschedule(game),
@@ -2452,6 +2726,8 @@ class _AdminLobbyScreenState extends ConsumerState<AdminLobbyScreen> {
         }
       } catch (_) {}
     }
+
+    if (!mounted) return;
 
     final confirm = await showDialog<bool>(
       context: context,

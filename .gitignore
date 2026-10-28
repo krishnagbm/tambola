@@ -68,3 +68,7 @@ node_modules/
 tests/multiplayer/screenshots/
 tests/multiplayer/reports/
 scratch/
+narration_audio/
+video_assets/
+tests/simulation/
+

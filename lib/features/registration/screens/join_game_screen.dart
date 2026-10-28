@@ -496,7 +496,7 @@ class _JoinGameScreenState extends ConsumerState<JoinGameScreen> {
                 const Icon(Icons.people_outline, size: 18, color: AppTheme.secondaryColor),
                 const SizedBox(width: 8),
                 Text(
-                  'Funded Capacity: ${game.fundedCapacity} Seats ${game.isPrivate ? "(Private OTP)" : ""}',
+                  'Room Capacity: ${game.fundedCapacity} Seats ${game.isPrivate ? "(Private OTP)" : ""}',
                   style: const TextStyle(fontSize: 14, color: Color(0xFFCBD5E1)),
                 ),
               ],

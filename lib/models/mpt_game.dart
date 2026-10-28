@@ -76,6 +76,21 @@ class MptGame {
 
   String get gameMode => flashHousieConfig?.mode ?? 'CLASSIC_90';
 
+  /// Calling mode: 'CLASSIC' (traditional 90-ball) or 'QUICK_DABBY' (draws from active ticket pool)
+  String get callingMode =>
+      (prizeGiftsConfig['_calling_mode'] as String?)?.toUpperCase() ?? 'CLASSIC';
+
+  bool get isQuickDabby => callingMode == 'QUICK_DABBY';
+
+  bool get isPostGameTriviaEnabled =>
+      prizeGiftsConfig['_post_game_trivia']?['enabled'] == true;
+
+  int get triviaTimeGapSeconds =>
+      (prizeGiftsConfig['_post_game_trivia']?['time_gap_seconds'] as num?)?.toInt() ?? 15;
+
+  int get callIntervalSeconds =>
+      (prizeGiftsConfig['_call_pace_seconds'] as num?)?.toInt() ?? 15;
+
   factory MptGame.fromJson(Map<String, dynamic> json) {
     List<String> parsePrizes(dynamic val) {
       if (val is List) {

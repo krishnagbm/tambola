@@ -62,6 +62,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   bool _orgVisualConfirmed = false;
   bool _orgAuthorityConfirmed = false;
   bool _freeToPlayConfirmed = false;
+  bool _isPostGameTriviaEnabled = true;
+  int _triviaTimeGapSeconds = 15;
 
   static const Map<String, Map<String, dynamic>> _currencyOptions = {
     'USD': {
@@ -165,6 +167,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   String? _selectedTierId = 'ba630f87-517a-44e2-8da9-e96e235d3c36';
   bool _isPrivate = false;
   bool _isLoading = false;
+  String _selectedCallingMode = 'CLASSIC'; // 'CLASSIC' or 'QUICK_DABBY'
 
   void _setCapacity(int capacity, {String? tierId}) {
     setState(() {
@@ -269,6 +272,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     'BOTTOM_LINE': 15,
     'FULL_HOUSE': 35,
     'SECOND_FULL_HOUSE': 20,
+    'POST_GAME_TRIVIA': 15,
   };
 
   late final List<Map<String, String>> _mockWinners;
@@ -333,6 +337,14 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         'player': shuffledNicknames[6],
         'isGrand': 'false',
       },
+      {
+        'key': 'POST_GAME_TRIVIA',
+        'icon': '🧠',
+        'prize': 'Recall Trivia Champion',
+        'avatar': sampleAvatars[7 % sampleAvatars.length],
+        'player': shuffledNicknames[7 % shuffledNicknames.length],
+        'isGrand': 'false',
+      },
     ];
   }
 
@@ -378,7 +390,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         'org_approver_email': _orgApproverEmailController.text.trim(),
         'org_visual_confirmed': _orgVisualConfirmed,
         'org_authority_confirmed': _orgAuthorityConfirmed,
-        'free_to_play_confirmed': _freeToPlayConfirmed,
+        'free_to_play_confirmed': false,
+        'is_post_game_trivia_enabled': _isPostGameTriviaEnabled,
+        'trivia_time_gap_seconds': _triviaTimeGapSeconds,
+        'calling_mode': _selectedCallingMode,
         'scheduled_date_time': _scheduledDateTime?.toUtc().toIso8601String(),
         'dabby_schedule_config': _dabbyScheduleConfig?.toDraftJson(),
         'saved_at': DateTime.now().toIso8601String(),
@@ -421,6 +436,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         }
         if (draft['is_private'] != null) {
           _isPrivate = draft['is_private'] as bool;
+        }
+        if (draft['calling_mode'] != null) {
+          _selectedCallingMode = draft['calling_mode'] as String;
         }
         if (draft['selected_capacity'] != null) {
           _selectedCapacity = (draft['selected_capacity'] as num).toInt();
@@ -488,8 +506,13 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         if (draft['org_authority_confirmed'] != null) {
           _orgAuthorityConfirmed = draft['org_authority_confirmed'] as bool;
         }
-        if (draft['free_to_play_confirmed'] != null) {
-          _freeToPlayConfirmed = draft['free_to_play_confirmed'] as bool;
+        // Terms & Conditions and Free-to-Play compliance must always be explicitly checked by the host on each session
+        _freeToPlayConfirmed = false;
+        if (draft['is_post_game_trivia_enabled'] != null) {
+          _isPostGameTriviaEnabled = draft['is_post_game_trivia_enabled'] as bool;
+        }
+        if (draft['trivia_time_gap_seconds'] != null) {
+          _triviaTimeGapSeconds = (draft['trivia_time_gap_seconds'] as num).toInt();
         }
         if (draft['scheduled_date_time'] != null) {
           final parsedDt = DateTime.tryParse(draft['scheduled_date_time'].toString());
@@ -600,6 +623,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         sum += v;
       }
     }
+    if (_isPostGameTriviaEnabled && _selectedCapacity > 5) {
+      final tv = double.tryParse(_prizeValueControllers['POST_GAME_TRIVIA']?.text.trim() ?? '') ?? 0;
+      sum += tv;
+    }
     return sum;
   }
 
@@ -622,6 +649,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
       return;
     }
     final enabledKeys = _prizes.entries.where((e) => e.value).map((e) => e.key).toList();
+    if (_isPostGameTriviaEnabled && _selectedCapacity > 5) {
+      enabledKeys.add('POST_GAME_TRIVIA');
+    }
     if (enabledKeys.isEmpty) return;
 
     // Always place FULL_HOUSE last so the Grand Prize receives the remainder and stays largest
@@ -693,10 +723,37 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         };
       }
     }
+    if (_isPostGameTriviaEnabled && _selectedCapacity > 5) {
+      final val = double.tryParse(_prizeValueControllers['POST_GAME_TRIVIA']?.text.trim() ?? '') ?? 0;
+      final offer = _selectedPrizeGifts['POST_GAME_TRIVIA'];
+      if (offer != null) {
+        final localizedDefault = _localizeOfferPrice(offer, offer.retailPrice);
+        map['POST_GAME_TRIVIA'] = offer.toPrizeConfigJson(
+          customPrizeValue: val > 0 ? val : localizedDefault,
+          currencyCode: _selectedCurrencyCode,
+          currencySymbol: _currencySymbol,
+        );
+      } else if (val > 0) {
+        map['POST_GAME_TRIVIA'] = {
+          'prize_value': val,
+          'currency_code': _selectedCurrencyCode,
+          'currency_symbol': _currencySymbol,
+        };
+      }
+    }
     if (_scheduledDateTime != null) {
       final config = _dabbyScheduleConfig ?? DabbyScheduleConfig(scheduledAt: _scheduledDateTime!);
       map['_dabby_orchestration'] = config.toJson(plannedCapacity: _selectedCapacity);
     }
+    final triviaVal = double.tryParse(_prizeValueControllers['POST_GAME_TRIVIA']?.text.trim() ?? '') ?? 0;
+    // Corporate / Event post-game recall trivia
+    map['_post_game_trivia'] = {
+      'enabled': _isPostGameTriviaEnabled && _selectedCapacity > 5,
+      'time_gap_seconds': _triviaTimeGapSeconds,
+      'prize_value': triviaVal,
+    };
+    // Calling mode: 'CLASSIC' (traditional 90-ball) or 'QUICK_DABBY'
+    map['_calling_mode'] = _selectedCallingMode;
     return map;
   }
 
@@ -1000,148 +1057,278 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     final tierLabel = _getCapacityTierLabel(_selectedCapacity);
     final creditsToChargeAtStart = _getCreditsForCapacity(_selectedCapacity);
 
+    String tempCallingMode = _selectedCallingMode;
+
     final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.darkCard,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
-          children: [
-            Icon(Icons.rate_review_rounded, color: AppTheme.secondaryColor),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Confirm Game Setup',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
             children: [
-              // Summary card
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppTheme.darkSurface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF2E334D)),
+              Icon(Icons.rate_review_rounded, color: AppTheme.secondaryColor),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Confirm Game Setup',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _nameController.text.trim(),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Summary card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF2E334D)),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.groups_rounded, size: 18, color: AppTheme.secondaryColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
+                        Text(
+                          _nameController.text.trim(),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            const Icon(Icons.groups_rounded, size: 18, color: AppTheme.secondaryColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    tierLabel,
+                                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                  ),
+                                  Text(
+                                    'Capacity: $_selectedCapacity Seats funded',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_scheduledDateTime != null) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Icon(Icons.alarm_on_rounded, size: 16, color: Color(0xFF38BDF8)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Kickoff: ${_formatDateTime(_scheduledDateTime!)}',
+                                  style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (_isPrivate) ...[
+                          const SizedBox(height: 8),
+                          const Row(
+                            children: [
+                              Icon(Icons.lock_rounded, size: 16, color: AppTheme.accentPartyPurple),
+                              SizedBox(width: 8),
+                              Text(
+                                'Private Party Mode (OTP Passcodes)',
+                                style: TextStyle(fontSize: 12, color: AppTheme.accentPartyPurple, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Calling Mode Option Box
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.darkSurface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF2E334D)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.speed_rounded, size: 16, color: AppTheme.secondaryColor),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Calling Mode',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: tempCallingMode == 'QUICK_DABBY'
+                                    ? AppTheme.secondaryColor.withValues(alpha: 0.15)
+                                    : const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: tempCallingMode == 'QUICK_DABBY'
+                                      ? AppTheme.secondaryColor.withValues(alpha: 0.4)
+                                      : const Color(0xFF334155),
+                                ),
+                              ),
+                              child: Text(
+                                tempCallingMode == 'QUICK_DABBY' ? '⚡ Up to 50% Faster' : 'Standard 1–90',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: tempCallingMode == 'QUICK_DABBY'
+                                      ? AppTheme.secondaryColor
+                                      : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Option 1: Classic Game
+                        _buildCallingModeOption(
+                          isSelected: tempCallingMode == 'CLASSIC',
+                          title: 'Classic Game',
+                          badgeText: 'Default',
+                          icon: Icons.casino_outlined,
+                          description:
+                              'Traditional 90-ball calling. Numbers are drawn at random from the complete 1–90 pool.',
+                          onTap: () {
+                            setDialogState(() {
+                              tempCallingMode = 'CLASSIC';
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Option 2: Quick Dabby
+                        _buildCallingModeOption(
+                          isSelected: tempCallingMode == 'QUICK_DABBY',
+                          title: 'Quick Dabby',
+                          badgeText: '⚡ Fast Play',
+                          badgeColor: AppTheme.secondaryColor,
+                          icon: Icons.bolt_rounded,
+                          description:
+                              'Calls only numbers appearing on active player tickets, significantly reducing idle waiting time.',
+                          onTap: () {
+                            setDialogState(() {
+                              tempCallingMode = 'QUICK_DABBY';
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Explanatory note
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF1E293B)),
+                          ),
+                          child: const Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                tierLabel,
-                                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
-                              ),
-                              Text(
-                                'Capacity: $_selectedCapacity Seats funded',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFFA0AEC0)),
+                              Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF94A3B8)),
+                              SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Quick Dabby may reduce calling time by up to 50%, particularly in games with fewer players. Player tickets, 7 winning claims, and prize allocations remain 100% identical and fair.',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    color: Color(0xFF94A3B8),
+                                    height: 1.3,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    if (_scheduledDateTime != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.alarm_on_rounded, size: 16, color: Color(0xFF38BDF8)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Kickoff: ${_formatDateTime(_scheduledDateTime!)}',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    if (_isPrivate) ...[
-                      const SizedBox(height: 8),
-                      const Row(
-                        children: [
-                          Icon(Icons.lock_rounded, size: 16, color: AppTheme.accentPartyPurple),
-                          SizedBox(width: 8),
-                          Text(
-                            'Private Party Mode (OTP Passcodes)',
-                            style: TextStyle(fontSize: 12, color: AppTheme.accentPartyPurple, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Credit deduction notice
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentSuccess.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.35)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
+                  ),
+
+                  const SizedBox(height: 12),
+                  // Credit deduction notice
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentSuccess.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppTheme.accentSuccess.withValues(alpha: 0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.credit_card_off_rounded, size: 18, color: AppTheme.accentSuccess),
-                        SizedBox(width: 8),
+                        const Row(
+                          children: [
+                            Icon(Icons.credit_card_off_rounded, size: 18, color: AppTheme.accentSuccess),
+                            SizedBox(width: 8),
+                            Text(
+                              '0 Credits Deducted Now',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
                         Text(
-                          '0 Credits Deducted Now',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                          creditsToChargeAtStart == 0
+                              ? 'This is a free Family Pack game. No credits are required now or at kickoff.'
+                              : 'Creating or scheduling this game is completely free! The $creditsToChargeAtStart credits will only be validated and deducted when the game officially starts in the lobby.',
+                          style: const TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), height: 1.35),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      creditsToChargeAtStart == 0
-                          ? 'This is a free Family Pack game. No credits are required now or at kickoff.'
-                          : 'Creating or scheduling this game is completely free! The $creditsToChargeAtStart credits will only be validated and deducted when the game officially starts in the lobby.',
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFFE2E8F0), height: 1.35),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Change Settings', style: TextStyle(color: Color(0xFF94A3B8))),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(ctx, true),
-            icon: const Icon(Icons.check_rounded, size: 16),
-            label: const Text('Confirm & Create'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.secondaryColor,
-              foregroundColor: Colors.black,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Change Settings', style: TextStyle(color: Color(0xFF94A3B8))),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                _selectedCallingMode = tempCallingMode;
+                Navigator.pop(ctx, true);
+              },
+              icon: const Icon(Icons.check_rounded, size: 16),
+              label: const Text('Confirm & Create'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.black,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -1219,6 +1406,101 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
     }
   }
 
+  Widget _buildCallingModeOption({
+    required bool isSelected,
+    required String title,
+    required String description,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? badgeText,
+    Color? badgeColor,
+  }) {
+    final effectiveColor = badgeColor ?? AppTheme.secondaryColor;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? effectiveColor.withValues(alpha: 0.12)
+              : const Color(0xFF1E2235),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? effectiveColor : const Color(0xFF2E334D),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                size: 18,
+                color: isSelected ? effectiveColor : const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        icon,
+                        size: 16,
+                        color: isSelected ? effectiveColor : const Color(0xFFA0AEC0),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: (badgeColor ?? const Color(0xFF64748B)).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.bold,
+                              color: badgeColor ?? const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF94A3B8),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _handleCopyLink(MptGame game) {
     final link = '${AppConfig.appBaseUrl}/#/join/${game.inviteCode}';
     Clipboard.setData(ClipboardData(text: link));
@@ -1262,7 +1544,46 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Game: ${game.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Game: ${game.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: game.isQuickDabby
+                          ? AppTheme.secondaryColor.withValues(alpha: 0.15)
+                          : const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: game.isQuickDabby
+                            ? AppTheme.secondaryColor.withValues(alpha: 0.4)
+                            : const Color(0xFF334155),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          game.isQuickDabby ? Icons.bolt_rounded : Icons.casino_outlined,
+                          size: 13,
+                          color: game.isQuickDabby ? AppTheme.secondaryColor : const Color(0xFFA0AEC0),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          game.isQuickDabby ? 'Quick Dabby ⚡' : 'Classic 1–90',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: game.isQuickDabby ? AppTheme.secondaryColor : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
               if (effectiveSched != null) ...[
                 const SizedBox(height: 10),
                 Container(
@@ -1698,6 +2019,10 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                       _buildGroupSizeSection(),
                                       const SizedBox(height: 16),
                                       _buildSchedulePicker(),
+                                      const SizedBox(height: 14),
+                                      _buildCustomPatternsCallout(),
+                                      const SizedBox(height: 14),
+                                      _buildFreeToPlayPolicyCard(),
                                     ],
                                   ),
                                 ),
@@ -1709,10 +2034,6 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                                       _buildWinningPatternsSection(),
                                       const SizedBox(height: 14),
                                       _buildWinnerEligibilitySection(),
-                                      const SizedBox(height: 10),
-                                      _buildCustomPatternsCallout(),
-                                      const SizedBox(height: 14),
-                                      _buildFreeToPlayPolicyCard(),
                                     ],
                                   ),
                                 ),
@@ -1833,33 +2154,45 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(color: const Color(0xFF334155)),
                             ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.lock_outline_rounded, size: 11, color: Color(0xFF94A3B8)),
-                                SizedBox(width: 3),
-                                Text(
-                                  'Corporate Only',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
-                                ),
-                              ],
+                            child: const Text(
+                              'Corporate Only',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF94A3B8)),
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
                       isHostPersonal
-                          ? (hostEmail.isNotEmpty
-                              ? 'Disabled for personal accounts ($hostEmail). Corporate domain login required.'
-                              : 'Feature official logo & branding. Corporate domain login required.')
+                          ? 'Corporate domain login required to unlock organization branding and corporate experiences.'
                           : 'Feature your official company logo, brand banner, and verified organization name.',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isHostPersonal ? const Color(0xFF94A3B8) : const Color(0xFFCBD5E1),
+                        color: isHostPersonal ? const Color(0xFFCBD5E1) : const Color(0xFFCBD5E1),
+                        height: 1.35,
                       ),
                     ),
+                    if (isHostPersonal) ...[
+                      const SizedBox(height: 3),
+                      const Text(
+                        'Includes DabHousie Recall Trivia™ — fun post-game challenges in observation, memory, attention to detail, and event recall.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF94A3B8),
+                          height: 1.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Corporate access is subject to account eligibility.',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF64748B),
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -2656,12 +2989,21 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         ),
                         _buildHallOfFameMetaItem(
                           icon: '🎯',
-                          value: '68/90 Calls',
+                          value: _selectedCallingMode == 'QUICK_DABBY'
+                              ? '44 Calls (Fast Pool)'
+                              : '68/90 Calls',
                         ),
                         _buildHallOfFameMetaItem(
                           icon: '⏱️',
-                          value: '10m 55s',
+                          value: _selectedCallingMode == 'QUICK_DABBY'
+                              ? '5m 30s'
+                              : '10m 55s',
                         ),
+                        if (_selectedCallingMode == 'QUICK_DABBY')
+                          _buildHallOfFameMetaItem(
+                            icon: '⚡',
+                            value: 'Quick Dabby',
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -2758,6 +3100,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
   List<Widget> _buildMockWinnersList() {
     final activePrizes = _mockWinners.where((w) {
       final key = w['key']!;
+      if (key == 'POST_GAME_TRIVIA') {
+        return _isPostGameTriviaEnabled && _selectedCapacity > 5;
+      }
       return _prizes[key] ?? false;
     }).toList();
 
@@ -3386,7 +3731,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
             child: Column(
-              children: _prizes.keys.map((key) {
+              children: [
+                ..._prizes.keys.map((key) {
                 String label;
                 String? goldenRuleBadge;
                 switch (key) {
@@ -3679,8 +4025,11 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                     ],
                   ),
                 );
-              }).toList(),
-            ),
+              }),
+              const SizedBox(height: 4),
+              _buildPostGameTriviaSection(),
+            ],
+          ),
           ),
         ),
       ],
@@ -3720,25 +4069,36 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          const Text(
-            '• 🎮 Active Players Rule: If under 5 players, all prizes are open to everyone (no stranded prizes).\n'
-            '• 🌟 5+ Players Rule: Max 1 Row Line per player (spreads rows fairly); Early 5, Corners & Full House remain open to all.\n'
-            '• 🏆 Full House is ALWAYS open to ALL players so everyone stays engaged until the finale.',
-            style: TextStyle(
-              fontSize: 11,
-              color: Color(0xFFA7F3D0),
-              height: 1.45,
-            ),
+          const SizedBox(height: 10),
+          _buildEligibilityRuleRow(
+            icon: '🎮',
+            title: 'Active Players Rule (< 5 players)',
+            description: 'All prizes are open to everyone (no stranded prizes).',
+          ),
+          _buildEligibilityRuleRow(
+            icon: '🌟',
+            title: '5+ Players Fairness Rule',
+            description: 'Max 1 Row Line per player (spreads rows fairly); Early 5, Corners & Full House remain open to all.',
+          ),
+          _buildEligibilityRuleRow(
+            icon: '🏆',
+            title: 'Grand Prize Finale',
+            description: 'Full House is ALWAYS open to ALL players so everyone stays engaged until the finale.',
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Prize Eligibility Policy:',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFFCBD5E1),
-            ),
+          const Row(
+            children: [
+              Icon(Icons.tune_rounded, size: 14, color: AppTheme.secondaryColor),
+              SizedBox(width: 6),
+              Text(
+                'Prize Eligibility Policy:',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFCBD5E1),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           DropdownButtonFormField<String>(
@@ -3767,7 +4127,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
               DropdownMenuItem(
                 value: 'ONE_LINE_PLUS_BONUS',
                 child: Text(
-                  '⭐ Smart Dynamic (Recommended): Max 1 Row Line • Early 5, Corners & Full House Open',
+                  '⭐ Smart Dynamic: Max 1 Row Line (Early 5, Corners & FH Open)',
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -3792,6 +4152,48 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                 _scheduleSaveDraft();
               }
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEligibilityRuleRow({
+    required String icon,
+    required String title,
+    required String description,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            alignment: Alignment.centerLeft,
+            child: Text(icon, style: const TextStyle(fontSize: 13)),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFFA7F3D0),
+                  height: 1.35,
+                ),
+                children: [
+                  TextSpan(
+                    text: '$title: ',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  TextSpan(text: description),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -3833,6 +4235,1084 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
             const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.accentPartyPurple, size: 12),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPostGameTriviaSection() {
+    final isCorporateOrEvent = _selectedCapacity > 5;
+    const key = 'POST_GAME_TRIVIA';
+    final isEnabled = _isPostGameTriviaEnabled && isCorporateOrEvent;
+    final assignedOffer = _selectedPrizeGifts[key];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: isEnabled
+            ? const Color(0xFF6366F1).withValues(alpha: 0.12)
+            : AppTheme.darkSurface.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isCorporateOrEvent
+              ? (isEnabled
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.6)
+                  : const Color(0xFF2E334D))
+              : Colors.amber.withValues(alpha: 0.3),
+          width: isEnabled ? 1.5 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: isCorporateOrEvent
+                    ? Checkbox(
+                        value: _isPostGameTriviaEnabled,
+                        activeColor: const Color(0xFF6366F1),
+                        onChanged: (val) {
+                          setState(() => _isPostGameTriviaEnabled = val ?? false);
+                          _syncTotalBudgetFromIndividualValues();
+                          _scheduleSaveDraft();
+                        },
+                      )
+                    : const Icon(
+                        Icons.lock_outline_rounded,
+                        size: 16,
+                        color: Colors.amberAccent,
+                      ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: isCorporateOrEvent
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                      : Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  Icons.psychology_rounded,
+                  color: isCorporateOrEvent
+                      ? const Color(0xFF818CF8)
+                      : const Color(0xFFA0AEC0),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: InkWell(
+                  onTap: isCorporateOrEvent
+                      ? () {
+                          setState(() => _isPostGameTriviaEnabled = !_isPostGameTriviaEnabled);
+                          _syncTotalBudgetFromIndividualValues();
+                          _scheduleSaveDraft();
+                        }
+                      : _showTriviaFamilyHelpDialog,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'DabHousie Recall Trivia™',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1.5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isCorporateOrEvent
+                                    ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                                    : Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: isCorporateOrEvent
+                                      ? const Color(0xFF818CF8).withValues(alpha: 0.6)
+                                      : Colors.amber.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                isCorporateOrEvent ? 'CORPORATE & EVENT' : '6+ PLAYERS ONLY',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCorporateOrEvent
+                                      ? const Color(0xFFC7D2FE)
+                                      : Colors.amberAccent,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isCorporateOrEvent
+                              ? (isEnabled
+                                  ? 'Challenges observation, memory, attention to detail & recall through post-game trivia.'
+                                  : 'Challenges observation, memory, attention to detail & recall through post-game trivia • Tap to enable')
+                              : 'Challenges observation, memory & event recall for Corporate packs (6+ Players)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isEnabled
+                                ? const Color(0xFFCBD5E1)
+                                : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.help_outline_rounded,
+                  color: isCorporateOrEvent
+                      ? const Color(0xFF818CF8)
+                      : Colors.amberAccent,
+                  size: 20,
+                ),
+                tooltip: 'What is DabHousie Recall Trivia™?',
+                onPressed: _showTriviaFamilyHelpDialog,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          if (isEnabled) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF131A2A).withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_rounded,
+                    size: 16,
+                    color: Color(0xFFFBBF24),
+                  ),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text(
+                      'Champion Reward:',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE2E8F0),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 78,
+                    child: TextField(
+                      controller: _prizeValueControllers[key],
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      textAlign: TextAlign.right,
+                      onChanged: (_) => _syncTotalBudgetFromIndividualValues(),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: '0',
+                        hintStyle: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF64748B),
+                        ),
+                        prefixText: _currencySymbol,
+                        prefixStyle: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppTheme.secondaryColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        isDense: true,
+                        filled: true,
+                        fillColor: AppTheme.darkCard,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 6,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(7),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF334155),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  InkWell(
+                    onTap: () => _openBrandGiftPicker(key, 'DabHousie Recall Trivia'),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: assignedOffer != null
+                            ? AppTheme.secondaryColor.withValues(alpha: 0.18)
+                            : AppTheme.primaryLight.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: assignedOffer != null
+                              ? AppTheme.secondaryColor
+                              : AppTheme.primaryLight.withValues(alpha: 0.65),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (assignedOffer != null &&
+                              assignedOffer.brandDomain.isNotEmpty)
+                            Container(
+                              width: 18,
+                              height: 18,
+                              padding: const EdgeInsets.all(1.5),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: CompanyLogo(
+                                domain: assignedOffer.brandDomain,
+                                size: 15,
+                                fallbackWidget: Text(
+                                  assignedOffer.emoji,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              assignedOffer != null ? assignedOffer.emoji : '🎁',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          const SizedBox(width: 5),
+                          Text(
+                            assignedOffer != null
+                                ? assignedOffer.brandName
+                                : 'Gift / Offer',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: assignedOffer != null
+                                  ? AppTheme.secondaryColor
+                                  : const Color(0xFF93C5FD),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (isEnabled && assignedOffer != null)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 12,
+                top: 5,
+                right: 4,
+              ),
+              child: Row(
+                children: [
+                  if (assignedOffer.brandDomain.isNotEmpty) ...[
+                    Container(
+                      width: 16,
+                      height: 16,
+                      padding: const EdgeInsets.all(1),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: CompanyLogo(
+                        domain: assignedOffer.brandDomain,
+                        size: 14,
+                        fallbackWidget: Text(
+                          assignedOffer.emoji,
+                          style: const TextStyle(fontSize: 9),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Expanded(
+                    child: Text(
+                      assignedOffer.isCustomHostOffer
+                          ? '✨ Custom Offer — ${assignedOffer.brandName}: ${assignedOffer.productTitle} ($_currencySymbol${assignedOffer.retailPrice.toStringAsFixed(0)} Value)'
+                          : (assignedOffer.organizerPrice <= 0
+                              ? '🎁 100% Free Sponsored — ${assignedOffer.brandName}: ${assignedOffer.productTitle}'
+                              : (assignedOffer.isHostSelfFulfilledTemplate
+                                  ? '🌍 Global Gift Template — ${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host provides code)'
+                                  : '${assignedOffer.brandName}: ${assignedOffer.productTitle} (Host Deal: $_currencySymbol${_localizeOfferPrice(assignedOffer, assignedOffer.organizerPrice).toStringAsFixed(0)})')),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.secondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => setState(
+                      () => _selectedPrizeGifts.remove(key),
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 14,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (!isCorporateOrEvent) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFFA0AEC0),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Family Pack (1–5 Players) excludes automated Trivia. Select 6+ Players to activate post-game cognitive recall.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.75),
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  TextButton(
+                    onPressed: _showTriviaFamilyHelpDialog,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Learn More',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amberAccent,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (isEnabled) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pacing & Transition from Game to Trivia:',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      _buildTriviaTimingChip(
+                        label: '15s Autonomous',
+                        badge: 'Recommended',
+                        seconds: 15,
+                      ),
+                      _buildTriviaTimingChip(
+                        label: '30s Break',
+                        badge: 'Extended',
+                        seconds: 30,
+                      ),
+                      _buildTriviaTimingChip(
+                        label: 'Host Manual',
+                        badge: 'Organizer Click',
+                        seconds: 0,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(color: Color(0xFF1E293B), height: 1),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Questions Compiled Dynamically (1 per category):',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      _buildTriviaCategoryPill('🏆 Social & Winner Recall'),
+                      _buildTriviaCategoryPill('🔢 Numbers & Milestones'),
+                      _buildTriviaCategoryPill('📊 Room Attendance Stats'),
+                      _buildTriviaCategoryPill('⏱️ Game Duration & Pacing'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.bolt_rounded,
+                        size: 14,
+                        color: Color(0xFFFBBF24),
+                      ),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          'Speed & Accuracy scoring: 500 base + 500 fast-response bonus per correct answer. Top 3 crowned on TV podium.',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: const Color(0xFFFBBF24).withValues(alpha: 0.9),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTriviaTimingChip({
+    required String label,
+    required String badge,
+    required int seconds,
+  }) {
+    final isSelected = _triviaTimeGapSeconds == seconds;
+    return InkWell(
+      onTap: () {
+        setState(() => _triviaTimeGapSeconds = seconds);
+        _scheduleSaveDraft();
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+              : const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF818CF8)
+                : const Color(0xFF334155),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_off_rounded,
+              size: 14,
+              color: isSelected
+                  ? const Color(0xFF818CF8)
+                  : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Colors.white : const Color(0xFFCBD5E1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTriviaCategoryPill(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFF334155), width: 0.8),
+      ),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 10,
+          color: Color(0xFF94A3B8),
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  void _showTriviaFamilyHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 540,
+            maxHeight: MediaQuery.of(ctx).size.height * 0.88,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: const Color(0xFF131A2A),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                  blurRadius: 36,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with icon, title, badge, and close button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.psychology_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'DabHousie Corporate Trivia™',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: const Text(
+                              'POST-GAME COGNITIVE SKILLS & EVENT RECALL',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFC7D2FE),
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white60, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'Close',
+                      onPressed: () => Navigator.of(ctx).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Scrollable Body Content
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Motto & Intro Hero Card
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFF6366F1).withValues(alpha: 0.22),
+                                const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFF818CF8).withValues(alpha: 0.4),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.auto_awesome_rounded, size: 14, color: Color(0xFFFBBF24)),
+                                  const SizedBox(width: 5),
+                                  const Text(
+                                    'OUR MOTTO',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFFBBF24),
+                                      letterSpacing: 0.7,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              const Text(
+                                '"Turn Passive Waiting into Active Observation"',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.2,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Turn every Bingo game into a high-energy opportunity to sharpen core cognitive skills—observation, focus, attention to detail, memory, and situational awareness.',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Color(0xFFE2E8F0),
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Section 1: Corporate Trivia Achievements
+                        Row(
+                          children: [
+                            const Icon(Icons.workspace_premium_rounded, size: 16, color: Color(0xFF38BDF8)),
+                            const SizedBox(width: 6),
+                            const Text(
+                              '5 Skills Challenged Through Game Trivia:',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          'Challenges participants to recall key game events, recognize winning sequences, track numbers called, and remember important milestones:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Decorated 5 Achievements Container
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A0F1D),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildTriviaAchievementItem(
+                                Icons.visibility_rounded,
+                                'Sharpen Observation',
+                                'Notice and retain important details.',
+                                const Color(0xFF38BDF8),
+                              ),
+                              const SizedBox(height: 6),
+                              _buildTriviaAchievementItem(
+                                Icons.psychology_rounded,
+                                'Strengthen Memory',
+                                'Recall events, sequences, and outcomes.',
+                                const Color(0xFFA78BFA),
+                              ),
+                              const SizedBox(height: 6),
+                              _buildTriviaAchievementItem(
+                                Icons.center_focus_strong_rounded,
+                                'Test Sustained Attention',
+                                'Stay alert to important game events.',
+                                const Color(0xFF34D399),
+                              ),
+                              const SizedBox(height: 6),
+                              _buildTriviaAchievementItem(
+                                Icons.explore_rounded,
+                                'Build Situational Awareness',
+                                'Understand what happened, when, and in what order.',
+                                const Color(0xFFFBBF24),
+                              ),
+                              const SizedBox(height: 6),
+                              _buildTriviaAchievementItem(
+                                Icons.groups_rounded,
+                                'Explore Team Learning',
+                                'Compare individual and team answers to see how collaboration affects recall and accuracy.',
+                                const Color(0xFFF472B6),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Beyond the Game Callout
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Text('💼 ', style: TextStyle(fontSize: 13)),
+                              Expanded(
+                                child: RichText(
+                                  text: const TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFFCBD5E1),
+                                      height: 1.35,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Beyond the Game: ',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: 'A fun, engaging way to practice cognitive skills relevant to workplace effectiveness and team performance.',
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Section 2: Sample Questions Header
+                        Row(
+                          children: [
+                            const Icon(Icons.quiz_rounded, size: 16, color: Color(0xFF818CF8)),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Sample Questions (Auto-Generated per Game):',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        const Text(
+                          'The server automatically compiles questions from live match milestones—no host setup required! For example:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                            fontStyle: FontStyle.italic,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Decorated Sample Questions Container
+                        Container(
+                          padding: const EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0A0F1D),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildTriviaSampleQuestionItem('🎯', 'Winner Recall', 'Who won the second row / Middle Line?'),
+                              const SizedBox(height: 6),
+                              _buildTriviaSampleQuestionItem('🔢', 'Number Recall', 'On which drawn number was Early-5 claimed?'),
+                              const SizedBox(height: 6),
+                              _buildTriviaSampleQuestionItem('👥', 'Event Stats', 'How many distinct winners were declared today?'),
+                              const SizedBox(height: 6),
+                              _buildTriviaSampleQuestionItem('⏱️', 'Pacing Recall', 'How long did today\'s game take?'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Gold Pack Eligibility Banner
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.amber.withValues(alpha: 0.16),
+                                Colors.amber.withValues(alpha: 0.08),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.workspace_premium_rounded, color: Colors.amberAccent, size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Available on Party, Event, Gala & Corporate packs.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: Colors.amberAccent,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Action button (Fixed at bottom)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Got it',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTriviaAchievementItem(
+    IconData icon,
+    String title,
+    String desc,
+    Color accentColor,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131A2A).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: 14, color: accentColor),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
+                children: [
+                  TextSpan(
+                    text: '$title: ',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: accentColor),
+                  ),
+                  TextSpan(text: desc),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTriviaSampleQuestionItem(String emoji, String category, String question) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFF131A2A).withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: const Color(0xFF818CF8).withValues(alpha: 0.35),
+                width: 0.6,
+              ),
+            ),
+            child: Text(
+              category.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFC7D2FE),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '"$question"',
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: Color(0xFFE2E8F0),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

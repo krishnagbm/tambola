@@ -6,6 +6,7 @@ import '../models/flash_housie_config.dart';
 import '../models/mpt_called_number.dart';
 import '../models/mpt_claim.dart';
 import '../models/mpt_game.dart';
+import '../models/mpt_game_trivia.dart';
 import '../models/mpt_ticket.dart';
 import 'package:flutter/foundation.dart';
 
@@ -76,7 +77,29 @@ class GameplayRepository {
       // Fallback
       final called = await getCalledNumbers(gameId);
       final calledSet = called.map((e) => e.number).toSet();
-      final uncalled = List.generate(90, (i) => i + 1).where((n) => !calledSet.contains(n)).toList();
+
+      // Check game mode
+      final gameData = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', gameId)
+          .maybeSingle();
+      final mode = (gameData?['prize_gifts_config'] as Map?)?['_calling_mode']
+              ?.toString()
+              .toUpperCase() ??
+          'CLASSIC';
+
+      List<int> pool;
+      if (mode == 'QUICK_DABBY') {
+        final activePool = await getGameTicketNumbersPool(gameId);
+        pool = activePool.isNotEmpty
+            ? activePool.toList()
+            : List.generate(90, (i) => i + 1);
+      } else {
+        pool = List.generate(90, (i) => i + 1);
+      }
+
+      final uncalled = pool.where((n) => !calledSet.contains(n)).toList();
       if (uncalled.isEmpty) return null;
 
       uncalled.shuffle();
@@ -100,6 +123,38 @@ class GameplayRepository {
         .order('call_seq', ascending: true);
 
     return (res as List).map((e) => MptCalledNumber.fromJson(e)).toList();
+  }
+
+  /// Returns the unique set of numbers appearing on all registered player tickets for this game.
+  /// For Quick Dabby games, this defines the active draw pool.
+  Future<Set<int>> getGameTicketNumbersPool(String gameId) async {
+    try {
+      final res = await _supabase
+          .from('MPT_player_tickets')
+          .select('ticket_matrix')
+          .eq('game_id', gameId);
+      final Set<int> pool = {};
+      for (final row in res) {
+        final matrix = row['ticket_matrix'];
+        if (matrix is List) {
+          for (final rowList in matrix) {
+            if (rowList is List) {
+              for (final cell in rowList) {
+                if (cell is int && cell > 0 && cell <= 90) {
+                  pool.add(cell);
+                } else if (cell is num && cell > 0 && cell <= 90) {
+                  pool.add(cell.toInt());
+                }
+              }
+            }
+          }
+        }
+      }
+      return pool;
+    } catch (e) {
+      debugPrint('getGameTicketNumbersPool error: $e');
+      return {};
+    }
   }
 
   /// Smart Polling stream for called numbers (1.5s interval, 0 WebSocket connections)
@@ -669,18 +724,14 @@ class GameplayRepository {
   /// Ends the game, marks it COMPLETED, and archives it to Hall of Fame
   Future<void> endGame(String gameId) async {
     final nowIso = DateTime.now().toUtc().toIso8601String();
-    try {
-      await _supabase
-          .from('MPT_games')
-          .update({
-            'status': 'COMPLETED',
-            'completed_at': nowIso,
-            'updated_at': nowIso,
-          })
-          .eq('id', gameId);
-    } catch (e) {
-      debugPrint('Direct MPT_games COMPLETED update warning: $e');
-    }
+    await _supabase
+        .from('MPT_games')
+        .update({
+          'status': 'COMPLETED',
+          'completed_at': nowIso,
+          'updated_at': nowIso,
+        })
+        .eq('id', gameId);
 
     try {
       await _supabase.rpc('MPT_archive_concluded_game', params: {
@@ -1374,4 +1425,186 @@ class GameplayRepository {
 
     return finalConfig;
   }
+
+  // ===========================================================================
+  // Post-Game Corporate Recall Trivia Methods
+  // ===========================================================================
+
+  /// Watches live trivia round status, countdowns, and questions
+  Stream<MptGameTriviaRound?> watchGameTriviaRound(String gameId) async* {
+    while (true) {
+      try {
+        final res = await _supabase
+            .from('MPT_game_trivia_rounds')
+            .select()
+            .eq('game_id', gameId)
+            .maybeSingle();
+        if (res != null) {
+          yield MptGameTriviaRound.fromJson(res);
+        } else {
+          yield null;
+        }
+      } catch (e) {
+        // Silently yield null on network blips
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+  }
+
+  /// Watches live final trivia podium winners with smart polling stream
+  Stream<List<MptTriviaWinner>> watchGameTriviaWinners(String gameId) async* {
+    while (true) {
+      try {
+        final res = await _supabase
+            .from('MPT_trivia_winners')
+            .select()
+            .eq('game_id', gameId)
+            .order('rank', ascending: true);
+        yield res.map((r) => MptTriviaWinner.fromJson(r)).toList();
+      } catch (e) {
+        yield const [];
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+  }
+
+  /// Triggers server-side generation of game recall trivia questions
+  Future<void> generateGameTrivia(String gameId) async {
+    try {
+      await _supabase.rpc('MPT_generate_game_trivia', params: {
+        'p_game_id': gameId,
+      });
+    } catch (e) {
+      debugPrint('Error generating game trivia: $e');
+      rethrow;
+    }
+  }
+
+  /// Starts the countdown to the trivia round
+  Future<void> startTriviaCountdown(String gameId, [int timeGapSeconds = 15]) async {
+    try {
+      final startsAt = DateTime.now().toUtc().add(Duration(seconds: timeGapSeconds));
+      await _supabase
+          .from('MPT_game_trivia_rounds')
+          .update({
+            'status': 'COUNTDOWN',
+            'starts_at': startsAt.toIso8601String(),
+          })
+          .eq('game_id', gameId);
+    } catch (e) {
+      debugPrint('Error starting trivia countdown: $e');
+      rethrow;
+    }
+  }
+
+  /// Launches the active trivia question sequence
+  Future<void> launchTriviaActive(String gameId) async {
+    try {
+      await _supabase
+          .from('MPT_game_trivia_rounds')
+          .update({
+            'status': 'ACTIVE',
+            'current_question_index': 0,
+            'started_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('game_id', gameId);
+    } catch (e) {
+      debugPrint('Error launching trivia active: $e');
+      rethrow;
+    }
+  }
+
+  /// Advances to next trivia question or finalizes if on the last question
+  Future<void> advanceTriviaQuestion({
+    required String gameId,
+    required int nextIndex,
+    bool isLast = false,
+  }) async {
+    try {
+      if (isLast) {
+        await finalizeGameTrivia(gameId);
+      } else {
+        try {
+          await _supabase.rpc('MPT_advance_trivia_question', params: {
+            'p_game_id': gameId,
+            'p_next_index': nextIndex,
+          });
+        } catch (_) {
+          await _supabase
+              .from('MPT_game_trivia_rounds')
+              .update({
+                'current_question_index': nextIndex,
+                'status': 'ACTIVE',
+              })
+              .eq('game_id', gameId);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error advancing trivia question: $e');
+      rethrow;
+    }
+  }
+
+  /// Submits a player's fast-recall trivia answer
+  Future<Map<String, dynamic>> submitTriviaAnswer({
+    required String gameId,
+    required String userId,
+    required String userName,
+    String? userAvatar,
+    required int questionIndex,
+    required int selectedOptionIndex,
+    required int responseTimeMs,
+    int maxTimeMs = 15000,
+  }) async {
+    try {
+      final res = await _supabase.rpc('MPT_submit_trivia_answer', params: {
+        'p_game_id': gameId,
+        'p_user_id': userId,
+        'p_user_name': userName,
+        'p_user_avatar': userAvatar,
+        'p_question_index': questionIndex,
+        'p_selected_option': selectedOptionIndex,
+        'p_response_time_ms': responseTimeMs,
+        'p_max_time_ms': maxTimeMs,
+      });
+      return res is Map<String, dynamic> ? res : Map<String, dynamic>.from(res as Map);
+    } catch (e) {
+      debugPrint('Error submitting trivia answer: $e');
+      rethrow;
+    }
+  }
+
+  /// Finalizes trivia leaderboard and populates podium winners
+  Future<Map<String, dynamic>> finalizeGameTrivia(String gameId) async {
+    try {
+      final res = await _supabase.rpc('MPT_finalize_game_trivia', params: {
+        'p_game_id': gameId,
+      });
+      return res is Map<String, dynamic> ? res : Map<String, dynamic>.from(res as Map);
+    } catch (e) {
+      debugPrint('Error finalizing game trivia: $e');
+      rethrow;
+    }
+  }
+
+  /// Updates the auto-call pace in seconds and persists to game config
+  Future<void> updateCallPace(String gameId, int seconds) async {
+    try {
+      final gameRow = await _supabase
+          .from('MPT_games')
+          .select('prize_gifts_config')
+          .eq('id', gameId)
+          .maybeSingle();
+      final config = (gameRow?['prize_gifts_config'] as Map<String, dynamic>?) ?? {};
+      final updatedConfig = Map<String, dynamic>.from(config);
+      updatedConfig['_call_pace_seconds'] = seconds;
+      await _supabase
+          .from('MPT_games')
+          .update({'prize_gifts_config': updatedConfig})
+          .eq('id', gameId);
+    } catch (e) {
+      debugPrint('updateCallPace non-fatal warning: $e');
+    }
+  }
 }
+

@@ -3,9 +3,9 @@ import 'package:tambola/models/mpt_capacity_tier.dart';
 
 void main() {
   group('Capacity Tiers & Credit Pricing Tests', () {
-    test('Default capacity tiers contain all 5 confirmed tiers with exact credit costs', () {
+    test('Default capacity tiers contain all confirmed tiers with exact credit costs', () {
       final tiers = MptCapacityTier.defaultTiers;
-      expect(tiers.length, 5);
+      expect(tiers.length, 8);
 
       // Tier 1: Family Pack (1–5) -> 0 credits
       expect(tiers[0].minPlayers, 1);

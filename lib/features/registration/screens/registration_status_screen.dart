@@ -658,7 +658,7 @@ class RegistrationStatusScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Funded Seats', '${game.fundedCapacity}', AppTheme.primaryLight),
+                _buildStatItem('Room Capacity', '${game.fundedCapacity}', AppTheme.primaryLight),
                 _buildStatItem('Confirmed', '$confirmedCount', AppTheme.accentSuccess),
                 _buildStatItem('Waiting', '$waitingCount', AppTheme.accentWarning),
               ],

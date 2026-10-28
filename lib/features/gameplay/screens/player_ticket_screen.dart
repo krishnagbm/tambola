@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
@@ -18,6 +19,7 @@ import '../../../models/flash_housie_config.dart';
 import '../../../models/mpt_called_number.dart';
 import '../../../models/mpt_claim.dart';
 import '../../../models/mpt_game.dart';
+import '../../../models/mpt_game_trivia.dart';
 import '../../../models/mpt_ticket.dart';
 import '../../../models/mpt_user.dart';
 import '../../../providers/app_providers.dart';
@@ -54,6 +56,77 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   String? _flashTapFeedback;
   bool _flashTapFeedbackIsError = false;
 
+  // Post-Game Corporate Recall Trivia Player State
+  int? _playerSelectedOptionIndex;
+  int _playerQuestionStartedAtMs = 0;
+  int _lastPlayerSeenQuestionIndex = -1;
+  bool _playerAnswerSubmitted = false;
+  bool? _playerAnswerIsCorrect;
+  int? _playerPointsAwarded;
+  int? _playerCorrectOptionIndex;
+  bool _isSubmittingTriviaAnswer = false;
+  bool _isPeekingTicket = false;
+  Timer? _peekTicketTimer;
+  bool _isPeekingClaims = false;
+  Timer? _peekClaimsTimer;
+  int _triviaPeekPenalties = 0;
+  bool _hasTriggeredTriviaActivation = false;
+  bool _hasAttemptedQuestionAdvance = false;
+  bool _showPlayerTriviaReview = false;
+  Map<int, int>? _playerSelectedAnswers = {};
+  Map<int, bool>? _playerAnswerCorrectness = {};
+  Map<int, int>? _playerQuestionScores = {};
+  Map<int, int>? _playerQuestionTimes = {};
+  bool _hasFetchedPastTriviaAnswers = false;
+
+  Map<int, int> get _safePlayerSelectedAnswers {
+    _playerSelectedAnswers ??= {};
+    return _playerSelectedAnswers!;
+  }
+
+  Map<int, bool> get _safePlayerAnswerCorrectness {
+    _playerAnswerCorrectness ??= {};
+    return _playerAnswerCorrectness!;
+  }
+
+  Map<int, int> get _safePlayerQuestionScores {
+    _playerQuestionScores ??= {};
+    return _playerQuestionScores!;
+  }
+
+  Map<int, int> get _safePlayerQuestionTimes {
+    _playerQuestionTimes ??= {};
+    return _playerQuestionTimes!;
+  }
+
+  void _fetchPastTriviaAnswersIfNeeded(String gameId, String? userId) {
+    if (_hasFetchedPastTriviaAnswers || userId == null) return;
+    _hasFetchedPastTriviaAnswers = true;
+    Supabase.instance.client
+        .from('MPT_trivia_responses')
+        .select('question_index, selected_option_index, is_correct, score_points, response_time_ms')
+        .eq('game_id', gameId)
+        .eq('user_id', userId)
+        .then((rows) {
+      if (mounted) {
+        for (final row in rows) {
+          final q = (row['question_index'] as num?)?.toInt();
+          final opt = (row['selected_option_index'] as num?)?.toInt();
+          final cor = row['is_correct'] == true;
+          final score = (row['score_points'] as num?)?.toInt() ?? 0;
+          final timeMs = (row['response_time_ms'] as num?)?.toInt() ?? 0;
+          if (q != null && opt != null) {
+            _safePlayerSelectedAnswers[q] = opt;
+            _safePlayerAnswerCorrectness[q] = cor;
+            _safePlayerQuestionScores[q] = score;
+            _safePlayerQuestionTimes[q] = timeMs;
+          }
+        }
+        setState(() {});
+      }
+    }).catchError((_) {});
+  }
+
   @override
   void initState() {
     super.initState();
@@ -62,7 +135,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     _neuroWaveUiTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final game = ref.read(gameStreamProvider(widget.gameId)).value;
-      if (game?.isInProgress == true || game?.isFlashHousie == true) {
+      if (game?.isInProgress == true ||
+          game?.isFlashHousie == true ||
+          game?.isPostGameTriviaEnabled == true) {
         setState(() {});
       }
     });
@@ -72,6 +147,8 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
   void dispose() {
     _neuroWaveUiTimer?.cancel();
     _finalGraceTimer?.cancel();
+    _peekTicketTimer?.cancel();
+    _peekClaimsTimer?.cancel();
     WakeLockHelper.release();
     super.dispose();
   }
@@ -1396,6 +1473,14 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                     'FULL_HOUSE',
                   ];
               final currentUser = ref.watch(currentUserProvider).value;
+              final triviaRound = currentGame?.isPostGameTriviaEnabled == true
+                  ? ref.watch(gameTriviaRoundStreamProvider(currentGame?.id ?? '')).value
+                  : null;
+              final isTriviaActive = currentGame?.isPostGameTriviaEnabled == true &&
+                  isGameEnded &&
+                  triviaRound != null &&
+                  (triviaRound.isActive || triviaRound.isCountdown);
+              final isTriviaCompleted = triviaRound?.isCompleted == true;
 
               return CelebrationOverlay(
                 isCelebrating: _showCelebration && !isCancelledOrNoWinners,
@@ -1432,34 +1517,69 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     _buildLobbyWaitingNotice(context, currentGame),
-                                    if (isInFinalGracePeriod) ...[
-                                      _buildFinalGraceBanner(),
-                                      const SizedBox(height: 10),
+                                    _buildCorporateTriviaPreGameNotice(currentGame),
+                                    if (isTriviaActive) ...[
+                                      // 1. Pink Banner at top during Trivia
+                                      _buildLatestNumberBanner(
+                                        latestCalled,
+                                        totalCalledCount,
+                                        poolTotalCount: poolTotalCount,
+                                        cycleLabel: activeCycleSpec?.label,
+                                        totalPlayers: totalPlayers,
+                                        isGameEnded: isGameEnded,
+                                        isCancelledOrNoWinners: isCancelledOrNoWinners,
+                                        context: context,
+                                        isCompact: true,
+                                        latestCalledAt: latestCalledAt,
+                                        isTriviaActive: true,
+                                        isTriviaCompleted: isTriviaCompleted,
+                                        callIntervalSeconds: currentGame?.callIntervalSeconds ?? 15,
+                                      ),
+                                      const SizedBox(height: 8),
+
+                                      // 2. Player Identity Banner (Player count hidden)
+                                      _buildPlayerIdentityBanner(
+                                        currentUser,
+                                        ticket,
+                                        game: currentGame,
+                                        totalPlayers: totalPlayers,
+                                        isCompact: true,
+                                        isGameEnded: isGameEnded || currentGame?.status == 'CANCELLED',
+                                        hidePlayerCount: true,
+                                      ),
+                                    ] else ...[
+                                      if (isInFinalGracePeriod) ...[
+                                        _buildFinalGraceBanner(),
+                                        const SizedBox(height: 10),
+                                      ],
+                                      _buildPlayerIdentityBanner(
+                                        currentUser,
+                                        ticket,
+                                        game: currentGame,
+                                        totalPlayers: totalPlayers,
+                                        isCompact: true,
+                                        isGameEnded:
+                                            isGameEnded ||
+                                            currentGame?.status == 'CANCELLED',
+                                      ),
+                                      const SizedBox(height: 8),
+                                      _buildLatestNumberBanner(
+                                        latestCalled,
+                                        totalCalledCount,
+                                        poolTotalCount: poolTotalCount,
+                                        cycleLabel: activeCycleSpec?.label,
+                                        totalPlayers: totalPlayers,
+                                        isGameEnded: isGameEnded,
+                                        isCancelledOrNoWinners:
+                                            isCancelledOrNoWinners,
+                                        context: context,
+                                        isCompact: true,
+                                        latestCalledAt: latestCalledAt,
+                                        isTriviaActive: false,
+                                        isTriviaCompleted: isTriviaCompleted,
+                                        callIntervalSeconds: currentGame?.callIntervalSeconds ?? 15,
+                                      ),
                                     ],
-                                    _buildPlayerIdentityBanner(
-                                      currentUser,
-                                      ticket,
-                                      game: currentGame,
-                                      totalPlayers: totalPlayers,
-                                      isCompact: true,
-                                      isGameEnded:
-                                          isGameEnded ||
-                                          currentGame?.status == 'CANCELLED',
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _buildLatestNumberBanner(
-                                      latestCalled,
-                                      totalCalledCount,
-                                      poolTotalCount: poolTotalCount,
-                                      cycleLabel: activeCycleSpec?.label,
-                                      totalPlayers: totalPlayers,
-                                      isGameEnded: isGameEnded,
-                                      isCancelledOrNoWinners:
-                                          isCancelledOrNoWinners,
-                                      context: context,
-                                      isCompact: true,
-                                      latestCalledAt: latestCalledAt,
-                                    ),
                                     if (flashConfig != null &&
                                         activeCycleSpec != null) ...[
                                       const SizedBox(height: 8),
@@ -1476,15 +1596,27 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                       currentUserId,
                                       isCompact: true,
                                     ),
+                                    if (currentGame?.isPostGameTriviaEnabled == true && isGameEnded) ...[
+                                      const SizedBox(height: 10),
+                                      _buildPlayerTriviaSection(currentGame, currentUser, isCompact: true),
+                                    ],
                                     const SizedBox(height: 8),
-                                    _buildTicketMatrix(
-                                      ticket,
-                                      calledSet,
-                                      isGameEnded: isGameEnded,
-                                      cellHeight: 52,
-                                      flashConfig: flashConfig,
-                                      currentUser: currentUser,
-                                    ),
+                                    if (isTriviaActive && !_isPeekingTicket)
+                                      _buildConcealedTicketRecallCard(onPeek: _handlePeekTicket)
+                                    else ...[
+                                      if (isTriviaActive && _isPeekingTicket) ...[
+                                        _buildPeekingActiveBanner(isTicket: true),
+                                        const SizedBox(height: 6),
+                                      ],
+                                      _buildTicketMatrix(
+                                        ticket,
+                                        calledSet,
+                                        isGameEnded: isGameEnded,
+                                        cellHeight: 52,
+                                        flashConfig: flashConfig,
+                                        currentUser: currentUser,
+                                      ),
+                                    ],
                                     const SizedBox(height: 12),
                                   ],
                                 ),
@@ -1500,60 +1632,68 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    if (activeCycleSpec != null &&
-                                        activeCycleSpec
-                                            .calledNumbers
-                                            .isNotEmpty) ...[
-                                      _buildRecentCallsFromInts(
-                                        activeCycleSpec.calledNumbers,
-                                      ),
-                                      const SizedBox(height: 10),
-                                    ] else if (calledNumbers.isNotEmpty) ...[
-                                      _buildRecentCallsBar(calledNumbers),
-                                      const SizedBox(height: 10),
-                                    ],
-                                    claimsStream.when(
-                                      loading: () => _buildPrizeClaimsSection(
-                                        activePrizes,
-                                        {},
-                                        currentUserId,
-                                        ticket,
-                                        calledSet,
-                                        isGameEnded: isGameEnded,
-                                        isCompact: true,
-                                        flashConfig: flashConfig,
-                                      ),
-                                      error: (_, __) =>
-                                          _buildPrizeClaimsSection(
-                                            activePrizes,
-                                            {},
-                                            currentUserId,
-                                            ticket,
-                                            calledSet,
-                                            isGameEnded: isGameEnded,
-                                            isCompact: true,
-                                            flashConfig: flashConfig,
-                                          ),
-                                      data: (claims) {
-                                        final approvedClaims =
-                                            <String, MptClaim>{};
-                                        for (final c in claims) {
-                                          if (c.status == 'APPROVED') {
-                                            approvedClaims[c.prizeType] = c;
-                                          }
-                                        }
-                                        return _buildPrizeClaimsSection(
+                                    if (isTriviaActive && !_isPeekingClaims)
+                                      _buildConcealedWinnersRecallCard(onPeek: _handlePeekClaims)
+                                    else ...[
+                                      if (isTriviaActive && _isPeekingClaims) ...[
+                                        _buildPeekingActiveBanner(isTicket: false),
+                                        const SizedBox(height: 6),
+                                      ],
+                                      if (activeCycleSpec != null &&
+                                          activeCycleSpec
+                                              .calledNumbers
+                                              .isNotEmpty) ...[
+                                        _buildRecentCallsFromInts(
+                                          activeCycleSpec.calledNumbers,
+                                        ),
+                                        const SizedBox(height: 10),
+                                      ] else if (calledNumbers.isNotEmpty) ...[
+                                        _buildRecentCallsBar(calledNumbers),
+                                        const SizedBox(height: 10),
+                                      ],
+                                      claimsStream.when(
+                                        loading: () => _buildPrizeClaimsSection(
                                           activePrizes,
-                                          approvedClaims,
+                                          {},
                                           currentUserId,
                                           ticket,
                                           calledSet,
                                           isGameEnded: isGameEnded,
                                           isCompact: true,
                                           flashConfig: flashConfig,
-                                        );
-                                      },
-                                    ),
+                                        ),
+                                        error: (_, __) =>
+                                            _buildPrizeClaimsSection(
+                                              activePrizes,
+                                              {},
+                                              currentUserId,
+                                              ticket,
+                                              calledSet,
+                                              isGameEnded: isGameEnded,
+                                              isCompact: true,
+                                              flashConfig: flashConfig,
+                                            ),
+                                        data: (claims) {
+                                          final approvedClaims =
+                                              <String, MptClaim>{};
+                                          for (final c in claims) {
+                                            if (c.status == 'APPROVED') {
+                                              approvedClaims[c.prizeType] = c;
+                                            }
+                                          }
+                                          return _buildPrizeClaimsSection(
+                                            activePrizes,
+                                            approvedClaims,
+                                            currentUserId,
+                                            ticket,
+                                            calledSet,
+                                            isGameEnded: isGameEnded,
+                                            isCompact: true,
+                                            flashConfig: flashConfig,
+                                          );
+                                        },
+                                      ),
+                                    ],
                                     if (!isGameEnded &&
                                         currentGame?.status != 'CANCELLED') ...[
                                       const SizedBox(height: 14),
@@ -1604,34 +1744,69 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildLobbyWaitingNotice(context, currentGame),
-                          if (isInFinalGracePeriod) ...[
-                            _buildFinalGraceBanner(),
+                          _buildCorporateTriviaPreGameNotice(currentGame),
+                          if (isTriviaActive) ...[
+                            // 1. Pink Banner at top during Trivia
+                            _buildLatestNumberBanner(
+                              latestCalled,
+                              totalCalledCount,
+                              poolTotalCount: poolTotalCount,
+                              cycleLabel: activeCycleSpec?.label,
+                              totalPlayers: totalPlayers,
+                              isGameEnded: isGameEnded,
+                              isCancelledOrNoWinners: isCancelledOrNoWinners,
+                              context: context,
+                              latestCalledAt: latestCalledAt,
+                              isTriviaActive: true,
+                              isTriviaCompleted: isTriviaCompleted,
+                              callIntervalSeconds: currentGame?.callIntervalSeconds ?? 15,
+                            ),
                             const SizedBox(height: 10),
-                          ],
-                          // Player Identity & Ticket Number Card
-                          _buildPlayerIdentityBanner(
-                            currentUser,
-                            ticket,
-                            game: currentGame,
-                            totalPlayers: totalPlayers,
-                            isGameEnded:
-                                isGameEnded ||
-                                currentGame?.status == 'CANCELLED',
-                          ),
-                          const SizedBox(height: 10),
 
-                          // Latest Called Ball / Game Concluded Banner
-                          _buildLatestNumberBanner(
-                            latestCalled,
-                            totalCalledCount,
-                            poolTotalCount: poolTotalCount,
-                            cycleLabel: activeCycleSpec?.label,
-                            totalPlayers: totalPlayers,
-                            isGameEnded: isGameEnded,
-                            isCancelledOrNoWinners: isCancelledOrNoWinners,
-                            context: context,
-                            latestCalledAt: latestCalledAt,
-                          ),
+                            // 2. Player Identity Banner (Player count hidden)
+                            _buildPlayerIdentityBanner(
+                              currentUser,
+                              ticket,
+                              game: currentGame,
+                              totalPlayers: totalPlayers,
+                              isGameEnded:
+                                  isGameEnded ||
+                                  currentGame?.status == 'CANCELLED',
+                              hidePlayerCount: true,
+                            ),
+                          ] else ...[
+                            if (isInFinalGracePeriod) ...[
+                              _buildFinalGraceBanner(),
+                              const SizedBox(height: 10),
+                            ],
+                            // Player Identity & Ticket Number Card
+                            _buildPlayerIdentityBanner(
+                              currentUser,
+                              ticket,
+                              game: currentGame,
+                              totalPlayers: totalPlayers,
+                              isGameEnded:
+                                  isGameEnded ||
+                                  currentGame?.status == 'CANCELLED',
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Latest Called Ball / Game Concluded Banner
+                            _buildLatestNumberBanner(
+                              latestCalled,
+                              totalCalledCount,
+                              poolTotalCount: poolTotalCount,
+                              cycleLabel: activeCycleSpec?.label,
+                              totalPlayers: totalPlayers,
+                              isGameEnded: isGameEnded,
+                              isCancelledOrNoWinners: isCancelledOrNoWinners,
+                              context: context,
+                              latestCalledAt: latestCalledAt,
+                              isTriviaActive: false,
+                              isTriviaCompleted: isTriviaCompleted,
+                              callIntervalSeconds: currentGame?.callIntervalSeconds ?? 15,
+                            ),
+                          ],
                           const SizedBox(height: 10),
 
                           if (flashConfig != null &&
@@ -1644,17 +1819,29 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           ],
 
                           // Recent Calls List
-                          if (activeCycleSpec != null &&
-                              activeCycleSpec.calledNumbers.isNotEmpty &&
-                              !isGameEnded) ...[
-                            _buildRecentCallsFromInts(
-                              activeCycleSpec.calledNumbers,
-                            ),
-                            const SizedBox(height: 12),
-                          ] else if (calledNumbers.isNotEmpty &&
-                              !isGameEnded) ...[
-                            _buildRecentCallsBar(calledNumbers),
-                            const SizedBox(height: 14),
+                          if (isTriviaActive && _isPeekingClaims) ...[
+                            _buildPeekingActiveBanner(isTicket: false),
+                            const SizedBox(height: 8),
+                            if (activeCycleSpec != null && activeCycleSpec.calledNumbers.isNotEmpty) ...[
+                              _buildRecentCallsFromInts(activeCycleSpec.calledNumbers),
+                              const SizedBox(height: 12),
+                            ] else if (calledNumbers.isNotEmpty) ...[
+                              _buildRecentCallsBar(calledNumbers),
+                              const SizedBox(height: 14),
+                            ],
+                          ] else if (!isTriviaActive) ...[
+                            if (activeCycleSpec != null &&
+                                activeCycleSpec.calledNumbers.isNotEmpty &&
+                                !isGameEnded) ...[
+                              _buildRecentCallsFromInts(
+                                activeCycleSpec.calledNumbers,
+                              ),
+                              const SizedBox(height: 12),
+                            ] else if (calledNumbers.isNotEmpty &&
+                                !isGameEnded) ...[
+                              _buildRecentCallsBar(calledNumbers),
+                              const SizedBox(height: 14),
+                            ],
                           ],
 
                           _buildParticipationBountyCard(
@@ -1665,54 +1852,70 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Interactive 3x9 Ticket (Preserved 3x9 layout for both Classic & FlashHousie)
-                          _buildTicketMatrix(
-                            ticket,
-                            calledSet,
-                            isGameEnded: isGameEnded,
-                            flashConfig: flashConfig,
-                            currentUser: currentUser,
-                          ),
+                          if (currentGame?.isPostGameTriviaEnabled == true && isGameEnded) ...[
+                            const SizedBox(height: 10),
+                            _buildPlayerTriviaSection(currentGame, currentUser),
+                          ],
+                          // Interactive 3x9 Ticket (Concealed if trivia is active)
+                          if (isTriviaActive && !_isPeekingTicket)
+                            _buildConcealedTicketRecallCard(onPeek: _handlePeekTicket)
+                          else ...[
+                            if (isTriviaActive && _isPeekingTicket) ...[
+                              _buildPeekingActiveBanner(isTicket: true),
+                              const SizedBox(height: 8),
+                            ],
+                            _buildTicketMatrix(
+                              ticket,
+                              calledSet,
+                              isGameEnded: isGameEnded,
+                              flashConfig: flashConfig,
+                              currentUser: currentUser,
+                            ),
+                          ],
                           const SizedBox(height: 20),
 
-                          // Prize Claims Section
-                          claimsStream.when(
-                            loading: () => _buildPrizeClaimsSection(
-                              activePrizes,
-                              {},
-                              currentUserId,
-                              ticket,
-                              calledSet,
-                              isGameEnded: isGameEnded,
-                              flashConfig: flashConfig,
-                            ),
-                            error: (_, __) => _buildPrizeClaimsSection(
-                              activePrizes,
-                              {},
-                              currentUserId,
-                              ticket,
-                              calledSet,
-                              isGameEnded: isGameEnded,
-                              flashConfig: flashConfig,
-                            ),
-                            data: (claims) {
-                              final approvedClaims = <String, MptClaim>{};
-                              for (final c in claims) {
-                                if (c.status == 'APPROVED') {
-                                  approvedClaims[c.prizeType] = c;
-                                }
-                              }
-                              return _buildPrizeClaimsSection(
+                          // Prize Claims Section (Concealed if trivia is active)
+                          if (isTriviaActive && !_isPeekingClaims)
+                            _buildConcealedWinnersRecallCard(onPeek: _handlePeekClaims)
+                          else ...[
+                            claimsStream.when(
+                              loading: () => _buildPrizeClaimsSection(
                                 activePrizes,
-                                approvedClaims,
+                                {},
                                 currentUserId,
                                 ticket,
                                 calledSet,
                                 isGameEnded: isGameEnded,
                                 flashConfig: flashConfig,
-                              );
-                            },
-                          ),
+                              ),
+                              error: (_, __) => _buildPrizeClaimsSection(
+                                activePrizes,
+                                {},
+                                currentUserId,
+                                ticket,
+                                calledSet,
+                                isGameEnded: isGameEnded,
+                                flashConfig: flashConfig,
+                              ),
+                              data: (claims) {
+                                final approvedClaims = <String, MptClaim>{};
+                                for (final c in claims) {
+                                  if (c.status == 'APPROVED') {
+                                    approvedClaims[c.prizeType] = c;
+                                  }
+                                }
+                                return _buildPrizeClaimsSection(
+                                  activePrizes,
+                                  approvedClaims,
+                                  currentUserId,
+                                  ticket,
+                                  calledSet,
+                                  isGameEnded: isGameEnded,
+                                  flashConfig: flashConfig,
+                                );
+                              },
+                            ),
+                          ],
                           if (!isGameEnded &&
                               currentGame?.status != 'CANCELLED') ...[
                             const SizedBox(height: 24),
@@ -1904,6 +2107,1144 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     );
   }
 
+  Widget _buildCorporateTriviaPreGameNotice(MptGame? game) {
+    if (game == null || !game.isPostGameTriviaEnabled) return const SizedBox.shrink();
+    if (game.isCompleted || game.status == 'COMPLETED') return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF818CF8).withValues(alpha: 0.6),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.psychology_rounded,
+              color: Color(0xFF818CF8),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      '🧠 POST-GAME RECALL TRIVIA ACTIVE',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFC7D2FE),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(Icons.bolt_rounded, color: Color(0xFFFBBF24), size: 14),
+                  ],
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Pay close attention to draw milestones, winner sequence, and numbers called! An automated observation recall challenge runs immediately after the game for bonus podium recognition.',
+                  style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1), height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerTriviaSection(
+    MptGame? game,
+    MptUser? user, {
+    bool isCompact = false,
+  }) {
+    if (game == null || !game.isPostGameTriviaEnabled) return const SizedBox.shrink();
+    if (!game.isCompleted && game.status != 'COMPLETED') return const SizedBox.shrink();
+
+    final triviaRoundAsync = ref.watch(gameTriviaRoundStreamProvider(game.id));
+    final triviaWinnersAsync = ref.watch(gameTriviaWinnersStreamProvider(game.id));
+    final round = triviaRoundAsync.value;
+    final winners = triviaWinnersAsync.value ?? const [];
+
+    if (round == null) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.darkSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF818CF8)),
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Preparing DabHousie Recall Trivia Challenge...',
+              style: TextStyle(fontSize: 12, color: Color(0xFFC7D2FE), fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (round.isCountdown) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF312E81), Color(0xFF1E1B4B)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF818CF8), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFF4F46E5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.psychology_rounded, color: Colors.white, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '🧠 GET READY FOR TRIVIA!',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Trivia starts in moments on this screen. Speed & accuracy count!',
+                    style: TextStyle(fontSize: 11, color: Color(0xFFC7D2FE)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Builder(builder: (ctx) {
+              int secondsRemaining = 0;
+              if (round.startsAt != null) {
+                secondsRemaining = round.startsAt!.difference(DateTime.now()).inSeconds;
+                if (secondsRemaining < 0) secondsRemaining = 0;
+              }
+              if (secondsRemaining <= 0 && !_hasTriggeredTriviaActivation) {
+                _hasTriggeredTriviaActivation = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ref.read(gameplayRepositoryProvider).launchTriviaActive(game.id).catchError((_) {});
+                });
+              }
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBBF24),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  secondsRemaining > 0 ? 'STARTING IN ${secondsRemaining}s' : 'STARTING NOW...',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.black),
+                ),
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    if (round.isActive) {
+      if (round.questions.isEmpty || round.currentQuestionIndex >= round.questions.length) {
+        return const SizedBox.shrink();
+      }
+      final currentQ = round.questions[round.currentQuestionIndex];
+
+      // Reset selection state when moving to a new question index
+      if (_lastPlayerSeenQuestionIndex != round.currentQuestionIndex) {
+        _lastPlayerSeenQuestionIndex = round.currentQuestionIndex;
+        _playerSelectedOptionIndex = null;
+        _playerAnswerSubmitted = false;
+        _playerAnswerIsCorrect = null;
+        _playerPointsAwarded = null;
+        _playerCorrectOptionIndex = null;
+        _playerQuestionStartedAtMs = DateTime.now().millisecondsSinceEpoch;
+        _hasAttemptedQuestionAdvance = false;
+      }
+
+      final qSecondsAllotted = round.secondsPerQuestion > 0 ? round.secondsPerQuestion : 15;
+      final qElapsedSecs = ((DateTime.now().millisecondsSinceEpoch - _playerQuestionStartedAtMs) / 1000).floor();
+      final qSecsLeft = (qSecondsAllotted - qElapsedSecs).clamp(0, qSecondsAllotted);
+
+      // Autonomous question advance fallback if host / TV screen is not advancing
+      if (qSecsLeft <= 0 && !_hasAttemptedQuestionAdvance) {
+        _hasAttemptedQuestionAdvance = true;
+        final nextIdx = round.currentQuestionIndex + 1;
+        final isLast = nextIdx >= round.questions.length;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(gameplayRepositoryProvider).advanceTriviaQuestion(
+            gameId: game.id,
+            nextIndex: nextIdx,
+            isLast: isLast,
+          ).catchError((_) {});
+        });
+      }
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF6366F1),
+            width: 1.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+              blurRadius: 14,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Top Header: Question count + Category + Live Score indicator
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    currentQ.categoryName.toUpperCase(),
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC7D2FE)),
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Q${round.currentQuestionIndex + 1} of ${round.questions.length}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: qSecsLeft <= 5 ? AppTheme.accentDanger.withValues(alpha: 0.25) : const Color(0xFF38BDF8).withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: qSecsLeft <= 5 ? AppTheme.accentDanger : const Color(0xFF38BDF8),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.timer_outlined,
+                            size: 11,
+                            color: qSecsLeft <= 5 ? AppTheme.accentDanger : const Color(0xFF38BDF8),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${qSecsLeft}s',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: qSecsLeft <= 5 ? AppTheme.accentDanger : const Color(0xFF38BDF8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (_playerAnswerSubmitted)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: (_playerAnswerIsCorrect == true)
+                          ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                          : AppTheme.accentDanger.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      _playerAnswerIsCorrect == true
+                          ? '+${_playerPointsAwarded ?? 500} pts${_triviaPeekPenalties > 0 ? ' (-$_triviaPeekPenalties peek)' : ''}'
+                          : '0 pts',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: _playerAnswerIsCorrect == true ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Question Text
+            Text(
+              currentQ.question,
+              style: const TextStyle(
+                fontSize: 15.5,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                height: 1.35,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            // 4 Fast-Recall Option Tiles (2x2 Grid on desktop / wide screens, stacked on small mobile)
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                final isWide = constraints.maxWidth > 380;
+                final optWidgets = currentQ.options.asMap().entries.map((optEntry) {
+                  final optIdx = optEntry.key;
+                  final optText = optEntry.value;
+                  return _buildPlayerOptionButton(
+                    index: optIdx,
+                    optionText: optText,
+                    currentQ: currentQ,
+                    gameId: game.id,
+                    user: user,
+                  );
+                }).toList();
+
+                if (isWide && optWidgets.length >= 2) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: optWidgets[0]),
+                          const SizedBox(width: 10),
+                          Expanded(child: optWidgets[1]),
+                        ],
+                      ),
+                      if (optWidgets.length > 2) ...[
+                        Row(
+                          children: [
+                            Expanded(child: optWidgets[2]),
+                            const SizedBox(width: 10),
+                            if (optWidgets.length > 3)
+                              Expanded(child: optWidgets[3])
+                            else
+                              const Spacer(),
+                          ],
+                        ),
+                      ],
+                    ],
+                  );
+                } else {
+                  return Column(children: optWidgets);
+                }
+              },
+            ),
+
+            if (_playerAnswerSubmitted) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: (_playerAnswerIsCorrect == true)
+                      ? AppTheme.accentSuccess.withValues(alpha: 0.15)
+                      : AppTheme.accentDanger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _playerAnswerIsCorrect == true ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                      color: _playerAnswerIsCorrect == true ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        _playerAnswerIsCorrect == true
+                            ? 'Spot on! Speed bonus added. Next question coming...'
+                            : 'Incorrect. Answer: ${currentQ.correctAnswer}',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: _playerAnswerIsCorrect == true ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // COMPLETED: Either Question & Answer Review OR Podium Standings
+    if (_showPlayerTriviaReview) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFF6366F1), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+              blurRadius: 14,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.quiz_rounded, color: Color(0xFF818CF8), size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Trivia Questions and Answers',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFFC7D2FE), letterSpacing: 0.5),
+                    ),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: () => setState(() => _showPlayerTriviaReview = false),
+                  icon: const Icon(Icons.workspace_premium_rounded, size: 15, color: Color(0xFFFBBF24)),
+                  label: const Text('Podium 🏆', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                ),
+              ],
+            ),
+            Builder(builder: (ctx) {
+              _fetchPastTriviaAnswersIfNeeded(game.id, user?.id);
+              return const SizedBox.shrink();
+            }),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                final isTwoColumn = constraints.maxWidth > 580;
+                final cards = round.questions.asMap().entries.map((entry) {
+                  final qIdx = entry.key;
+                  final q = entry.value;
+                  final playerPickedIdx = _safePlayerSelectedAnswers[qIdx];
+                  final playerWasCorrect = _safePlayerAnswerCorrectness[qIdx] == true;
+                  final playerScore = _safePlayerQuestionScores[qIdx];
+                  final playerTimeMs = _safePlayerQuestionTimes[qIdx];
+                  return _buildTriviaReviewQuestionCard(
+                    qIdx: qIdx,
+                    q: q,
+                    playerPickedIdx: playerPickedIdx,
+                    playerWasCorrect: playerWasCorrect,
+                    playerScore: playerScore,
+                    playerTimeMs: playerTimeMs,
+                  );
+                }).toList();
+
+                if (isTwoColumn && cards.length >= 2) {
+                  final rows = <Widget>[];
+                  for (int i = 0; i < cards.length; i += 2) {
+                    final left = cards[i];
+                    final right = (i + 1 < cards.length) ? cards[i + 1] : null;
+                    rows.add(
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: left),
+                            const SizedBox(width: 12),
+                            Expanded(child: right ?? const SizedBox.shrink()),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return Column(children: rows);
+                } else {
+                  return Column(
+                    children: cards
+                        .map((c) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: c,
+                            ))
+                        .toList(),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () => setState(() => _showPlayerTriviaReview = false),
+                icon: const Icon(Icons.arrow_back_rounded, size: 16),
+                label: const Text('Back to Official Podium 🏆'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // COMPLETED: Podium Standings
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFBBF24), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+            blurRadius: 14,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.workspace_premium_rounded, color: Color(0xFFFBBF24), size: 24),
+              SizedBox(width: 8),
+              Text(
+                'TRIVIA RECALL PODIUM',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24), letterSpacing: 0.8),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (winners.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('Calculating official trivia standings...', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+              ),
+            )
+          else ...[
+            ...winners.map((w) {
+              final isMe = w.userId == user?.id;
+              Color badgeColor;
+              String emoji;
+              switch (w.rank) {
+                case 1:
+                  badgeColor = const Color(0xFFFBBF24); // Gold
+                  emoji = '🥇';
+                  break;
+                case 2:
+                  badgeColor = const Color(0xFFCBD5E1); // Silver
+                  emoji = '🥈';
+                  break;
+                case 3:
+                  badgeColor = const Color(0xFFF97316); // Bronze
+                  emoji = '🥉';
+                  break;
+                case 4:
+                  badgeColor = const Color(0xFFA78BFA); // Purple / Star
+                  emoji = '🎖️';
+                  break;
+                case 5:
+                  badgeColor = const Color(0xFF38BDF8); // Sky Blue
+                  emoji = '🌟';
+                  break;
+                default:
+                  badgeColor = const Color(0xFF94A3B8); // Slate
+                  emoji = '#${w.rank}';
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isMe ? const Color(0xFF6366F1).withValues(alpha: 0.25) : const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isMe ? const Color(0xFF818CF8) : const Color(0xFF334155),
+                    width: isMe ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(emoji, style: const TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isMe ? '${w.userName} (You)' : w.userName,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: isMe ? Colors.white : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                          Text(
+                            w.title,
+                            style: TextStyle(fontSize: 10, color: badgeColor, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${w.totalScore} pts',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: badgeColor),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 10),
+            Center(
+              child: TextButton.icon(
+                onPressed: () => setState(() => _showPlayerTriviaReview = true),
+                icon: const Icon(Icons.quiz_rounded, size: 16, color: Color(0xFF818CF8)),
+                label: const Text(
+                  'Review Questions & Your Answers 📝',
+                  style: TextStyle(
+                    color: Color(0xFF818CF8),
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayerOptionButton({
+    required int index,
+    required String optionText,
+    required MptTriviaQuestion currentQ,
+    required String gameId,
+    required MptUser? user,
+  }) {
+    Color baseColor;
+    String symbol;
+    switch (index) {
+      case 0:
+        baseColor = const Color(0xFFEF4444);
+        symbol = '▲';
+        break;
+      case 1:
+        baseColor = const Color(0xFF3B82F6);
+        symbol = '◆';
+        break;
+      case 2:
+        baseColor = const Color(0xFFF59E0B);
+        symbol = '●';
+        break;
+      default:
+        baseColor = const Color(0xFF10B981);
+        symbol = '■';
+        break;
+    }
+
+    final isSelected = _playerSelectedOptionIndex == index;
+    final isSubmitted = _playerAnswerSubmitted;
+    final isCorrectOption = _playerCorrectOptionIndex == index;
+
+    Color tileColor = baseColor.withValues(alpha: 0.2);
+    Color borderColor = baseColor.withValues(alpha: 0.6);
+
+    if (isSubmitted) {
+      if (isSelected) {
+        tileColor = (_playerAnswerIsCorrect == true)
+            ? AppTheme.accentSuccess.withValues(alpha: 0.35)
+            : AppTheme.accentDanger.withValues(alpha: 0.35);
+        borderColor = (_playerAnswerIsCorrect == true) ? AppTheme.accentSuccess : AppTheme.accentDanger;
+      } else if (isCorrectOption) {
+        tileColor = AppTheme.accentSuccess.withValues(alpha: 0.25);
+        borderColor = AppTheme.accentSuccess;
+      } else {
+        tileColor = Colors.white.withValues(alpha: 0.04);
+        borderColor = Colors.white.withValues(alpha: 0.1);
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Semantics(
+        label: 'TRIVIA_OPTION_$index: $optionText',
+        button: true,
+        enabled: !isSubmitted && !_isSubmittingTriviaAnswer,
+        child: InkWell(
+        onTap: (isSubmitted || _isSubmittingTriviaAnswer)
+            ? null
+            : () async {
+                setState(() {
+                  _playerSelectedOptionIndex = index;
+                  _isSubmittingTriviaAnswer = true;
+                });
+                final responseTimeMs = DateTime.now().millisecondsSinceEpoch -
+                    (_playerQuestionStartedAtMs > 0 ? _playerQuestionStartedAtMs : DateTime.now().millisecondsSinceEpoch);
+
+                try {
+                  final res = await ref.read(gameplayRepositoryProvider).submitTriviaAnswer(
+                    gameId: gameId,
+                    userId: user?.id ?? 'guest',
+                    userName: user?.displayName ?? 'Player',
+                    userAvatar: user?.avatar,
+                    questionIndex: _lastPlayerSeenQuestionIndex,
+                    selectedOptionIndex: index,
+                    responseTimeMs: responseTimeMs < 100 ? 100 : responseTimeMs,
+                  );
+                  if (mounted) {
+                    final rawPoints = (res['points_awarded'] as num?)?.toInt() ?? 0;
+                    final netPoints = rawPoints > 0 ? (rawPoints - _triviaPeekPenalties).clamp(0, 10000) : 0;
+                    final isCorrect = res['is_correct'] == true;
+                    _safePlayerSelectedAnswers[_lastPlayerSeenQuestionIndex] = index;
+                    _safePlayerAnswerCorrectness[_lastPlayerSeenQuestionIndex] = isCorrect;
+                    _safePlayerQuestionScores[_lastPlayerSeenQuestionIndex] = netPoints;
+                    _safePlayerQuestionTimes[_lastPlayerSeenQuestionIndex] = responseTimeMs;
+                    setState(() {
+                      _playerAnswerSubmitted = true;
+                      _playerAnswerIsCorrect = isCorrect;
+                      _playerPointsAwarded = netPoints;
+                      _playerCorrectOptionIndex = (res['correct_index'] as num?)?.toInt() ?? currentQ.correctIndex;
+                      _isSubmittingTriviaAnswer = false;
+                    });
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    final rawPoints = index == currentQ.correctIndex ? 500 : 0;
+                    final netPoints = rawPoints > 0 ? (rawPoints - _triviaPeekPenalties).clamp(0, 10000) : 0;
+                    final isCorrect = index == currentQ.correctIndex;
+                    _safePlayerSelectedAnswers[_lastPlayerSeenQuestionIndex] = index;
+                    _safePlayerAnswerCorrectness[_lastPlayerSeenQuestionIndex] = isCorrect;
+                    _safePlayerQuestionScores[_lastPlayerSeenQuestionIndex] = netPoints;
+                    _safePlayerQuestionTimes[_lastPlayerSeenQuestionIndex] = responseTimeMs;
+                    setState(() {
+                      _isSubmittingTriviaAnswer = false;
+                      _playerAnswerSubmitted = true;
+                      _playerAnswerIsCorrect = isCorrect;
+                      _playerPointsAwarded = netPoints;
+                      _playerCorrectOptionIndex = currentQ.correctIndex;
+                    });
+                  }
+                }
+              },
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color: tileColor,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor, width: isSelected ? 2.0 : 1.2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: baseColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  symbol,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  optionText,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  _playerAnswerIsCorrect == true ? Icons.check_circle_rounded : Icons.radio_button_checked_rounded,
+                  color: borderColor,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+  }
+
+  Widget _buildTriviaReviewQuestionCard({
+    required int qIdx,
+    required MptTriviaQuestion q,
+    required int? playerPickedIdx,
+    required bool playerWasCorrect,
+    int? playerScore,
+    int? playerTimeMs,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: playerWasCorrect
+              ? AppTheme.accentSuccess.withValues(alpha: 0.5)
+              : (playerPickedIdx != null ? AppTheme.accentDanger.withValues(alpha: 0.4) : const Color(0xFF334155)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Q${qIdx + 1} • ${q.categoryName.toUpperCase()}',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+              ),
+              if (playerPickedIdx != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: playerWasCorrect
+                        ? AppTheme.accentSuccess.withValues(alpha: 0.2)
+                        : AppTheme.accentDanger.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: playerWasCorrect
+                          ? AppTheme.accentSuccess.withValues(alpha: 0.5)
+                          : AppTheme.accentDanger.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        playerWasCorrect ? '✅ Correct' : '❌ Missed',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: playerWasCorrect ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                        ),
+                      ),
+                      if (playerScore != null && playerTimeMs != null) ...[
+                        const SizedBox(width: 5),
+                        Text(
+                          playerWasCorrect
+                              ? '+$playerScore pts (${(playerTimeMs / 1000).toStringAsFixed(1)}s)'
+                              : '0 pts (${(playerTimeMs / 1000).toStringAsFixed(1)}s)',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: playerWasCorrect ? const Color(0xFF86EFAC) : const Color(0xFFFCA5A5),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                )
+              else
+                const Text('⏳ No response', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            q.question,
+            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          ...q.options.asMap().entries.map((optEntry) {
+            final optIdx = optEntry.key;
+            final optText = optEntry.value;
+            final isCorrect = optIdx == q.correctIndex;
+            final isPlayerChoice = optIdx == playerPickedIdx;
+
+            Color tileBg = Colors.white.withValues(alpha: 0.03);
+            Color borderColor = Colors.white.withValues(alpha: 0.08);
+            String badge = '';
+
+            if (isCorrect && isPlayerChoice) {
+              tileBg = AppTheme.accentSuccess.withValues(alpha: 0.25);
+              borderColor = AppTheme.accentSuccess;
+              badge = '🎯 Your Pick (Correct!)';
+            } else if (isCorrect) {
+              tileBg = AppTheme.accentSuccess.withValues(alpha: 0.18);
+              borderColor = AppTheme.accentSuccess.withValues(alpha: 0.8);
+              badge = '✅ Correct Answer';
+            } else if (isPlayerChoice) {
+              tileBg = AppTheme.accentDanger.withValues(alpha: 0.2);
+              borderColor = AppTheme.accentDanger;
+              badge = '❌ Your Pick';
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: tileBg,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: borderColor, width: (isCorrect || isPlayerChoice) ? 1.4 : 1.0),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      optText,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: (isCorrect || isPlayerChoice) ? FontWeight.bold : FontWeight.normal,
+                        color: isCorrect ? AppTheme.accentSuccess : (isPlayerChoice ? AppTheme.accentDanger : const Color(0xFFCBD5E1)),
+                      ),
+                    ),
+                  ),
+                  if (badge.isNotEmpty)
+                    Text(
+                      badge,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: isCorrect ? AppTheme.accentSuccess : AppTheme.accentDanger,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  void _handlePeekTicket() {
+    setState(() {
+      _isPeekingTicket = true;
+      _triviaPeekPenalties += 150;
+    });
+    _peekTicketTimer?.cancel();
+    _peekTicketTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _isPeekingTicket = false;
+        });
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚠️ Ticket visible for 5s! -150 pts memory penalty deducted.'),
+        backgroundColor: AppTheme.accentDanger,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _handlePeekClaims() {
+    setState(() {
+      _isPeekingClaims = true;
+      _triviaPeekPenalties += 200;
+    });
+    _peekClaimsTimer?.cancel();
+    _peekClaimsTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _isPeekingClaims = false;
+        });
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('⚠️ Claims & Recent Calls visible for 5s! -200 pts memory penalty deducted.'),
+        backgroundColor: Color(0xFFF59E0B),
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Widget _buildPeekingActiveBanner({required bool isTicket}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppTheme.accentDanger.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.accentDanger),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: AppTheme.accentDanger, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            isTicket
+                ? '⚠️ PEEKING ACTIVE (-150 PTS) • Re-locking in 5s'
+                : '⚠️ PEEKING ACTIVE (-200 PTS) • Re-locking in 5s',
+            style: const TextStyle(
+              color: AppTheme.accentDanger,
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConcealedTicketRecallCard({required VoidCallback onPeek}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.lock_clock_rounded, color: Color(0xFF818CF8), size: 36),
+          const SizedBox(height: 8),
+          const Text(
+            '🔒 TICKET NUMBERS CONCEALED',
+            style: TextStyle(
+              color: Color(0xFFC7D2FE),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Memory Recall in progress! Rely on your memory to answer recall questions.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onPeek,
+            icon: const Icon(Icons.visibility_rounded, size: 16),
+            label: const Text('Peek at Ticket (-150 pts penalty)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.9),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConcealedWinnersRecallCard({required VoidCallback onPeek}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.visibility_off_rounded, color: Color(0xFFFBBF24), size: 36),
+          const SizedBox(height: 8),
+          const Text(
+            '🔒 CLAIMS & DRAWN BALLS CONCEALED',
+            style: TextStyle(
+              color: Color(0xFFFDE68A),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Recall who claimed which prize and recent balls from memory!',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: onPeek,
+            icon: const Icon(Icons.remove_red_eye_rounded, size: 16),
+            label: const Text('Peek at Claims & Balls (-200 pts penalty)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF59E0B),
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPlayerIdentityBanner(
     MptUser? user,
     MptTicket ticket, {
@@ -1911,6 +3252,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     int totalPlayers = 1,
     bool isCompact = false,
     bool isGameEnded = false,
+    bool hidePlayerCount = false,
   }) {
     final emoji = Formatters.getAvatarEmoji(user?.avatar);
     final name =
@@ -2010,7 +3352,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '$totalPlayers Players',
+                  hidePlayerCount ? '? Players' : '$totalPlayers Players',
                   style: TextStyle(
                     fontSize: isCompact ? 10.5 : 11.5,
                     fontWeight: FontWeight.bold,
@@ -2050,18 +3392,23 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
     BuildContext? context,
     bool isCompact = false,
     DateTime? latestCalledAt,
+    bool isTriviaActive = false,
+    bool isTriviaCompleted = false,
+    int callIntervalSeconds = 15,
   }) {
     if (isGameEnded) {
       final accentColor = isCancelledOrNoWinners
           ? const Color(0xFFF87171)
-          : AppTheme.secondaryColor;
+          : (isTriviaActive ? const Color(0xFF818CF8) : AppTheme.secondaryColor);
       return Container(
         padding: EdgeInsets.all(isCompact ? 12 : 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: isCancelledOrNoWinners
                 ? const [Color(0xFF331B26), Color(0xFF1E1B2E)]
-                : const [Color(0xFF4338CA), Color(0xFF1E1B4B)],
+                : (isTriviaActive
+                    ? const [Color(0xFF312E81), Color(0xFF1E1B4B)]
+                    : const [Color(0xFF4338CA), Color(0xFF1E1B4B)]),
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -2083,7 +3430,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 Icon(
                   isCancelledOrNoWinners
                       ? Icons.cancel_outlined
-                      : Icons.celebration,
+                      : (isTriviaActive ? Icons.psychology_rounded : Icons.celebration),
                   color: accentColor,
                   size: 22,
                 ),
@@ -2092,7 +3439,9 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                   child: Text(
                     isCancelledOrNoWinners
                         ? 'GAME CANCELLED / ENDED WITHOUT WINNERS 🚫'
-                        : 'GAME CONCLUDED 🎉',
+                        : (isTriviaActive
+                            ? 'CLASSIC GAME COMPLETED • TRIVIA FOLLOWS 🧠'
+                            : 'GAME CONCLUDED 🎉'),
                     style: TextStyle(
                       fontSize: isCompact ? 14 : 17,
                       fontWeight: FontWeight.w900,
@@ -2108,9 +3457,11 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
             Text(
               isCancelledOrNoWinners
                   ? 'This game was cancelled or ended early without any prize winners.'
-                  : (totalCalled >= 90
-                        ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
-                        : 'Game concluded across $totalPlayers players! Check your rewards below.'),
+                  : (isTriviaActive
+                      ? 'Classic game completed. Corporate Recall Trivia follows below! Put your memory to the test.'
+                      : (totalCalled >= 90
+                          ? 'All 90 numbers called across $totalPlayers players! Prize claiming is now finalized.'
+                          : 'Game concluded across $totalPlayers players! Check your rewards below.')),
               style: TextStyle(
                 fontSize: isCompact ? 11.5 : 13,
                 color: Colors.white,
@@ -2118,47 +3469,49 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                if (context != null && !isCancelledOrNoWinners)
-                  ElevatedButton.icon(
-                    onPressed: () => context.push('/rewards'),
-                    icon: const Icon(Icons.emoji_events, size: 16),
-                    label: const Text('View My Rewards 🏆'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.secondaryColor,
-                      foregroundColor: AppTheme.primaryDark,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+            if (!isTriviaActive || isTriviaCompleted) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  if (context != null && !isCancelledOrNoWinners)
+                    ElevatedButton.icon(
+                      onPressed: () => context.push('/rewards'),
+                      icon: const Icon(Icons.emoji_events, size: 16),
+                      label: const Text('View My Rewards 🏆'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: AppTheme.primaryDark,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
-                  ),
-                if (context != null)
-                  OutlinedButton.icon(
-                    onPressed: () => context.go('/'),
-                    icon: const Icon(Icons.home_rounded, size: 16),
-                    label: const Text('Return Home'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white54),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                  if (context != null)
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/'),
+                      icon: const Icon(Icons.home_rounded, size: 16),
+                      label: const Text('Return Home'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white54),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        textStyle: const TextStyle(fontSize: 12),
                       ),
-                      textStyle: const TextStyle(fontSize: 12),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       );
@@ -2216,7 +3569,7 @@ class _PlayerTicketScreenState extends ConsumerState<PlayerTicketScreen> {
                 Builder(
                   builder: (_) {
                     final elapsed = DateTime.now().difference(latestCalledAt).inSeconds;
-                    final secsLeft = (15 - elapsed).clamp(0, 15);
+                    final secsLeft = (callIntervalSeconds - elapsed).clamp(0, callIntervalSeconds);
                     return Container(
                       margin: const EdgeInsets.only(top: 4),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

@@ -7,6 +7,7 @@ import '../models/mpt_called_number.dart';
 import '../models/mpt_capacity_tier.dart';
 import '../models/mpt_claim.dart';
 import '../models/mpt_game.dart';
+import '../models/mpt_game_trivia.dart';
 import '../models/mpt_registration.dart';
 import '../models/mpt_reward.dart';
 import '../models/mpt_seat_otp.dart';
@@ -185,6 +186,11 @@ final playerTicketProvider = FutureProvider.autoDispose.family<MptTicket, String
   return ref.watch(gameplayRepositoryProvider).getOrCreatePlayerTicket(gameId);
 });
 
+// Quick Dabby Ticket Pool Provider (Unique numbers present across all player tickets)
+final gameTicketPoolProvider = FutureProvider.autoDispose.family<Set<int>, String>((ref, gameId) async {
+  return ref.watch(gameplayRepositoryProvider).getGameTicketNumbersPool(gameId);
+});
+
 // My Rewards Provider
 final myRewardsProvider = FutureProvider.autoDispose<List<MptReward>>((ref) async {
   return ref.watch(rewardsRepositoryProvider).getMyRewards();
@@ -239,5 +245,15 @@ final currentAdminRoleProvider = FutureProvider.autoDispose<Map<String, dynamic>
 final adminReportsOverviewProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   return ref.watch(adminReportsRepositoryProvider).getReportsOverview();
 });
+
+// Post-Game Corporate Recall Trivia Providers
+final gameTriviaRoundStreamProvider = StreamProvider.autoDispose.family<MptGameTriviaRound?, String>((ref, gameId) {
+  return ref.watch(gameplayRepositoryProvider).watchGameTriviaRound(gameId);
+});
+
+final gameTriviaWinnersStreamProvider = StreamProvider.autoDispose.family<List<MptTriviaWinner>, String>((ref, gameId) {
+  return ref.watch(gameplayRepositoryProvider).watchGameTriviaWinners(gameId);
+});
+
 
 

@@ -145,6 +145,17 @@ class GameRepository {
         .eq('id', gameId);
   }
 
+  /// Updates the calling mode of a game ('CLASSIC' or 'QUICK_DABBY')
+  Future<void> updateCallingMode(String gameId, String newMode) async {
+    final game = await getGame(gameId);
+    final updatedPrizeGifts = Map<String, dynamic>.from(game.prizeGiftsConfig);
+    updatedPrizeGifts['_calling_mode'] = newMode;
+    await _supabase
+        .from('MPT_games')
+        .update({'prize_gifts_config': updatedPrizeGifts})
+        .eq('id', gameId);
+  }
+
   /// Updates or clears the schedule and Dabby orchestration config for a game
   Future<void> updateGameSchedule({
     required String gameId,

@@ -2177,11 +2177,21 @@
         }
 
         const isSkill = isSkillGame(g);
-        const cardClass = isSkill ? 'game-card skill-game' : 'game-card';
-        const modeBadge = isSkill ? '<div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div>' : '';
+        const isQuick = !isSkill && (
+          String(g.calling_mode || '').toUpperCase() === 'QUICK_DABBY' ||
+          (g.prize_gifts_config && String(g.prize_gifts_config._calling_mode || '').toUpperCase() === 'QUICK_DABBY')
+        );
+        const cardClass = isSkill ? 'game-card skill-game' : (isQuick ? 'game-card quick-dabby-game' : 'game-card');
+        const modeBadge = isSkill
+          ? '<div class="skill-mode-badge">⚡ Skill Game • FlashHousie™</div>'
+          : (isQuick
+              ? '<div class="skill-mode-badge" style="background: rgba(245, 158, 11, 0.16); color: #FBBF24; border-color: rgba(245, 158, 11, 0.5);">⚡ Quick Dabby (Fast Play)</div>'
+              : '');
         const callsMeta = isSkill
           ? `<div class="game-meta-item skill-meta">⚡ <strong>3 Flash Rounds</strong></div>`
-          : `<div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>`;
+          : (isQuick
+              ? `<div class="game-meta-item" style="color: #FBBF24;">⚡ <strong>${balls} Calls (Fast Pool)</strong></div>`
+              : `<div class="game-meta-item">🎱 <strong>${balls}/90 Calls</strong></div>`);
 
         html += `
           <div class="${cardClass}">

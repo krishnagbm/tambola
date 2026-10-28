@@ -316,6 +316,7 @@ class DabhousieCorporateUspCard extends StatelessWidget {
             runSpacing: 6,
             children: [
               _buildBadge('🎟️ 1 Ticket = Fair Odds'),
+              _buildBadge('🧠 Cognitive Recall Trivia'),
               _buildBadge('🎮 Host Plays Too'),
               _buildBadge('🔒 Host OTP Security'),
               _buildBadge('🛡️ Quorum Protected'),

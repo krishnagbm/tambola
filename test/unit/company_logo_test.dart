@@ -25,13 +25,13 @@ void main() {
       );
       expect(url, 'https://img.logo.dev/apple.com?format=png&size=256&token=pk_test_123');
 
-      // Test size clamping (min 16, max 800)
+      // Test size clamping (min 256 for crisp rendering, max 800)
       final urlSmall = CompanyLogo.buildLogoUrl(
         domain: 'apple.com',
         token: 'pk_test_123',
         size: 5,
       );
-      expect(urlSmall, contains('&size=16'));
+      expect(urlSmall, contains('&size=256'));
 
       final urlLarge = CompanyLogo.buildLogoUrl(
         domain: 'apple.com',

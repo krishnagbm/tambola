@@ -51,6 +51,7 @@ class _AdminGameControlScreenState
   int _autoEndSecondsLeft = 0;
   Timer? _autoEndTimer;
   Timer? _neuroWaveUiTimer;
+  Timer? _gameDurationTicker;
   NeuroWavePhase? _lastNeuroPhase;
   bool _isAutoFinalizingGrandWinners = false;
   int _all90GraceSecondsLeft = 0;
@@ -60,6 +61,9 @@ class _AdminGameControlScreenState
   @override
   void initState() {
     super.initState();
+    final initialPace = ref.read(gameStreamProvider(widget.gameId)).value?.callIntervalSeconds ?? 15;
+    _autoCallIntervalSeconds = initialPace;
+    _countdownSecondsLeft = initialPace;
     _isMuted = TambolaAudioCaller().isMuted;
     _neuroWaveUiTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
       if (!mounted) return;
@@ -73,6 +77,13 @@ class _AdminGameControlScreenState
           _lastNeuroPhase = neuro.phase;
           setState(() {});
         }
+      }
+    });
+    _gameDurationTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final game = ref.read(gameStreamProvider(widget.gameId)).value;
+      if (game != null && game.startedAt != null && !game.isCompleted) {
+        setState(() {});
       }
     });
     if (widget.autoPilot) {
@@ -106,6 +117,7 @@ class _AdminGameControlScreenState
   @override
   void dispose() {
     _neuroWaveUiTimer?.cancel();
+    _gameDurationTicker?.cancel();
     _autoCallTimer?.cancel();
     _celebrationTimer?.cancel();
     _autoEndTimer?.cancel();
@@ -120,6 +132,7 @@ class _AdminGameControlScreenState
       _isAutoPilotPaused = false;
       _countdownSecondsLeft = _autoCallIntervalSeconds;
     });
+    ref.read(gameplayRepositoryProvider).updateCallPace(widget.gameId, _autoCallIntervalSeconds);
 
     _autoCallTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -194,6 +207,7 @@ class _AdminGameControlScreenState
         _countdownSecondsLeft = seconds;
       }
     });
+    ref.read(gameplayRepositoryProvider).updateCallPace(widget.gameId, seconds);
   }
 
   void _triggerCelebrationPause(String message) {
@@ -247,10 +261,178 @@ class _AdminGameControlScreenState
               '🏆 All prizes won! Game concluded and final results published.',
             ),
             backgroundColor: AppTheme.accentSuccess,
+            duration: Duration(seconds: 4),
           ),
         );
+        _showPostGameConclusionDialog();
       }
     } catch (_) {}
+  }
+
+  void _showPostGameConclusionDialog() {
+    if (!mounted) return;
+    final game = ref.read(gameStreamProvider(widget.gameId)).value;
+    final calledNumbers = ref.read(calledNumbersStreamProvider(widget.gameId)).value ?? [];
+    final isQuick = game?.isQuickDabby == true;
+    final callsMade = calledNumbers.length;
+
+    String finalDurationStr = '--';
+    if (game?.startedAt != null) {
+      final endTime = game!.completedAt ?? DateTime.now();
+      final diff = endTime.difference(game.startedAt!);
+      if (!diff.isNegative) {
+        final m = diff.inMinutes;
+        final s = diff.inSeconds % 60;
+        finalDurationStr = m > 0 ? '${m}m ${s}s' : '${s}s';
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppTheme.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppTheme.secondaryColor, width: 1.5),
+        ),
+        title: Row(
+          children: const [
+            Icon(Icons.emoji_events_rounded, color: AppTheme.secondaryColor, size: 28),
+            SizedBox(width: 10),
+            Text(
+              'Game Concluded! 🏆',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'All configured prizes have been won and verified! The game is now concluded and results are archived.',
+              style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(
+                    children: [
+                      const Text(
+                        'TOTAL TIME',
+                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.timer_outlined, size: 14, color: AppTheme.secondaryColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            finalDurationStr,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Container(width: 1, height: 28, color: const Color(0xFF334155)),
+                  Column(
+                    children: [
+                      const Text(
+                        'CALLING MODE',
+                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isQuick ? '⚡ Quick Dabby' : '🎲 Classic 1–90',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: isQuick ? const Color(0xFFFBBF24) : Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(width: 1, height: 28, color: const Color(0xFF334155)),
+                  Column(
+                    children: [
+                      const Text(
+                        'DRAWS',
+                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '$callsMade Calls',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+                ),
+              ),
+              child: const Text(
+                'Auto-Pilot has concluded. You remain in Game Control to inspect the final called numbers board and winner claims. You can switch to the Live TV Display or return to your Dashboard whenever you choose.',
+                style: TextStyle(color: Color(0xFFA0AEC0), fontSize: 13),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Stay on Board', style: TextStyle(color: Color(0xFFA0AEC0))),
+          ),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.push('/live-display/${widget.gameId}');
+            },
+            icon: const Icon(Icons.tv, size: 18),
+            label: const Text('Live TV Display'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.secondaryColor,
+              side: const BorderSide(color: AppTheme.secondaryColor),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context.go('/');
+            },
+            icon: const Icon(Icons.dashboard_rounded, size: 18),
+            label: const Text('Dashboard'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              foregroundColor: AppTheme.primaryDark,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _startAll90GraceCountdown() {
@@ -640,7 +822,7 @@ class _AdminGameControlScreenState
           ),
         ),
       );
-      context.go('/');
+      _showPostGameConclusionDialog();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -709,6 +891,308 @@ class _AdminGameControlScreenState
             child: const Text('Save'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showChangeCallingModeDialog(MptGame game) {
+    final calledStream = ref.read(calledNumbersStreamProvider(widget.gameId));
+    final hasStarted = calledStream.value?.isNotEmpty ?? false;
+
+    if (hasStarted) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.lock_clock_rounded, color: AppTheme.secondaryColor),
+              SizedBox(width: 8),
+              Text('Calling Mode Locked', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Text(
+            'The number draw has already begun for this game. Calling mode (${game.isQuickDabby ? "Quick Dabby" : "Classic Calling"}) cannot be changed mid-game to ensure fairness.',
+            style: const TextStyle(fontSize: 13, color: Color(0xFFCBD5E1)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    String selectedMode = game.callingMode;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.speed_rounded, color: AppTheme.secondaryColor),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Select Calling Mode',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Choose the draw engine before calling begins:',
+                  style: TextStyle(fontSize: 12, color: Color(0xFFA0AEC0)),
+                ),
+                const SizedBox(height: 12),
+
+                // Option 1: Classic Game
+                _buildCallingModeRadioTile(
+                  isSelected: selectedMode == 'CLASSIC',
+                  title: 'Classic Game (1–90)',
+                  badgeText: 'Default',
+                  icon: Icons.casino_outlined,
+                  description: 'Traditional 90-ball calling drawn randomly from the complete 1–90 pool.',
+                  onTap: () {
+                    setDialogState(() => selectedMode = 'CLASSIC');
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // Option 2: Quick Dabby
+                _buildCallingModeRadioTile(
+                  isSelected: selectedMode == 'QUICK_DABBY',
+                  title: 'Quick Dabby ⚡',
+                  badgeText: 'Fast Play',
+                  badgeColor: AppTheme.secondaryColor,
+                  icon: Icons.bolt_rounded,
+                  description: 'Draws only from numbers on participating tickets to eliminate idle waiting time.',
+                  onTap: () {
+                    setDialogState(() => selectedMode = 'QUICK_DABBY');
+                  },
+                ),
+                const SizedBox(height: 10),
+
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF1E293B)),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF94A3B8)),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Quick Dabby may reduce calling time by up to 50% for smaller groups. Player tickets and prize claims remain 100% fair and identical.',
+                          style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8), height: 1.3),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF94A3B8))),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                if (selectedMode != game.callingMode) {
+                  try {
+                    await ref
+                        .read(gameRepositoryProvider)
+                        .updateCallingMode(widget.gameId, selectedMode);
+                    ref.invalidate(gameStreamProvider(widget.gameId));
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          selectedMode == 'QUICK_DABBY'
+                              ? '⚡ Switched to Quick Dabby mode!'
+                              : '🎯 Switched to Classic 90-ball calling mode!',
+                        ),
+                        backgroundColor: AppTheme.accentSuccess,
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to update calling mode: $e'),
+                        backgroundColor: AppTheme.accentDanger,
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.secondaryColor,
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('Save Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCallingModeBadge(MptGame game, bool canEdit) {
+    final isQuick = game.isQuickDabby;
+    final badgeColor = isQuick ? AppTheme.secondaryColor : const Color(0xFF38BDF8);
+
+    return InkWell(
+      onTap: () => _showChangeCallingModeDialog(game),
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        decoration: BoxDecoration(
+          color: badgeColor.withValues(alpha: 0.16),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: badgeColor.withValues(alpha: 0.5),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isQuick ? Icons.bolt_rounded : Icons.casino_outlined,
+              size: 12,
+              color: badgeColor,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isQuick ? 'Quick Dabby ⚡' : 'Classic 1–90',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: badgeColor,
+              ),
+            ),
+            if (canEdit) ...[
+              const SizedBox(width: 2),
+              Icon(
+                Icons.arrow_drop_down,
+                size: 13,
+                color: badgeColor,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCallingModeRadioTile({
+    required bool isSelected,
+    required String title,
+    required String description,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? badgeText,
+    Color? badgeColor,
+  }) {
+    final effectiveColor = badgeColor ?? AppTheme.secondaryColor;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? effectiveColor.withValues(alpha: 0.12)
+              : const Color(0xFF1E2235),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? effectiveColor : const Color(0xFF2E334D),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                size: 16,
+                color: isSelected ? effectiveColor : const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, size: 15, color: isSelected ? effectiveColor : const Color(0xFFA0AEC0)),
+                      const SizedBox(width: 5),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      if (badgeText != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: (badgeColor ?? const Color(0xFF64748B)).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: badgeColor ?? const Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: Color(0xFF94A3B8),
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1302,6 +1786,8 @@ class _AdminGameControlScreenState
     final claimsStream = ref.watch(claimsStreamProvider(widget.gameId));
     final gameStream = ref.watch(gameStreamProvider(widget.gameId));
     final regStream = ref.watch(registrationsStreamProvider(widget.gameId));
+    final ticketPoolAsync = ref.watch(gameTicketPoolProvider(widget.gameId));
+    final quickPool = ticketPoolAsync.value ?? const <int>{};
 
     final game = gameStream.value;
     final registrations = regStream.value ?? [];
@@ -1541,7 +2027,9 @@ class _AdminGameControlScreenState
               ? (flashCfg!.isLastCycle &&
                   activeFlashCycle!.isCompleted &&
                   flashCfg.awardedWinners.containsKey('FULL_HOUSE'))
-              : calledNumbers.length >= 90;
+              : (game?.isQuickDabby == true && quickPool.isNotEmpty)
+                  ? calledNumbers.length >= quickPool.length
+                  : calledNumbers.length >= 90;
           final disableCalling =
               _isCalling ||
               isMaxNumbers ||
@@ -1653,6 +2141,7 @@ class _AdminGameControlScreenState
                                   effectiveCalledCount,
                                   calledNumbers,
                                   isGameCompleted,
+                                  quickPool,
                                 ),
                                 if (game?.isFlashHousie == true) ...[
                                   const SizedBox(height: 8),
@@ -1671,7 +2160,11 @@ class _AdminGameControlScreenState
                                   iconSize: 24,
                                 ),
                                 const SizedBox(height: 8),
-                                _buildMasterBoard(calledSet, game: game),
+                                _buildMasterBoard(
+                                  calledSet,
+                                  game: game,
+                                  quickPool: quickPool,
+                                ),
                               ],
                             ),
                           ),
@@ -1750,6 +2243,7 @@ class _AdminGameControlScreenState
                                       effectiveCalledCount,
                                       calledNumbers,
                                       isGameCompleted,
+                                      quickPool,
                                     ),
                                     if (game?.isFlashHousie == true) ...[
                                       const SizedBox(height: 12),
@@ -1768,7 +2262,11 @@ class _AdminGameControlScreenState
                                       iconSize: 28,
                                     ),
                                     const SizedBox(height: 16),
-                                    _buildMasterBoard(calledSet, game: game),
+                                    _buildMasterBoard(
+                                      calledSet,
+                                      game: game,
+                                      quickPool: quickPool,
+                                    ),
                                     const SizedBox(height: 16),
                                     OutlinedButton.icon(
                                       onPressed: isGameCompleted
@@ -1868,6 +2366,7 @@ class _AdminGameControlScreenState
                           effectiveCalledCount,
                           calledNumbers,
                           isGameCompleted,
+                          quickPool,
                         ),
                         if (game?.isFlashHousie == true) ...[
                           const SizedBox(height: 12),
@@ -1886,7 +2385,11 @@ class _AdminGameControlScreenState
                           iconSize: 28,
                         ),
                         const SizedBox(height: 16),
-                        _buildMasterBoard(calledSet, game: game),
+                        _buildMasterBoard(
+                          calledSet,
+                          game: game,
+                          quickPool: quickPool,
+                        ),
                         const SizedBox(height: 16),
                         _buildClaimsQueue(
                           claimsStream,
@@ -2474,6 +2977,8 @@ class _AdminGameControlScreenState
                                 color: Color(0xFFCBD5E1),
                               ),
                             ),
+                            _buildPacePresetChip('4s Turbo', 4),
+                            const SizedBox(width: 3),
                             _buildPacePresetChip('8s Fast', 8),
                             const SizedBox(width: 3),
                             _buildPacePresetChip('15s Std', 15),
@@ -3308,25 +3813,34 @@ class _AdminGameControlScreenState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Capacity Tier Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.5),
-                    width: 0.8,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Capacity Tier Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      isFreeTier ? '5-Player (Free)' : '$capacity-Member Game',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryColor,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  isFreeTier ? '5-Player (Free)' : '$capacity-Member Game',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.secondaryColor,
-                  ),
-                ),
+                  if (game != null) ...[
+                    const SizedBox(width: 6),
+                    _buildCallingModeBadge(game, !isGameCompleted),
+                  ],
+                ],
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -3578,6 +4092,8 @@ class _AdminGameControlScreenState
   }
 
   Widget _buildPreGameBanner(MptGame? game, int confirmedCount) {
+    final isQuick = game?.isQuickDabby == true;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -3587,39 +4103,132 @@ class _AdminGameControlScreenState
           color: AppTheme.accentSuccess.withValues(alpha: 0.6),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(
-            Icons.campaign_outlined,
-            color: AppTheme.accentSuccess,
-            size: 26,
+          Row(
+            children: [
+              const Icon(
+                Icons.campaign_outlined,
+                color: AppTheme.accentSuccess,
+                size: 26,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Game is Ready to Start! 🎲',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.accentSuccess,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      confirmedCount > 0
+                          ? '$confirmedCount players are in the game. When everyone is ready with their tickets, tap "CALL FIRST NUMBER" below to begin!'
+                          : 'Invite your players first. When they have joined, tap "CALL FIRST NUMBER" below to begin drawing balls.',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFFCBD5E1),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Game is Ready to Start! 🎲',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.accentSuccess,
-                  ),
+          if (game != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A).withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isQuick
+                      ? AppTheme.secondaryColor.withValues(alpha: 0.5)
+                      : const Color(0xFF334155),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  confirmedCount > 0
-                      ? '$confirmedCount players are in the game. When everyone is ready with their tickets, tap "CALL FIRST NUMBER" below to begin!'
-                      : 'Invite your players first. When they have joined, tap "CALL FIRST NUMBER" below to begin drawing balls.',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFFCBD5E1),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isQuick ? Icons.bolt_rounded : Icons.casino_outlined,
+                    size: 18,
+                    color: isQuick ? AppTheme.secondaryColor : const Color(0xFF60A5FA),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              isQuick ? 'Quick Dabby Mode ⚡' : 'Classic Mode (1–90)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isQuick ? AppTheme.secondaryColor : Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: isQuick
+                                    ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                    : const Color(0xFF1E293B),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                isQuick ? 'Fast Play' : 'Standard',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: isQuick ? AppTheme.secondaryColor : const Color(0xFF94A3B8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isQuick
+                              ? 'Draws numbers only from active player tickets for faster play.'
+                              : 'Draws numbers randomly from the complete 1–90 tambola pool.',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _showChangeCallingModeDialog(game),
+                    icon: const Icon(Icons.tune_rounded, size: 13),
+                    label: const Text('Change Mode', style: TextStyle(fontSize: 11)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: isQuick ? AppTheme.secondaryColor : Colors.white,
+                      side: BorderSide(
+                        color: isQuick
+                            ? AppTheme.secondaryColor.withValues(alpha: 0.8)
+                            : const Color(0xFF64748B),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -3792,6 +4401,7 @@ class _AdminGameControlScreenState
     int totalCalled, [
     List<MptCalledNumber>? calledNumbers,
     bool isGameCompleted = false,
+    Set<int> quickPool = const <int>{},
   ]) {
     final isFlash =
         game?.isFlashHousie == true && game?.flashHousieConfig != null;
@@ -3802,14 +4412,27 @@ class _AdminGameControlScreenState
         : ((calledNumbers != null && calledNumbers.isNotEmpty)
               ? calledNumbers.reversed.skip(1).take(6).map((e) => e.number).toList()
               : <int>[]);
+    final isQuick = game?.isQuickDabby == true;
     final maxPoolCount = isFlash
         ? (activeFlashCycle?.drawPool.length ?? 8)
-        : 90;
+        : (isQuick && quickPool.isNotEmpty ? quickPool.length : 90);
     final countLabel = isFlash
         ? '${activeFlashCycle?.roundBadgeLabel ?? "Round"} Pool Called'
-        : 'Total Called';
+        : (isQuick ? 'Active Pool Called' : 'Total Called');
     final capacity = game?.fundedCapacity ?? 5;
     final isFreeTier = capacity <= 5;
+
+    // Elapsed / Final Duration
+    String durationDisplay = '00:00';
+    if (game?.startedAt != null) {
+      final endTime = game!.completedAt ?? DateTime.now();
+      final diff = endTime.difference(game.startedAt!);
+      if (!diff.isNegative) {
+        final m = diff.inMinutes;
+        final s = diff.inSeconds % 60;
+        durationDisplay = '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      }
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -3894,6 +4517,8 @@ class _AdminGameControlScreenState
                     ),
                   ),
                 ),
+                const SizedBox(width: 6),
+                _buildCallingModeBadge(game, totalCalled == 0 && !isGameCompleted),
               ],
             ),
             const SizedBox(height: 8),
@@ -3922,6 +4547,65 @@ class _AdminGameControlScreenState
                       fontWeight: FontWeight.w900,
                       color: AppTheme.secondaryColor,
                       height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+              // Game Time Counter
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    isGameCompleted ? 'FINAL TIME' : 'GAME TIME',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.6,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: isGameCompleted
+                          ? const Color(0xFF38BDF8).withValues(alpha: 0.15)
+                          : const Color(0xFF1E293B),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isGameCompleted
+                            ? const Color(0xFF38BDF8).withValues(alpha: 0.5)
+                            : const Color(0xFF334155),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.timer_outlined,
+                          size: 15,
+                          color: isGameCompleted ? const Color(0xFF38BDF8) : AppTheme.secondaryColor,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          durationDisplay,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: isGameCompleted ? const Color(0xFF38BDF8) : Colors.white,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isQuick ? '⚡ Quick Dabby' : '🎲 Classic 1–90',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: isQuick ? const Color(0xFFFBBF24) : const Color(0xFF94A3B8),
                     ),
                   ),
                 ],
@@ -4012,11 +4696,18 @@ class _AdminGameControlScreenState
     );
   }
 
-  Widget _buildMasterBoard(Set<int> calledSet, {MptGame? game}) {
+  Widget _buildMasterBoard(
+    Set<int> calledSet, {
+    MptGame? game,
+    Set<int> quickPool = const {},
+  }) {
     final isFlash =
         game?.isFlashHousie == true && game?.flashHousieConfig != null;
     final activeFlashCycle = game?.flashHousieConfig?.activeCycleSpec;
-    final maxPool = isFlash ? (activeFlashCycle?.drawPool.length ?? 8) : 90;
+    final isQuick = game?.isQuickDabby == true;
+    final maxPool = isFlash
+        ? (activeFlashCycle?.drawPool.length ?? 8)
+        : (isQuick && quickPool.isNotEmpty ? quickPool.length : 90);
 
     return Card(
       child: Padding(
@@ -4028,14 +4719,47 @@ class _AdminGameControlScreenState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  isFlash
-                      ? 'Master Board (1–90) • ${activeFlashCycle?.roundBadgeLabel ?? "Round"}'
-                      : 'Master Board (1–90)',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isFlash
+                          ? 'Master Board (1–90) • ${activeFlashCycle?.roundBadgeLabel ?? "Round"}'
+                          : (isQuick
+                              ? 'Master Board (1–90)'
+                              : 'Master Board (1–90)'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isQuick) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.4),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Text(
+                          '⚡ QUICK DABBY',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.secondaryColor,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   '${calledSet.length}/$maxPool Called',
@@ -4061,28 +4785,44 @@ class _AdminGameControlScreenState
               itemBuilder: (ctx, idx) {
                 final num = idx + 1;
                 final isCalled = calledSet.contains(num);
-                return Container(
-                  decoration: BoxDecoration(
-                    color: isCalled
-                        ? AppTheme.accentSuccess
-                        : AppTheme.darkSurface,
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
+                final isDeadNumber =
+                    isQuick && quickPool.isNotEmpty && !quickPool.contains(num);
+
+                return Opacity(
+                  opacity: isDeadNumber ? 0.22 : 1.0,
+                  child: Container(
+                    decoration: BoxDecoration(
                       color: isCalled
                           ? AppTheme.accentSuccess
-                          : const Color(0xFF2E334D),
-                      width: 0.9,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$num',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
+                          : (isDeadNumber
+                              ? const Color(0xFF141722)
+                              : AppTheme.darkSurface),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
                         color: isCalled
-                            ? Colors.white
-                            : const Color(0xFFCBD5E1),
+                            ? AppTheme.accentSuccess
+                            : (isDeadNumber
+                                ? const Color(0xFF1E2333)
+                                : const Color(0xFF2E334D)),
+                        width: 0.9,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$num',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          decoration: isDeadNumber
+                              ? TextDecoration.lineThrough
+                              : null,
+                          decorationColor: const Color(0xFF64748B),
+                          color: isCalled
+                              ? Colors.white
+                              : (isDeadNumber
+                                  ? const Color(0xFF475569)
+                                  : const Color(0xFFCBD5E1)),
+                        ),
                       ),
                     ),
                   ),

@@ -53,9 +53,20 @@ node tests/multiplayer/runner.js --game=577873 --players=5
 node tests/multiplayer/runner.js --url="https://www.dabhousie.com/#/join/577873"
 ```
 
-#### Headless Mode (Run in Background without Windows):
+#### Lightweight Mode (Zero-Memory API Runner - Recommended for Screen Recording):
 ```powershell
-node tests/multiplayer/runner.js --game=577873 --headless
+# Runs automated players via direct Supabase REST API (uses <50MB RAM instead of 2GB)
+node tests/multiplayer/direct_runner.js --game=577873 --players=4
+```
+
+#### Headless Browser Mode:
+```powershell
+node tests/multiplayer/runner.js --game=577873 --players=4 --headless
+```
+
+#### Keep Windows Open After Game Ends:
+```powershell
+node tests/multiplayer/runner.js --game=577873 --players=4 --keep-open
 ```
 
 #### Local Development Server:
@@ -74,6 +85,7 @@ node tests/multiplayer/runner.js --game=577873 --base-url="http://localhost:8080
 | `--players=<N>` | | `3` | Number of automated player sessions to spawn |
 | `--headless` | `--hide`, `--headless=true` | `false` | Run headless in the background without opening browser windows |
 | `--show` | `--headed`, `--headless=false` | `true` | Open visible browser windows side-by-side (default) |
+| `--keep-open` | `--no-close` | `false` | Keeps browser windows open after test finishes (default: auto-closes to free RAM) |
 | `--base-url=<URL>` | | `https://www.dabhousie.com` | Target DabHousie environment or local dev server |
 
 ---

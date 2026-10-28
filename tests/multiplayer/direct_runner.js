@@ -189,6 +189,7 @@ class DirectPlayer {
     this.lastCalledNumber = null;
     this.lastCallSequence = 0;
     this.claimsHistory = [];
+    this.answeredTriviaQuestions = new Set();
     this.registrationTimeMs = null;
   }
 
@@ -411,18 +412,35 @@ class DirectPlayer {
         }),
       });
       claimResult = res;
-      this.log(`🎉 Claim "${prizeName}" APPROVED via RPC: ${JSON.stringify(res)}`);
-      this.claimsHistory.push({
-        playerId: this.id,
-        playerName: this.name,
-        prizeId,
-        prizeName,
-        callSequence: lastSeq,
-        callNumber: lastNumber,
-        status: 'APPROVED',
-        response: res,
-        timestamp: new Date().toISOString(),
-      });
+      if (res && (res.status === 'APPROVED' || res.claim_id)) {
+        this.log(`🎉 Claim "${prizeName}" APPROVED via RPC: ${JSON.stringify(res)}`);
+        this.claimsHistory.push({
+          playerId: this.id,
+          playerName: this.name,
+          prizeId,
+          prizeName,
+          callSequence: lastSeq,
+          callNumber: lastNumber,
+          status: 'APPROVED',
+          response: res,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        const reason = res?.reason || res?.status || 'Rejected by server';
+        this.log(`⚠️ Claim "${prizeName}" NOT APPROVED: ${reason}`);
+        this.claimsHistory.push({
+          playerId: this.id,
+          playerName: this.name,
+          prizeId,
+          prizeName,
+          callSequence: lastSeq,
+          callNumber: lastNumber,
+          status: 'REJECTED',
+          response: res,
+          reason,
+          timestamp: new Date().toISOString(),
+        });
+      }
     } catch (rpcErr) {
       // 2. Direct table insert fallback (Strict validation parity with server SQL function)
       try {
@@ -500,6 +518,48 @@ class DirectPlayer {
       claimsHistory: this.claimsHistory,
       registrationTimeMs: this.registrationTimeMs,
     };
+  }
+
+  async playTriviaQuestion(round) {
+    if (!round || round.status !== 'ACTIVE' || round.current_question_index == null) {
+      return;
+    }
+
+    const qIdx = round.current_question_index;
+    if (this.answeredTriviaQuestions.has(qIdx)) {
+      return;
+    }
+
+    this.answeredTriviaQuestions.add(qIdx);
+
+    const reactionDelay = 1200 + Math.floor(Math.random() * 2000);
+    this.log(`🧠 [TRIVIA Q#${qIdx + 1}] Reading question and choices... (delay: ${(reactionDelay / 1000).toFixed(1)}s)`);
+    await new Promise(r => setTimeout(r, reactionDelay));
+
+    const currentQ = round.questions && round.questions[qIdx];
+    let chosenOption = Math.floor(Math.random() * 4);
+    if (currentQ && typeof currentQ.correct_index === 'number') {
+      if (this.id === 1) chosenOption = Math.random() < 0.85 ? currentQ.correct_index : chosenOption;
+      else if (this.id === 2) chosenOption = Math.random() < 0.65 ? currentQ.correct_index : chosenOption;
+    }
+
+    try {
+      const res = await this.fetchApi('/rest/v1/rpc/MPT_submit_trivia_answer', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_game_id: this.gameId,
+          p_user_id: this.userId,
+          p_user_name: this.name,
+          p_user_avatar: this.avatar,
+          p_question_index: qIdx,
+          p_selected_option_index: chosenOption,
+          p_response_time_ms: reactionDelay,
+        }),
+      });
+      this.log(`🎯 [TRIVIA Q#${qIdx + 1}] Answered Option ${chosenOption} (${res?.is_correct ? 'CORRECT! +' + res.points_awarded + ' pts' : 'INCORRECT'}). Total: ${res?.current_total_score} pts`);
+    } catch (err) {
+      this.log(`Trivia answer error: ${err.message}`);
+    }
   }
 }
 
@@ -667,7 +727,142 @@ Usage: node tests/multiplayer/direct_runner.js --game=XXXXXX --players=10
       if (gRes.ok) {
         const gData = await gRes.json();
         if (gData[0]?.status === 'COMPLETED') {
-          console.log('\n🏁 Game marked as COMPLETED by host!');
+          console.log('\n🏁 Main Tambola Game concluded!');
+
+          // Check if DabHousie Recall Trivia is active (Corporate packs)
+          let triviaRound = null;
+          try {
+            const trRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_trivia_rounds?game_id=eq.${gameId}&select=*`, {
+              headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+            });
+            if (trRes.ok) {
+              const list = await trRes.json();
+              if (Array.isArray(list) && list.length > 0 && list[0].status !== 'CANCELLED') {
+                triviaRound = list[0];
+              }
+            }
+          } catch (_) {}
+
+          if (triviaRound) {
+            console.log(`\n=====================================================`);
+            console.log(`🧠 DABHOUSIE RECALL TRIVIA IN PROGRESS (Corporate Event)`);
+            console.log(`Total Questions: ${triviaRound.total_questions || triviaRound.questions?.length || 4}`);
+            console.log(`Waiting for Trivia questions...`);
+            console.log(`=====================================================\n`);
+
+            let triviaDone = false;
+            let lastQIdx = -1;
+            let currentQStartedAt = 0;
+            let isAdvancingQuestion = false;
+
+            while (!triviaDone) {
+              try {
+                const trPoll = await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_trivia_rounds?id=eq.${triviaRound.id}&select=*`, {
+                  headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+                });
+                if (trPoll.ok) {
+                  const updated = (await trPoll.json())[0];
+                  if (!updated || updated.status === 'COMPLETED' || updated.status === 'CANCELLED') {
+                    triviaDone = true;
+                    break;
+                  }
+
+                  if (updated.status === 'ACTIVE' && updated.current_question_index != null) {
+                    if (updated.current_question_index !== lastQIdx) {
+                      lastQIdx = updated.current_question_index;
+                      currentQStartedAt = Date.now();
+                      isAdvancingQuestion = false;
+                      const curQ = updated.questions ? updated.questions[lastQIdx] : null;
+                      const totalQ = updated.questions ? updated.questions.length : (updated.total_questions || 4);
+                      console.log(`\n📢 [TRIVIA Q#${lastQIdx + 1}/${totalQ}] "${curQ?.question}"`);
+                    }
+
+                    for (const p of players) {
+                      await p.playTriviaQuestion(updated);
+                    }
+
+                    // Self-driving fallback: If host or display screen has not advanced within 15s, auto-advance
+                    const qDurationMs = (updated.seconds_per_question || 15) * 1000;
+                    const totalQ = updated.questions ? updated.questions.length : (updated.total_questions || 4);
+                    if (!isAdvancingQuestion && currentQStartedAt > 0 && (Date.now() - currentQStartedAt >= qDurationMs + 1000)) {
+                      isAdvancingQuestion = true;
+                      const nextQ = lastQIdx + 1;
+                      if (nextQ >= totalQ) {
+                        console.log(`\n🏁 [TRIVIA AUTO-DRIVE] Finalizing DabHousie Trivia round...`);
+                        await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_finalize_game_trivia`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+                          body: JSON.stringify({ p_game_id: gameId })
+                        }).catch(() => {});
+                        await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_trivia_rounds?id=eq.${updated.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+                          body: JSON.stringify({ status: 'COMPLETED', completed_at: new Date().toISOString() })
+                        }).catch(() => {});
+                      } else {
+                        console.log(`\n➡️ [TRIVIA AUTO-DRIVE] Advancing to Question #${nextQ + 1}/${totalQ}...`);
+                        await fetch(`${SUPABASE_URL}/rest/v1/rpc/MPT_advance_trivia_question`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+                          body: JSON.stringify({ p_game_id: gameId, p_next_index: nextQ })
+                        }).catch(() => {});
+                        await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_trivia_rounds?id=eq.${updated.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` },
+                          body: JSON.stringify({ current_question_index: nextQ })
+                        }).catch(() => {});
+                      }
+                    }
+                  } else if (updated.status === 'COUNTDOWN') {
+                    const startsAtDate = updated.starts_at ? new Date(updated.starts_at) : null;
+                    if (startsAtDate && startsAtDate <= new Date()) {
+                      console.log(`\n🚀 [TRIVIA AUTO-DRIVE] Countdown ended. Launching Trivia ACTIVE...`);
+                      await fetch(`${SUPABASE_URL}/rest/v1/MPT_game_trivia_rounds?id=eq.${updated.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'apikey': SUPABASE_ANON,
+                          'Authorization': `Bearer ${SUPABASE_ANON}`
+                        },
+                        body: JSON.stringify({
+                          status: 'ACTIVE',
+                          current_question_index: 0,
+                          started_at: new Date().toISOString()
+                        })
+                      }).catch(() => {});
+                    } else {
+                      process.stdout.write('.');
+                    }
+                  }
+                }
+              } catch (_) {}
+
+              await new Promise(r => setTimeout(r, 1000));
+            }
+
+            // Fetch final podium
+            try {
+              const wRes = await fetch(`${SUPABASE_URL}/rest/v1/MPT_trivia_winners?game_id=eq.${gameId}&order=rank.asc&select=*`, {
+                headers: { 'apikey': SUPABASE_ANON, 'Authorization': `Bearer ${SUPABASE_ANON}` }
+              });
+              if (wRes.ok) {
+                const winners = await wRes.json();
+                if (winners && winners.length > 0) {
+                  console.log(`\n=====================================================`);
+                  console.log(`🏆 DABHOUSIE TRIVIA OFFICIAL PODIUM`);
+                  console.log(`=====================================================`);
+                  for (const w of winners) {
+                    const medal = w.rank === 1 ? '🥇' : (w.rank === 2 ? '🥈' : (w.rank === 3 ? '🥉' : (w.rank === 4 ? '🎖️' : (w.rank === 5 ? '🌟' : `#${w.rank}`))));
+                    console.log(`  ${medal} Rank ${w.rank}: ${w.user_name} (${w.title}) — ${w.total_score} pts`);
+                  }
+                  console.log(`=====================================================\n`);
+                }
+              }
+            } catch (_) {}
+          } else {
+            console.log('[POST-GAME] No Trivia round active (Family Pack or Trivia disabled).');
+          }
+
           saveReport('COMPLETED');
           break;
         }
