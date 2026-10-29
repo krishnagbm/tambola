@@ -55,26 +55,31 @@
       max-width: 100vw;
     }
 
-    /* Guide Controls / Role Filter Bar (Locked Sticky Menu) */
-    .guide-controls-bar {
+    /* Sticky Filter Controls Bar (Pixel-Matched to videos.html) */
+    .controls-wrapper {
       position: sticky;
-      top: 68px;
+      top: 64px;
       z-index: 45;
+      background: rgba(10, 14, 23, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    }
+
+    .controls-bar {
+      max-width: 1080px;
+      margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 22px;
       flex-wrap: wrap;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      border-radius: 16px;
-      padding: 12px 18px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     }
 
+    /* Guide Controls / Role Filter Bar */
     .guide-filter-pills {
       display: flex;
       align-items: center;
@@ -542,31 +547,32 @@
     </p>
   </section>
 
+  <!-- Sticky Role Controls Bar (Locked sticky below Hero) -->
+  <div class="controls-wrapper" id="guide-controls">
+    <div class="controls-bar">
+      <div class="guide-filter-pills" role="tablist" aria-label="Role & Feature Filters">
+        <span class="filter-label">Quick Jump:</span>
+        <button id="btn-toggle-all" class="filter-pill-btn" onclick="toggleAllCards()" style="border-color: rgba(250, 204, 21, 0.5);">
+          <span id="toggle-all-icon">📂</span>
+          <span id="toggle-all-text">Expand All</span>
+        </button>
+        <button id="pill-card-host" class="filter-pill-btn" onclick="filterGuideCard('card-host')">👑 Hosts</button>
+        <button id="pill-card-player" class="filter-pill-btn" onclick="filterGuideCard('card-player')">📱 Guests</button>
+        <button id="pill-card-quick-dabby" class="filter-pill-btn" onclick="filterGuideCard('card-quick-dabby')">⚡ Quick Dabby</button>
+        <button id="pill-card-trivia" class="filter-pill-btn" onclick="filterGuideCard('card-trivia')">🧠 Trivia</button>
+        <button id="pill-card-claims" class="filter-pill-btn" onclick="filterGuideCard('card-claims')">🛡️ Claims</button>
+        <button id="pill-card-tv" class="filter-pill-btn" onclick="filterGuideCard('card-tv')">📺 TV Mode</button>
+        <button id="pill-card-gala" class="filter-pill-btn" onclick="filterGuideCard('card-gala')">👥 250+ Galas</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content -->
   <main class="main-content">
 
-    <!-- Interactive Guide Controls / Role Bar (Locked Sticky Menu) -->
-    <div class="guide-controls-bar">
-      <div class="guide-filter-pills">
-        <span class="filter-label">Quick Jump:</span>
-        <button id="pill-card-host" class="filter-pill-btn active-pill" onclick="openAndScrollCard('card-host')">👑 Hosts</button>
-        <button id="pill-card-player" class="filter-pill-btn" onclick="openAndScrollCard('card-player')">📱 Guests</button>
-        <button id="pill-card-quick-dabby" class="filter-pill-btn" onclick="openAndScrollCard('card-quick-dabby')">⚡ Quick Dabby</button>
-        <button id="pill-card-trivia" class="filter-pill-btn" onclick="openAndScrollCard('card-trivia')">🧠 Trivia</button>
-        <button id="pill-card-claims" class="filter-pill-btn" onclick="openAndScrollCard('card-claims')">🛡️ Claims</button>
-        <button id="pill-card-tv" class="filter-pill-btn" onclick="openAndScrollCard('card-tv')">📺 TV Mode</button>
-        <button id="pill-card-gala" class="filter-pill-btn" onclick="openAndScrollCard('card-gala')">👥 250+ Galas</button>
-      </div>
-
-      <button id="btn-toggle-all" class="btn-toggle-all" onclick="toggleAllCards()">
-        <span id="toggle-all-icon">📂</span>
-        <span id="toggle-all-text">Expand All</span>
-      </button>
-    </div>
-
-    <!-- CARD 1: For Game Organizers (Hosts) - OPEN BY DEFAULT -->
-    <div id="card-host" class="collapsible-card is-open">
-      <button class="card-header-trigger" onclick="toggleCard('card-host')" aria-expanded="true">
+    <!-- CARD 1: For Game Organizers (Hosts) -->
+    <div id="card-host" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-host')" aria-expanded="false">
         <div class="header-left">
           <div class="header-icon">👑</div>
           <div class="header-text">
@@ -935,17 +941,74 @@
 
   <!-- Interactive Collapsible Cards Script -->
   <script>
-    function updateActivePill(activeCardId) {
+    var currentGuideFilter = 'all';
+
+    function updateActivePill(activeFilter) {
       var pills = document.querySelectorAll('.filter-pill-btn');
       pills.forEach(function(pill) {
         pill.classList.remove('active-pill');
       });
-      if (activeCardId) {
-        var activePill = document.getElementById('pill-' + activeCardId);
+      if (activeFilter && activeFilter !== 'all') {
+        var activePill = document.getElementById('pill-' + activeFilter);
         if (activePill) {
           activePill.classList.add('active-pill');
         }
       }
+    }
+
+    function filterGuideCard(cardId) {
+      currentGuideFilter = cardId;
+      var allCards = document.querySelectorAll('.collapsible-card');
+
+      if (cardId === 'all') {
+        // Show all cards collapsed
+        allCards.forEach(function(c) {
+          c.style.display = '';
+          c.classList.remove('is-open');
+          var trigger = c.querySelector('.card-header-trigger');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+        updateActivePill(null);
+        setToggleButtonState(false);
+        return;
+      }
+
+      // Filter: display ONLY target card right below the filter bar, open it, hide others
+      allCards.forEach(function(c) {
+        var trigger = c.querySelector('.card-header-trigger');
+        if (c.id === cardId) {
+          c.style.display = '';
+          c.classList.add('is-open');
+          if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        } else {
+          c.style.display = 'none';
+          c.classList.remove('is-open');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      updateActivePill(cardId);
+      // Whenever any specific filter (e.g. Claims, Trivia) is selected, button becomes Collapse All
+      setToggleButtonState(true);
+
+      // If page was scrolled far down, smoothly dock back to the top of the guide controls bar
+      var controlsBar = document.getElementById('guide-controls');
+      if (controlsBar) {
+        var rect = controlsBar.getBoundingClientRect();
+        if (rect.top < 64) {
+          window.scrollTo({
+            top: controlsBar.offsetTop - 64,
+            behavior: 'smooth'
+          });
+        }
+      }
+
+      // Update URL hash
+      try {
+        if (history.replaceState) {
+          history.replaceState(null, null, '#' + cardId.replace('card-', ''));
+        }
+      } catch (_) {}
     }
 
     function toggleCard(cardId) {
@@ -955,85 +1018,44 @@
       var isOpen = card.classList.contains('is-open');
 
       if (isOpen) {
-        // Toggle closed
         card.classList.remove('is-open');
         var trigger = card.querySelector('.card-header-trigger');
         if (trigger) trigger.setAttribute('aria-expanded', 'false');
       } else {
-        // Accordion behavior: Auto-close all other cards
-        var allCards = document.querySelectorAll('.collapsible-card');
-        allCards.forEach(function(c) {
-          c.classList.remove('is-open');
-          var t = c.querySelector('.card-header-trigger');
-          if (t) t.setAttribute('aria-expanded', 'false');
-        });
-
-        // Open clicked card
         card.classList.add('is-open');
         var trigger = card.querySelector('.card-header-trigger');
         if (trigger) trigger.setAttribute('aria-expanded', 'true');
-
-        // Smoothly adjust scroll position if card top is hidden under sticky headers
-        setTimeout(function() {
-          var controlsBar = document.querySelector('.guide-controls-bar');
-          var barHeight = controlsBar ? controlsBar.offsetHeight : 54;
-          var totalHeaderOffset = 64 + barHeight + 14;
-          var cardRect = card.getBoundingClientRect();
-          if (cardRect.top < totalHeaderOffset || cardRect.top > window.innerHeight - 100) {
-            var targetY = window.pageYOffset + cardRect.top - totalHeaderOffset;
-            window.scrollTo({
-              top: Math.max(0, targetY),
-              behavior: 'smooth'
-            });
-          }
-        }, 60);
       }
 
       updateToggleAllButton();
     }
 
-    function openAndScrollCard(cardId) {
-      var card = document.getElementById(cardId);
-      if (!card) return;
-
-      // Accordion behavior: Auto-close all other cards
-      var allCards = document.querySelectorAll('.collapsible-card');
-      allCards.forEach(function(c) {
-        c.classList.remove('is-open');
-        var t = c.querySelector('.card-header-trigger');
-        if (t) t.setAttribute('aria-expanded', 'false');
-      });
-
-      // Open target card
-      card.classList.add('is-open');
-      var trigger = card.querySelector('.card-header-trigger');
-      if (trigger) trigger.setAttribute('aria-expanded', 'true');
-
-      updateToggleAllButton();
-
-      // Smooth scroll into view right beneath sticky nav (64px) and sticky controls bar
-      setTimeout(function() {
-        var controlsBar = document.querySelector('.guide-controls-bar');
-        var barHeight = controlsBar ? controlsBar.offsetHeight : 54;
-        var totalHeaderOffset = 64 + barHeight + 14;
-        var elementPosition = card.getBoundingClientRect().top;
-        var offsetPosition = elementPosition + window.pageYOffset - totalHeaderOffset;
-
-        window.scrollTo({
-          top: Math.max(0, offsetPosition),
-          behavior: 'smooth'
-        });
-      }, 60);
-
-      // Update URL hash without jumping
-      try {
-        if (history.replaceState) {
-          history.replaceState(null, null, '#' + cardId.replace('card-', ''));
-        }
-      } catch (_) {}
-    }
-
     function toggleAllCards() {
+      // If currently filtered to a single card (or when button is Collapse All)
+      var btnText = document.getElementById('toggle-all-text');
+      var isCurrentlyCollapseAll = btnText && btnText.textContent.trim() === 'Collapse All';
+
+      if (currentGuideFilter !== 'all') {
+        if (isCurrentlyCollapseAll) {
+          // Collapse all cards and show all cards in collapsed state
+          filterGuideCard('all');
+        } else {
+          // Expand all cards
+          currentGuideFilter = 'all';
+          var allCards = document.querySelectorAll('.collapsible-card');
+          allCards.forEach(function(c) {
+            c.style.display = '';
+            c.classList.add('is-open');
+            var trigger = c.querySelector('.card-header-trigger');
+            if (trigger) trigger.setAttribute('aria-expanded', 'true');
+          });
+          updateActivePill(null);
+          setToggleButtonState(true);
+        }
+        return;
+      }
+
+      // In 'all' view: toggle open/close
       var allCards = document.querySelectorAll('.collapsible-card');
       var anyClosed = false;
 
@@ -1054,53 +1076,48 @@
         }
       });
 
-      updateToggleAllButton();
+      setToggleButtonState(anyClosed);
+    }
+
+    function setToggleButtonState(isOpen) {
+      var btnIcon = document.getElementById('toggle-all-icon');
+      var btnText = document.getElementById('toggle-all-text');
+      if (isOpen) {
+        if (btnIcon) btnIcon.textContent = '📁';
+        if (btnText) btnText.textContent = 'Collapse All';
+      } else {
+        if (btnIcon) btnIcon.textContent = '📂';
+        if (btnText) btnText.textContent = 'Expand All';
+      }
     }
 
     function updateToggleAllButton() {
       var allCards = document.querySelectorAll('.collapsible-card');
-      var openCount = 0;
-      var lastOpenId = null;
+      var anyOpen = false;
 
       allCards.forEach(function(card) {
-        if (card.classList.contains('is-open')) {
-          openCount++;
-          lastOpenId = card.id;
+        if (card.style.display !== 'none' && card.classList.contains('is-open')) {
+          anyOpen = true;
         }
       });
 
-      var btnIcon = document.getElementById('toggle-all-icon');
-      var btnText = document.getElementById('toggle-all-text');
-
-      if (openCount === allCards.length) {
-        if (btnIcon) btnIcon.textContent = '📁';
-        if (btnText) btnText.textContent = 'Collapse All';
-        updateActivePill(null);
-      } else {
-        if (btnIcon) btnIcon.textContent = '📂';
-        if (btnText) btnText.textContent = 'Expand All';
-        if (openCount === 1 && lastOpenId) {
-          updateActivePill(lastOpenId);
-        } else {
-          updateActivePill(null);
-        }
-      }
+      setToggleButtonState(anyOpen);
     }
 
     // Initialize from URL Hash on page load (e.g. #host, #player, #quick-dabby, #trivia, #claims, #tv, #gala)
     (function initFromHash() {
       var hash = (window.location.hash || '').toLowerCase().replace('#', '');
       if (!hash) {
-        updateToggleAllButton();
+        setToggleButtonState(false);
         return;
       }
 
       var targetId = 'card-' + hash;
       var card = document.getElementById(targetId);
       if (card) {
-        openAndScrollCard(targetId);
+        filterGuideCard(targetId);
       } else {
-        updateToggleAllButton();
+        setToggleButtonState(false);
       }
     })();
   </script>

@@ -219,6 +219,21 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
               style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
+          TextButton.icon(
+            onPressed: () => launchUrl(
+              Uri.parse('${AppConfig.appBaseUrl}/videos.html'),
+              webOnlyWindowName: '_self',
+            ),
+            icon: const Icon(Icons.play_circle_fill, color: Color(0xFFF43F5E), size: 16),
+            label: const Text(
+              'Videos',
+              style: TextStyle(
+                color: Color(0xFFF43F5E),
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
           PopupMenuButton<String>(
             tooltip: 'Game Guides',
             offset: const Offset(0, 40),
@@ -392,6 +407,19 @@ class DabHousieAppBar extends ConsumerWidget implements PreferredSizeWidget {
                     Text(
                       'How It Works',
                       style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: '${AppConfig.appBaseUrl}/videos.html',
+                child: const Row(
+                  children: [
+                    Icon(Icons.play_circle_fill, size: 16, color: Color(0xFFF43F5E)),
+                    SizedBox(width: 8),
+                    Text(
+                      'Videos & Tutorials',
+                      style: TextStyle(color: Color(0xFFF43F5E), fontSize: 13, fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),

@@ -882,16 +882,48 @@
       <div class="hero-badge">🎬 Official DabHousie Video Hub</div>
       <h1 class="hero-title">Watch, Learn &amp; Experience <span class="gradient-text">DabHousie</span></h1>
       <p class="hero-sub">
-        Explore live gameplay walkthroughs, zero-download player guides, big-screen TV projector modes, and cognitive recall trivia in high-definition video.
+        Explore 16+ live gameplay walkthroughs, zero-download player guides, big-screen TV projector modes, and cognitive recall trivia in high-definition video.
       </p>
     </section>
+
+    <!-- Top Filter Controls Bar (Visible above the fold / Hero) -->
+    <div class="controls-wrapper" id="video-controls-top" style="position: relative; top: 0; margin-bottom: 24px;">
+      <div class="controls-bar">
+        <div class="filter-pills" role="tablist" aria-label="Video Category Filters">
+          <button class="filter-pill active" onclick="setGroupFilter('all', this, true)" role="tab" aria-selected="true">
+            🌟 All Videos (<span class="count-all-slot">16</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('promos', this, true)" role="tab" aria-selected="false">
+            🚀 Promos (<span class="count-promos-slot">2</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('player', this, true)" role="tab" aria-selected="false">
+            🎯 Player Guides (<span class="count-player-slot">5</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('host', this, true)" role="tab" aria-selected="false">
+            👑 Host &amp; TV Mode (<span class="count-host-slot">7</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('trivia', this, true)" role="tab" aria-selected="false">
+            🧠 Recall Trivia (<span class="count-trivia-slot">2</span>)
+          </button>
+        </div>
+
+        <div class="search-box-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="video-search-input-top" class="search-input"
+            placeholder="Search 16+ tutorials &amp; guides..."
+            oninput="syncAndSearch(this.value, 'video-search-input')"
+            onfocus="scrollToGallery()"
+            aria-label="Search video tutorials">
+        </div>
+      </div>
+    </div>
 
     <!-- Cinema Stage (Option A Featured Player) -->
     <section class="cinema-stage-section" id="cinema-stage">
       <div class="cinema-container">
         <div class="cinema-screen-wrap">
           <iframe id="cinema-player" class="cinema-iframe"
-            src="https://www.youtube.com/embed/08JiD_-CyD8?rel=0&amp;modestbranding=1"
+            src="https://www.youtube.com/embed/g2FxGM6mLbE?rel=0&amp;modestbranding=1&amp;cc_load_policy=0"
             title="DabHousie Video Player"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen>
@@ -907,16 +939,16 @@
                 <span id="cinema-now-playing" class="cinema-now-playing">
                   <span class="pulse-dot"></span> Now Playing on Cinema Stage
                 </span>
-                <span id="cinema-group-pill" class="cinema-group-pill">Player &amp; Guest Guides</span>
-                <span id="cinema-duration" class="cinema-duration-badge">⏱️ 1:51</span>
+                <span id="cinema-group-pill" class="cinema-group-pill">Brand Promos &amp; Trailers</span>
+                <span id="cinema-duration" class="cinema-duration-badge">⏱️ 1:01</span>
               </div>
               <h2 id="cinema-title" class="cinema-title">
-                How to Play &amp; Win Live Tambola Online - Ticket Dabbing, Claim Verification &amp; Rewards
+                DabHousie Dabby Promo 60s
               </h2>
             </div>
 
             <div class="cinema-actions">
-              <a id="cinema-yt-btn" href="https://www.youtube.com/watch?v=08JiD_-CyD8" target="_blank"
+              <a id="cinema-yt-btn" href="https://www.youtube.com/watch?v=g2FxGM6mLbE" target="_blank"
                 rel="noopener noreferrer" class="btn-cinema btn-cinema-yt" title="Watch directly on YouTube">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
@@ -931,30 +963,30 @@
           </div>
 
           <p id="cinema-summary" class="cinema-summary">
-            Learn how to join with a party code, dab numbers as they are called, catch patterns, avoid bogey claims, and verify winning claims with celebratory confetti.
+            The complete 60-second showcase of DabHousie: modern multiplayer 90-ball bingo, automatic voice calling, digital tickets, and team-building recall trivia.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- Sticky Group Controls & Search Bar -->
+    <!-- Sticky Group Controls & Search Bar (After Hero / Stage) -->
     <div class="controls-wrapper" id="video-controls">
       <div class="controls-bar">
         <div class="filter-pills" role="tablist" aria-label="Video Category Filters">
           <button class="filter-pill active" onclick="setGroupFilter('all', this)" role="tab" aria-selected="true">
-            🌟 All Videos (<span id="count-all">16</span>)
-          </button>
-          <button class="filter-pill" onclick="setGroupFilter('player', this)" role="tab" aria-selected="false">
-            🎯 Player Guides (<span id="count-player">5</span>)
-          </button>
-          <button class="filter-pill" onclick="setGroupFilter('host', this)" role="tab" aria-selected="false">
-            👑 Host &amp; TV Mode (<span id="count-host">7</span>)
-          </button>
-          <button class="filter-pill" onclick="setGroupFilter('trivia', this)" role="tab" aria-selected="false">
-            🧠 Recall Trivia (<span id="count-trivia">2</span>)
+            🌟 All Videos (<span class="count-all-slot">16</span>)
           </button>
           <button class="filter-pill" onclick="setGroupFilter('promos', this)" role="tab" aria-selected="false">
-            🚀 Promos (<span id="count-promos">2</span>)
+            🚀 Promos (<span class="count-promos-slot">2</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('player', this)" role="tab" aria-selected="false">
+            🎯 Player Guides (<span class="count-player-slot">5</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('host', this)" role="tab" aria-selected="false">
+            👑 Host &amp; TV Mode (<span class="count-host-slot">7</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('trivia', this)" role="tab" aria-selected="false">
+            🧠 Recall Trivia (<span class="count-trivia-slot">2</span>)
           </button>
         </div>
 
@@ -962,7 +994,7 @@
           <span class="search-icon">🔍</span>
           <input type="text" id="video-search-input" class="search-input"
             placeholder="Search videos by title or topic..."
-            oninput="handleSearch(this.value)"
+            oninput="syncAndSearch(this.value, 'video-search-input-top')"
             aria-label="Search video tutorials">
         </div>
       </div>
@@ -1044,7 +1076,7 @@
     // Cinema Stage & Gallery Controller
     let currentFilter = 'all';
     let searchQuery = '';
-    let activeVideoId = '08JiD_-CyD8';
+    let activeVideoId = 'g2FxGM6mLbE';
 
     function getVideos() {
       return window.DABHOUSIE_VIDEOS || [];
@@ -1054,17 +1086,17 @@
       const videos = getVideos();
       const counts = {
         all: videos.length,
+        promos: videos.filter(v => v.group === 'promos').length,
         player: videos.filter(v => v.group === 'player').length,
         host: videos.filter(v => v.group === 'host').length,
         trivia: videos.filter(v => v.group === 'trivia').length,
-        promos: videos.filter(v => v.group === 'promos').length,
       };
 
-      document.getElementById('count-all').textContent = counts.all;
-      document.getElementById('count-player').textContent = counts.player;
-      document.getElementById('count-host').textContent = counts.host;
-      document.getElementById('count-trivia').textContent = counts.trivia;
-      document.getElementById('count-promos').textContent = counts.promos;
+      document.querySelectorAll('.count-all-slot').forEach(el => el.textContent = counts.all);
+      document.querySelectorAll('.count-promos-slot').forEach(el => el.textContent = counts.promos);
+      document.querySelectorAll('.count-player-slot').forEach(el => el.textContent = counts.player);
+      document.querySelectorAll('.count-host-slot').forEach(el => el.textContent = counts.host);
+      document.querySelectorAll('.count-trivia-slot').forEach(el => el.textContent = counts.trivia);
     }
 
     function renderGrid() {
@@ -1145,7 +1177,7 @@
 
       // Update iframe source
       const player = document.getElementById('cinema-player');
-      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&cc_load_policy=0`;
 
       // Update Cinema Meta Details
       document.getElementById('cinema-title').textContent = video.title;
@@ -1183,20 +1215,43 @@
       });
     }
 
-    function setGroupFilter(group, btnElement) {
+    function scrollToGallery() {
+      const controls = document.getElementById('video-controls') || document.querySelector('.video-gallery-section');
+      if (!controls) return;
+      const offsetTop = controls.getBoundingClientRect().top + window.pageYOffset - 70;
+      window.scrollTo({
+        top: Math.max(0, offsetTop),
+        behavior: 'smooth'
+      });
+    }
+
+    function setGroupFilter(group, btnElement, shouldScroll = false) {
       currentFilter = group;
 
       document.querySelectorAll('.filter-pill').forEach(btn => {
-        btn.classList.remove('active');
-        btn.setAttribute('aria-selected', 'false');
+        const matches = btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${group}'`);
+        if (matches) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-selected', 'true');
+        } else {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-selected', 'false');
+        }
       });
 
-      if (btnElement) {
-        btnElement.classList.add('active');
-        btnElement.setAttribute('aria-selected', 'true');
-      }
-
       renderGrid();
+
+      if (shouldScroll) {
+        scrollToGallery();
+      }
+    }
+
+    function syncAndSearch(val, otherInputId) {
+      const otherInput = document.getElementById(otherInputId);
+      if (otherInput && otherInput.value !== val) {
+        otherInput.value = val;
+      }
+      handleSearch(val);
     }
 
     function handleSearch(val) {

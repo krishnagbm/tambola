@@ -54,6 +54,20 @@ class DashboardFooter extends StatelessWidget {
                 ),
                 const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
                 InkWell(
+                  onTap: () => _launchURL('${AppConfig.appBaseUrl}/videos.html'),
+                  child: const Text(
+                    'Videos',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFF43F5E),
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Color(0xFFF43F5E),
+                    ),
+                  ),
+                ),
+                const Text('•', style: TextStyle(color: Color(0xFF64748B), fontSize: 11)),
+                InkWell(
                   onTap: () => _launchURL('${AppConfig.appBaseUrl}/recent-games.html'),
                   child: const Text(
                     'Recent Games',
