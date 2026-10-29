@@ -28,6 +28,14 @@
     <priority>0.9</priority>
   </url>
 
+  <!-- Official Video Hub & Live Tutorials -->
+  <url>
+    <loc>https://www.dabhousie.com/videos.html</loc>
+    <lastmod>2026-10-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Play 90-Ball Bingo with Dabby (Free Rapid Practice Solo Game) -->
   <url>
     <loc>https://www.dabhousie.com/play-with-dabby.html</loc>

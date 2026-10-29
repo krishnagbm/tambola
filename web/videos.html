@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DabHousie Video Hub — Live Gameplay Tutorials, Host Guides &amp; Walkthroughs</title>
+  <meta name="description"
+    content="Watch official DabHousie video tutorials: live multiplayer Tambola gameplay, automated number calling, guest ticket dabbing, big-screen TV projector sync, and post-game recall trivia.">
+  <meta name="keywords"
+    content="tambola tutorial, housie video guide, 90-ball bingo caller video, dabhousie gameplay, virtual tambola host demo, digital bingo ticket walkthrough, live housie projector display, tambola recall trivia video">
+  <link rel="canonical" href="https://www.dabhousie.com/videos.html">
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Cache Control -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Google tag (gtag.js) - Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-E46BLPH29F');
+  </script>
+
+  <!-- Google AdSense -->
+  <meta name="google-adsense-account" content="ca-pub-6136000774092015">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6136000774092015"
+    crossorigin="anonymous"></script>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="video.other">
+  <meta property="og:title" content="DabHousie Video Hub — Live Gameplay Tutorials &amp; Host Guides">
+  <meta property="og:description"
+    content="Watch official walkthroughs of live multiplayer Tambola, automated voice calling, zero-download guest check-in, and TV projector display sync.">
+  <meta property="og:url" content="https://www.dabhousie.com/videos.html">
+  <meta property="og:image" content="https://www.dabhousie.com/og-banner.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DabHousie Video Hub — Live Gameplay Tutorials &amp; Host Guides">
+  <meta name="twitter:description"
+    content="Watch official walkthroughs of live multiplayer Tambola, automated voice calling, zero-download guest check-in, and TV projector display sync.">
+  <meta name="twitter:image" content="https://www.dabhousie.com/og-banner.png">
+
+  <link rel="stylesheet" href="/css/site.css">
+
+  <style>
+    /* =========================================================
+       DABHOUSIE VIDEO HUB & CINEMA STAGE STYLES
+       ========================================================= */
+    :root {
+      --video-glow: rgba(56, 189, 248, 0.25);
+      --badge-player: #10B981;
+      --badge-host: #3B82F6;
+      --badge-trivia: #8B5CF6;
+      --badge-promos: #F59E0B;
+    }
+
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    /* Hero Section */
+    .video-hero {
+      text-align: center;
+      padding: 42px 20px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38BDF8;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 4.5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      color: #F8FAFC;
+      margin-bottom: 12px;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, #60A5FA 0%, #FBBF24 50%, #34D399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.08rem;
+      color: #94A3B8;
+      max-width: 760px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Cinema Stage (Option A Featured Player) */
+    .cinema-stage-section {
+      max-width: 1180px;
+      margin: 0 auto 36px;
+      padding: 0 16px;
+    }
+
+    .cinema-container {
+      position: relative;
+      background: #0D1322;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 80px var(--video-glow);
+      transition: box-shadow 0.4s ease;
+    }
+
+    .cinema-screen-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 Aspect Ratio */
+      background: #000;
+    }
+
+    .cinema-iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    /* Ambient glow bar beneath screen */
+    .cinema-ambient-bar {
+      height: 3px;
+      background: linear-gradient(90deg, #3B82F6 0%, #10B981 33%, #F59E0B 66%, #8B5CF6 100%);
+      opacity: 0.85;
+    }
+
+    .cinema-details {
+      padding: 24px 28px;
+      background: linear-gradient(180deg, #11192E 0%, #0A0E17 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .cinema-header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .cinema-meta-left {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .cinema-tag-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cinema-group-pill {
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60A5FA;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .cinema-duration-badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #CBD5E1;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cinema-now-playing {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #34D399;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #34D399;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #34D399;
+      animation: pulseAnim 1.8s infinite;
+    }
+
+    @keyframes pulseAnim {
+      0% { opacity: 0.3; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.3; transform: scale(0.9); }
+    }
+
+    .cinema-title {
+      font-size: clamp(1.25rem, 2.5vw, 1.7rem);
+      font-weight: 800;
+      color: #F8FAFC;
+      line-height: 1.3;
+      margin: 0;
+    }
+
+    .cinema-summary {
+      font-size: 0.95rem;
+      color: #94A3B8;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .cinema-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-cinema {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 0;
+      text-decoration: none;
+    }
+
+    .btn-cinema-yt {
+      background: #FF0000;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(255, 0, 0, 0.35);
+    }
+
+    .btn-cinema-yt:hover {
+      background: #E60000;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(255, 0, 0, 0.5);
+      color: #FFF;
+    }
+
+    .btn-cinema-share {
+      background: rgba(255, 255, 255, 0.08);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-cinema-share:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFF;
+      transform: translateY(-2px);
+    }
+
+    /* Sticky Filter Controls Bar */
+    .controls-wrapper {
+      position: sticky;
+      top: 64px;
+      z-index: 40;
+      background: rgba(10, 14, 23, 0.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 16px;
+      margin-bottom: 36px;
+    }
+
+    .controls-bar {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94A3B8;
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .filter-pill:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #F8FAFC;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .filter-pill.active {
+      background: #0B3D91;
+      border-color: #60A5FA;
+      color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(11, 61, 145, 0.4);
+    }
+
+    .search-box-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+      min-width: 220px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #F8FAFC;
+      padding: 8px 14px 8px 36px;
+      border-radius: 9999px;
+      font-size: 0.86rem;
+      outline: none;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .search-input:focus {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #60A5FA;
+      box-shadow: 0 0 16px rgba(96, 165, 250, 0.25);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+      color: #94A3B8;
+      pointer-events: none;
+    }
+
+    /* Video Gallery Section */
+    .video-gallery-section {
+      max-width: 1180px;
+      margin: 0 auto 60px;
+      padding: 0 16px;
+    }
+
+    .section-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      color: #94A3B8;
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 22px;
+    }
+
+    @media (min-width: 1024px) {
+      .video-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    /* Video Card */
+    .video-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .video-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(96, 165, 250, 0.4);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.15);
+    }
+
+    .video-card.is-active {
+      border: 2px solid #34D399 !important;
+      box-shadow: 0 0 30px rgba(52, 211, 153, 0.35) !important;
+    }
+
+    .card-thumb-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    .card-thumb-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.35s ease;
+    }
+
+    .video-card:hover .card-thumb-img {
+      transform: scale(1.06);
+    }
+
+    .card-play-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .video-card:hover .card-play-overlay {
+      opacity: 1;
+    }
+
+    .play-icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #FF0000;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 18px rgba(255, 0, 0, 0.6);
+      transform: scale(0.85);
+      transition: transform 0.25s ease;
+    }
+
+    .video-card:hover .play-icon-circle {
+      transform: scale(1);
+    }
+
+    .play-icon-circle svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+      margin-left: 2px;
+    }
+
+    .card-duration-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.85);
+      color: #FFF;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.03em;
+    }
+
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .card-tag-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-group-pill {
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .card-group-pill.pill-player {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-group-pill.pill-host {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60A5FA;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .card-group-pill.pill-trivia {
+      background: rgba(139, 92, 246, 0.15);
+      color: #A78BFA;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .card-group-pill.pill-promos {
+      background: rgba(245, 158, 11, 0.15);
+      color: #FBBF24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .card-active-indicator {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #34D399;
+    }
+
+    .video-card.is-active .card-active-indicator {
+      display: inline-flex;
+    }
+
+    .card-title {
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      line-height: 1.38;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.76em;
+    }
+
+    .card-summary {
+      font-size: 0.81rem;
+      color: #94A3B8;
+      line-height: 1.45;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+    }
+
+    .card-play-btn {
+      color: #60A5FA;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: color 0.2s ease;
+    }
+
+    .video-card:hover .card-play-btn {
+      color: #93C5FD;
+    }
+
+    .card-yt-link {
+      color: #64748B;
+      text-decoration: none;
+      font-size: 0.76rem;
+      transition: color 0.2s ease;
+    }
+
+    .card-yt-link:hover {
+      color: #EF4444;
+    }
+
+    /* Zero Results State */
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+    }
+
+    .no-results-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    .no-results-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 8px;
+    }
+
+    .no-results-sub {
+      color: #94A3B8;
+      font-size: 0.9rem;
+    }
+
+    /* Bottom CTA Card */
+    .cta-banner-section {
+      max-width: 1180px;
+      margin: 0 auto 70px;
+      padding: 0 16px;
+    }
+
+    .cta-banner {
+      background: linear-gradient(135deg, #0B3D91 0%, #1E1B4B 60%, #0F172A 100%);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 20px;
+      padding: 36px 32px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .cta-banner h3 {
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 800;
+      color: #FFF;
+      margin-bottom: 10px;
+    }
+
+    .cta-banner p {
+      font-size: 1rem;
+      color: #CBD5E1;
+      max-width: 680px;
+      margin: 0 auto 24px;
+    }
+
+    .cta-btns {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .cta-btn-primary {
+      background: #FFC107;
+      color: #0A0E17;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 12px 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 18px rgba(255, 193, 7, 0.4);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .cta-btn-primary:hover {
+      background: #FACC15;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(255, 193, 7, 0.55);
+    }
+
+    .cta-btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFF;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .cta-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    /* Toast Notification */
+    .toast-pill {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #10B981;
+      color: #0A0E17;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .toast-pill.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+
+  <!-- Google VideoObject Structured Data Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "DabHousie Official Video Tutorials & Gameplay Walkthroughs",
+    "description": "Collection of official 90-Ball Bingo, Tambola, and Housie video tutorials from DabHousie.",
+    "itemListElement": [
+      {
+        "@type": "VideoObject",
+        "position": 1,
+        "name": "How to Play & Win Live Tambola Online - Ticket Dabbing & Claim Verification",
+        "description": "Learn how to join with a party code, dab numbers as they are called, catch patterns, avoid bogey claims, and verify winning claims with celebratory confetti.",
+        "thumbnailUrl": "https://img.youtube.com/vi/08JiD_-CyD8/hqdefault.jpg",
+        "uploadDate": "2026-10-28",
+        "contentUrl": "https://www.youtube.com/watch?v=08JiD_-CyD8",
+        "embedUrl": "https://www.youtube.com/embed/08JiD_-CyD8"
+      },
+      {
+        "@type": "VideoObject",
+        "position": 2,
+        "name": "How to Host a Live Tambola Game on DabHousie - Room Setup & Pattern Selection",
+        "description": "Step-by-step room creation: select group size, configure winning prize patterns, fair-play rules, and generate your 6-character party code.",
+        "thumbnailUrl": "https://img.youtube.com/vi/pgwDeJjJXjA/hqdefault.jpg",
+        "uploadDate": "2026-10-28",
+        "contentUrl": "https://www.youtube.com/watch?v=pgwDeJjJXjA",
+        "embedUrl": "https://www.youtube.com/embed/pgwDeJjJXjA"
+      },
+      {
+        "@type": "VideoObject",
+        "position": 3,
+        "name": "Live Tambola Game Control & TV Mode on DabHousie - Big-Screen Display Sync",
+        "description": "Transform any TV, projector, or event monitor into a high-visibility 90-number board with synchronized color callouts and crowd scan QR codes.",
+        "thumbnailUrl": "https://img.youtube.com/vi/ldai7gc9ANE/hqdefault.jpg",
+        "uploadDate": "2026-10-28",
+        "contentUrl": "https://www.youtube.com/watch?v=ldai7gc9ANE",
+        "embedUrl": "https://www.youtube.com/embed/ldai7gc9ANE"
+      },
+      {
+        "@type": "VideoObject",
+        "position": 4,
+        "name": "Live Tambola Gameplay with Post-Game Recall Trivia & Cognitive Skills",
+        "description": "Watch live gameplay followed by DabHousie signature Post-Game Recall Trivia testing players memory and observation skills under the clock.",
+        "thumbnailUrl": "https://img.youtube.com/vi/dmkWRf9oLzA/hqdefault.jpg",
+        "uploadDate": "2026-10-28",
+        "contentUrl": "https://www.youtube.com/watch?v=dmkWRf9oLzA",
+        "embedUrl": "https://www.youtube.com/embed/dmkWRf9oLzA"
+      }
+    ]
+  }
+  </script>
+</head>
+
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="site-header">
+    <div class="nav-container">
+      <div class="nav-left">
+        <a href="/" class="brand">
+          <img src="/dabhousie_horizontal_logo.png" alt="DabHousie" class="nav-logo">
+        </a>
+      </div>
+
+      <div class="nav-right">
+        <ul class="nav-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🌟 Why DabHousie</a></li>
+          <li><a href="/play-with-dabby.html" style="color: #facc15; font-weight: 800;">⚡ Play with Dabby</a></li>
+          <li><a href="/how-it-works.html">How It Works</a></li>
+          <li><a href="/videos.html" class="active" style="color: #F43F5E; font-weight: 800;">📺 Videos</a></li>
+          <li class="nav-dropdown">
+            <a href="/how-to-play-tambola.html" class="nav-dropdown-toggle">Game Guides <span
+                class="arrow-icon">▾</span></a>
+            <ul class="dropdown-menu">
+              <li><a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide (Standard Rules)</a></li>
+              <li><a href="/how-to-play-tambola.html">🎯 Tambola Guide (Jaldi 5 &amp; Rules)</a></li>
+              <li><a href="/how-to-play-housie.html">🎲 Housie Guide (Party Rules &amp; Caller)</a></li>
+              <li><a href="/skill-games-guide.html">🧠⚡ Skill Games Guide (FlashHousie™ &amp; Levels 0–5)</a></li>
+            </ul>
+          </li>
+          <li><a href="/pricing.html">Pricing</a></li>
+          <li><a href="/recent-games.html">Recent Games</a></li>
+          <li><a href="/brand-partners.html">Brand Partners</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <div id="nav-auth-container">
+            <a href="/#/" class="nav-signin-btn">Sign In</a>
+          </div>
+          <a href="/#/create-game" class="btn-nav-host">Host a Game</a>
+          <a href="/join.html" class="btn-nav-join">🔑 Join a Game</a>
+          <button class="mobile-nav-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">☰</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-nav-drawer" class="mobile-nav-drawer">
+    <a href="/">Home</a>
+    <a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🌟 Why DabHousie</a>
+    <a href="/play-with-dabby.html" style="color: #facc15; font-weight: 800;">⚡ Play with Dabby (Practice)</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/videos.html" class="active" style="color: #F43F5E; font-weight: 800;">📺 Video Tutorials &amp; Demos</a>
+    <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide</a>
+    <a href="/how-to-play-tambola.html">🎯 Tambola Guide</a>
+    <a href="/how-to-play-housie.html">🎲 Housie Guide</a>
+    <a href="/skill-games-guide.html">🧠 Skill Games Guide</a>
+    <a href="/pricing.html">Pricing</a>
+    <a href="/recent-games.html">Recent Games</a>
+    <a href="/brand-partners.html">Brand Partners</a>
+    <a href="/join.html" style="color: #FFC107; font-weight: 700;">🔑 Join a Game</a>
+    <a href="/#/create-game" style="color: #60A5FA; font-weight: 700;">➕ Host a Game</a>
+  </div>
+
+  <main>
+    <!-- Video Hero Section -->
+    <section class="video-hero">
+      <div class="hero-badge">🎬 Official DabHousie Video Hub</div>
+      <h1 class="hero-title">Watch, Learn &amp; Experience <span class="gradient-text">DabHousie</span></h1>
+      <p class="hero-sub">
+        Explore live gameplay walkthroughs, zero-download player guides, big-screen TV projector modes, and cognitive recall trivia in high-definition video.
+      </p>
+    </section>
+
+    <!-- Cinema Stage (Option A Featured Player) -->
+    <section class="cinema-stage-section" id="cinema-stage">
+      <div class="cinema-container">
+        <div class="cinema-screen-wrap">
+          <iframe id="cinema-player" class="cinema-iframe"
+            src="https://www.youtube.com/embed/08JiD_-CyD8?rel=0&amp;modestbranding=1"
+            title="DabHousie Video Player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div class="cinema-ambient-bar"></div>
+
+        <div class="cinema-details">
+          <div class="cinema-header-row">
+            <div class="cinema-meta-left">
+              <div class="cinema-tag-row">
+                <span id="cinema-now-playing" class="cinema-now-playing">
+                  <span class="pulse-dot"></span> Now Playing on Cinema Stage
+                </span>
+                <span id="cinema-group-pill" class="cinema-group-pill">Player &amp; Guest Guides</span>
+                <span id="cinema-duration" class="cinema-duration-badge">⏱️ 1:51</span>
+              </div>
+              <h2 id="cinema-title" class="cinema-title">
+                How to Play &amp; Win Live Tambola Online - Ticket Dabbing, Claim Verification &amp; Rewards
+              </h2>
+            </div>
+
+            <div class="cinema-actions">
+              <a id="cinema-yt-btn" href="https://www.youtube.com/watch?v=08JiD_-CyD8" target="_blank"
+                rel="noopener noreferrer" class="btn-cinema btn-cinema-yt" title="Watch directly on YouTube">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <span>Watch on YouTube</span>
+              </a>
+              <button id="cinema-share-btn" class="btn-cinema btn-cinema-share" onclick="copyCurrentVideoLink()"
+                title="Copy direct link to this video">
+                <span>🔗 Share Video</span>
+              </button>
+            </div>
+          </div>
+
+          <p id="cinema-summary" class="cinema-summary">
+            Learn how to join with a party code, dab numbers as they are called, catch patterns, avoid bogey claims, and verify winning claims with celebratory confetti.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sticky Group Controls & Search Bar -->
+    <div class="controls-wrapper" id="video-controls">
+      <div class="controls-bar">
+        <div class="filter-pills" role="tablist" aria-label="Video Category Filters">
+          <button class="filter-pill active" onclick="setGroupFilter('all', this)" role="tab" aria-selected="true">
+            🌟 All Videos (<span id="count-all">16</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('player', this)" role="tab" aria-selected="false">
+            🎯 Player Guides (<span id="count-player">5</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('host', this)" role="tab" aria-selected="false">
+            👑 Host &amp; TV Mode (<span id="count-host">7</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('trivia', this)" role="tab" aria-selected="false">
+            🧠 Recall Trivia (<span id="count-trivia">2</span>)
+          </button>
+          <button class="filter-pill" onclick="setGroupFilter('promos', this)" role="tab" aria-selected="false">
+            🚀 Promos (<span id="count-promos">2</span>)
+          </button>
+        </div>
+
+        <div class="search-box-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="video-search-input" class="search-input"
+            placeholder="Search videos by title or topic..."
+            oninput="handleSearch(this.value)"
+            aria-label="Search video tutorials">
+        </div>
+      </div>
+    </div>
+
+    <!-- Video Grid Section -->
+    <section class="video-gallery-section">
+      <div class="section-meta-bar">
+        <span id="gallery-status-text">Showing all 16 official videos</span>
+        <a href="#cinema-stage" style="color: #60A5FA; text-decoration: none;" onclick="scrollToCinema()">▲ Back to Cinema Stage</a>
+      </div>
+
+      <div class="video-grid" id="video-grid-container">
+        <!-- Rendered dynamically from web/js/videos-data.js -->
+      </div>
+    </section>
+
+    <!-- Bottom Action Banner -->
+    <section class="cta-banner-section">
+      <div class="cta-banner">
+        <h3>Ready to Experience DabHousie Live?</h3>
+        <p>
+          Host your own party for family gatherings, kitty parties, or corporate team-building events in under 60 seconds with digital tickets and an automated caller.
+        </p>
+        <div class="cta-btns">
+          <a href="/#/create-game" class="cta-btn-primary">🎉 Host a Live Game Now</a>
+          <a href="/play-with-dabby.html" class="cta-btn-secondary">⚡ Practice Solo with Dabby</a>
+          <a href="/how-it-works.html" class="cta-btn-secondary">📖 Interactive Host Guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="/">Home</a> <span>•</span>
+      <a href="/why-dabhousie.html">Why DabHousie</a> <span>•</span>
+      <a href="/how-it-works.html">How It Works</a> <span>•</span>
+      <a href="/videos.html">Videos</a> <span>•</span>
+      <a href="/how-to-play-tambola.html">Tambola Guide</a> <span>•</span>
+      <a href="/how-to-play-housie.html">Housie Guide</a> <span>•</span>
+      <a href="/90-ball-bingo.html">90-Ball Bingo Guide</a> <span>•</span>
+      <a href="/skill-games-guide.html">Skill Games Guide</a> <span>•</span>
+      <a href="/pricing.html">Pricing</a> <span>•</span>
+      <a href="/recent-games.html">Recent Games</a> <span>•</span>
+      <a href="/brand-partners.html">Brand Partners</a> <span>•</span>
+      <a href="/terms-conditions.html">Terms &amp; Conditions</a> <span>•</span>
+      <a href="/privacy-policy.html">Privacy Policy</a>
+    </div>
+    <div class="footer-social-bar">
+      <a href="https://www.linkedin.com/company/dabhousie/" target="_blank" rel="noopener noreferrer" class="footer-social-btn linkedin" title="Follow DabHousie on LinkedIn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+        <span>LinkedIn</span>
+      </a>
+      <a href="https://www.youtube.com/@DabHousie" target="_blank" rel="noopener noreferrer" class="footer-social-btn youtube" title="Watch DabHousie on YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        <span>YouTube</span>
+      </a>
+      <a href="https://www.facebook.com/dabhousie" target="_blank" rel="noopener noreferrer" class="footer-social-btn facebook" title="Connect on Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+        <span>Facebook</span>
+      </a>
+    </div>
+    <p class="footer-copy">&copy; 2026 DabHousie by Digital App Studio. All rights reserved.</p>
+    <p class="disclaimer-text">
+      * Built for team building &amp; authentic social connection — strictly not gambling. Free hosting for up to 5 players is offered for a limited promotional period and is subject to terms of service and fair usage policies.
+    </p>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div id="toast-pill" class="toast-pill">🔗 Video link copied to clipboard!</div>
+
+  <!-- Video Registry & Nav Controller -->
+  <script src="/js/videos-data.js"></script>
+  <script src="/js/nav.js"></script>
+
+  <script>
+    // Cinema Stage & Gallery Controller
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let activeVideoId = '08JiD_-CyD8';
+
+    function getVideos() {
+      return window.DABHOUSIE_VIDEOS || [];
+    }
+
+    function updateCategoryCounts() {
+      const videos = getVideos();
+      const counts = {
+        all: videos.length,
+        player: videos.filter(v => v.group === 'player').length,
+        host: videos.filter(v => v.group === 'host').length,
+        trivia: videos.filter(v => v.group === 'trivia').length,
+        promos: videos.filter(v => v.group === 'promos').length,
+      };
+
+      document.getElementById('count-all').textContent = counts.all;
+      document.getElementById('count-player').textContent = counts.player;
+      document.getElementById('count-host').textContent = counts.host;
+      document.getElementById('count-trivia').textContent = counts.trivia;
+      document.getElementById('count-promos').textContent = counts.promos;
+    }
+
+    function renderGrid() {
+      const container = document.getElementById('video-grid-container');
+      const statusText = document.getElementById('gallery-status-text');
+      const videos = getVideos();
+
+      const filtered = videos.filter(v => {
+        const matchesGroup = (currentFilter === 'all') || (v.group === currentFilter);
+        const matchesQuery = !searchQuery || 
+          v.title.toLowerCase().includes(searchQuery) ||
+          v.summary.toLowerCase().includes(searchQuery) ||
+          v.badge.toLowerCase().includes(searchQuery);
+        return matchesGroup && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        statusText.textContent = `No videos match "${searchQuery}"`;
+        container.innerHTML = `
+          <div class="no-results">
+            <div class="no-results-icon">🔍</div>
+            <div class="no-results-title">No matching tutorials found</div>
+            <div class="no-results-sub">Try searching for "host", "ticket", "trivia", or clear your filter.</div>
+          </div>
+        `;
+        return;
+      }
+
+      statusText.textContent = `Showing ${filtered.length} of ${videos.length} videos`;
+
+      let html = '';
+      filtered.forEach(v => {
+        const isActive = v.id === activeVideoId;
+        const activeClass = isActive ? ' is-active' : '';
+
+        html += `
+          <article class="video-card${activeClass}" id="card-${v.id}" onclick="playOnCinema('${v.id}')"
+                   tabindex="0" role="button" aria-label="Play ${escapeHtml(v.title)} on Cinema Stage">
+            <div class="card-thumb-wrap">
+              <img src="${v.thumbnail}" alt="${escapeHtml(v.title)}" class="card-thumb-img" loading="lazy">
+              <div class="card-play-overlay">
+                <div class="play-icon-circle">
+                  <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+              <span class="card-duration-badge">${v.duration || 'Video'}</span>
+            </div>
+
+            <div class="card-body">
+              <div class="card-tag-row">
+                <span class="card-group-pill pill-${v.group}">${escapeHtml(v.badge)}</span>
+                <span class="card-active-indicator">
+                  <span class="pulse-dot"></span> On Stage
+                </span>
+              </div>
+              <h3 class="card-title">${escapeHtml(v.title)}</h3>
+              <p class="card-summary">${escapeHtml(v.summary)}</p>
+
+              <div class="card-footer">
+                <span class="card-play-btn">▶ Play on Stage</span>
+                <a href="${v.youtubeUrl}" target="_blank" rel="noopener noreferrer" class="card-yt-link"
+                   onclick="event.stopPropagation();" title="Watch on YouTube">↗ YouTube</a>
+              </div>
+            </div>
+          </article>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function playOnCinema(videoId, shouldScroll = true) {
+      const videos = getVideos();
+      const video = videos.find(v => v.id === videoId);
+      if (!video) return;
+
+      activeVideoId = videoId;
+
+      // Update iframe source
+      const player = document.getElementById('cinema-player');
+      player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+
+      // Update Cinema Meta Details
+      document.getElementById('cinema-title').textContent = video.title;
+      document.getElementById('cinema-summary').textContent = video.summary;
+      document.getElementById('cinema-duration').textContent = `⏱️ ${video.duration}`;
+      document.getElementById('cinema-group-pill').textContent = video.groupLabel;
+      document.getElementById('cinema-yt-btn').href = video.youtubeUrl;
+
+      // Update card active classes
+      document.querySelectorAll('.video-card').forEach(c => c.classList.remove('is-active'));
+      const activeCard = document.getElementById(`card-${videoId}`);
+      if (activeCard) activeCard.classList.add('is-active');
+
+      // Update URL query string without reloading page
+      try {
+        if (history.replaceState) {
+          const newUrl = `${window.location.pathname}?v=${videoId}${currentFilter !== 'all' ? '&group=' + currentFilter : ''}`;
+          history.replaceState(null, null, newUrl);
+        }
+      } catch (_) {}
+
+      // Smooth scroll up to Cinema Stage if user clicked a card from down below
+      if (shouldScroll) {
+        scrollToCinema();
+      }
+    }
+
+    function scrollToCinema() {
+      const stage = document.getElementById('cinema-stage');
+      if (!stage) return;
+      const offsetTop = stage.getBoundingClientRect().top + window.pageYOffset - 80;
+      window.scrollTo({
+        top: Math.max(0, offsetTop),
+        behavior: 'smooth'
+      });
+    }
+
+    function setGroupFilter(group, btnElement) {
+      currentFilter = group;
+
+      document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      });
+
+      if (btnElement) {
+        btnElement.classList.add('active');
+        btnElement.setAttribute('aria-selected', 'true');
+      }
+
+      renderGrid();
+    }
+
+    function handleSearch(val) {
+      searchQuery = (val || '').trim().toLowerCase();
+      renderGrid();
+    }
+
+    function copyCurrentVideoLink() {
+      const shareUrl = `${window.location.origin}/videos.html?v=${activeVideoId}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(showToast);
+      } else {
+        const temp = document.createElement('input');
+        temp.value = shareUrl;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast();
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast-pill');
+      if (!toast) return;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Initialize from URL params or hash on load
+    (function initVideoHub() {
+      updateCategoryCounts();
+
+      const params = new URLSearchParams(window.location.search);
+      const videoParam = params.get('v');
+      const groupParam = params.get('group') || (window.location.hash || '').replace('#', '');
+
+      if (groupParam && ['player', 'host', 'trivia', 'promos'].includes(groupParam.toLowerCase())) {
+        const matchingBtn = document.querySelector(`.filter-pill[onclick*="'${groupParam.toLowerCase()}'"]`);
+        setGroupFilter(groupParam.toLowerCase(), matchingBtn);
+      } else {
+        renderGrid();
+      }
+
+      if (videoParam) {
+        const videos = getVideos();
+        const exists = videos.some(v => v.id === videoParam);
+        if (exists) {
+          playOnCinema(videoParam, false);
+        }
+      }
+    })();
+  </script>
+</body>
+
+</html>

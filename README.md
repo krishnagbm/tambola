@@ -82,9 +82,11 @@ c:\dev\Tambola\
 │   ├── providers/               # Riverpod state providers & Supabase Realtime streams
 │   ├── repositories/            # Auth, Game, Gameplay, Rewards, and Wallet repositories
 │   └── router/                  # GoRouter declarative routing
+├── scripts/
+│   └── sync_youtube.js          # Channel video sync utility (fetches latest @DabHousie uploads)
 ├── supabase/
 │   └── migrations/              # 33 sequential SQL migrations (strictly namespaced with MPT_)
-└── web/                         # Static SEO HTML pages, legal disclosures, sitemap.xml, ads.txt
+└── web/                         # Static SEO HTML pages, legal disclosures, videos.html, sitemap.xml, ads.txt
 ```
 
 ---
@@ -133,7 +135,7 @@ python test/sql_ticket_stress_test.py
 ---
 
 ### 4. Test Standalone SEO Web Pages & "Play with Dabby" Locally
-To preview and test static HTML pages (`/play-with-dabby.html`, `/how-it-works.html`, `/90-ball-bingo.html`, etc.) with local assets:
+To preview and test static HTML pages (`/videos.html`, `/play-with-dabby.html`, `/how-it-works.html`, `/90-ball-bingo.html`, etc.) with local assets:
 ```bash
 # Using Python built-in HTTP server:
 python -m http.server 8080 --directory web
@@ -142,6 +144,7 @@ python -m http.server 8080 --directory web
 npx serve web -p 8080
 ```
 Then open in your browser:
+- **Official Video Hub (Cinema Mode):** `http://localhost:8080/videos.html`
 - **Play with Dabby (Practice Solo Game):** `http://localhost:8080/play-with-dabby.html`
 - **Embedded Modal View:** `http://localhost:8080/play-with-dabby.html?embed=true`
 - **90-Ball Bingo Guide:** `http://localhost:8080/90-ball-bingo.html`
@@ -163,7 +166,31 @@ npm run test:seed
 
 ---
 
-### 6. Production Web Build
+### 6. YouTube Channel Video Sync (Automated)
+DabHousie features an interactive, pre-rendered Video Hub at `/videos.html` (Option A Cinema Mode) powered by the data registry in `web/js/videos-data.js`.
+
+Whenever you publish new public videos to the official [@DabHousie](https://www.youtube.com/@DabHousie) YouTube channel, run:
+```bash
+npm run sync-videos
+```
+*or directly:*
+```bash
+node scripts/sync_youtube.js
+```
+
+#### What this command does:
+1. **Fetches Channel Uploads:** Scrapes the latest public videos directly from `https://www.youtube.com/@DabHousie/videos`.
+2. **Diff Detection:** Compares channel videos against `web/js/videos-data.js` and identifies newly added video IDs.
+3. **Smart Auto-Categorization:** Automatically assigns new videos to the appropriate category based on keywords:
+   - 🎯 **Player Guides** (`player`) — joining, registration, ticket dabbing, gameplay rules.
+   - 👑 **Host & TV Mode** (`host`) — room creation, organizer lobby, TV/projector display mode.
+   - 🧠 **Recall Trivia** (`trivia`) — post-game recall trivia, memory skills, cognitive questions.
+   - 🚀 **Brand Promos** (`promos`) — teasers, promotional spots, channel highlights.
+4. **Non-Destructive Update:** Appends the new videos directly to `web/js/videos-data.js` while preserving existing custom titles and badges.
+
+---
+
+### 7. Production Web Build
 ```bash
 flutter build web --release
 ```

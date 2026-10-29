@@ -340,6 +340,7 @@
       { href: '/recent-games.html', icon: '🏆', text: 'Recent Games & Hall of Fame', style: 'color:var(--accent); font-weight:700;' },
       { href: '/brand-partners.html', icon: '🤝', text: 'Brand Partners' },
       { href: '/how-it-works.html', icon: '📖', text: 'How It Works' },
+      { href: '/videos.html', icon: '📺', text: 'Videos & Live Tutorials', style: 'color:#F43F5E; font-weight:700;' },
       { href: '/pricing.html', icon: '🏷️', text: 'Pricing & Credit Packs' },
       { divider: true },
       { href: '/how-to-play-tambola.html', icon: '🎯', text: 'Tambola Guide (Jaldi 5 & Rules)' },
