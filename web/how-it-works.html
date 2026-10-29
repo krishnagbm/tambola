@@ -4,13 +4,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How DabHousie Works — Live Multiplayer Tambola, Housie & 90-Ball Bingo</title>
+  <title>How DabHousie Works — Live Multiplayer Tambola, Housie &amp; 90-Ball Bingo</title>
   <meta name="description"
-    content="Learn how to host and play live multiplayer Tambola, Housie, and 90-Ball Bingo on DabHousie. Automated number calling, instant digital tickets, and server-side prize verification.">
+    content="Interactive step-by-step guide to hosting and playing live multiplayer Tambola, Housie, and 90-Ball Bingo on DabHousie. Automated number calling, Quick Dabby fast play, post-game recall trivia, and server-side prize verification.">
   <meta name="keywords"
-    content="how to play tambola online, host housie game, 90-ball bingo caller, multiplayer tambola rules, virtual bingo host, tambola ticket generator">
+    content="how to play tambola online, host housie game, 90-ball bingo caller, quick dabby, tambola trivia, multiplayer tambola rules, virtual bingo host, tambola ticket generator">
   <link rel="canonical" href="https://www.dabhousie.com/how-it-works.html">
   <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Cache Control (Prevent Stale Cache on Updates) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 
   <!-- Google tag (gtag.js) - Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E46BLPH29F"></script>
@@ -28,20 +33,400 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="How DabHousie Works — Live Multiplayer Tambola, Housie & 90-Ball Bingo">
+  <meta property="og:title" content="How DabHousie Works — Live Multiplayer Tambola, Housie &amp; 90-Ball Bingo">
   <meta property="og:description"
-    content="Host games for up to 250 players with digital tickets, automated number calling, and server-verified prize claims.">
+    content="Host games for up to 250 players with digital tickets, Quick Dabby fast calling, post-game trivia, and server-verified prize claims.">
   <meta property="og:url" content="https://www.dabhousie.com/how-it-works.html">
   <meta property="og:image" content="https://www.dabhousie.com/og-banner.png">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="How DabHousie Works — Live Multiplayer Tambola, Housie & 90-Ball Bingo">
+  <meta name="twitter:title" content="How DabHousie Works — Live Multiplayer Tambola, Housie &amp; 90-Ball Bingo">
   <meta name="twitter:description"
-    content="Host games for up to 250 players with digital tickets, automated number calling, and server-verified prize claims.">
+    content="Host games for up to 250 players with digital tickets, Quick Dabby fast calling, post-game trivia, and server-verified prize claims.">
   <meta name="twitter:image" content="https://www.dabhousie.com/og-banner.png">
 
   <link rel="stylesheet" href="/css/site.css">
+
+  <style>
+    /* Specialized Styling for How It Works Interactive Collapsible Guide */
+    html, body {
+      overflow-x: hidden;
+      max-width: 100vw;
+    }
+
+    /* Guide Controls / Role Filter Bar */
+    .guide-controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 18px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .guide-filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-right: 4px;
+    }
+
+    .filter-pill-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #CBD5E1;
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-pill-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFFFFF;
+      transform: translateY(-1px);
+    }
+
+    .btn-toggle-all {
+      background: transparent;
+      border: 1px solid rgba(250, 204, 21, 0.45);
+      color: #FACC15;
+      font-size: 0.84rem;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-toggle-all:hover {
+      background: rgba(250, 204, 21, 0.15);
+      border-color: #FACC15;
+    }
+
+    /* Collapsible Card Component */
+    .collapsible-card {
+      background: rgba(18, 24, 38, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 18px;
+      margin-bottom: 18px;
+      overflow: hidden;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .collapsible-card:hover {
+      border-color: rgba(96, 165, 250, 0.35);
+    }
+
+    .collapsible-card.is-open {
+      border-color: rgba(250, 204, 21, 0.45);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
+    }
+
+    /* Card Header Trigger Button */
+    .card-header-trigger {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 22px 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      color: inherit;
+      gap: 16px;
+      transition: background 0.2s ease;
+    }
+
+    .card-header-trigger:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-grow: 1;
+    }
+
+    .header-icon {
+      font-size: 2rem;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .header-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #F8FAFC;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .header-subtitle {
+      font-size: 0.92rem;
+      color: #94A3B8;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    /* Badges */
+    .header-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-host {
+      background: rgba(250, 204, 21, 0.16);
+      color: #FACC15;
+    }
+
+    .badge-player {
+      background: rgba(56, 189, 248, 0.16);
+      color: #38BDF8;
+    }
+
+    .badge-speed {
+      background: rgba(245, 158, 11, 0.18);
+      color: #FBBF24;
+    }
+
+    .badge-trivia {
+      background: rgba(168, 85, 247, 0.18);
+      color: #C084FC;
+    }
+
+    .badge-security {
+      background: rgba(52, 211, 153, 0.16);
+      color: #34D399;
+    }
+
+    .badge-tv {
+      background: rgba(96, 165, 250, 0.16);
+      color: #60A5FA;
+    }
+
+    /* Chevron Indicator */
+    .chevron-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #CBD5E1;
+      font-size: 1.15rem;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .card-header-trigger:hover .chevron-icon {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+    }
+
+    .collapsible-card.is-open .chevron-icon {
+      transform: rotate(180deg);
+      background: rgba(250, 204, 21, 0.22);
+      color: #FACC15;
+    }
+
+    /* Content Body */
+    .card-content-body {
+      display: none;
+      padding: 0 24px 28px 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      margin-top: 4px;
+      animation: fadeInCardBody 0.25s ease;
+    }
+
+    .collapsible-card.is-open .card-content-body {
+      display: block;
+    }
+
+    @keyframes fadeInCardBody {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Grid and Inner Box Styling */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .feature-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .feature-box h4 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin: 0 0 8px 0;
+      line-height: 1.4;
+    }
+
+    .feature-box p {
+      font-size: 0.92rem;
+      color: #94A3B8;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .card-screenshot-container {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .card-screenshot-img {
+      max-width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45);
+    }
+
+    .card-screenshot-caption {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* CTA Section */
+    .cta-banner {
+      background: linear-gradient(135deg, #1E3A8A 0%, #0B3D91 100%);
+      border-radius: 18px;
+      padding: 38px 28px;
+      text-align: center;
+      margin: 40px 0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .cta-banner h2 {
+      font-size: 1.7rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: #FFFFFF;
+    }
+
+    .cta-banner p {
+      color: #E2E8F0;
+      font-size: 1.05rem;
+      max-width: 650px;
+      margin: 0 auto 22px;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Mobile Overrides */
+    @media (max-width: 768px) {
+      .card-header-trigger {
+        padding: 16px 16px;
+      }
+
+      .header-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.6rem;
+      }
+
+      .header-title {
+        font-size: 1.1rem;
+      }
+
+      .header-subtitle {
+        font-size: 0.85rem;
+      }
+
+      .card-content-body {
+        padding: 0 16px 20px 16px;
+      }
+
+      .guide-controls-bar {
+        padding: 12px 14px;
+      }
+
+      .guide-filter-pills {
+        gap: 6px;
+      }
+
+      .filter-pill-btn {
+        font-size: 0.78rem;
+        padding: 5px 10px;
+      }
+    }
+  </style>
 
   <!-- JSON-LD Structured Data -->
   <script type="application/ld+json">
@@ -54,7 +439,7 @@
       {
         "@type": "HowToStep",
         "name": "Setup & Schedule Your Game",
-        "text": "Organizers choose a game name, select group capacity, configure winning patterns, and schedule for later or launch instantly."
+        "text": "Organizers choose a game name, select group capacity, configure winning patterns, choose Quick Dabby or Classic calling, and schedule for later or launch instantly."
       },
       {
         "@type": "HowToStep",
@@ -64,7 +449,12 @@
       {
         "@type": "HowToStep",
         "name": "Play & Verify Live",
-        "text": "Draw numbers automatically or manually. Players dab numbers on guaranteed-unique digital tickets. When a winning pattern is claimed, DabHousie's server instantly validates the ticket in real time."
+        "text": "Draw numbers automatically with Dabby or manually. Players dab numbers on guaranteed-unique digital tickets with real-time server validation."
+      },
+      {
+        "@type": "HowToStep",
+        "name": "Post-Game Recall Trivia",
+        "text": "Optionally transition into an interactive corporate or friendly trivia round with live Top 5 podium celebration."
       }
     ]
   }
@@ -85,7 +475,7 @@
       <div class="nav-right">
         <ul class="nav-links">
           <li><a href="/">Home</a></li>
-          <li><a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🏢 Why DabHousie</a></li>
+          <li><a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🌟 Why DabHousie</a></li>
           <li><a href="/play-with-dabby.html" style="color: #facc15; font-weight: 800;">⚡ Play with Dabby</a></li>
           <li><a href="/how-it-works.html" class="active">How It Works</a></li>
           <li class="nav-dropdown">
@@ -118,7 +508,7 @@
   <!-- Mobile Drawer -->
   <div id="mobile-nav-drawer" class="mobile-nav-drawer">
     <a href="/">Home</a>
-    <a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🏢 Why DabHousie (For Teams)</a>
+    <a href="/why-dabhousie.html" style="color: #60A5FA; font-weight: 700;">🌟 Why DabHousie</a>
     <a href="/play-with-dabby.html" style="color: #facc15; font-weight: 800;">⚡ Play with Dabby (Practice)</a>
     <a href="/how-it-works.html" class="active">How It Works</a>
     <a href="/90-ball-bingo.html">🎱 90-Ball Bingo Guide</a>
@@ -135,165 +525,345 @@
     <span class="eyebrow">STEP-BY-STEP PLATFORM GUIDE</span>
     <h1>How DabHousie Works</h1>
     <p class="subtitle">
-      Whether you’re hosting a game or joining as an individual, with friends, or as a team,<br>DabHousie makes live
-      Tambola, Housie, 90-Ball Bingo &amp; Skill Specials simple to play.<br>Hosts control multiplayer rooms, while
-      guests join instantly for free<br>with no app download or account creation required.
+      Whether hosting a 250-player company all-hands or playing a casual living room game with family,<br>
+      DabHousie makes live Tambola, Housie, and 90-Ball Bingo simple and automated.<br>
+      Explore the steps below or tap any section to view details.
     </p>
   </section>
 
   <!-- Main Content -->
   <main class="main-content">
 
-    <!-- Organizer Flow -->
-    <div class="content-card">
-      <h2>👑 For Game Organizers (Hosts)</h2>
-      <p>Organizing a live game takes less than 60 seconds with zero preparation, printing, or app installs required.
-      </p>
-
-      <div class="grid-2">
-        <div class="feature-box">
-          <h4>1. Easy Setup &amp; Game Scheduling</h4>
-          <p>Choose your room name, select group capacity (up to 250 players), configure winning patterns, and launch
-            immediately or schedule the game in advance for a future date and time.</p>
-        </div>
-        <div class="feature-box">
-          <h4>2. Display QR Code &amp; Instant Links</h4>
-          <p>Display a large, high-resolution room QR code on your TV, screen, or printout for instant phone scanning,
-            or share a 6-digit room code and clickable link over WhatsApp, chat, or email.</p>
-        </div>
-        <div class="feature-box">
-          <h4>3. Automated Speech Caller &amp; Board</h4>
-          <p>Draw numbers automatically with realistic speech calling at customizable speeds, or draw manually while
-            projecting the live 1–90 board to a smart TV or projector.</p>
-        </div>
-        <div class="feature-box">
-          <h4>4. Live Host Control &amp; Instant Verification</h4>
-          <p>Monitor connected players in real time, manage ticket distribution, and let DabHousie's server-side engine
-            automatically validate prize claims without pausing game momentum.</p>
-        </div>
+    <!-- Interactive Guide Controls / Role Bar -->
+    <div class="guide-controls-bar">
+      <div class="guide-filter-pills">
+        <span class="filter-label">Quick Jump:</span>
+        <button class="filter-pill-btn" onclick="openAndScrollCard('card-host')">👑 Hosts</button>
+        <button class="filter-pill-btn" onclick="openAndScrollCard('card-player')">📱 Guests</button>
+        <button class="filter-pill-btn" onclick="openAndScrollCard('card-quick-dabby')">⚡ Quick Dabby</button>
+        <button class="filter-pill-btn" onclick="openAndScrollCard('card-trivia')">🧠 Trivia</button>
+        <button class="filter-pill-btn" onclick="openAndScrollCard('card-tv')">📺 TV Mode</button>
       </div>
 
-      <div style="text-align:center; margin-top:20px;">
-        <img src="/screenshots/screenshot_organizer_control.png" alt="DabHousie Organizer Live Control & Master Board"
-          style="max-width:100%; border-radius:12px; border:1px solid var(--card-border); box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Live Organizer Control Screen with
-          Auto-Pilot Timer, 1–90 Master Board &amp; Real-Time Claims Roster</p>
+      <button id="btn-toggle-all" class="btn-toggle-all" onclick="toggleAllCards()">
+        <span id="toggle-all-icon">📂</span>
+        <span id="toggle-all-text">Expand All</span>
+      </button>
+    </div>
+
+    <!-- CARD 1: For Game Organizers (Hosts) - OPEN BY DEFAULT -->
+    <div id="card-host" class="collapsible-card is-open">
+      <button class="card-header-trigger" onclick="toggleCard('card-host')" aria-expanded="true">
+        <div class="header-left">
+          <div class="header-icon">👑</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              1. For Game Organizers (Hosts)
+              <span class="header-badge badge-host">Host Flow</span>
+            </h2>
+            <p class="header-subtitle">Create, schedule, and run automated rooms in under 60 seconds with hands-free calling</p>
+          </div>
+        </div>
+        <div class="chevron-icon">▾</div>
+      </button>
+
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          Organizing a live game takes less than 60 seconds with zero preparation, printing, or app installs required. The host retains total control over room access, speed, and prize claims.
+        </p>
+
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>1. Easy Setup &amp; Game Scheduling</h4>
+            <p>Choose your room name, select group capacity (up to 250 players), configure winning patterns, choose Quick Dabby or Classic calling, and launch immediately or schedule for a future kickoff.</p>
+          </div>
+          <div class="feature-box">
+            <h4>2. Display QR Code &amp; Instant Links</h4>
+            <p>Display a large, high-resolution room QR code on your TV, screen, or printout for instant phone scanning, or share a 6-digit room code and clickable link over WhatsApp, chat, or email.</p>
+          </div>
+          <div class="feature-box">
+            <h4>3. Automated Speech Caller &amp; Board</h4>
+            <p>Draw numbers automatically with realistic speech calling at customizable speeds, or draw manually while projecting the live 1–90 board to a smart TV, auditorium display, or Zoom call.</p>
+          </div>
+          <div class="feature-box">
+            <h4>4. Live Host Control &amp; Instant Verification</h4>
+            <p>Monitor connected players in real time, manage ticket distribution, and let DabHousie's server-side engine automatically validate prize claims without pausing game momentum—so the host can play too!</p>
+          </div>
+        </div>
+
+        <div class="card-screenshot-container">
+          <img src="/screenshots/screenshot_organizer_control.png" alt="DabHousie Organizer Live Control & Master Board"
+            class="card-screenshot-img">
+          <p class="card-screenshot-caption">Live Organizer Control Screen with Auto-Pilot Timer, 1–90 Master Board &amp; Real-Time Claims Roster</p>
+        </div>
       </div>
     </div>
 
-    <!-- Player Flow -->
-    <div class="content-card">
-      <h2>📱 For Players &amp; Guests</h2>
-      <p>We believe joining a party game should be effortless and frictionless for every guest.</p>
+    <!-- CARD 2: For Players & Guests - OPEN BY DEFAULT -->
+    <div id="card-player" class="collapsible-card is-open">
+      <button class="card-header-trigger" onclick="toggleCard('card-player')" aria-expanded="true">
+        <div class="header-left">
+          <div class="header-icon">📱</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              2. For Players &amp; Guests
+              <span class="header-badge badge-player">Guest Flow</span>
+            </h2>
+            <p class="header-subtitle">Instant browser play on any smartphone—zero app downloads and zero account logins</p>
+          </div>
+        </div>
+        <div class="chevron-icon">▾</div>
+      </button>
 
-      <div class="grid-3">
-        <div class="feature-box">
-          <h4>Zero App Downloads</h4>
-          <p>Guests open the link on Safari, Chrome, Edge, or Firefox. No installation required to play.</p>
-        </div>
-        <div class="feature-box">
-          <h4>No Account Required</h4>
-          <p>Players simply enter a nickname, select a fun avatar, and get their unique digital ticket immediately.</p>
-        </div>
-        <div class="feature-box">
-          <h4>Real-Time Dabbing</h4>
-          <p>Tap numbers as they are called or turn on auto-dabbing. The game highlights winning patterns when achieved.
-          </p>
-        </div>
-      </div>
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          We believe joining a game should be effortless and frictionless for every guest, from tech-savvy colleagues to grandparents and young children.
+        </p>
 
-      <div style="text-align:center; margin-top:20px;">
-        <img src="/screenshots/screenshot_mobile_ticket.png" alt="DabHousie Mobile Browser Live Player Ticket"
-          style="max-width:320px; border-radius:16px; border:1px solid var(--card-border); box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Instant Mobile Browser Play (Safari/Chrome)
-          — 3×9 ticket, caller counter, and real-time claim buttons</p>
+        <div class="grid-3">
+          <div class="feature-box">
+            <h4>Zero App Downloads</h4>
+            <p>Guests open the link on Safari, Chrome, Edge, or Firefox. No app store installation or updates required.</p>
+          </div>
+          <div class="feature-box">
+            <h4>No Account Required</h4>
+            <p>Players simply enter a nickname, select a fun avatar, and get their unique digital ticket immediately.</p>
+          </div>
+          <div class="feature-box">
+            <h4>Real-Time Dabbing</h4>
+            <p>Tap numbers as they are called or turn on auto-dabbing. The ticket automatically highlights winning patterns.</p>
+          </div>
+          <div class="feature-box">
+            <h4>100% Unique Tickets</h4>
+            <p>Each guest receives exactly one server-generated 3×9 ticket with balanced columns—no duplicate cards.</p>
+          </div>
+          <div class="feature-box">
+            <h4>Bogus Claim Protection</h4>
+            <p>Catches accidental false shouts gently and notifies players instantly without interrupting the whole room.</p>
+          </div>
+          <div class="feature-box">
+            <h4>Interactive Voice &amp; Sounds</h4>
+            <p>Crisp audio calling and celebratory winning animations keep the energy buzzing on every phone.</p>
+          </div>
+        </div>
+
+        <div class="card-screenshot-container">
+          <img src="/screenshots/screenshot_mobile_ticket.png" alt="DabHousie Mobile Browser Live Player Ticket"
+            style="max-width:320px;" class="card-screenshot-img">
+          <p class="card-screenshot-caption">Instant Mobile Browser Play (Safari/Chrome) — 3×9 ticket, caller counter, and real-time claim buttons</p>
+        </div>
       </div>
     </div>
 
-    <!-- Automated Claim Verification Engine -->
-    <div class="content-card">
-      <h2>🛡️ Server-Side Prize Claim Verification</h2>
-      <p>
-        Traditional paper games often suffer from disputed claims, missed calls, or false shouts. DabHousie
-        automatically validates prize claims with instant server verification.
-      </p>
-
-      <div class="grid-2">
-        <div class="feature-box">
-          <h4>⚡ Real-Time Logic Engine</h4>
-          <p>
-            When a player taps <strong>Claim Prize</strong> (e.g., Top Line or Full House), our database engine verifies
-            the player's ticket numbers against the sequence of numbers drawn so far.
-          </p>
+    <!-- CARD 3: Quick Dabby Fast Action Mode -->
+    <div id="card-quick-dabby" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-quick-dabby')" aria-expanded="false">
+        <div class="header-left">
+          <div class="header-icon" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.25);">⚡</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              3. Quick Dabby™ Fast Action Calling
+              <span class="header-badge badge-speed">Fast Play</span>
+            </h2>
+            <p class="header-subtitle">Active-pool calling concluding games up to 50% faster with zero dead numbers</p>
+          </div>
         </div>
-        <div class="feature-box">
-          <h4>🎟️ Scannable QR Prize Vouchers</h4>
-          <p>
-            Validated winners receive an official digital voucher and QR code on their screen, making in-person physical
-            prize hand-outs seamless at clubhouses and parties.
-          </p>
-        </div>
-      </div>
+        <div class="chevron-icon">▾</div>
+      </button>
 
-      <div style="text-align:center; margin-top:20px;">
-        <img src="/screenshots/screenshot_multiplayer_claims.png"
-          alt="DabHousie Real-Time Multiplayer Sync & Claim Validation"
-          style="max-width:100%; border-radius:12px; border:1px solid var(--card-border); box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Multiplayer live sync: instantaneous server
-          prize validation, winning alerts, and bogey protection</p>
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          In traditional 90-ball bingo with smaller groups (under 25 players), over 60% of numbers drawn are "dead calls" that nobody holds, causing games to drag. Quick Dabby™ solves this completely:
+        </p>
+
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>⚡ Active-Ticket Pool Selection</h4>
+            <p>Quick Dabby inspects all tickets issued to active players in the room and draws numbers strictly from that combined unique pool (e.g. 44 numbers for a 4-player game), ensuring almost every draw dabs a ticket!</p>
+          </div>
+          <div class="feature-box">
+            <h4>⏱️ Concludes in 5–8 Minutes</h4>
+            <p>Reduces total calls needed from 75–85 down to ~35–45 draws, cutting game duration in half so it fits corporate meeting agendas and keeps kids and elders fully energized.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🔄 Seamless Lobby Toggle</h4>
+            <p>Hosts can switch between <strong>Quick Dabby ⚡</strong> and <strong>Classic 1–90 🎲</strong> right from the Organizer Game Lobby before launching the game.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🛡️ 100% Authentic Rules</h4>
+            <p>All classic winning patterns (Early 5, Top Line, Middle Line, Bottom Line, Full House) and cryptographic ticket validation remain identical and authentic.</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- TV & Projector Display Mode -->
-    <div class="content-card">
-      <h2>📺 Big-Screen TV &amp; Projector Mode</h2>
-      <p>
-        Hosting an in-person event at a hall, clubhouse, or living room? Open DabHousie's dedicated Live Display link on
-        your smart TV or projector:
-      </p>
-      <ul>
-        <li><strong>On-Screen Room QR Code:</strong> Guests walk in and simply scan the TV screen with their smartphone
-          camera to join instantly.</li>
-        <li><strong>High-Visibility 1–90 Number Board:</strong> Highlights called numbers with bold, high-contrast
-          colors.</li>
-        <li><strong>Last Called Number Callout:</strong> Oversized display visible from across the room.</li>
-        <li><strong>Live Winners Ticker:</strong> Automatically celebrates winners in real time.</li>
-      </ul>
+    <!-- CARD 4: Corporate Post-Game Recall Trivia -->
+    <div id="card-trivia" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-trivia')" aria-expanded="false">
+        <div class="header-left">
+          <div class="header-icon" style="background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.25);">🧠</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              4. Corporate Post-Game Recall Trivia
+              <span class="header-badge badge-trivia">Learning &amp; Fun</span>
+            </h2>
+            <p class="header-subtitle">Reinforce all-hands key takeaways or friendly memory with a live Top 5 podium</p>
+          </div>
+        </div>
+        <div class="chevron-icon">▾</div>
+      </button>
 
-      <div style="text-align:center; margin-top:20px;">
-        <img src="/screenshots/screenshot_tv_mode.png" alt="DabHousie TV & Projector Display Mode for Big Screen Events"
-          style="max-width:100%; border-radius:12px; border:1px solid var(--card-border); box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Live Big-Screen TV Display — glowing 1–90
-          board, active caller animation, and real-time winner notifications</p>
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          Keep the energy soaring right after the final Full House is claimed! Instead of the event abruptly ending, DabHousie launches an integrated interactive Trivia round:
+        </p>
+
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>🎯 Seamless One-Click Transition</h4>
+            <p>No need to ask guests to switch to Kahoot or Slido. The game automatically transitions directly to the trivia countdown on player screens and stage displays.</p>
+          </div>
+          <div class="feature-box">
+            <h4>⏱️ Live Synchronous Countdown</h4>
+            <p>Questions appear simultaneously on big-screen TVs and mobile phones with a high-energy ticking countdown clock and instant answer locking.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🏆 Celebratory Top 5 Podium</h4>
+            <p>Real-time scoring based on speed and accuracy reveals the 1st through 5th place winners on a vibrant animated victory podium.</p>
+          </div>
+          <div class="feature-box">
+            <h4>💼 Custom Business or Family Content</h4>
+            <p>Hosts can configure questions based on quarterly OKRs, company history, all-hands announcements, or fun family trivia moments.</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- High-Capacity 50–250+ Player Events -->
-    <div class="content-card">
-      <h2>👥 50 to 250+ Player High-Capacity Galas</h2>
-      <p>
-        Whether organizing society gatherings, festive kitty parties, or corporate galas, DabHousie is designed to
-        support large lobbies with fast real-time synchronization and automated prize validation.
-      </p>
-
-      <div class="grid-2">
-        <div class="feature-box">
-          <h4>🎟️ Guaranteed 100% Unique Tickets</h4>
-          <p>Every single player receives a mathematically guaranteed unique 3×9 ticket with balanced number
-            distribution across all 9 columns.</p>
+    <!-- CARD 5: Server-Side Prize Claim Verification -->
+    <div id="card-claims" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-claims')" aria-expanded="false">
+        <div class="header-left">
+          <div class="header-icon">🛡️</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              5. Server-Side Prize Claim Verification
+              <span class="header-badge badge-security">Integrity</span>
+            </h2>
+            <p class="header-subtitle">Tamper-proof real-time claim validation, bogus detection, and digital vouchers</p>
+          </div>
         </div>
-        <div class="feature-box">
-          <h4>⚡ Fast Instant Verification</h4>
-          <p>Instant server-side validation handles simultaneous claims without pauses or lag across 50, 100, or 250
-            concurrent connected players.</p>
+        <div class="chevron-icon">▾</div>
+      </button>
+
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          Traditional paper games often suffer from disputed claims, missed calls, or false shouts. DabHousie automatically validates prize claims with instant server verification.
+        </p>
+
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>⚡ Real-Time Logic Engine</h4>
+            <p>When a player taps <strong>Claim Prize</strong> (e.g., Top Line or Full House), our database engine verifies the player's ticket numbers against the sequence of numbers drawn so far in milliseconds.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🎟️ Scannable QR Prize Vouchers</h4>
+            <p>Validated winners receive an official digital voucher and QR code on their screen, making in-person physical prize hand-outs or corporate gift voucher claims seamless.</p>
+          </div>
+        </div>
+
+        <div class="card-screenshot-container">
+          <img src="/screenshots/screenshot_multiplayer_claims.png"
+            alt="DabHousie Real-Time Multiplayer Sync & Claim Validation"
+            class="card-screenshot-img">
+          <p class="card-screenshot-caption">Multiplayer live sync: instantaneous server prize validation, winning alerts, and bogey protection</p>
         </div>
       </div>
+    </div>
 
-      <div style="text-align:center; margin-top:20px;">
-        <img src="/screenshots/screenshot_50_players.png" alt="DabHousie 50+ Player Live Multiplayer Game in Progress"
-          style="max-width:100%; border-radius:12px; border:1px solid var(--card-border); box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-        <p style="font-size:12px; color:var(--text-muted); margin-top:8px;">Live 50-Player Game in Progress —
-          synchronized real-time dabs, tickets, and automated caller status</p>
+    <!-- CARD 6: Big-Screen TV & Projector Mode -->
+    <div id="card-tv" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-tv')" aria-expanded="false">
+        <div class="header-left">
+          <div class="header-icon">📺</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              6. Big-Screen TV &amp; Projector Mode
+              <span class="header-badge badge-tv">Display View</span>
+            </h2>
+            <p class="header-subtitle">Dedicated live caller board for living room Smart TVs and auditorium projectors</p>
+          </div>
+        </div>
+        <div class="chevron-icon">▾</div>
+      </button>
+
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          Hosting an in-person event at a hall, clubhouse, or living room? Open DabHousie's dedicated Live Display link on your smart TV or projector:
+        </p>
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>📱 On-Screen Room QR Code</h4>
+            <p>Guests walk in and simply scan the TV screen with their smartphone camera to join the room instantly.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🔢 High-Visibility 1–90 Board</h4>
+            <p>Highlights called numbers with bold, glowing, high-contrast colors visible across the entire room.</p>
+          </div>
+          <div class="feature-box">
+            <h4>📢 Last Called Number Callout</h4>
+            <p>Oversized display showing the current draw, speech nickname, and elapsed game time.</p>
+          </div>
+          <div class="feature-box">
+            <h4>🏆 Live Winners Ticker</h4>
+            <p>Automatically celebrates winning players in real time with animated alerts and podium screens.</p>
+          </div>
+        </div>
+
+        <div class="card-screenshot-container">
+          <img src="/screenshots/screenshot_tv_mode.png" alt="DabHousie TV & Projector Display Mode for Big Screen Events"
+            class="card-screenshot-img">
+          <p class="card-screenshot-caption">Live Big-Screen TV Display — glowing 1–90 board, active caller animation, and real-time winner notifications</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD 7: 50 to 250+ Player High-Capacity Galas -->
+    <div id="card-gala" class="collapsible-card">
+      <button class="card-header-trigger" onclick="toggleCard('card-gala')" aria-expanded="false">
+        <div class="header-left">
+          <div class="header-icon">👥</div>
+          <div class="header-text">
+            <h2 class="header-title">
+              7. 50 to 250+ Player High-Capacity Galas
+              <span class="header-badge badge-host">Enterprise Scale</span>
+            </h2>
+            <p class="header-subtitle">Enterprise-grade real-time infrastructure for corporate all-hands and society festivals</p>
+          </div>
+        </div>
+        <div class="chevron-icon">▾</div>
+      </button>
+
+      <div class="card-content-body">
+        <p style="margin-top: 14px; color: #CBD5E1;">
+          Whether organizing society gatherings, festive kitty parties, or corporate galas, DabHousie is designed to support large lobbies with fast real-time synchronization and automated prize validation.
+        </p>
+
+        <div class="grid-2">
+          <div class="feature-box">
+            <h4>🎟️ Guaranteed 100% Unique Tickets</h4>
+            <p>Every single player receives a mathematically guaranteed unique 3×9 ticket with balanced number distribution across all 9 columns.</p>
+          </div>
+          <div class="feature-box">
+            <h4>⚡ Fast Instant Verification</h4>
+            <p>Instant server-side validation handles simultaneous claims without pauses or lag across 50, 100, or 250 concurrent connected players.</p>
+          </div>
+        </div>
+
+        <div class="card-screenshot-container">
+          <img src="/screenshots/screenshot_50_players.png" alt="DabHousie 50+ Player Live Multiplayer Game in Progress"
+            class="card-screenshot-img">
+          <p class="card-screenshot-caption">Live 50-Player Game in Progress — synchronized real-time dabs, tickets, and automated caller status</p>
+        </div>
       </div>
     </div>
 
@@ -302,9 +872,9 @@
       <h2>Ready to Start Your Game?</h2>
       <p>Join a game with an invite code or start your own multiplayer room free for up to 5 players*.</p>
       <div class="btn-group">
-        <a href="/#/join" class="btn-nav-join" style="font-size:15px; padding:12px 28px;">🔑 Join a Game</a>
-        <a href="/#/create-game" class="btn-nav-host" style="font-size:15px; padding:12px 24px;">👨‍👩‍👧‍👦 Host a
-          Game</a>
+        <a href="/join.html" class="btn-nav-join" style="font-size:15px; padding:12px 28px;">🔑 Join a Game</a>
+        <a href="/#/create-game" class="btn-nav-host" style="font-size:15px; padding:12px 24px;">👨‍👩‍👧‍👦 Host a Game</a>
+        <a href="/play-with-dabby.html" class="btn-nav-join" style="font-size:15px; padding:12px 24px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);">⚡ Free Practice</a>
       </div>
     </div>
 
@@ -348,6 +918,113 @@
   </footer>
 
   <script src="/js/nav.js"></script>
+
+  <!-- Interactive Collapsible Cards Script -->
+  <script>
+    function toggleCard(cardId) {
+      var card = document.getElementById(cardId);
+      if (!card) return;
+
+      var trigger = card.querySelector('.card-header-trigger');
+      var isOpen = card.classList.contains('is-open');
+
+      if (isOpen) {
+        card.classList.remove('is-open');
+        if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      } else {
+        card.classList.add('is-open');
+        if (trigger) trigger.setAttribute('aria-expanded', 'true');
+      }
+
+      updateToggleAllButton();
+    }
+
+    function openAndScrollCard(cardId) {
+      var card = document.getElementById(cardId);
+      if (!card) return;
+
+      card.classList.add('is-open');
+      var trigger = card.querySelector('.card-header-trigger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+
+      updateToggleAllButton();
+
+      // Smooth scroll into view
+      setTimeout(function() {
+        var headerOffset = 80;
+        var elementPosition = card.getBoundingClientRect().top;
+        var offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      }, 50);
+
+      // Update URL hash without jumping
+      try {
+        if (history.replaceState) {
+          history.replaceState(null, null, '#' + cardId.replace('card-', ''));
+        }
+      } catch (_) {}
+    }
+
+    function toggleAllCards() {
+      var allCards = document.querySelectorAll('.collapsible-card');
+      var anyClosed = false;
+
+      allCards.forEach(function(card) {
+        if (!card.classList.contains('is-open')) {
+          anyClosed = true;
+        }
+      });
+
+      allCards.forEach(function(card) {
+        var trigger = card.querySelector('.card-header-trigger');
+        if (anyClosed) {
+          card.classList.add('is-open');
+          if (trigger) trigger.setAttribute('aria-expanded', 'true');
+        } else {
+          card.classList.remove('is-open');
+          if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      updateToggleAllButton();
+    }
+
+    function updateToggleAllButton() {
+      var allCards = document.querySelectorAll('.collapsible-card');
+      var openCount = 0;
+
+      allCards.forEach(function(card) {
+        if (card.classList.contains('is-open')) openCount++;
+      });
+
+      var btnIcon = document.getElementById('toggle-all-icon');
+      var btnText = document.getElementById('toggle-all-text');
+
+      if (openCount === allCards.length) {
+        if (btnIcon) btnIcon.textContent = '📁';
+        if (btnText) btnText.textContent = 'Collapse All';
+      } else {
+        if (btnIcon) btnIcon.textContent = '📂';
+        if (btnText) btnText.textContent = 'Expand All';
+      }
+    }
+
+    // Initialize from URL Hash on page load (e.g. #host, #player, #quick-dabby, #trivia, #tv)
+    (function initFromHash() {
+      var hash = (window.location.hash || '').toLowerCase().replace('#', '');
+      if (!hash) return;
+
+      var targetId = 'card-' + hash;
+      var card = document.getElementById(targetId);
+      if (card) {
+        openAndScrollCard(targetId);
+      }
+    })();
+  </script>
 </body>
 
 </html>
