@@ -889,6 +889,9 @@
         <a href="#partner-registration-portal" class="btn-bp-primary">
           🚀 Start 10-Reward Pilot
         </a>
+        <a href="#partner-portal" class="btn-bp-secondary" style="border-color: #38BDF8; color: #7DD3FC;" onclick="openPartnerPortalModal(event)">
+          ⚙️ Manage Partner Gifts &amp; Campaign
+        </a>
         <a href="/brand-voucher-rules.html" class="btn-bp-secondary" style="border-color: #F59E0B; color: #FCD34D;">
           📜 View Sponsor Guard Rulebook
         </a>
@@ -1273,7 +1276,7 @@
                 <span class="field-error-msg">❌ Representative name is required.</span>
               </div>
               <div class="brand-form-group">
-                <label for="bm-contact-email">Corporate Work Email *</label>
+                <label for="bm-contact-email">Corporate Work Email * (Matches Domain)</label>
                 <input type="email" id="bm-contact-email" required placeholder="partnerships@yourbrand.com">
                 <span class="field-error-msg">❌ Valid corporate email is required.</span>
               </div>
@@ -1284,8 +1287,49 @@
               <input type="text" id="bm-contact-role" placeholder="e.g. Growth Lead, Brand Manager, Founder">
             </div>
 
-            <div class="wizard-nav-btns" style="justify-content: flex-end;">
-              <button type="button" class="btn-wizard-primary" onclick="validateAndNext(1)">
+            <!-- OTP Domain Verification Container -->
+            <div id="bm-otp-section" style="margin-top: 18px; padding: 18px; background: #0b1120; border: 1px solid #1e293b; border-radius: 12px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-size: 13px; font-weight: 700; color: #93C5FD; display: flex; align-items: center; gap: 6px;">
+                  🔐 Corporate Domain Ownership Check (Anti-Spoofing)
+                </span>
+                <span id="bm-otp-status-badge" style="display: none; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.3);">
+                  Domain Unverified
+                </span>
+              </div>
+              <p style="font-size: 12px; color: #94A3B8; margin: 0 0 12px; line-height: 1.5;">
+                To protect brands against unauthorized listing, we send a quick 6-digit confirmation code to your work email.
+              </p>
+
+              <div id="bm-otp-send-row" style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" id="bm-send-otp-btn" class="btn-wizard-secondary" onclick="sendDomainOtp()" style="background: #1e293b; border: 1px solid #3b82f6; color: #93c5fd; padding: 9px 18px; font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                  ✉️ Send Verification Code
+                </button>
+                <span id="bm-otp-send-feedback" style="font-size: 12px; color: #94a3b8;"></span>
+              </div>
+
+              <!-- OTP Verification Input Box (Shown after Send) -->
+              <div id="bm-otp-verify-row" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #1e293b;">
+                <label for="bm-otp-code" style="display: block; font-size: 12px; font-weight: 700; color: #FCD34D; margin-bottom: 6px;">
+                  Enter 6-Digit Passcode sent to your work email:
+                </label>
+                <div style="display: flex; gap: 10px; align-items: center; max-width: 360px;">
+                  <input type="text" id="bm-otp-code" maxlength="6" placeholder="123456" style="flex: 1; font-family: Courier, monospace; font-size: 18px; font-weight: 800; letter-spacing: 4px; text-align: center; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #ffffff;">
+                  <button type="button" id="bm-verify-otp-btn" class="btn-wizard-primary" onclick="verifyDomainOtp()" style="padding: 9px 18px; font-size: 13px; font-weight: 700; white-space: nowrap;">
+                    Verify Code
+                  </button>
+                </div>
+                <div id="bm-otp-verify-feedback" style="margin-top: 8px; font-size: 12px;"></div>
+              </div>
+
+              <!-- Success Card once verified -->
+              <div id="bm-otp-verified-card" style="display: none; padding: 12px 16px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; color: #6EE7B7; font-size: 13px; font-weight: 700;">
+                ✅ Corporate domain ownership confirmed! You may now proceed to configure offer details.
+              </div>
+            </div>
+
+            <div class="wizard-nav-btns" style="justify-content: flex-end; margin-top: 20px;">
+              <button type="button" id="bm-next-to-step2-btn" class="btn-wizard-primary" onclick="validateAndNext(1)" style="opacity: 0.55; cursor: not-allowed;" title="Verify email OTP first">
                 Next: Offer Details ➔
               </button>
             </div>
@@ -1605,6 +1649,74 @@
     </section>
   </main>
 
+  <!-- Partner Campaign Management Modal -->
+  <div id="partner-portal-modal" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); z-index: 99999; overflow-y: auto; padding: 24px 16px;">
+    <div style="max-width: 820px; margin: 30px auto; background: #0f172a; border: 1px solid #334155; border-radius: 18px; box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6); overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="padding: 20px 24px; background: linear-gradient(135deg, #0B3D91 0%, #1e293b 100%); border-bottom: 2px solid #38bdf8; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <span style="font-size: 11px; font-weight: 700; color: #7DD3FC; text-transform: uppercase; letter-spacing: 1px;">Brand Partner Self-Serve Hub</span>
+          <h2 style="margin: 4px 0 0 0; font-size: 19px; font-weight: 800; color: #ffffff;">⚙️ Manage Brand Gifts &amp; Campaign</h2>
+        </div>
+        <button type="button" onclick="closePartnerPortalModal()" style="background: rgba(255,255,255,0.1); border: none; color: #ffffff; font-size: 20px; line-height: 1; border-radius: 8px; width: 34px; height: 34px; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding: 26px 24px;">
+        
+        <!-- Step A: Partner Login via Work Email & OTP (if unverified) -->
+        <div id="portal-auth-view">
+          <p style="font-size: 13.5px; color: #cbd5e1; margin: 0 0 16px; line-height: 1.5;">
+            Enter your official corporate work email to access your sponsored game gifts, rotate promo codes, update redemption URLs, add more gifts, or retire offers.
+          </p>
+          <div style="max-width: 440px; margin-bottom: 16px;">
+            <label for="portal-work-email" style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Corporate Work Email</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="email" id="portal-work-email" placeholder="e.g. helpdesk@pocketbull.net" style="flex: 1; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+              <button type="button" id="portal-send-otp-btn" onclick="sendPortalLoginOtp()" class="btn-wizard-primary" style="padding: 10px 18px; font-size: 13px; font-weight: 700; white-space: nowrap;">
+                Send Passcode
+              </button>
+            </div>
+            <div id="portal-send-feedback" style="margin-top: 6px; font-size: 12px; color: #94a3b8;"></div>
+          </div>
+
+          <div id="portal-otp-verify-box" style="display: none; max-width: 440px; padding: 16px; background: #0b1120; border: 1px dashed #38bdf8; border-radius: 10px;">
+            <label for="portal-otp-input" style="display: block; font-size: 12px; font-weight: 700; color: #FCD34D; margin-bottom: 6px;">
+              Enter 6-Digit Passcode received in your inbox:
+            </label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="portal-otp-input" maxlength="6" placeholder="123456" style="flex: 1; text-align: center; font-family: Courier, monospace; font-size: 18px; font-weight: 800; letter-spacing: 4px; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff;">
+              <button type="button" id="portal-verify-otp-btn" onclick="verifyPortalLoginOtp()" class="btn-wizard-primary" style="padding: 8px 18px; font-size: 13px; font-weight: 700;">
+                Verify &amp; Unlock
+              </button>
+            </div>
+            <div id="portal-otp-feedback" style="margin-top: 6px; font-size: 12px;"></div>
+          </div>
+        </div>
+
+        <!-- Step B: Dashboard View (Unlocked) -->
+        <div id="portal-dashboard-view" style="display: none;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #1e293b; padding-bottom: 14px;">
+            <div>
+              <span id="portal-logged-email" style="font-size: 13px; font-weight: 700; color: #34d399;"></span>
+              <p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;">Manage your registered gift offers across live multiplayer DabHousie games.</p>
+            </div>
+            <a href="#partner-registration-portal" onclick="closePartnerPortalModal(); goToWizardStep(1);" class="btn-bp-primary" style="padding: 8px 16px; font-size: 12.5px; text-decoration: none;">
+              ➕ Add More Gifts
+            </a>
+          </div>
+
+          <!-- Campaign Offers List -->
+          <div id="portal-campaigns-list">
+            <div style="text-align: center; color: #94a3b8; padding: 24px;">Loading your campaigns...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-links">
@@ -1825,6 +1937,143 @@
       }
     }
 
+    let isBrandDomainVerified = false;
+    let brandVerificationToken = null;
+
+    async function sendDomainOtp() {
+      const brandName = document.getElementById('bm-brand-name')?.value.trim();
+      const domain = document.getElementById('bm-domain')?.value.trim();
+      const repName = document.getElementById('bm-contact-name')?.value.trim();
+      const repEmail = document.getElementById('bm-contact-email')?.value.trim();
+      const btn = document.getElementById('bm-send-otp-btn');
+      const feedback = document.getElementById('bm-otp-send-feedback');
+      const verifyRow = document.getElementById('bm-otp-verify-row');
+
+      if (!domain) {
+        alert('Please enter your Company Website Domain first.');
+        document.getElementById('bm-domain')?.focus();
+        return;
+      }
+      if (!repEmail || !document.getElementById('bm-contact-email')?.checkValidity()) {
+        alert('Please enter a valid Corporate Work Email.');
+        document.getElementById('bm-contact-email')?.focus();
+        return;
+      }
+
+      const emailDomain = repEmail.split('@')[1]?.toLowerCase() || '';
+      const cleanDomain = domain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      if (emailDomain !== cleanDomain && !emailDomain.endsWith('.' + cleanDomain)) {
+        alert(`Domain Mismatch: Your email domain (@${emailDomain}) does not match your website domain (${cleanDomain}). Please use your official corporate work email.`);
+        document.getElementById('bm-contact-email')?.focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending Code...';
+      feedback.style.color = '#94a3b8';
+      feedback.textContent = 'Dispatching passcode to ' + repEmail + '...';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'send_brand_partner_otp',
+            brand_name: brandName,
+            brand_domain: cleanDomain,
+            contact_name: repName,
+            contact_email: repEmail
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          btn.textContent = 'Resend Code';
+          btn.disabled = false;
+          feedback.style.color = '#38bdf8';
+          feedback.textContent = '✉️ Passcode sent! Check your inbox.';
+          verifyRow.style.display = 'block';
+          document.getElementById('bm-otp-code')?.focus();
+        } else {
+          btn.textContent = 'Send Verification Code';
+          btn.disabled = false;
+          feedback.style.color = '#ef4444';
+          feedback.textContent = data.message || 'Failed to send code. Please try again.';
+        }
+      } catch (err) {
+        btn.textContent = 'Send Verification Code';
+        btn.disabled = false;
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Network error. Please try again.';
+      }
+    }
+
+    async function verifyDomainOtp() {
+      const domain = document.getElementById('bm-domain')?.value.trim();
+      const repEmail = document.getElementById('bm-contact-email')?.value.trim();
+      const otpCode = document.getElementById('bm-otp-code')?.value.trim();
+      const btn = document.getElementById('bm-verify-otp-btn');
+      const feedback = document.getElementById('bm-otp-verify-feedback');
+      const cleanDomain = domain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+
+      if (!otpCode || otpCode.length < 6) {
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Please enter the complete 6-digit passcode.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+      feedback.style.color = '#94a3b8';
+      feedback.textContent = 'Verifying domain ownership...';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'verify_brand_partner_otp',
+            contact_email: repEmail,
+            brand_domain: cleanDomain,
+            otp_code: otpCode
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.verified) {
+          isBrandDomainVerified = true;
+          brandVerificationToken = data.verification_token;
+
+          // Hide input rows, show success card
+          document.getElementById('bm-otp-send-row').style.display = 'none';
+          document.getElementById('bm-otp-verify-row').style.display = 'none';
+          document.getElementById('bm-otp-verified-card').style.display = 'block';
+
+          // Lock domain and email inputs so they cannot be altered after verification
+          document.getElementById('bm-domain').readOnly = true;
+          document.getElementById('bm-contact-email').readOnly = true;
+          document.getElementById('bm-domain').style.background = '#1e293b';
+          document.getElementById('bm-contact-email').style.background = '#1e293b';
+
+          // Enable Next to Step 2 button
+          const nextBtn = document.getElementById('bm-next-to-step2-btn');
+          if (nextBtn) {
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            nextBtn.removeAttribute('title');
+          }
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Verify Code';
+          feedback.style.color = '#ef4444';
+          feedback.textContent = data.message || 'Invalid or expired code.';
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Verify Code';
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Network error. Please try again.';
+      }
+    }
+
     function validateAndNext(currentStep) {
       if (currentStep === 1) {
         const brandName = document.getElementById('bm-brand-name');
@@ -1852,6 +2101,13 @@
           repEmail.reportValidity();
           return;
         }
+
+        if (!isBrandDomainVerified) {
+          alert('Domain Verification Required: Please click "Send Verification Code" and verify the 6-digit passcode sent to your corporate work email before configuring offer details.');
+          document.getElementById('bm-otp-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
         goToWizardStep(2);
       } else if (currentStep === 2) {
         const title = document.getElementById('bm-product-title');
@@ -1886,6 +2142,7 @@
       const selectedCountries = getSelectedCountries();
       const payload = {
         action: 'register_brand_offer',
+        verification_token: brandVerificationToken || '',
         brand_name: document.getElementById('bm-brand-name').value.trim(),
         brand_domain: document.getElementById('bm-domain').value.trim(),
         contact_name: document.getElementById('bm-contact-name').value.trim(),
@@ -2133,7 +2390,356 @@
       });
     }
 
+    // ==========================================
+    // PARTNER SELF-SERVE CAMPAIGN PORTAL & MODAL
+    // ==========================================
+    let portalSessionToken = null;
+    let portalSessionEmail = null;
+
+    function openPartnerPortalModal(e) {
+      if (e) e.preventDefault();
+      const modal = document.getElementById('partner-portal-modal');
+      if (!modal) return;
+      modal.style.display = 'block';
+
+      // If already verified during this session, show dashboard directly
+      if (isBrandDomainVerified && brandVerificationToken) {
+        portalSessionToken = brandVerificationToken;
+        portalSessionEmail = document.getElementById('bm-contact-email')?.value.trim().toLowerCase();
+        showPortalDashboard();
+      } else {
+        document.getElementById('portal-auth-view').style.display = 'block';
+        document.getElementById('portal-dashboard-view').style.display = 'none';
+        const prefEmail = document.getElementById('bm-contact-email')?.value.trim();
+        if (prefEmail) document.getElementById('portal-work-email').value = prefEmail;
+      }
+    }
+
+    function closePartnerPortalModal() {
+      const modal = document.getElementById('partner-portal-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function sendPortalLoginOtp() {
+      const email = document.getElementById('portal-work-email')?.value.trim().toLowerCase();
+      const btn = document.getElementById('portal-send-otp-btn');
+      const feedback = document.getElementById('portal-send-feedback');
+
+      if (!email || !email.includes('@')) {
+        alert('Please enter a valid corporate work email address.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      feedback.style.color = '#94a3b8';
+      feedback.textContent = 'Dispatching passcode to ' + email + '...';
+
+      const emailDomain = email.split('@')[1];
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'send_brand_partner_otp',
+            contact_email: email,
+            brand_domain: emailDomain
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          btn.textContent = 'Resend Code';
+          btn.disabled = false;
+          feedback.style.color = '#38bdf8';
+          feedback.textContent = 'Passcode sent! Check your inbox.';
+          document.getElementById('portal-otp-verify-box').style.display = 'block';
+          document.getElementById('portal-otp-input')?.focus();
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Send Passcode';
+          feedback.style.color = '#ef4444';
+          feedback.textContent = data.message || 'Could not send passcode.';
+        }
+      } catch (_) {
+        btn.disabled = false;
+        btn.textContent = 'Send Passcode';
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Network error. Please try again.';
+      }
+    }
+
+    async function verifyPortalLoginOtp() {
+      const email = document.getElementById('portal-work-email')?.value.trim().toLowerCase();
+      const otp = document.getElementById('portal-otp-input')?.value.trim();
+      const btn = document.getElementById('portal-verify-otp-btn');
+      const feedback = document.getElementById('portal-otp-feedback');
+      const emailDomain = email.split('@')[1];
+
+      if (!otp || otp.length < 6) {
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Enter the complete 6-digit passcode.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'verify_brand_partner_otp',
+            contact_email: email,
+            brand_domain: emailDomain,
+            otp_code: otp
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.verified) {
+          portalSessionToken = data.verification_token;
+          portalSessionEmail = email;
+          showPortalDashboard();
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Verify & Unlock';
+          feedback.style.color = '#ef4444';
+          feedback.textContent = data.message || 'Invalid passcode.';
+        }
+      } catch (_) {
+        btn.disabled = false;
+        btn.textContent = 'Verify & Unlock';
+        feedback.style.color = '#ef4444';
+        feedback.textContent = 'Network error. Please try again.';
+      }
+    }
+
+    async function showPortalDashboard() {
+      document.getElementById('portal-auth-view').style.display = 'none';
+      document.getElementById('portal-dashboard-view').style.display = 'block';
+      document.getElementById('portal-logged-email').textContent = '👤 Logged in as: ' + portalSessionEmail;
+      await loadPartnerCampaigns();
+    }
+
+    async function loadPartnerCampaigns() {
+      const container = document.getElementById('portal-campaigns-list');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 24px;">Loading your campaigns...</div>';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'get_partner_campaigns',
+            contact_email: portalSessionEmail,
+            token: portalSessionToken
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success && Array.isArray(data.offers) && data.offers.length > 0) {
+          container.innerHTML = data.offers.map((o) => {
+            const isUsed = (Number(o.games_assigned_count || 0) > 0) || (Number(o.vouchers_consumed_count || 0) > 0);
+            const statusUpper = escapeHtml(String(o.status || 'PENDING').toUpperCase());
+            const statusBg = statusUpper === 'ACTIVE' ? '#10b981' : (statusUpper === 'ARCHIVED' || statusUpper === 'PAUSED' ? '#64748b' : '#f59e0b');
+
+            return `
+              <div id="offer-card-${escapeHtml(o.id)}" style="background: #0b1120; border: 1px solid #1e293b; border-radius: 12px; padding: 18px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+                  <div>
+                    <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #ffffff;">
+                      ${escapeHtml(o.product_title || o.gift_title)}
+                    </h3>
+                    <div style="font-size: 12px; color: #94a3b8;">
+                      Brand: <strong style="color: #cbd5e1;">${escapeHtml(o.brand_name)}</strong> (@${escapeHtml(o.brand_domain)})
+                      &bull; Retail Value: <strong style="color: #34d399;">$${Number(o.retail_price || 0).toFixed(2)}</strong>
+                    </div>
+                  </div>
+                  <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: ${statusBg}22; color: ${statusBg}; border: 1px solid ${statusBg}55;">
+                    ${statusUpper}
+                  </span>
+                </div>
+
+                <!-- Usage Badge & Safety Lock Warning -->
+                <div style="font-size: 12px; padding: 6px 10px; border-radius: 6px; margin-bottom: 12px; background: ${isUsed ? 'rgba(59, 130, 246, 0.12)' : 'rgba(16, 185, 129, 0.1)'}; color: ${isUsed ? '#93c5fd' : '#6ee7b7'}; border: 1px solid ${isUsed ? 'rgba(59, 130, 246, 0.25)' : 'rgba(16, 185, 129, 0.25)'};">
+                  ${isUsed 
+                    ? `🔒 <strong>Live Game Protection:</strong> Assigned to ${o.games_assigned_count || 0} games (${o.vouchers_consumed_count || 0} claimed). Reward monetary value is locked, but you can update promo codes, landing URL, terms, or retire offer.` 
+                    : `✨ <strong>Not Yet Used in Games:</strong> You may edit all offer parameters or retire this gift.`}
+                </div>
+
+                <!-- Editable Fields Form -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                  <div>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Voucher / Promo Code</label>
+                    <input type="text" id="edit-promo-${escapeHtml(o.id)}" value="${escapeHtml(o.promo_code || '')}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-family: monospace;">
+                  </div>
+                  <div>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Product / Landing URL</label>
+                    <input type="url" id="edit-url-${escapeHtml(o.id)}" value="${escapeHtml(o.product_url || '')}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-top: 10px;">
+                  <div>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Expiration Date</label>
+                    <input type="date" id="edit-expiry-${escapeHtml(o.id)}" value="${o.expiration_date ? escapeHtml(String(o.expiration_date).slice(0, 10)) : ''}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                  </div>
+                  <div>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Minimum Purchase / Restrictions</label>
+                    <input type="text" id="edit-min-${escapeHtml(o.id)}" value="${escapeHtml(o.minimum_purchase || '')}" placeholder="e.g. Min order $20" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                  </div>
+                </div>
+
+                <!-- Action Buttons: Save Changes & Retire -->
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #1e293b;">
+                  ${statusUpper !== 'ARCHIVED' && statusUpper !== 'PAUSED' ? `
+                    <button type="button" onclick="retirePartnerOffer('${escapeHtml(o.id)}')" style="background: transparent; border: 1px solid #ef4444; color: #f87171; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                      🛑 Retire Gift
+                    </button>
+                  ` : `
+                    <span style="font-size: 12px; color: #94a3b8; align-self: center;">Offer Retired</span>
+                  `}
+                  <button type="button" onclick="savePartnerOfferChanges('${escapeHtml(o.id)}')" style="background: #10b981; border: none; color: #fff; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                    💾 Save Changes
+                  </button>
+                </div>
+                <div id="edit-msg-${escapeHtml(o.id)}" style="margin-top: 8px; font-size: 12px; text-align: right;"></div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          container.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; padding: 32px;">
+              <p style="margin: 0 0 14px 0;">No registered partner offers found under <strong>${escapeHtml(portalSessionEmail)}</strong>.</p>
+              <a href="#partner-registration-portal" onclick="closePartnerPortalModal(); goToWizardStep(1);" class="btn-bp-primary" style="padding: 9px 18px; font-size: 13px; text-decoration: none;">
+                🚀 Register Your First 10-Reward Pilot
+              </a>
+            </div>
+          `;
+        }
+      } catch (_) {
+        container.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 24px;">Failed to load campaigns. Please try again.</div>';
+      }
+    }
+
+    async function savePartnerOfferChanges(offerId) {
+      const msgEl = document.getElementById('edit-msg-' + offerId);
+      const promoCode = document.getElementById('edit-promo-' + offerId)?.value.trim();
+      const productUrl = document.getElementById('edit-url-' + offerId)?.value.trim();
+      const expiry = document.getElementById('edit-expiry-' + offerId)?.value || null;
+      const minPurchase = document.getElementById('edit-min-' + offerId)?.value.trim();
+
+      if (msgEl) {
+        msgEl.style.color = '#94a3b8';
+        msgEl.textContent = 'Saving changes...';
+      }
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_partner_campaign',
+            offer_id: offerId,
+            contact_email: portalSessionEmail,
+            token: portalSessionToken,
+            promo_code: promoCode,
+            product_url: productUrl,
+            expiration_date: expiry,
+            minimum_purchase: minPurchase
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (msgEl) {
+            msgEl.style.color = '#34d399';
+            msgEl.textContent = '✅ Changes saved & live!';
+          }
+        } else {
+          if (msgEl) {
+            msgEl.style.color = '#ef4444';
+            msgEl.textContent = data.message || 'Could not save changes.';
+          }
+        }
+      } catch (_) {
+        if (msgEl) {
+          msgEl.style.color = '#ef4444';
+          msgEl.textContent = 'Network error saving changes.';
+        }
+      }
+    }
+
+    async function retirePartnerOffer(offerId) {
+      if (!confirm('Are you sure you want to retire this brand gift? Retired gifts will no longer be assigned to upcoming games.')) return;
+      const msgEl = document.getElementById('edit-msg-' + offerId);
+      if (msgEl) {
+        msgEl.style.color = '#94a3b8';
+        msgEl.textContent = 'Retiring gift...';
+      }
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_partner_campaign',
+            offer_id: offerId,
+            contact_email: portalSessionEmail,
+            token: portalSessionToken,
+            retire: true
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('Gift successfully retired.');
+          await loadPartnerCampaigns();
+        } else {
+          alert(data.message || 'Could not retire gift.');
+        }
+      } catch (_) {
+        alert('Network error retiring gift.');
+      }
+    }
+
+    // Handle incoming URL parameters (e.g. Email links: ?action=partner_approve&offer_id=...&token=...)
+    async function checkUrlActionLinks() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      const offerId = urlParams.get('offer_id');
+      const token = urlParams.get('token');
+
+      if (action && (action === 'partner_approve' || action === 'partner_reject') && offerId && token) {
+        const isApprove = action === 'partner_approve';
+        const confirmMsg = isApprove
+          ? 'Confirm authorization of your DabHousie brand offer pilot?'
+          : 'Are you sure you want to cancel and reject this offer submission?';
+
+        if (confirm(confirmMsg)) {
+          try {
+            const res = await fetch(PUBLIC_API_ENDPOINT, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: isApprove ? 'partner_authorize_offer' : 'partner_reject_offer',
+                offer_id: offerId,
+                token: token
+              })
+            });
+            const data = await res.json();
+            alert(data.message || (isApprove ? 'Offer authorized!' : 'Offer cancelled.'));
+            if (isApprove) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+              openPartnerPortalModal();
+            }
+          } catch (_) {
+            alert('Failed to process authorization request. Please try again.');
+          }
+        }
+      }
+    }
+
     loadPartnerDirectory();
+    checkUrlActionLinks();
   </script>
 </body>
 </html>

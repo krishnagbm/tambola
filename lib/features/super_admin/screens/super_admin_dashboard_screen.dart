@@ -2318,9 +2318,71 @@ class _SuperAdminDashboardScreenState
                   style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '📊 ${b['clicks_count'] ?? 0} clicks  •  Assigned to ${b['games_assigned_count'] ?? 0} games',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '📊 ${b['clicks_count'] ?? 0} clicks  •  Assigned to ${b['games_assigned_count'] ?? 0} games',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    ),
+                    if (status != 'ACTIVE')
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentSuccess,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        icon: const Icon(Icons.check_circle_outline, size: 14),
+                        label: const Text('Approve & Publish', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        onPressed: () async {
+                          final offerId = b['id']?.toString();
+                          if (offerId == null) return;
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              backgroundColor: AppTheme.darkCard,
+                              title: const Text('Approve Brand Partner Offer', style: TextStyle(color: Colors.white)),
+                              content: Text(
+                                'Approve "${b['brand_name']}" offer and publish to the active Partner Catalog?',
+                                style: const TextStyle(color: Color(0xFFCBD5E1)),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel', style: TextStyle(color: Colors.white70)),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentSuccess),
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Approve & Publish'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed == true && mounted) {
+                            final success = await ref.read(adminReportsRepositoryProvider).approveBrandOffer(offerId);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? 'Offer approved and published to Partner Catalog!'
+                                        : 'Could not approve offer. Please try again.',
+                                  ),
+                                  backgroundColor: success ? AppTheme.accentSuccess : Colors.red,
+                                ),
+                              );
+                              if (success) {
+                                _refreshAll();
+                              }
+                            }
+                          }
+                        },
+                      ),
+                  ],
                 ),
               ],
             ),

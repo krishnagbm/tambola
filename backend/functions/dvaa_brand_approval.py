@@ -15,6 +15,11 @@
 import json
 import os
 import sys
+import re
+import hmac
+import hashlib
+import time
+import secrets
 import urllib.request
 import urllib.error
 
@@ -26,7 +31,46 @@ from email_ses import (
     send_brand_approved_confirmation_email,
     send_winner_gift_email,
     send_brand_offer_registered_email,
+    send_brand_partner_otp_email,
+    send_partner_confirmed_to_dabhousie_email,
 )
+
+OTP_HMAC_SECRET = os.getenv("OTP_HMAC_SECRET") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "dabhousie_brand_otp_secret_key"
+BLOCKED_FREE_DOMAINS = {
+    "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
+    "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "mac.com",
+    "aol.com", "zoho.com", "proton.me", "protonmail.com", "mail.com", "gmx.com",
+    "rediffmail.com", "yandex.com",
+}
+
+def _clean_domain(domain_str: str) -> str:
+    clean = (domain_str or "").strip().lower()
+    clean = re.sub(r"^https?://", "", clean)
+    clean = re.sub(r"^www\.", "", clean)
+    return clean.split("/")[0].split(":")[0].strip()
+
+def _make_verification_token(email: str, domain: str) -> str:
+    """Generates an HMAC verification token valid for 2 hours once OTP is verified."""
+    exp = int(time.time()) + 7200
+    msg = f"{email}:{domain}:{exp}".encode("utf-8")
+    sig = hmac.new(OTP_HMAC_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    return f"{exp}:{sig}"
+
+def _verify_token(token: str, email: str, domain: str) -> bool:
+    """Verifies that the token was signed with OTP_HMAC_SECRET and has not expired."""
+    try:
+        parts = token.split(":")
+        if len(parts) != 2:
+            return False
+        exp = int(parts[0])
+        sig = parts[1]
+        if time.time() > exp:
+            return False
+        msg = f"{email}:{domain}:{exp}".encode("utf-8")
+        expected = hmac.new(OTP_HMAC_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(sig, expected)
+    except Exception:
+        return False
 
 
 def _supabase_rest(endpoint_path: str, method: str = "GET", payload: dict = None):
@@ -168,13 +212,121 @@ def handler(event, context):
                 return _r(200, {"success": True, "offers": _sanitize_public_offers(data)})
             return _r(200, {"success": True, "offers": []})
 
+        # 3b. Send Brand Partner Domain OTP
+        if action == "send_brand_partner_otp":
+            contact_email = (payload.get("contact_email") or payload.get("email") or "").strip().lower()
+            brand_name = (payload.get("brand_name") or "").strip()
+            brand_domain = _clean_domain(payload.get("brand_domain") or "")
+            rep_name = (payload.get("contact_name") or payload.get("name") or "").strip()
+
+            if not contact_email or "@" not in contact_email:
+                return _r(400, {"success": False, "message": "Please enter a valid work email address."})
+
+            email_domain = contact_email.split("@")[-1].lower()
+            if not brand_domain:
+                brand_domain = email_domain
+
+            if email_domain in BLOCKED_FREE_DOMAINS:
+                return _r(400, {
+                    "success": False,
+                    "message": "Personal/free email addresses (@gmail, @yahoo, etc.) cannot register official brand offers. Please use your corporate work email.",
+                })
+
+            # Strictest anti-spoofing check: work email domain must match claimed brand domain
+            if email_domain != brand_domain and not email_domain.endswith(f".{brand_domain}"):
+                return _r(400, {
+                    "success": False,
+                    "message": f"Domain Mismatch: Your work email (@{email_domain}) does not match your brand domain ({brand_domain}).",
+                })
+
+            # Generate 6-digit numeric OTP
+            otp_code = f"{secrets.randbelow(900000) + 100000}"
+            otp_hash = hashlib.sha256(f"{otp_code}:{contact_email}:{brand_domain}".encode("utf-8")).hexdigest()
+
+            # Store in Supabase MPT_brand_domain_verifications table
+            sc, ins_res = _supabase_rest(
+                "/rest/v1/MPT_brand_domain_verifications",
+                method="POST",
+                payload={
+                    "email": contact_email,
+                    "domain": brand_domain,
+                    "otp_hash": otp_hash,
+                    "status": "PENDING",
+                    "expires_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + 600)),
+                },
+            )
+
+            # Send OTP email via Amazon SES
+            mail_sent = send_brand_partner_otp_email(
+                to_email=contact_email,
+                otp_code=otp_code,
+                brand_name=brand_name or brand_domain,
+                brand_domain=brand_domain,
+                rep_name=rep_name,
+            )
+
+            if not mail_sent:
+                return _r(500, {"success": False, "message": "Could not deliver verification email. Please check the address and try again."})
+
+            return _r(200, {
+                "success": True,
+                "message": f"Verification code sent to {contact_email}. Please check your inbox.",
+                "brand_domain": brand_domain,
+            })
+
+        # 3c. Verify Brand Partner Domain OTP
+        if action == "verify_brand_partner_otp":
+            contact_email = (payload.get("contact_email") or payload.get("email") or "").strip().lower()
+            brand_domain = _clean_domain(payload.get("brand_domain") or "")
+            otp_code = (payload.get("otp_code") or payload.get("otp") or "").strip()
+
+            if not contact_email or not otp_code:
+                return _r(400, {"success": False, "message": "Email and 6-digit verification code are required."})
+
+            email_domain = contact_email.split("@")[-1].lower() if "@" in contact_email else ""
+            if not brand_domain:
+                brand_domain = email_domain
+
+            expected_hash = hashlib.sha256(f"{otp_code}:{contact_email}:{brand_domain}".encode("utf-8")).hexdigest()
+
+            # Query database for recent matching pending OTP
+            now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            sc, rows = _supabase_rest(
+                f"/rest/v1/MPT_brand_domain_verifications?email=eq.{urllib.parse.quote(contact_email)}&domain=eq.{urllib.parse.quote(brand_domain)}&status=eq.PENDING&expires_at=gte.{now_iso}&order=created_at.desc&limit=1",
+                method="GET",
+            )
+
+            if sc == 200 and isinstance(rows, list) and len(rows) > 0:
+                record = rows[0]
+                if record.get("otp_hash") == expected_hash:
+                    # Mark record as VERIFIED
+                    _supabase_rest(
+                        f"/rest/v1/MPT_brand_domain_verifications?id=eq.{record['id']}",
+                        method="PATCH",
+                        payload={"status": "VERIFIED", "verified_at": now_iso},
+                    )
+                    verification_token = _make_verification_token(contact_email, brand_domain)
+                    return _r(200, {
+                        "success": True,
+                        "verified": True,
+                        "verification_token": verification_token,
+                        "message": f"Official domain ownership confirmed for @{brand_domain}!",
+                        "brand_domain": brand_domain,
+                    })
+
+            return _r(400, {
+                "success": False,
+                "message": "Invalid or expired verification code. Please check your code or request a new one.",
+            })
+
         # 4. Register Brand Marketing Partner Offer
         if action == "register_brand_offer":
             brand_name = (payload.get("brand_name") or "").strip()
-            brand_domain = (payload.get("brand_domain") or "").strip().lower()
+            brand_domain = _clean_domain(payload.get("brand_domain") or "")
             brand_logo_url = (payload.get("brand_logo_url") or "").strip()
             marketer_name = (payload.get("marketer_name") or payload.get("contact_name") or "").strip()
             marketer_email = (payload.get("marketer_email") or payload.get("contact_email") or "").strip().lower()
+            verification_token = (payload.get("verification_token") or "").strip()
             contact_role = (payload.get("contact_role") or "").strip()
             gift_title = (payload.get("gift_title") or payload.get("product_title") or "").strip()
             gift_description = (payload.get("gift_description") or payload.get("product_description") or payload.get("description") or "").strip()
@@ -218,6 +370,20 @@ def handler(event, context):
 
             if not brand_domain:
                 brand_domain = email_domain
+
+            # If a verification token is provided, verify it; otherwise ensure email domain matches brand domain
+            is_domain_verified = False
+            if verification_token and _verify_token(verification_token, marketer_email, brand_domain):
+                is_domain_verified = True
+            elif email_domain == brand_domain or email_domain.endswith(f".{brand_domain}"):
+                is_domain_verified = True
+
+            if not is_domain_verified:
+                return _r(403, {
+                    "success": False,
+                    "message": f"Brand Domain Unverified: You must complete the email OTP verification step for @{brand_domain} before registering this offer.",
+                })
+
             if not brand_logo_url and brand_domain:
                 brand_logo_url = f"https://img.logo.dev/{brand_domain}?token=pk_VAZ6tvAVQHCDwKeaNRVyjQ&size=256&format=png"
 
@@ -253,6 +419,8 @@ def handler(event, context):
                 },
             )
             if status_code == 200 and isinstance(data, dict) and data.get("success"):
+                offer_id = str(data.get("offer_id") or "")
+                token = _make_verification_token(marketer_email, brand_domain)
                 try:
                     send_brand_offer_registered_email(
                         to_email=marketer_email,
@@ -267,11 +435,177 @@ def handler(event, context):
                         vouchers_total_count=vouchers_total_count,
                         target_region=target_region,
                         currency=currency,
+                        offer_id=offer_id,
+                        approval_token=token,
                     )
                 except Exception as e_mail:
                     print(f"  [ SES ] Non-fatal brand offer email error: {e_mail}")
-                return _r(200, data)
+                return _r(200, {**data, "approval_token": token})
             return _r(400, data if isinstance(data, dict) else {"success": False, "message": "Could not register partner offer."})
+
+        # 4b. Partner Authorizes or Rejects Submitted Offer via Email Action Link
+        if action in ("partner_authorize_offer", "partner_confirm_offer", "partner_reject_offer"):
+            offer_id = (payload.get("offer_id") or "").strip()
+            token = (payload.get("token") or "").strip()
+            decision = "REJECT" if "reject" in action or payload.get("decision") == "REJECT" else "APPROVE"
+
+            if not offer_id or not token:
+                return _r(400, {"success": False, "message": "Missing offer_id or security token."})
+
+            # Fetch the offer
+            sc, rows = _supabase_rest(f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}&limit=1", method="GET")
+            if sc != 200 or not isinstance(rows, list) or len(rows) == 0:
+                return _r(404, {"success": False, "message": "Offer not found."})
+
+            offer = rows[0]
+            contact_email = offer.get("contact_email", "")
+            brand_domain = offer.get("brand_domain", "")
+
+            # Verify security token
+            if not _verify_token(token, contact_email, brand_domain):
+                return _r(403, {"success": False, "message": "Invalid or expired authorization token."})
+
+            if decision == "REJECT":
+                _supabase_rest(
+                    f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}",
+                    method="PATCH",
+                    payload={"status": "ARCHIVED", "outreach_status": "PARTNER_REJECTED", "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+                )
+                return _r(200, {
+                    "success": True,
+                    "status": "ARCHIVED",
+                    "decision": "REJECT",
+                    "message": f"Brand offer '{offer.get('product_title')}' has been cancelled by {contact_email}.",
+                })
+
+            # Decision is APPROVE: Mark as PARTNER_CONFIRMED (waiting for DabHousie SuperAdmin approval)
+            now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            _supabase_rest(
+                f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}",
+                method="PATCH",
+                payload={
+                    "outreach_status": "PARTNER_CONFIRMED",
+                    "verified_at": now_iso,
+                    "updated_at": now_iso,
+                },
+            )
+
+            # Notify DabHousie Partnerships team
+            try:
+                send_partner_confirmed_to_dabhousie_email(
+                    brand_name=offer.get("brand_name", brand_domain),
+                    brand_domain=brand_domain,
+                    gift_title=offer.get("product_title", "Brand Gift"),
+                    contact_name=offer.get("contact_name") or offer.get("brand_name"),
+                    contact_email=contact_email,
+                    retail_value=float(offer.get("retail_price") or 0),
+                    vouchers_total_count=int(offer.get("vouchers_total_count") or 10),
+                    offer_id=offer_id,
+                )
+            except Exception as e_notif:
+                print(f"  [ SES ] Non-fatal partner confirmation alert error: {e_notif}")
+
+            return _r(200, {
+                "success": True,
+                "status": "PARTNER_CONFIRMED",
+                "decision": "APPROVE",
+                "message": f"Offer successfully authorized by {offer.get('brand_name')}! DabHousie Partnerships has been notified for final review and catalog publishing.",
+                "offer": offer,
+            })
+
+        # 4c. Partner Portal: Fetch Partner Campaigns
+        if action == "get_partner_campaigns":
+            contact_email = (payload.get("contact_email") or payload.get("email") or "").strip().lower()
+            token = (payload.get("token") or payload.get("verification_token") or "").strip()
+
+            if not contact_email or "@" not in contact_email:
+                return _r(400, {"success": False, "message": "Valid corporate email is required."})
+
+            email_domain = contact_email.split("@")[-1].lower()
+            if not token or not _verify_token(token, contact_email, email_domain):
+                return _r(403, {"success": False, "message": "Session expired or invalid verification token. Please verify OTP again."})
+
+            sc, rows = _supabase_rest(
+                f"/rest/v1/MPT_brand_offers?contact_email=eq.{urllib.parse.quote(contact_email)}&order=created_at.desc",
+                method="GET",
+            )
+            if sc == 200 and isinstance(rows, list):
+                return _r(200, {"success": True, "offers": rows})
+            return _r(200, {"success": True, "offers": []})
+
+        # 4d. Partner Portal: Update or Retire Brand Gift
+        if action == "update_partner_campaign":
+            offer_id = (payload.get("offer_id") or "").strip()
+            contact_email = (payload.get("contact_email") or "").strip().lower()
+            token = (payload.get("token") or payload.get("verification_token") or "").strip()
+
+            if not offer_id or not contact_email:
+                return _r(400, {"success": False, "message": "Missing offer_id or contact_email."})
+
+            email_domain = contact_email.split("@")[-1].lower()
+            if not token or not _verify_token(token, contact_email, email_domain):
+                return _r(403, {"success": False, "message": "Unauthorized or session expired."})
+
+            # Check existing offer
+            sc, rows = _supabase_rest(f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}&limit=1", method="GET")
+            if sc != 200 or not isinstance(rows, list) or len(rows) == 0:
+                return _r(404, {"success": False, "message": "Offer not found."})
+
+            curr = rows[0]
+            if curr.get("contact_email", "").lower() != contact_email:
+                return _r(403, {"success": False, "message": "You can only edit offers registered under your corporate email."})
+
+            assigned_count = int(curr.get("games_assigned_count") or 0)
+            consumed_count = int(curr.get("vouchers_consumed_count") or 0)
+            has_been_used = assigned_count > 0 or consumed_count > 0
+
+            # Handle Retire Action
+            if payload.get("retire") is True or payload.get("status") in ("PAUSED", "ARCHIVED"):
+                new_status = "PAUSED" if payload.get("status") == "PAUSED" else "ARCHIVED"
+                _supabase_rest(
+                    f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}",
+                    method="PATCH",
+                    payload={"status": new_status, "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())},
+                )
+                return _r(200, {"success": True, "message": f"Brand gift status updated to {new_status}."})
+
+            # Update mutable fields
+            patch_data = {"updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+            if "product_url" in payload:
+                patch_data["product_url"] = str(payload["product_url"]).strip()
+            if "promo_code" in payload:
+                patch_data["promo_code"] = str(payload["promo_code"]).strip()
+            if "expiration_date" in payload:
+                patch_data["expiration_date"] = payload["expiration_date"] or None
+            if "redemption_restrictions" in payload:
+                patch_data["redemption_restrictions"] = payload["redemption_restrictions"] or None
+            if "minimum_purchase" in payload:
+                patch_data["minimum_purchase"] = payload["minimum_purchase"] or None
+            if "description" in payload or "product_description" in payload:
+                patch_data["product_description"] = (payload.get("description") or payload.get("product_description") or "").strip()
+
+            # Safety Rule: Retail price & Organizer price are locked if gift has already been used in live games
+            if "retail_price" in payload:
+                if has_been_used and float(payload["retail_price"]) != float(curr.get("retail_price") or 0):
+                    return _r(400, {
+                        "success": False,
+                        "message": "Offer Value Locked: Retail value cannot be modified because this gift is already active/assigned in DabHousie games.",
+                    })
+                elif not has_been_used:
+                    patch_data["retail_price"] = float(payload["retail_price"])
+
+            sc_up, up_res = _supabase_rest(
+                f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}",
+                method="PATCH",
+                payload=patch_data,
+            )
+
+            return _r(200, {
+                "success": True,
+                "message": "Brand gift details updated successfully!",
+                "has_been_used": has_been_used,
+            })
 
         # 5. Track Brand Offer Product Link Click
         if action == "track_brand_offer_click":

@@ -589,12 +589,15 @@ def _fetch_inline_logos(organization_logo_url: Optional[str] = None) -> Tuple[Op
         try:
             req = urllib.request.Request(fetch_url, headers={"User-Agent": "Mozilla/5.0 (DabHousie-SES)"})
             with urllib.request.urlopen(req, timeout=4) as resp:
-                raw_logo = resp.read()
-                org_logo_bytes = _autocrop_png_bytes(raw_logo)
+                if resp.status == 200:
+                    raw_logo = resp.read()
+                    if raw_logo and len(raw_logo) > 100:
+                        org_logo_bytes = _autocrop_png_bytes(raw_logo)
         except Exception as e:
             print(f"  [ SES ] Could not fetch org logo for inline CID: {e}")
 
-    org_logo_src = "cid:logo_org" if org_logo_bytes else (organization_logo_url or "")
+    # Only point to cid:logo_org if org_logo_bytes was actually successfully loaded
+    org_logo_src = "cid:logo_org" if org_logo_bytes else ""
     return dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src
 
 
@@ -1288,7 +1291,7 @@ def send_winner_gift_email(
     brand_box_html = ""
     if brand_name or gift_title:
         logo_img_html = ""
-        if brand_logo_url or org_logo_bytes:
+        if org_logo_bytes:
             logo_img_html = f"""
             <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 12px auto;">
               <tr>
@@ -1297,6 +1300,13 @@ def send_winner_gift_email(
                 </td>
               </tr>
             </table>
+            """
+        elif brand_display:
+            initial = brand_display[:1].upper()
+            logo_img_html = f"""
+            <div style="display:inline-block; width:48px; height:48px; line-height:48px; border-radius:10px; background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#ffffff; font-size:20px; font-weight:800; text-align:center; margin-bottom:12px; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+              {initial}
+            </div>
             """
         voucher_row_html = ""
         if fulfilled_code:
@@ -1428,20 +1438,28 @@ def send_brand_offer_registered_email(
     target_region: str = "Global",
     currency: str = "USD",
     audit_email: str = PARTNERSHIPS_EMAIL,
+    offer_id: Optional[str] = None,
+    approval_token: Optional[str] = None,
 ) -> bool:
     """
-    Sends a thank-you & pending-approval confirmation email from partnerships@dabhousie.com
-    to a Brand Marketing representative when they submit a partner offer.
+    Sends an authorization & pending-approval confirmation email from partnerships@dabhousie.com
+    to a Brand Marketing representative when they submit a partner offer, complete with Approve & Reject links.
     """
     if not to_email:
         return False
 
-    subject = f"🤝 Thank You for Sponsoring a DabHousie Brand Offer: {brand_name} — {gift_title} (Pending Approval)"
+    subject = f"🤝 Action Required: Authorize Your DabHousie Brand Offer ({brand_name} — {gift_title})"
     dabhousie_logo_bytes, header_logo_src, org_logo_bytes, org_logo_src = _fetch_inline_logos(brand_logo_url)
     host_cost_label = "$0.00 (100% Brand Sponsored)" if float(organizer_price or 0) == 0 else f"${float(organizer_price):.2f}"
 
+    token_param = f"&token={approval_token}" if approval_token else ""
+    offer_param = f"&offer_id={offer_id}" if offer_id else ""
+    approve_url = f"{BASE_URL}/brand-partners.html?action=partner_approve{offer_param}{token_param}"
+    reject_url = f"{BASE_URL}/brand-partners.html?action=partner_reject{offer_param}{token_param}"
+    portal_url = f"{BASE_URL}/brand-partners.html#partner-portal"
+
     logo_preview_html = ""
-    if brand_logo_url or org_logo_bytes:
+    if org_logo_bytes:
         logo_preview_html = f"""
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:14px; text-align:center; margin-bottom:18px;">
           <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
@@ -1452,6 +1470,17 @@ def send_brand_offer_registered_email(
             </tr>
           </table>
           <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:8px;">{brand_name}</div>
+        </div>
+        """
+    else:
+        # Fallback to stylized corporate monogram badge if logo could not be fetched
+        initial = (brand_name[:1] if brand_name else "B").upper()
+        logo_preview_html = f"""
+        <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:14px; text-align:center; margin-bottom:18px;">
+          <div style="display:inline-block; width:52px; height:52px; line-height:52px; border-radius:12px; background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#ffffff; font-size:22px; font-weight:800; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+            {initial}
+          </div>
+          <div style="font-size:14px; font-weight:700; color:#f8fafc; margin-top:8px;">{brand_name}</div>
         </div>
         """
 
@@ -1480,7 +1509,7 @@ def send_brand_offer_registered_email(
           <strong>Thank you for partnering with DabHousie and sponsoring a promotional reward for {brand_name}!</strong> We truly appreciate your support in making live multiplayer Housie &amp; Bingo events even more exciting for players around the world.
         </p>
         <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
-          Your <strong>{vouchers_total_count}-reward pilot offer</strong> has been received and is currently <strong>waiting for approval</strong> by our Brand Partnerships team. Once verified and approved, your offer will appear in the <strong>DabHousie Partner Catalog</strong> and <strong>Host Gift Catalog</strong> so event organizers can assign your reward to winning game tiers.
+          Please review the submitted campaign details below. To authorize this offer and notify DabHousie to review and publish it, click <strong>Approve &amp; Authorize Offer</strong>:
         </p>
         {logo_preview_html}
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1120; border:1px solid #1e293b; border-radius:12px; margin-bottom:20px;">
@@ -1493,20 +1522,33 @@ def send_brand_offer_registered_email(
               <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Reward Sponsorship / Host Cost: <strong style="color:#38bdf8;">{host_cost_label}</strong></div>
               <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Pilot Batch Quantity: <strong style="color:#ffffff;">{vouchers_total_count} rewards</strong></div>
               <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Target Region: <strong style="color:#ffffff;">{target_region}</strong></div>
-              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Approval Status: <strong style="color:#fcd34d;">⏳ Waiting for Approval</strong></div>
+              <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Voucher Promo Code: <strong style="color:#38bdf8; font-family:monospace;">{promo_code or 'Dynamic / Host Assign'}</strong></div>
               <div style="font-size:13px; color:#94a3b8;">Brand Landing Page: <a href="{product_url}" style="color:#38bdf8;">{product_url}</a></div>
             </td>
           </tr>
         </table>
-        <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin:18px auto 0 auto;">
-          <tr>
-            <td align="center" bgcolor="#f59e0b" style="background-color:#f59e0b; border-radius:10px; padding:0;">
-              <a href="{BASE_URL}/brand-partners.html" target="_blank" style="background-color:#f59e0b; color:#0f172a !important; display:inline-block; font-size:14px; font-weight:800; text-decoration:none; padding:13px 28px; border-radius:10px;">
-                View Brand Marketing Partner Program &rarr;
-              </a>
-            </td>
-          </tr>
-        </table>
+
+        <!-- Action Buttons: Approve vs Reject -->
+        <div style="text-align:center; margin:24px 0 14px 0;">
+          <table align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+            <tr>
+              <td align="center" bgcolor="#10b981" style="background-color:#10b981; border-radius:10px; padding:0; margin-right:12px;">
+                <a href="{approve_url}" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:inline-block; font-size:14.5px; font-weight:800; text-decoration:none; padding:13px 26px; border-radius:10px;">
+                  ✅ Approve &amp; Authorize Offer &rarr;
+                </a>
+              </td>
+              <td width="16">&nbsp;</td>
+              <td align="center" bgcolor="#334155" style="background-color:#334155; border-radius:10px; padding:0;">
+                <a href="{reject_url}" target="_blank" style="background-color:#334155; color:#cbd5e1 !important; display:inline-block; font-size:13.5px; font-weight:700; text-decoration:none; padding:13px 20px; border-radius:10px;">
+                  ❌ Reject / Cancel
+                </a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:14px 0 0 0; font-size:12px; color:#94a3b8;">
+            Need to adjust details or retire gifts? Visit the <a href="{portal_url}" style="color:#38bdf8; text-decoration:underline;">Partner Portal</a>.
+          </p>
+        </div>
       </td>
     </tr>
     <tr>
@@ -1546,6 +1588,176 @@ DabHousie Brand Marketing Partner Program: {BASE_URL}/brand-partners.html
         dabhousie_logo_bytes=dabhousie_logo_bytes,
         org_logo_bytes=org_logo_bytes,
         audit_email=audit_email,
+        from_email=PARTNERSHIPS_EMAIL,
+        from_display_name="DabHousie Partnerships",
+    )
+
+
+def send_partner_confirmed_to_dabhousie_email(
+    brand_name: str,
+    brand_domain: str,
+    gift_title: str,
+    contact_name: str,
+    contact_email: str,
+    retail_value: float,
+    vouchers_total_count: int,
+    offer_id: str,
+) -> bool:
+    """
+    Notifies partnerships@dabhousie.com when the brand partner has officially approved their offer,
+    ready for DabHousie SuperAdmin to review and publish.
+    """
+    subject = f"🤝 Partner Confirmed: {brand_name} Authorized Offer '{gift_title}' (Ready for DabHousie Review)"
+    dabhousie_logo_bytes, header_logo_src, _, _ = _fetch_inline_logos(None)
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Partner Confirmed Offer</title></head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; margin:0 auto; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:22px; text-align:center; border-bottom:3px solid #10b981;">
+        <img src="{header_logo_src}" alt="DabHousie" width="180" style="max-width:180px; height:auto; display:block; margin:0 auto 8px auto;" />
+        <h1 style="margin:0; color:#ffffff; font-size:19px; font-weight:800;">🤝 Partner Confirmed &amp; Authorized Offer</h1>
+        <p style="margin:4px 0 0 0; color:#93c5fd; font-size:13px; font-weight:600;">{brand_name} &bull; @{brand_domain}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:22px;">
+        <p style="margin:0 0 14px 0; font-size:14px; color:#e2e8f0; line-height:1.6;">
+          An authorized representative at <strong>{brand_name}</strong> (<strong>{contact_name}</strong> &bull; {contact_email}) has clicked <strong>Approve &amp; Authorize Offer</strong> for their pilot campaign.
+        </p>
+        <div style="background:#0b1120; border:1px solid #1e293b; border-radius:10px; padding:14px; margin-bottom:18px; font-size:13px; color:#cbd5e1; line-height:1.7;">
+          <div>Offer Title: <strong style="color:#ffffff;">{gift_title}</strong></div>
+          <div>Retail Value: <strong style="color:#34d399;">${retail_value:.2f}</strong></div>
+          <div>Quantity: <strong style="color:#ffffff;">{vouchers_total_count} rewards</strong></div>
+          <div>Offer ID: <code style="color:#93c5fd;">{offer_id}</code></div>
+          <div>Status: <span style="color:#34d399; font-weight:700;">Ready for SuperAdmin Activation</span></div>
+        </div>
+        <p style="margin:0 0 16px 0; font-size:13.5px; color:#94a3b8; line-height:1.5;">
+          You can now review and publish this brand gift directly in the DabHousie SuperAdmin Dashboard under the <strong>Brand Offers</strong> tab.
+        </p>
+        <div style="text-align:center;">
+          <a href="{BASE_URL}/#/super-admin" target="_blank" style="background-color:#10b981; color:#ffffff !important; display:inline-block; font-size:14px; font-weight:800; text-decoration:none; padding:12px 24px; border-radius:8px;">
+            Open SuperAdmin Dashboard &rarr;
+          </a>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+    text_content = f"""Partner Confirmed Offer: {brand_name} - {gift_title}
+Contact: {contact_name} ({contact_email})
+Value: ${retail_value:.2f} ({vouchers_total_count} rewards)
+Offer ID: {offer_id}
+Open SuperAdmin to activate: {BASE_URL}/#/super-admin
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=PARTNERSHIPS_EMAIL,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=None,
+        audit_email=None,
+        from_email=PARTNERSHIPS_EMAIL,
+        from_display_name="DabHousie Partnerships",
+    )
+
+
+def send_brand_partner_otp_email(
+    to_email: str,
+    otp_code: str,
+    brand_name: str,
+    brand_domain: str,
+    rep_name: Optional[str] = None,
+) -> bool:
+    """
+    Sends a 6-digit Brand Domain Verification OTP email from partnerships@dabhousie.com
+    to ensure that the representative registering an offer actually belongs to the claimed brand domain.
+    """
+    if not to_email:
+        return False
+
+    rep_display = f"Hello <strong>{rep_name}</strong>," if rep_name else "Hello,"
+    brand_display = brand_name or brand_domain
+    subject = f"🔐 DabHousie Brand Partner Verification: {otp_code} (Confirm @{brand_domain})"
+
+    dabhousie_logo_bytes, header_logo_src, _, _ = _fetch_inline_logos(None)
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>DabHousie Brand Partner Verification Code</title></head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; margin:0 auto; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:26px 20px; text-align:center; border-bottom:3px solid #f59e0b;">
+        <img src="{header_logo_src}" alt="DabHousie" width="190" style="max-width:190px; height:auto; display:block; margin:0 auto 10px auto;" />
+        <p style="margin:0 0 6px 0; color:#f59e0b; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:1.3px;">Brand Marketing Partner Program</p>
+        <h1 style="margin:0; color:#ffffff; font-size:20px; font-weight:800;">🔐 Verify Your Official Brand Domain</h1>
+        <p style="margin:6px 0 0 0; color:#93c5fd; font-size:13.5px; font-weight:600;">{brand_display} &bull; @{brand_domain}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:26px 24px;">
+        <p style="margin:0 0 14px 0; font-size:14.5px; color:#e2e8f0; line-height:1.6;">
+          {rep_display}
+        </p>
+        <p style="margin:0 0 18px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
+          We received a request to register <strong>{brand_display}</strong> as a DabHousie Brand Marketing Partner and sponsor promotional game rewards.
+        </p>
+        <p style="margin:0 0 20px 0; font-size:14px; color:#cbd5e1; line-height:1.6;">
+          To safeguard against brand spoofing and ensure that only authorized representatives configure campaigns for <strong>{brand_domain}</strong>, please enter this 6-digit confirmation code on the registration page:
+        </p>
+
+        <div style="background:#0b1120; border:2px solid #2563eb; border-radius:14px; padding:22px 16px; text-align:center; margin:0 auto 22px auto;">
+          <div style="font-size:11.5px; font-weight:700; color:#93c5fd; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:8px;">Your 6-Digit Brand Passcode</div>
+          <div style="font-family:Courier, 'Courier New', monospace; font-size:34px; font-weight:800; letter-spacing:7px; color:#fcd34d; display:inline-block; padding:4px 16px; background:#1e293b; border-radius:8px;">
+            {otp_code}
+          </div>
+          <div style="font-size:12px; color:#94a3b8; margin-top:10px;">⏰ Valid for 10 minutes &bull; Single-use only</div>
+        </div>
+
+        <p style="margin:0 0 6px 0; font-size:12.5px; color:#94a3b8; line-height:1.5;">
+          🛡️ If you or a member of your marketing team did not initiate this partnership submission, you can safely ignore this email.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:16px 24px; background:#0b1120; border-top:1px solid #1f2937; text-align:center; font-size:12px; color:#94a3b8; line-height:1.6;">
+        DabHousie Partnerships &bull; <a href="mailto:{PARTNERSHIPS_EMAIL}" style="color:#38bdf8; text-decoration:none;">{PARTNERSHIPS_EMAIL}</a><br>
+        <a href="{BASE_URL}" style="color:#94a3b8; text-decoration:none;">www.dabhousie.com</a>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+    text_content = f"""DabHousie Brand Partner Domain Verification
+
+Hello {rep_name or ''},
+
+Your 6-digit brand verification code for {brand_display} (@{brand_domain}) is:
+
+{otp_code}
+
+This code is valid for 10 minutes and verifies your domain ownership on DabHousie.
+
+If you did not request this, please disregard this email.
+Support: {PARTNERSHIPS_EMAIL}
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=to_email,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=None,
+        audit_email=None,
         from_email=PARTNERSHIPS_EMAIL,
         from_display_name="DabHousie Partnerships",
     )
