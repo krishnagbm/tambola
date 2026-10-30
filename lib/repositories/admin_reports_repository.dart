@@ -695,6 +695,8 @@ class AdminReportsRepository {
     } catch (_) {
       return false;
     }
+  }
+
   /// Approves a pending brand partner offer and activates it in the Partner Catalog
   Future<bool> approveBrandOffer(String offerId) async {
     try {

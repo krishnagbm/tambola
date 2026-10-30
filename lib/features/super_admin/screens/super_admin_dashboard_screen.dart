@@ -2362,9 +2362,9 @@ class _SuperAdminDashboardScreenState
                               ],
                             ),
                           );
-                          if (confirmed == true && mounted) {
+                          if (confirmed == true && context.mounted) {
                             final success = await ref.read(adminReportsRepositoryProvider).approveBrandOffer(offerId);
-                            if (mounted) {
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
