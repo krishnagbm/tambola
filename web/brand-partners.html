@@ -895,9 +895,9 @@
         <a href="/brand-voucher-rules.html" class="btn-bp-secondary" style="border-color: #F59E0B; color: #FCD34D;">
           📜 View Sponsor Guard Rulebook
         </a>
-        <a href="mailto:partnerships@dabhousie.com?subject=DabHousie%20Brand%20Marketing%20Partnership%20Inquiry" class="btn-bp-secondary">
-          ✉️ Contact partnerships@dabhousie.com
-        </a>
+        <button type="button" class="btn-bp-secondary" onclick="openContactInquiryModal(event)">
+          💬 Contact Partnerships
+        </button>
       </div>
 
       <!-- Visual Acquisition Model -->
@@ -1673,7 +1673,7 @@
           <div style="max-width: 440px; margin-bottom: 16px;">
             <label for="portal-work-email" style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Corporate Work Email</label>
             <div style="display: flex; gap: 8px;">
-              <input type="email" id="portal-work-email" placeholder="e.g. helpdesk@pocketbull.net" style="flex: 1; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+              <input type="email" id="portal-work-email" placeholder="e.g. partnerships@yourbrand.com" style="flex: 1; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
               <button type="button" id="portal-send-otp-btn" onclick="sendPortalLoginOtp()" class="btn-wizard-primary" style="padding: 10px 18px; font-size: 13px; font-weight: 700; white-space: nowrap;">
                 Send Passcode
               </button>
@@ -1714,6 +1714,53 @@
         </div>
 
       </div>
+    </div>
+  </div>
+
+  <!-- Modal: Contact Partnerships Inquiry -->
+  <div id="contact-inquiry-modal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.8); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 16px;">
+    <div style="background: #0f172a; border: 1px solid #38bdf8; border-radius: 16px; max-width: 500px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); overflow: hidden; position: relative;">
+      
+      <div style="padding: 20px 24px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.05);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 22px;">💬</span>
+          <div>
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #fff;">Contact DabHousie Partnerships</h3>
+            <p style="margin: 2px 0 0 0; font-size: 12px; color: #94a3b8;">Direct inquiry to our brand partnerships team</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeContactInquiryModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1; padding: 4px;">&times;</button>
+      </div>
+
+      <form id="contact-inquiry-form" onsubmit="submitContactInquiry(event)" style="padding: 24px;">
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Your Name</label>
+          <input type="text" id="ci-name" required placeholder="e.g. Sarah Jenkins" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Corporate Work Email</label>
+          <input type="email" id="ci-email" required placeholder="e.g. sarah@yourbrand.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Brand Name or Website</label>
+          <input type="text" id="ci-brand" required placeholder="e.g. Acme Corp / acme.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">How can we collaborate?</label>
+          <textarea id="ci-message" required rows="3" placeholder="Tell us about your brand offer ideas or questions..." style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px; resize: vertical;"></textarea>
+        </div>
+
+        <div id="ci-status" style="margin-bottom: 14px; font-size: 13px; display: none;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" onclick="closeContactInquiryModal()" class="btn-bp-secondary" style="padding: 10px 16px; font-size: 13px;">Cancel</button>
+          <button type="submit" id="ci-submit-btn" class="btn-wizard-primary" style="padding: 10px 22px; font-size: 13px; font-weight: 700;">Send Inquiry</button>
+        </div>
+      </form>
+
     </div>
   </div>
 
@@ -2698,6 +2745,73 @@
         }
       } catch (_) {
         alert('Network error retiring gift.');
+      }
+    }
+
+    // Contact Partnerships Modal
+    function openContactInquiryModal(e) {
+      if (e) e.preventDefault();
+      const modal = document.getElementById('contact-inquiry-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        const statusEl = document.getElementById('ci-status');
+        if (statusEl) statusEl.style.display = 'none';
+      }
+    }
+
+    function closeContactInquiryModal() {
+      const modal = document.getElementById('contact-inquiry-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function submitContactInquiry(e) {
+      e.preventDefault();
+      const name = document.getElementById('ci-name').value.trim();
+      const email = document.getElementById('ci-email').value.trim();
+      const brand = document.getElementById('ci-brand').value.trim();
+      const message = document.getElementById('ci-message').value.trim();
+      const statusEl = document.getElementById('ci-status');
+      const submitBtn = document.getElementById('ci-submit-btn');
+
+      if (!name || !email || !brand || !message) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Sending...';
+      statusEl.style.display = 'none';
+
+      try {
+        const res = await fetch(PUBLIC_API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'brand_acknowledgement',
+            to_email: email,
+            brand_name: brand,
+            contact_name: name,
+            message: message
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          statusEl.style.color = '#34d399';
+          statusEl.innerText = 'Thank you! Your partnership inquiry has been sent to our team.';
+          statusEl.style.display = 'block';
+          document.getElementById('contact-inquiry-form').reset();
+          setTimeout(() => {
+            closeContactInquiryModal();
+          }, 2500);
+        } else {
+          statusEl.style.color = '#f87171';
+          statusEl.innerText = data.error || data.message || 'Could not send inquiry. Please try again.';
+          statusEl.style.display = 'block';
+        }
+      } catch (_) {
+        statusEl.style.color = '#f87171';
+        statusEl.innerText = 'Network error. Please try again later.';
+        statusEl.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Send Inquiry';
       }
     }
 

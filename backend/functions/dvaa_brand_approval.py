@@ -356,11 +356,6 @@ def handler(event, context):
             new_customers_only = bool(payload.get("new_customers_only", False))
             redemption_channel = (payload.get("redemption_channel") or "ONLINE").strip().upper()
 
-            BLOCKED_FREE_DOMAINS = {
-                "gmail.com", "googlemail.com", "yahoo.com", "ymail.com", "hotmail.com",
-                "outlook.com", "live.com", "msn.com", "icloud.com", "me.com", "mac.com",
-                "aol.com", "zoho.com", "proton.me", "protonmail.com", "mail.com", "gmx.com",
-            }
             email_domain = marketer_email.split("@")[-1] if "@" in marketer_email else ""
             if not email_domain or email_domain in BLOCKED_FREE_DOMAINS:
                 return _r(400, {
