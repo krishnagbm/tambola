@@ -376,19 +376,41 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.secondaryColor,
-                      foregroundColor: Colors.black,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final uri = Uri.tryParse('https://www.dabhousie.com/brand-voucher-rules.html');
+                        if (uri != null) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      icon: const Icon(Icons.menu_book_rounded, size: 16),
+                      label: const Text('📜 Sponsor Guard Rulebook'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.secondaryColor,
+                        side: BorderSide(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.6),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    child: const Text(
-                      'Got It, Explore Claims & Gifts',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.secondaryColor,
+                        foregroundColor: Colors.black,
+                      ),
+                      child: const Text(
+                        'Got It, Explore Claims & Gifts',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -929,6 +951,28 @@ class _OrganizerClaimsScreenState extends ConsumerState<OrganizerClaimsScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.tryParse('https://www.dabhousie.com/brand-voucher-rules.html');
+                      if (uri != null) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    icon: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 14,
+                      color: Color(0xFFFCD34D),
+                    ),
+                    label: const Text(
+                      '📜 Rulebook',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFCD34D),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   TextButton.icon(
                     onPressed: _openBrandPublisherVisionDialog,
                     icon: const Icon(
