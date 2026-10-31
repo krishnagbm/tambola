@@ -2661,24 +2661,24 @@
                 </div>
 
                 <!-- Editable Fields Form -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
-                  <div>
-                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Voucher / Promo Code</label>
-                    <input type="text" id="edit-promo-${escapeHtml(o.id)}" value="${escapeHtml(o.promo_code || '')}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-family: monospace;">
-                  </div>
-                  <div>
-                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Product / Landing URL</label>
-                    <input type="url" id="edit-url-${escapeHtml(o.id)}" value="${escapeHtml(o.product_url || '')}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                  </div>
+                <!-- Full-width Product / Landing URL for easy visibility and editing -->
+                <div style="font-size: 12px; margin-bottom: 12px;">
+                  <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Product / Landing URL</label>
+                  <input type="url" id="edit-url-${escapeHtml(o.id)}" value="${escapeHtml(o.product_url || '')}" placeholder="https://yourbrand.com/special-offer" style="width: 100%; box-sizing: border-box; padding: 8px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #38bdf8; font-size: 13px;">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; margin-top: 10px;">
+                <!-- Three fields in one row: Promo Code, Expiration Date, Minimum Purchase -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px; font-size: 12px;">
+                  <div>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Voucher / Promo Code</label>
+                    <input type="text" id="edit-promo-${escapeHtml(o.id)}" value="${escapeHtml(o.promo_code || '')}" placeholder="e.g. DABHOUSIE50" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-family: monospace;">
+                  </div>
                   <div>
                     <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Expiration Date</label>
                     <input type="date" id="edit-expiry-${escapeHtml(o.id)}" value="${o.expiration_date ? escapeHtml(String(o.expiration_date).slice(0, 10)) : ''}" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
                   </div>
                   <div>
-                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Minimum Purchase / Restrictions</label>
+                    <label style="display: block; color: #94a3b8; font-weight: 700; margin-bottom: 4px;">Min. Purchase / Restrictions</label>
                     <input type="text" id="edit-min-${escapeHtml(o.id)}" value="${escapeHtml(o.minimum_purchase || '')}" placeholder="e.g. Min order $20" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff;">
                   </div>
                 </div>
