@@ -181,8 +181,23 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
+    v_uid UUID;
+    v_role TEXT;
     v_offer public."MPT_brand_offers";
 BEGIN
+    v_uid := auth.uid();
+    
+    -- Allow service_role (v_uid is null in service role) OR verified ADMIN
+    IF v_uid IS NOT NULL THEN
+        SELECT role INTO v_role
+        FROM public."MPT_admin_profiles"
+        WHERE user_id = v_uid;
+
+        IF v_role IS DISTINCT FROM 'ADMIN' THEN
+            RAISE EXCEPTION 'ACCESS_DENIED: Administrator privileges required';
+        END IF;
+    END IF;
+
     UPDATE public."MPT_brand_offers"
     SET
         status = 'ACTIVE',
@@ -205,5 +220,4 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public."MPT_approve_brand_offer"(UUID) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public."MPT_approve_brand_offer"(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public."MPT_approve_brand_offer"(UUID) TO authenticated, service_role;

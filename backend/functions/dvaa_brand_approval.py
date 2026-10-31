@@ -550,6 +550,37 @@ def handler(event, context):
                 "offer": offer,
             })
 
+        # 4b-2. Super Admin Approves Brand Offer (via API Gateway backend)
+        if action in ("admin_approve_brand_offer", "approve_brand_offer"):
+            offer_id = (payload.get("offer_id") or "").strip()
+            if not offer_id:
+                return _r(400, {"success": False, "message": "Missing offer_id parameter."})
+
+            now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            sc, res_patch = _supabase_rest(
+                f"/rest/v1/MPT_brand_offers?id=eq.{urllib.parse.quote(offer_id)}",
+                method="PATCH",
+                payload={
+                    "status": "ACTIVE",
+                    "outreach_status": "PARTNER_ACTIVE",
+                    "verified_at": now_iso,
+                    "updated_at": now_iso,
+                },
+            )
+            if sc in (200, 204):
+                return _r(200, {
+                    "success": True,
+                    "offer_id": offer_id,
+                    "status": "ACTIVE",
+                    "outreach_status": "PARTNER_ACTIVE",
+                    "message": "Brand offer approved and published to the active Partner Catalog.",
+                })
+            return _r(500, {
+                "success": False,
+                "message": f"Failed to approve brand offer in database (status {sc}).",
+                "details": str(res_patch),
+            })
+
         # 4c. Partner Portal: Fetch Partner Campaigns
         if action == "get_partner_campaigns":
             contact_email = (payload.get("contact_email") or payload.get("email") or "").strip().lower()

@@ -2377,6 +2377,10 @@ class _SuperAdminDashboardScreenState
                                 ),
                               );
                               if (success) {
+                                setState(() {
+                                  b['status'] = 'ACTIVE';
+                                  b['outreach_status'] = 'PARTNER_ACTIVE';
+                                });
                                 _refreshAll();
                               }
                             }

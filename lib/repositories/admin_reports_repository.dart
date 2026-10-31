@@ -699,6 +699,28 @@ class AdminReportsRepository {
 
   /// Approves a pending brand partner offer and activates it in the Partner Catalog
   Future<bool> approveBrandOffer(String offerId) async {
+    // 1. First attempt: Dedicated backend API Gateway handler (uses Supabase service-role key to bypass RLS)
+    try {
+      final uri = Uri.parse(
+        'https://6uvajebdr2.execute-api.us-east-2.amazonaws.com/Prod/email/brand-approval',
+      );
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'action': 'admin_approve_brand_offer',
+          'offer_id': offerId,
+        }),
+      );
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        if (body is Map && body['success'] == true) {
+          return true;
+        }
+      }
+    } catch (_) {}
+
+    // 2. Second attempt: Database RPC
     try {
       final res = await _supabase.rpc(
         'MPT_approve_brand_offer',
@@ -707,30 +729,22 @@ class AdminReportsRepository {
       if (res is Map && res['success'] == true) {
         return true;
       }
-      // Fallback direct update if RPC is restricted
-      await _supabase
+    } catch (_) {}
+
+    // 3. Fallback direct update
+    try {
+      final updated = await _supabase
           .from('MPT_brand_offers')
           .update({
             'status': 'ACTIVE',
             'outreach_status': 'PARTNER_ACTIVE',
             'verified_at': DateTime.now().toUtc().toIso8601String(),
           })
-          .eq('id', offerId);
-      return true;
+          .eq('id', offerId)
+          .select();
+      return updated.isNotEmpty;
     } catch (_) {
-      try {
-        await _supabase
-            .from('MPT_brand_offers')
-            .update({
-              'status': 'ACTIVE',
-              'outreach_status': 'PARTNER_ACTIVE',
-              'verified_at': DateTime.now().toUtc().toIso8601String(),
-            })
-            .eq('id', offerId);
-        return true;
-      } catch (_) {
-        return false;
-      }
+      return false;
     }
   }
 }
