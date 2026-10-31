@@ -49,6 +49,8 @@ def handler(event, context):
                 "partner_reject_offer",
                 "get_partner_campaigns",
                 "update_partner_campaign",
+                "partner_inquiry",
+                "partnership_inquiry",
                 "register_brand_offer",
                 "track_brand_offer_click",
                 "track_brand_offer_view",

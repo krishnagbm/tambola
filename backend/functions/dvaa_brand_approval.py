@@ -33,6 +33,7 @@ from email_ses import (
     send_brand_offer_registered_email,
     send_brand_partner_otp_email,
     send_partner_confirmed_to_dabhousie_email,
+    send_partner_inquiry_email,
 )
 
 OTP_HMAC_SECRET = os.getenv("OTP_HMAC_SECRET") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "dabhousie_brand_otp_secret_key"
@@ -690,7 +691,30 @@ def handler(event, context):
                 return _r(200, {"success": True, "message": f"Prize & Brand Gift voucher emailed to {to_email_winner}!"})
             return _r(500, {"success": False, "error": "Failed to dispatch prize email via AWS SES."})
 
-        # 8. Corporate Brand Approvals
+        # 8. Brand Partnerships Direct Inquiry (from web Contact Modal)
+        if action in ("partner_inquiry", "partnership_inquiry"):
+            contact_name = payload.get("contact_name", "").strip() or payload.get("name", "").strip()
+            contact_email = payload.get("contact_email", "").strip().lower() or payload.get("to_email", "").strip().lower() or payload.get("email", "").strip().lower()
+            brand_name = payload.get("brand_name", "").strip() or payload.get("organization_name", "").strip() or payload.get("brand", "").strip()
+            message = payload.get("message", "").strip() or payload.get("inquiry", "").strip()
+
+            if not contact_email or not brand_name:
+                return _r(400, {"success": False, "error": "Email and Brand Name are required."})
+
+            sent = send_partner_inquiry_email(
+                contact_name=contact_name or "Brand Partner",
+                contact_email=contact_email,
+                brand_name=brand_name,
+                message=message or "No message provided.",
+            )
+            if sent:
+                return _r(200, {
+                    "success": True,
+                    "message": "Thank you! Your partnership inquiry has been sent to our team.",
+                })
+            return _r(500, {"success": False, "error": "Failed to deliver inquiry to partnerships team."})
+
+        # 9. Corporate Brand Approvals
         to_email = payload.get("to_email", "").strip()
         game_name = payload.get("game_name", "DabHousie Game")
 
@@ -698,9 +722,9 @@ def handler(event, context):
             return _r(400, {"error": "Missing to_email parameter"})
 
         if action in ("brand_acknowledgement", "brand_acknowledgment"):
-            organization_name = payload.get("organization_name", "").strip()
+            organization_name = payload.get("organization_name", "").strip() or payload.get("brand_name", "").strip()
             organization_logo_url = payload.get("organization_logo_url", "").strip()
-            organizer_name = payload.get("organizer_name", "").strip()
+            organizer_name = payload.get("organizer_name", "").strip() or payload.get("contact_name", "").strip()
             capacity = payload.get("capacity")
             host_email = payload.get("host_email", "").strip().lower()
             invite_code = payload.get("invite_code", "").strip()

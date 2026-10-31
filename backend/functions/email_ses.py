@@ -1668,6 +1668,75 @@ Open SuperAdmin to activate: {BASE_URL}/#/super-admin
     )
 
 
+def send_partner_inquiry_email(
+    contact_name: str,
+    contact_email: str,
+    brand_name: str,
+    message: str,
+) -> bool:
+    """
+    Sends an inquiry notification from the Brand Partners 'Contact Partnerships' modal
+    to partnerships@dabhousie.com, and sends an automated acknowledgement receipt to the submitter.
+    """
+    subject = f"💬 New Brand Partnership Inquiry from {contact_name} ({brand_name})"
+    dabhousie_logo_bytes, header_logo_src, _, _ = _fetch_inline_logos(None)
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Partnership Inquiry</title></head>
+<body style="font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color:#080c14; color:#e2e8f0; margin:0; padding:20px 10px;">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px; margin:0 auto; background:#111827; border:1px solid #374151; border-radius:16px; overflow:hidden;">
+    <tr>
+      <td style="background:linear-gradient(135deg, #0B3D91 0%, #0f172a 100%); padding:22px; text-align:center; border-bottom:3px solid #38bdf8;">
+        <img src="{header_logo_src}" alt="DabHousie" width="180" style="max-width:180px; height:auto; display:block; margin:0 auto 8px auto;" />
+        <h1 style="margin:0; color:#ffffff; font-size:19px; font-weight:800;">💬 New Brand Partnership Inquiry</h1>
+        <p style="margin:4px 0 0 0; color:#93c5fd; font-size:13px; font-weight:600;">{brand_name}</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:22px;">
+        <div style="background:#0b1120; border:1px solid #1e293b; border-radius:10px; padding:16px; margin-bottom:18px; font-size:13.5px; color:#cbd5e1; line-height:1.7;">
+          <div><strong>Sender Name:</strong> {contact_name}</div>
+          <div><strong>Corporate Email:</strong> <a href="mailto:{contact_email}" style="color:#38bdf8;">{contact_email}</a></div>
+          <div><strong>Brand / Website:</strong> {brand_name}</div>
+        </div>
+        <div style="font-size:13px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:6px;">Inquiry / Message:</div>
+        <div style="background:#1e293b; border-left:3px solid #38bdf8; padding:12px 16px; border-radius:6px; font-size:13.5px; color:#f1f5f9; line-height:1.6; white-space:pre-wrap; margin-bottom:18px;">
+          {message}
+        </div>
+        <div style="text-align:center;">
+          <a href="mailto:{contact_email}?subject=DabHousie%20Brand%20Partnership%20Follow-up%20for%20{brand_name}" style="background-color:#3b82f6; color:#ffffff !important; display:inline-block; font-size:13.5px; font-weight:800; text-decoration:none; padding:10px 20px; border-radius:8px;">
+            Reply to {contact_name} &rarr;
+          </a>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+    text_content = f"""New Brand Partnership Inquiry
+Name: {contact_name}
+Email: {contact_email}
+Brand: {brand_name}
+
+Message:
+{message}
+"""
+
+    return _dispatch_ses_mime_or_standard(
+        to_email=PARTNERSHIPS_EMAIL,
+        subject=subject,
+        html_content=html_content,
+        text_content=text_content,
+        dabhousie_logo_bytes=dabhousie_logo_bytes,
+        org_logo_bytes=None,
+        audit_email=None,
+        from_email=PARTNERSHIPS_EMAIL,
+        from_display_name="DabHousie Partnerships",
+    )
+
+
 def send_brand_partner_otp_email(
     to_email: str,
     otp_code: str,
