@@ -1312,13 +1312,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.dashboard_customize_outlined, color: AppTheme.secondaryColor, size: 18),
-                    SizedBox(width: 8),
-                    Text(
+                    const Icon(Icons.dashboard_customize_outlined, color: AppTheme.secondaryColor, size: 18),
+                    const SizedBox(width: 8),
+                    const Text(
                       'My Hosted Games',
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'View Sponsor Guard Rulebook & Brand Voucher Allocation Policy',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () async {
+                          final uri = Uri.tryParse('https://www.dabhousie.com/brand-voucher-rules.html');
+                          if (uri != null) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppTheme.secondaryColor.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.help_outline_rounded, size: 13, color: AppTheme.secondaryColor),
+                              SizedBox(width: 3),
+                              Text(
+                                'Voucher Rules',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.secondaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
