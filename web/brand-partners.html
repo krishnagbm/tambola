@@ -795,6 +795,12 @@
       color: #FFFFFF;
     }
 
+    .btn-wizard-secondary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .btn-wizard-primary {
       background: linear-gradient(135deg, #F59E0B, #D97706);
       border: 1px solid rgba(253, 211, 77, 0.4);
@@ -814,6 +820,14 @@
     .btn-wizard-primary:hover {
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+    }
+
+    .btn-wizard-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -1997,6 +2011,9 @@
       if (step1ResendTimer) clearInterval(step1ResendTimer);
       let rem = seconds;
       btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.55';
+      btn.style.cursor = 'not-allowed';
       btn.textContent = `Resend in ${rem}s`;
       step1ResendTimer = setInterval(() => {
         rem--;
@@ -2004,6 +2021,9 @@
           clearInterval(step1ResendTimer);
           step1ResendTimer = null;
           btn.disabled = false;
+          btn.style.pointerEvents = 'auto';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
           btn.textContent = 'Resend Code';
         } else {
           btn.textContent = `Resend in ${rem}s`;
@@ -2498,6 +2518,9 @@
       if (portalResendTimer) clearInterval(portalResendTimer);
       let rem = seconds;
       btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.55';
+      btn.style.cursor = 'not-allowed';
       btn.textContent = `Resend in ${rem}s`;
       portalResendTimer = setInterval(() => {
         rem--;
@@ -2505,6 +2528,9 @@
           clearInterval(portalResendTimer);
           portalResendTimer = null;
           btn.disabled = false;
+          btn.style.pointerEvents = 'auto';
+          btn.style.opacity = '1';
+          btn.style.cursor = 'pointer';
           btn.textContent = 'Resend Code';
         } else {
           btn.textContent = `Resend in ${rem}s`;
