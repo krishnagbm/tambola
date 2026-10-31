@@ -1385,9 +1385,9 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
         );
         isBrandSelfApproved = brandRes['is_self_approved'] == true;
         if (isBrandSelfApproved) {
-          brandApprovalMsg = 'DVAA™ Verified! Official branding has been automatically approved and activated for your event. An official acknowledgement email and audit copy have been dispatched to $approverEmail and contact@dabhousie.com.';
+          brandApprovalMsg = 'DVAA™ Verified! Official branding has been automatically approved and activated for your event. An official acknowledgement email and audit copy have been dispatched to $approverEmail and ${AppConfig.supportEmail}.';
         } else if (brandRes['success'] == true) {
-          brandApprovalMsg = 'DVAA™ authorization request successfully sent to $approverEmail with an audit copy to contact@dabhousie.com. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
+          brandApprovalMsg = 'DVAA™ authorization request successfully sent to $approverEmail with an audit copy to ${AppConfig.supportEmail}. Official branding will automatically appear on the event live card and Hall of Fame the moment they click approve.';
         } else {
           brandApprovalMsg = 'Approval record saved. (Note: ${brandRes['message'] ?? 'Check your email inbox or spam folder'}).';
         }
@@ -2260,7 +2260,7 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Because you are verified under @$hostDomain via corporate email authentication, your event qualifies for instant brand activation under DVAA™. Official branding will be automatically activated upon creation, with an audit confirmation emailed to you and contact@dabhousie.com.',
+                            'Because you are verified under @$hostDomain via corporate email authentication, your event qualifies for instant brand activation under DVAA™. Official branding will be automatically activated upon creation, with an audit confirmation emailed to you and ${AppConfig.supportEmail}.',
                             style: const TextStyle(fontSize: 11.5, color: Color(0xFFCBD5E1), height: 1.3),
                           ),
                         ],
@@ -2816,8 +2816,8 @@ class _CreateGameScreenState extends ConsumerState<CreateGameScreen> {
                         const SizedBox(height: 4),
                         Text(
                           isSelfApproval
-                              ? 'DVAA™ Compliance: An immutable confirmation & audit record will be emailed to $hostEmail and contact@dabhousie.com.'
-                              : 'DVAA™ Compliance: An authorization request email will be dispatched to ${approverEmail.isEmpty ? "the corporate approver" : approverEmail} with an audit copy to contact@dabhousie.com.',
+                              ? 'DVAA™ Compliance: An immutable confirmation & audit record will be emailed to $hostEmail and ${AppConfig.supportEmail}.'
+                              : 'DVAA™ Compliance: An authorization request email will be dispatched to ${approverEmail.isEmpty ? "the corporate approver" : approverEmail} with an audit copy to ${AppConfig.supportEmail}.',
                           style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
                         ),
                       ],

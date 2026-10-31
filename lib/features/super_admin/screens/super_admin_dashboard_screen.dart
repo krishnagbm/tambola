@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../providers/app_providers.dart';
@@ -614,14 +615,14 @@ class _SuperAdminDashboardScreenState
                       color: const Color(0xFF10B981).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.mark_email_read_outlined, size: 11, color: Color(0xFF10B981)),
-                        SizedBox(width: 4),
+                        const Icon(Icons.mark_email_read_outlined, size: 11, color: Color(0xFF10B981)),
+                        const SizedBox(width: 4),
                         Text(
-                          'ALERTS: contact@dabhousie.com',
-                          style: TextStyle(
+                          'ALERTS: ${AppConfig.supportEmail}',
+                          style: const TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF10B981),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/config/app_config.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/dabhousie_app_bar.dart';
@@ -2658,7 +2659,7 @@ class _BrandGiftFulfillmentDialogState
                               id: o.id,
                               brandName: o.brandName,
                               brandDomain: '${o.brandName.toLowerCase().replaceAll(' ', '')}.com',
-                              contactEmail: 'partners@dabhousie.com',
+                              contactEmail: AppConfig.partnershipsEmail,
                               productTitle: o.productTitle,
                               productDescription: o.description,
                               category: o.category,
