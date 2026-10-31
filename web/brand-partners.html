@@ -1805,6 +1805,12 @@
     let currentCatalogStatus = 'ACTIVE';
     let currentCatalogCountry = 'ALL';
 
+    // OTP challenge cache & countdown timer state
+    let step1OtpChallenge = '';
+    let step1ResendTimer = null;
+    let portalOtpChallenge = '';
+    let portalResendTimer = null;
+
     const OFFER_TYPE_LABELS = {
       'GIFT_VOUCHER': 'Gift vouchers',
       'DISCOUNT': 'Discount vouchers',
@@ -1985,6 +1991,26 @@
     let isBrandDomainVerified = false;
     let brandVerificationToken = null;
 
+    function startStep1ResendCountdown(seconds = 60) {
+      const btn = document.getElementById('bm-send-otp-btn');
+      if (!btn) return;
+      if (step1ResendTimer) clearInterval(step1ResendTimer);
+      let rem = seconds;
+      btn.disabled = true;
+      btn.textContent = `Resend in ${rem}s`;
+      step1ResendTimer = setInterval(() => {
+        rem--;
+        if (rem <= 0) {
+          clearInterval(step1ResendTimer);
+          step1ResendTimer = null;
+          btn.disabled = false;
+          btn.textContent = 'Resend Code';
+        } else {
+          btn.textContent = `Resend in ${rem}s`;
+        }
+      }, 1000);
+    }
+
     async function sendDomainOtp() {
       const brandName = document.getElementById('bm-brand-name')?.value.trim();
       const domain = document.getElementById('bm-domain')?.value.trim();
@@ -2032,8 +2058,8 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          btn.textContent = 'Resend Code';
-          btn.disabled = false;
+          if (data.challenge) step1OtpChallenge = data.challenge;
+          startStep1ResendCountdown(60);
           feedback.style.color = '#38bdf8';
           feedback.textContent = '✉️ Passcode sent! Check your inbox.';
           verifyRow.style.display = 'block';
@@ -2079,7 +2105,8 @@
             action: 'verify_brand_partner_otp',
             contact_email: repEmail,
             brand_domain: cleanDomain,
-            otp_code: otpCode
+            otp_code: otpCode,
+            challenge: step1OtpChallenge
           })
         });
         const data = await res.json();
@@ -2465,6 +2492,26 @@
       if (modal) modal.style.display = 'none';
     }
 
+    function startPortalResendCountdown(seconds = 60) {
+      const btn = document.getElementById('portal-send-otp-btn');
+      if (!btn) return;
+      if (portalResendTimer) clearInterval(portalResendTimer);
+      let rem = seconds;
+      btn.disabled = true;
+      btn.textContent = `Resend in ${rem}s`;
+      portalResendTimer = setInterval(() => {
+        rem--;
+        if (rem <= 0) {
+          clearInterval(portalResendTimer);
+          portalResendTimer = null;
+          btn.disabled = false;
+          btn.textContent = 'Resend Code';
+        } else {
+          btn.textContent = `Resend in ${rem}s`;
+        }
+      }, 1000);
+    }
+
     async function sendPortalLoginOtp() {
       const email = document.getElementById('portal-work-email')?.value.trim().toLowerCase();
       const btn = document.getElementById('portal-send-otp-btn');
@@ -2493,8 +2540,8 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          btn.textContent = 'Resend Code';
-          btn.disabled = false;
+          if (data.challenge) portalOtpChallenge = data.challenge;
+          startPortalResendCountdown(60);
           feedback.style.color = '#38bdf8';
           feedback.textContent = 'Passcode sent! Check your inbox.';
           document.getElementById('portal-otp-verify-box').style.display = 'block';
@@ -2537,7 +2584,8 @@
             action: 'verify_brand_partner_otp',
             contact_email: email,
             brand_domain: emailDomain,
-            otp_code: otp
+            otp_code: otp,
+            challenge: portalOtpChallenge
           })
         });
         const data = await res.json();

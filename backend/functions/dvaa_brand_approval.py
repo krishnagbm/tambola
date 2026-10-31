@@ -239,22 +239,33 @@ def handler(event, context):
                     "message": f"Domain Mismatch: Your work email (@{email_domain}) does not match your brand domain ({brand_domain}).",
                 })
 
-            # Generate 6-digit numeric OTP
+            # Generate 6-digit numeric OTP and signed HMAC challenge token (expiring in 10 minutes)
             otp_code = f"{secrets.randbelow(900000) + 100000}"
+            otp_exp = int(time.time()) + 600
+            otp_sig = hmac.new(
+                OTP_HMAC_SECRET.encode("utf-8"),
+                f"{otp_code}:{contact_email}:{brand_domain}:{otp_exp}".encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
+            challenge = f"{otp_exp}:{otp_sig}"
+
             otp_hash = hashlib.sha256(f"{otp_code}:{contact_email}:{brand_domain}".encode("utf-8")).hexdigest()
 
-            # Store in Supabase MPT_brand_domain_verifications table
-            sc, ins_res = _supabase_rest(
-                "/rest/v1/MPT_brand_domain_verifications",
-                method="POST",
-                payload={
-                    "email": contact_email,
-                    "domain": brand_domain,
-                    "otp_hash": otp_hash,
-                    "status": "PENDING",
-                    "expires_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + 600)),
-                },
-            )
+            # Store in Supabase MPT_brand_domain_verifications table if table exists
+            try:
+                _supabase_rest(
+                    "/rest/v1/MPT_brand_domain_verifications",
+                    method="POST",
+                    payload={
+                        "email": contact_email,
+                        "domain": brand_domain,
+                        "otp_hash": otp_hash,
+                        "status": "PENDING",
+                        "expires_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(otp_exp)),
+                    },
+                )
+            except Exception as e_db:
+                print(f"  [ DVAA ] Notice: DB insert skipped or table pending: {e_db}")
 
             # Send OTP email via Amazon SES
             mail_sent = send_brand_partner_otp_email(
@@ -272,6 +283,8 @@ def handler(event, context):
                 "success": True,
                 "message": f"Verification code sent to {contact_email}. Please check your inbox.",
                 "brand_domain": brand_domain,
+                "challenge": challenge,
+                "expires_in": 600,
             })
 
         # 3c. Verify Brand Partner Domain OTP
@@ -279,6 +292,7 @@ def handler(event, context):
             contact_email = (payload.get("contact_email") or payload.get("email") or "").strip().lower()
             brand_domain = _clean_domain(payload.get("brand_domain") or "")
             otp_code = (payload.get("otp_code") or payload.get("otp") or "").strip()
+            challenge = (payload.get("challenge") or "").strip()
 
             if not contact_email or not otp_code:
                 return _r(400, {"success": False, "message": "Email and 6-digit verification code are required."})
@@ -287,32 +301,59 @@ def handler(event, context):
             if not brand_domain:
                 brand_domain = email_domain
 
+            # 1. First check stateless cryptographic HMAC challenge if passed by frontend
+            if challenge and ":" in challenge:
+                try:
+                    c_exp_str, c_sig = challenge.split(":", 1)
+                    c_exp = int(c_exp_str)
+                    if time.time() > c_exp:
+                        return _r(400, {"success": False, "message": "Verification code has expired. Please request a new one."})
+                    expected_sig = hmac.new(
+                        OTP_HMAC_SECRET.encode("utf-8"),
+                        f"{otp_code}:{contact_email}:{brand_domain}:{c_exp}".encode("utf-8"),
+                        hashlib.sha256
+                    ).hexdigest()
+                    if hmac.compare_digest(c_sig, expected_sig):
+                        verification_token = _make_verification_token(contact_email, brand_domain)
+                        return _r(200, {
+                            "success": True,
+                            "verified": True,
+                            "verification_token": verification_token,
+                            "message": f"Official domain ownership confirmed for @{brand_domain}!",
+                            "brand_domain": brand_domain,
+                        })
+                except Exception as e_chal:
+                    print(f"  [ DVAA ] Challenge parse error: {e_chal}")
+
             expected_hash = hashlib.sha256(f"{otp_code}:{contact_email}:{brand_domain}".encode("utf-8")).hexdigest()
 
-            # Query database for recent matching pending OTP
+            # 2. Check database for recent matching pending OTP if table exists
             now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            sc, rows = _supabase_rest(
-                f"/rest/v1/MPT_brand_domain_verifications?email=eq.{urllib.parse.quote(contact_email)}&domain=eq.{urllib.parse.quote(brand_domain)}&status=eq.PENDING&expires_at=gte.{now_iso}&order=created_at.desc&limit=1",
-                method="GET",
-            )
+            try:
+                sc, rows = _supabase_rest(
+                    f"/rest/v1/MPT_brand_domain_verifications?email=eq.{urllib.parse.quote(contact_email)}&domain=eq.{urllib.parse.quote(brand_domain)}&status=eq.PENDING&expires_at=gte.{now_iso}&order=created_at.desc&limit=1",
+                    method="GET",
+                )
 
-            if sc == 200 and isinstance(rows, list) and len(rows) > 0:
-                record = rows[0]
-                if record.get("otp_hash") == expected_hash:
-                    # Mark record as VERIFIED
-                    _supabase_rest(
-                        f"/rest/v1/MPT_brand_domain_verifications?id=eq.{record['id']}",
-                        method="PATCH",
-                        payload={"status": "VERIFIED", "verified_at": now_iso},
-                    )
-                    verification_token = _make_verification_token(contact_email, brand_domain)
-                    return _r(200, {
-                        "success": True,
-                        "verified": True,
-                        "verification_token": verification_token,
-                        "message": f"Official domain ownership confirmed for @{brand_domain}!",
-                        "brand_domain": brand_domain,
-                    })
+                if sc == 200 and isinstance(rows, list) and len(rows) > 0:
+                    record = rows[0]
+                    if record.get("otp_hash") == expected_hash:
+                        # Mark record as VERIFIED
+                        _supabase_rest(
+                            f"/rest/v1/MPT_brand_domain_verifications?id=eq.{record['id']}",
+                            method="PATCH",
+                            payload={"status": "VERIFIED", "verified_at": now_iso},
+                        )
+                        verification_token = _make_verification_token(contact_email, brand_domain)
+                        return _r(200, {
+                            "success": True,
+                            "verified": True,
+                            "verification_token": verification_token,
+                            "message": f"Official domain ownership confirmed for @{brand_domain}!",
+                            "brand_domain": brand_domain,
+                        })
+            except Exception as e_db_read:
+                print(f"  [ DVAA ] DB query error: {e_db_read}")
 
             return _r(400, {
                 "success": False,
