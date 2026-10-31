@@ -1752,12 +1752,14 @@
 
         <div style="margin-bottom: 14px;">
           <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Corporate Work Email</label>
-          <input type="email" id="ci-email" required placeholder="e.g. sarah@yourbrand.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+          <input type="email" id="ci-email" required placeholder="e.g. sarah@acme.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+          <span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 4px;">Must be an official company email (free webmail like @gmail, @yahoo, @hotmail blocked).</span>
         </div>
 
         <div style="margin-bottom: 14px;">
-          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Brand Name or Website</label>
-          <input type="text" id="ci-brand" required placeholder="e.g. Acme Corp / acme.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #93c5fd; margin-bottom: 6px;">Official Brand Website / Domain</label>
+          <input type="text" id="ci-brand" required placeholder="e.g. acme.com or https://acme.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: #0b1120; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 14px;">
+          <span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 4px;">Email domain must match your brand domain.</span>
         </div>
 
         <div style="margin-bottom: 18px;">
@@ -2839,13 +2841,39 @@
     async function submitContactInquiry(e) {
       e.preventDefault();
       const name = document.getElementById('ci-name').value.trim();
-      const email = document.getElementById('ci-email').value.trim();
+      const email = document.getElementById('ci-email').value.trim().toLowerCase();
       const brand = document.getElementById('ci-brand').value.trim();
       const message = document.getElementById('ci-message').value.trim();
       const statusEl = document.getElementById('ci-status');
       const submitBtn = document.getElementById('ci-submit-btn');
 
       if (!name || !email || !brand || !message) return;
+
+      // 1. Social/Free Email Validation Check
+      const blockedFreeDomains = [
+        'gmail.com', 'googlemail.com', 'yahoo.com', 'ymail.com', 'hotmail.com',
+        'outlook.com', 'live.com', 'msn.com', 'icloud.com', 'me.com', 'mac.com',
+        'aol.com', 'zoho.com', 'proton.me', 'protonmail.com', 'mail.com', 'gmx.com',
+        'rediffmail.com', 'yandex.com'
+      ];
+      const emailDomain = email.split('@')[1] || '';
+      if (!emailDomain || blockedFreeDomains.includes(emailDomain)) {
+        statusEl.style.color = '#f87171';
+        statusEl.innerText = 'Please use your official corporate work email. Free webmail providers (@gmail, @yahoo, @hotmail, etc.) are not accepted for brand inquiries.';
+        statusEl.style.display = 'block';
+        return;
+      }
+
+      // 2. Domain Match Check
+      const cleanBrandDomain = brand.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].trim();
+      if (cleanBrandDomain.includes('.')) {
+        if (emailDomain !== cleanBrandDomain && !emailDomain.endsWith('.' + cleanBrandDomain) && !cleanBrandDomain.endsWith('.' + emailDomain)) {
+          statusEl.style.color = '#f87171';
+          statusEl.innerText = `Domain Mismatch: Your email (@${emailDomain}) does not match your brand domain (${cleanBrandDomain}).`;
+          statusEl.style.display = 'block';
+          return;
+        }
+      }
 
       submitBtn.disabled = true;
       submitBtn.innerText = 'Sending...';
@@ -2859,6 +2887,7 @@
             action: 'partner_inquiry',
             contact_email: email,
             brand_name: brand,
+            brand_domain: cleanBrandDomain,
             contact_name: name,
             message: message
           })

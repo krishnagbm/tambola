@@ -696,10 +696,33 @@ def handler(event, context):
             contact_name = payload.get("contact_name", "").strip() or payload.get("name", "").strip()
             contact_email = payload.get("contact_email", "").strip().lower() or payload.get("to_email", "").strip().lower() or payload.get("email", "").strip().lower()
             brand_name = payload.get("brand_name", "").strip() or payload.get("organization_name", "").strip() or payload.get("brand", "").strip()
+            brand_domain_input = payload.get("brand_domain", "").strip()
             message = payload.get("message", "").strip() or payload.get("inquiry", "").strip()
 
             if not contact_email or not brand_name:
                 return _r(400, {"success": False, "error": "Email and Brand Name are required."})
+
+            if "@" not in contact_email:
+                return _r(400, {"success": False, "error": "Please enter a valid work email address."})
+
+            email_domain = contact_email.split("@")[-1].lower()
+
+            # 1. Block free / social webmail providers
+            if email_domain in BLOCKED_FREE_DOMAINS:
+                return _r(400, {
+                    "success": False,
+                    "error": "Personal / free email accounts (@gmail, @yahoo, @hotmail, etc.) cannot be used for brand partnership inquiries. Please use your official corporate work email."
+                })
+
+            # 2. Extract and verify domain match if brand name or domain was provided
+            target_domain = _clean_domain(brand_domain_input) if brand_domain_input else _clean_domain(brand_name)
+            # If the user entered a domain like "pocketbull.net" or "nike.com"
+            if target_domain and "." in target_domain:
+                if email_domain != target_domain and not email_domain.endswith(f".{target_domain}") and not target_domain.endswith(f".{email_domain}"):
+                    return _r(400, {
+                        "success": False,
+                        "error": f"Domain Mismatch: Your corporate email (@{email_domain}) does not match your brand domain ({target_domain}). Please use an email matching your brand website."
+                    })
 
             sent = send_partner_inquiry_email(
                 contact_name=contact_name or "Brand Partner",
