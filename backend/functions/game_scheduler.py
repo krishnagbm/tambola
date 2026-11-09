@@ -184,26 +184,30 @@ def evaluate_scheduled_games() -> Dict[str, Any]:
                         if confirmed_count >= 1:
                             # Start anyway with current participants
                             print(f"  [ SCHEDULER ] Launching game {g.get('invite_code')} with {confirmed_count} player(s) (START_ANYWAY).")
-                            _start_game(sb, g["id"])
-
-                            summary["games_launched"].append({
-                                "invite_code": g.get("invite_code"),
-                                "reason": "START_ANYWAY low quorum action",
-                            })
-                            print(f"  [ SCHEDULER ] Launched game {g.get('invite_code')} anyway under START_ANYWAY policy")
+                            started = _start_game(sb, g["id"])
+                            if started:
+                                summary["games_launched"].append({
+                                    "invite_code": g.get("invite_code"),
+                                    "reason": "START_ANYWAY low quorum action",
+                                })
+                                print(f"  [ SCHEDULER ] Launched game {g.get('invite_code')} anyway under START_ANYWAY policy")
+                            else:
+                                print(f"  [ SCHEDULER ] START_ANYWAY launch BLOCKED for game {g.get('invite_code')} (Financial validation / credit deduction failed)")
                         else:
                             print(f"  [ SCHEDULER ] Cannot launch game {g.get('invite_code')} with 0 players even under START_ANYWAY")
 
             # ── Scenario B: Quorum Met at Kickoff ────────────────────────────
             else:
                 if autonomous_enabled and confirmed_count >= 1:
-                    _start_game(sb, g["id"])
-
-                    summary["games_launched"].append({
-                        "invite_code": g.get("invite_code"),
-                        "reason": f"Quorum reached ({confirmed_count}/{quorum_count}) with autonomous host",
-                    })
-                    print(f"  [ SCHEDULER ] Autonomous kickoff for game {g.get('invite_code')} ({confirmed_count}/{quorum_count})")
+                    started = _start_game(sb, g["id"])
+                    if started:
+                        summary["games_launched"].append({
+                            "invite_code": g.get("invite_code"),
+                            "reason": f"Quorum reached ({confirmed_count}/{quorum_count}) with autonomous host",
+                        })
+                        print(f"  [ SCHEDULER ] Autonomous kickoff for game {g.get('invite_code')} ({confirmed_count}/{quorum_count})")
+                    else:
+                        print(f"  [ SCHEDULER ] Autonomous kickoff BLOCKED for game {g.get('invite_code')} (Financial validation / credit deduction failed)")
 
         # ── Step 2: 100% Autonomous Authoritative Cloud Calling ──────────────
         # Call balls for any active in-progress autonomous games every 15 seconds
@@ -314,22 +318,16 @@ def _auto_call_autonomous_games(sb: Any, summary: Dict[str, Any]) -> None:
 
 
 def _start_game(sb: Any, game_id: str) -> bool:
-    """Authoritative game start via MPT_start_game_and_charge RPC with fallback."""
+    """Authoritative game start via MPT_start_game_and_charge RPC with strict financial integrity."""
     try:
-        sb.rpc("MPT_start_game_and_charge", {"p_game_id": game_id}).execute()
-        print(f"  [ SCHEDULER ] MPT_start_game_and_charge RPC successfully executed for {game_id}")
+        res = sb.rpc("MPT_start_game_and_charge", {"p_game_id": game_id}).execute()
+        print(f"  [ SCHEDULER ] MPT_start_game_and_charge RPC successfully executed for {game_id}: {res.data}")
         return True
     except Exception as e:
         print(f"  [ SCHEDULER ] MPT_start_game_and_charge RPC failed for {game_id}: {e}")
-        try:
-            sb.from_("MPT_games").update({
-                "status": "IN_PROGRESS",
-                "started_at": datetime.now(timezone.utc).isoformat(),
-            }).eq("id", game_id).execute()
-            return True
-        except Exception as e2:
-            print(f"  [ SCHEDULER ] Fallback direct status update failed for {game_id}: {e2}")
-            return False
+        # FINANCIAL INTEGRITY: Never bypass RPC failure to set status = IN_PROGRESS!
+        # If the RPC failed (e.g. insufficient credits, unverified seats), the game must NOT launch free.
+        return False
 
 
 def _get_host_email(sb: Any, user_id: Optional[str]) -> Optional[str]:

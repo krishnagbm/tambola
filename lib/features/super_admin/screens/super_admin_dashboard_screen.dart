@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -825,6 +826,43 @@ class _SuperAdminDashboardScreenState
     );
   }
 
+  /// Accurately resolves required quorum for a game based on Dabby orchestration config,
+  /// scheduled capacity percentage (default 67%), or the standard minimum (2) for live ad-hoc rooms.
+  int _getRequiredQuorum(Map<String, dynamic> g) {
+    final cap = (g['funded_capacity'] as num?)?.toInt() ??
+        (g['initial_funded_capacity'] as num?)?.toInt() ??
+        25;
+    final prizeGifts = g['prize_gifts_config'];
+    if (prizeGifts is Map) {
+      final dabby = prizeGifts['_dabby_orchestration'];
+      if (dabby is Map) {
+        final qc = (dabby['quorum_count'] as num?)?.toInt();
+        if (qc != null && qc > 0) return qc;
+        final qp = (dabby['quorum_percentage'] as num?)?.toDouble() ?? 0.67;
+        return math.max(1, (cap * qp).ceil());
+      }
+    }
+    if (g['scheduled_at'] != null) {
+      return math.max(1, (cap * 0.67).ceil());
+    }
+    return 2;
+  }
+
+  String _getQuorumBadgeText(Map<String, dynamic> g, int confirmedCount) {
+    final required = _getRequiredQuorum(g);
+    final isMet = confirmedCount >= required;
+    final isScheduled = g['scheduled_at'] != null;
+    if (isMet) {
+      return isScheduled
+          ? 'Quorum Met ($confirmedCount / $required)'
+          : 'Quorum Met ($confirmedCount players)';
+    } else {
+      return isScheduled
+          ? 'Below Quorum ($confirmedCount / $required required)'
+          : 'Below Quorum ($confirmedCount / min 2)';
+    }
+  }
+
   // ==========================================
   // TAB 1: RECENT GAMES (WITH CAPACITY & QUORUM CONTROLS)
   // ==========================================
@@ -842,7 +880,8 @@ class _SuperAdminDashboardScreenState
       final cap = (g['initial_funded_capacity'] as num?)?.toInt() ?? 25;
       final isVisible = g['is_publicly_visible'] != false;
       final confirmedCount = (g['confirmed_players_count'] as num?)?.toInt() ?? (g['player_count'] as num?)?.toInt() ?? 0;
-      final quorumMet = confirmedCount >= 2;
+      final requiredQuorum = _getRequiredQuorum(g);
+      final quorumMet = confirmedCount >= requiredQuorum;
       final name = (g['name'] as String? ?? '').toLowerCase();
       final code = (g['invite_code'] as String? ?? '').toLowerCase();
       final host = (g['host_identifier'] as String? ?? '').toLowerCase();
@@ -967,7 +1006,7 @@ class _SuperAdminDashboardScreenState
                     FilterChip(
                       selected: _hideBelowQuorum,
                       onSelected: (val) => setState(() => _hideBelowQuorum = val),
-                      label: const Text('Only Quorum Met (≥ 2p)', style: TextStyle(fontSize: 11)),
+                      label: const Text('Only Quorum Met', style: TextStyle(fontSize: 11)),
                       selectedColor: AppTheme.secondaryColor.withValues(alpha: 0.25),
                       checkmarkColor: AppTheme.secondaryColor,
                       backgroundColor: const Color(0xFF0F172A),
@@ -1056,7 +1095,8 @@ class _SuperAdminDashboardScreenState
     final statusColor = _getStatusColor(status);
     final isPubliclyVisible = g['is_publicly_visible'] != false;
     final confirmedCount = (g['confirmed_players_count'] as num?)?.toInt() ?? (g['player_count'] as num?)?.toInt() ?? 0;
-    final quorumMet = confirmedCount >= 2;
+    final requiredQuorum = _getRequiredQuorum(g);
+    final quorumMet = confirmedCount >= requiredQuorum;
     final tierName = g['capacity_tier_name'] as String? ?? 'Cap: ${g['initial_funded_capacity'] ?? 25}';
     final gameId = g['id'] as String? ?? '';
     final schedRaw = g['scheduled_at'];
@@ -1213,9 +1253,7 @@ class _SuperAdminDashboardScreenState
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        quorumMet
-                            ? 'Quorum Met ($confirmedCount players)'
-                            : 'Below Quorum ($confirmedCount / min 2)',
+                        _getQuorumBadgeText(g, confirmedCount),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -1422,7 +1460,9 @@ class _SuperAdminDashboardScreenState
 
                 final isPublic = game['is_publicly_visible'] != false;
                 final confirmedCount = players.where((p) => p['seat_status'] == 'CONFIRMED' || p['seat_status'] == 'ELIGIBLE').length;
-                final quorumMet = confirmedCount >= 2;
+                final requiredQuorum = _getRequiredQuorum(game);
+                final quorumMet = confirmedCount >= requiredQuorum;
+                final isScheduled = game['scheduled_at'] != null;
 
                 return DefaultTabController(
                   length: 3,
@@ -1487,8 +1527,12 @@ class _SuperAdminDashboardScreenState
                                 const SizedBox(width: 6),
                                 Text(
                                   quorumMet
-                                      ? 'Quorum Met ($confirmedCount players confirmed)'
-                                      : 'Below Quorum ($confirmedCount / min 2 players)',
+                                      ? (isScheduled
+                                          ? 'Quorum Met ($confirmedCount of $requiredQuorum players confirmed)'
+                                          : 'Quorum Met ($confirmedCount players confirmed)')
+                                      : (isScheduled
+                                          ? 'Below Quorum ($confirmedCount / $requiredQuorum required)'
+                                          : 'Below Quorum ($confirmedCount / min 2 players)'),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
@@ -2974,22 +3018,18 @@ class _SuperAdminDashboardScreenState
   // TAB 4: REGISTERED USERS & PLAYERS DRILL-DOWN
   // ==========================================
   Widget _buildUsersTab(List users, Map<String, dynamic> metrics) {
-    if (users.isEmpty) {
-      return FutureBuilder<List<Map<String, dynamic>>>(
-        future:
-            ref.read(adminReportsRepositoryProvider).getRegisteredUsersList(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.secondaryColor),
-            );
-          }
-          final loaded = snapshot.data ?? [];
-          return _renderUsersList(loaded, metrics);
-        },
-      );
-    }
-    return _renderUsersList(users, metrics);
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: ref.read(adminReportsRepositoryProvider).getRegisteredOAuthUsers(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.secondaryColor),
+          );
+        }
+        final loaded = snapshot.data ?? (users.isNotEmpty ? List<Map<String, dynamic>>.from(users) : []);
+        return _renderUsersList(loaded, metrics);
+      },
+    );
   }
 
   Widget _renderUsersList(List users, Map<String, dynamic> metrics) {
@@ -3954,7 +3994,7 @@ class _SuperAdminDashboardScreenState
     for (final g in games) {
       final gMap = g as Map<String, dynamic>;
       final confirmed = (gMap['confirmed_players_count'] as num?)?.toInt() ?? 0;
-      if (confirmed >= 2) quorumMetCount++;
+      if (confirmed >= _getRequiredQuorum(gMap)) quorumMetCount++;
     }
 
     showDialog(
@@ -4056,7 +4096,7 @@ class _SuperAdminDashboardScreenState
                             const SizedBox(width: 10),
                             Expanded(
                               child: _buildMetricMiniCard(
-                                label: 'Quorum Met (≥ 2)',
+                                label: 'Quorum Met',
                                 value: '$quorumMetCount',
                                 color: AppTheme.secondaryColor,
                                 icon: Icons.groups_outlined,
@@ -4094,7 +4134,9 @@ class _SuperAdminDashboardScreenState
                               final tier = gMap['capacity_tier_name'] ?? 'Family Pack';
                               final host = gMap['host_identifier'] ?? 'Host';
                               final confirmed = (gMap['confirmed_players_count'] as num?)?.toInt() ?? 0;
-                              final quorum = confirmed >= 2;
+                              final requiredQuorum = _getRequiredQuorum(gMap);
+                              final quorum = confirmed >= requiredQuorum;
+                              final isSched = gMap['scheduled_at'] != null;
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
@@ -4129,7 +4171,9 @@ class _SuperAdminDashboardScreenState
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
-                                        quorum ? '✓ Quorum Met ($confirmed)' : 'Quorum Pending ($confirmed)',
+                                        quorum
+                                            ? (isSched ? '✓ Quorum Met ($confirmed/$requiredQuorum)' : '✓ Quorum Met ($confirmed)')
+                                            : (isSched ? 'Below Quorum ($confirmed/$requiredQuorum)' : 'Quorum Pending ($confirmed)'),
                                         style: TextStyle(
                                           fontSize: 9.5,
                                           fontWeight: FontWeight.bold,

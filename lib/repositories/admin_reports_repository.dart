@@ -647,15 +647,33 @@ class AdminReportsRepository {
     }
   }
 
+  /// Fetches real registered OAuth & email accounts from auth.users via secure admin RPC
+  Future<List<Map<String, dynamic>>> getRegisteredOAuthUsers() async {
+    try {
+      final res = await _supabase.rpc('MPT_get_registered_oauth_users');
+      if (res is List && res.isNotEmpty) {
+        return List<Map<String, dynamic>>.from(res);
+      }
+    } catch (_) {}
+    return getRegisteredUsersList();
+  }
+
   /// Direct query fallback for registered users & players
   Future<List<Map<String, dynamic>>> getRegisteredUsersList() async {
     try {
       final res = await _supabase
           .from('MPT_users')
-          .select()
+          .select('*, MPT_admin_profiles(email)')
           .order('created_at', ascending: false)
-          .limit(50);
-      return List<Map<String, dynamic>>.from(res as List);
+          .limit(200);
+      return (res as List).map((row) {
+        final m = Map<String, dynamic>.from(row as Map);
+        final ap = m['MPT_admin_profiles'] as Map?;
+        if (ap != null && ap['email'] != null) {
+          m['email'] = ap['email'];
+        }
+        return m;
+      }).toList();
     } catch (_) {
       return [];
     }

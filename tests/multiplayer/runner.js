@@ -10,7 +10,7 @@ function parseArgs() {
     joinUrl: null,
     playersCount: 3,
     headless: false,
-    baseUrl: 'https://www.dabhousie.com',
+    baseUrl: 'http://localhost:3000',
     keepOpen: false,
     desktop: false,
     hd: false,

@@ -20,11 +20,11 @@ export class PlayerSession {
    * @param {string} name - Player display name (e.g. "DabTest Player 1")
    * @param {object} windowBounds - { x, y, width, height }
    */
-  constructor(id, name, windowBounds = { x: 0, y: 0, width: 440, height: 860 }, baseUrl = 'https://www.dabhousie.com') {
+  constructor(id, name, windowBounds = { x: 0, y: 0, width: 440, height: 860 }, baseUrl = 'http://localhost:3000') {
     this.id = id;
     this.name = name;
     this.bounds = windowBounds;
-    this.baseUrl = (baseUrl || 'https://www.dabhousie.com').replace(/\/+$/, '');
+    this.baseUrl = (baseUrl || 'http://localhost:3000').replace(/\/+$/, '');
     this.context = null;
     this.browser = null;
     this.page = null;
