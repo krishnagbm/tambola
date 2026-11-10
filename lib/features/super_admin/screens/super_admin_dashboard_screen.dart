@@ -28,6 +28,9 @@ class _SuperAdminDashboardScreenState
   String _visibilityFilter = 'ALL'; // 'ALL', 'PUBLIC', 'HIDDEN'
   String _searchQuery = '';
   String _hostSearchQuery = '';
+  String? _selectedHostFilter;
+  bool _groupByHost = false;
+  final Set<String> _collapsedHosts = {};
 
   // Payments Filter States
   String _paymentSearchQuery = '';
@@ -658,6 +661,17 @@ class _SuperAdminDashboardScreenState
                 ),
                 const SizedBox(width: 10),
                 _buildKpiCard(
+                  title: 'Active Hosts',
+                  value: '${m['total_hosts'] ?? (fullData['recent_hosts'] as List?)?.length ?? 0}',
+                  subText: '${(fullData['recent_hosts'] as List?)?.length ?? 0} verified organizers',
+                  icon: Icons.record_voice_over_outlined,
+                  color: const Color(0xFF38BDF8),
+                  onTap: () {
+                    _tabController.animateTo(1);
+                  },
+                ),
+                const SizedBox(width: 10),
+                _buildKpiCard(
                   title: 'Reg. Users',
                   value: '${m['total_registered_users'] ?? 0}',
                   subText: '${m['total_users'] ?? 0} total player profiles',
@@ -885,11 +899,22 @@ class _SuperAdminDashboardScreenState
       final name = (g['name'] as String? ?? '').toLowerCase();
       final code = (g['invite_code'] as String? ?? '').toLowerCase();
       final host = (g['host_identifier'] as String? ?? '').toLowerCase();
+      final hostEmail = (g['host_email'] as String? ?? '').toLowerCase();
+      final hostName = (g['host_name'] as String? ?? '').toLowerCase();
+      final hostId = (g['host_id'] as String? ?? g['admin_user_id'] as String? ?? '').toLowerCase();
 
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
-        if (!name.contains(q) && !code.contains(q) && !host.contains(q)) {
+        if (!name.contains(q) && !code.contains(q) && !host.contains(q) && !hostEmail.contains(q) && !hostName.contains(q)) {
+          return false;
+        }
+      }
+
+      // Host specific filter
+      if (_selectedHostFilter != null && _selectedHostFilter!.isNotEmpty) {
+        final hf = _selectedHostFilter!.toLowerCase();
+        if (!host.contains(hf) && !hostEmail.contains(hf) && !hostName.contains(hf) && !hostId.contains(hf)) {
           return false;
         }
       }
@@ -912,6 +937,16 @@ class _SuperAdminDashboardScreenState
 
       return true;
     }).toList();
+
+    // Calculate host distribution for Host filter
+    final Map<String, int> hostCounts = {};
+    for (final item in games) {
+      final g = item as Map<String, dynamic>;
+      final h = g['host_identifier'] as String? ?? g['host_email'] as String? ?? 'Unknown Host';
+      hostCounts[h] = (hostCounts[h] ?? 0) + 1;
+    }
+    final sortedHosts = hostCounts.keys.toList()
+      ..sort((a, b) => (hostCounts[b] ?? 0).compareTo(hostCounts[a] ?? 0));
 
     return Column(
       children: [
@@ -971,6 +1006,21 @@ class _SuperAdminDashboardScreenState
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
+                      backgroundColor: _groupByHost ? AppTheme.secondaryColor : const Color(0xFF334155),
+                      foregroundColor: _groupByHost ? Colors.black : Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => setState(() => _groupByHost = !_groupByHost),
+                    icon: Icon(_groupByHost ? Icons.group_work : Icons.list_alt, size: 14),
+                    label: Text(
+                      _groupByHost ? 'Group by Host 👥' : 'Timeline 📜',
+                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF334155),
                       foregroundColor: AppTheme.secondaryColor,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -984,11 +1034,13 @@ class _SuperAdminDashboardScreenState
               ),
               const SizedBox(height: 10),
 
-              // Capacity Tier Filter Chips
+              // Capacity Tier Filter Chips & Host Dropdown
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
+                    _buildHostDropdown(sortedHosts, hostCounts),
+                    const SizedBox(width: 10),
                     _buildTierFilterChip('ALL', 'All Tiers (${games.length})'),
                     const SizedBox(width: 6),
                     _buildTierFilterChip('Family Pack (1–5)', 'Family (1–5)'),
@@ -1020,22 +1072,65 @@ class _SuperAdminDashboardScreenState
           ),
         ),
 
-        // List of Filtered Games
+        // Active Host Filter Banner (1-click dismiss)
+        if (_selectedHostFilter != null && _selectedHostFilter!.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppTheme.secondaryColor.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.person, size: 16, color: AppTheme.secondaryColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Filtered by Host: $_selectedHostFilter (${filteredGames.length} games found)',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => setState(() => _selectedHostFilter = null),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.close, size: 14, color: AppTheme.secondaryColor),
+                        SizedBox(width: 4),
+                        Text(
+                          'Clear Filter',
+                          style: TextStyle(fontSize: 11, color: AppTheme.secondaryColor, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        // List of Filtered Games or Grouped Host Cards
         Expanded(
           child: filteredGames.isEmpty
               ? _buildEmptyTabState(
                   'No games match your filters',
-                  'Try clearing the capacity tier, quorum filter, or search keywords.',
+                  'Try clearing the capacity tier, host filter, quorum filter, or search keywords.',
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredGames.length,
-                  separatorBuilder: (_, index) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) {
-                    final g = filteredGames[i] as Map<String, dynamic>;
-                    return _buildGameCard(g);
-                  },
-                ),
+              : _groupByHost
+                  ? _buildGroupedByHostView(filteredGames)
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredGames.length,
+                      separatorBuilder: (_, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final g = filteredGames[i] as Map<String, dynamic>;
+                        return _buildGameCard(g);
+                      },
+                    ),
         ),
       ],
     );
@@ -1084,6 +1179,226 @@ class _SuperAdminDashboardScreenState
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildHostDropdown(List<String> sortedHosts, Map<String, int> hostCounts) {
+    return Container(
+      height: 32,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(
+        color: _selectedHostFilter != null ? AppTheme.secondaryColor.withValues(alpha: 0.15) : const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: _selectedHostFilter != null ? AppTheme.secondaryColor : const Color(0xFF334155),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedHostFilter ?? 'ALL',
+          dropdownColor: AppTheme.darkCard,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: _selectedHostFilter != null ? FontWeight.bold : FontWeight.normal,
+            color: _selectedHostFilter != null ? AppTheme.secondaryColor : Colors.white,
+          ),
+          items: [
+            DropdownMenuItem(
+              value: 'ALL',
+              child: Text('All Hosts (${hostCounts.values.fold(0, (a, b) => a + b)} games)'),
+            ),
+            ...sortedHosts.map((h) => DropdownMenuItem(
+              value: h,
+              child: Text('$h (${hostCounts[h]} games)'),
+            )),
+          ],
+          onChanged: (val) {
+            setState(() {
+              _selectedHostFilter = (val == null || val == 'ALL') ? null : val;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniStatusBadge(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color),
+      ),
+    );
+  }
+
+  Widget _buildGroupedByHostView(List<Map<String, dynamic>> filteredGames) {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (final item in filteredGames) {
+      final h = item['host_identifier'] as String? ?? item['host_email'] as String? ?? 'Unknown Host';
+      grouped.putIfAbsent(h, () => []).add(item);
+    }
+
+    final hostKeys = grouped.keys.toList()
+      ..sort((a, b) => grouped[b]!.length.compareTo(grouped[a]!.length));
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: hostKeys.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (context, i) {
+        final hostKey = hostKeys[i];
+        final hostGames = grouped[hostKey]!;
+        final isCollapsed = _collapsedHosts.contains(hostKey);
+        final firstGame = hostGames.first;
+        final hostName = firstGame['host_name'] as String? ?? hostKey;
+        final hostEmail = firstGame['host_email'] as String?;
+
+        int completed = 0;
+        int active = 0;
+        int cancelled = 0;
+        for (final g in hostGames) {
+          final st = (g['status'] as String? ?? '').toUpperCase();
+          if (st == 'COMPLETED') completed++;
+          else if (['OPEN', 'READY_TO_START', 'STARTING', 'IN_PROGRESS'].contains(st)) active++;
+          else if (st == 'CANCELLED') cancelled++;
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF131728),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: hostKey == _selectedHostFilter ? AppTheme.secondaryColor : const Color(0xFF2E334D),
+              width: hostKey == _selectedHostFilter ? 1.5 : 1.0,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Host Header Bar
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    if (isCollapsed) {
+                      _collapsedHosts.remove(hostKey);
+                    } else {
+                      _collapsedHosts.add(hostKey);
+                    }
+                  });
+                },
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppTheme.secondaryColor.withValues(alpha: 0.18),
+                        child: Text(
+                          hostName.isNotEmpty ? hostName[0].toUpperCase() : 'H',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    hostName,
+                                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Colors.white),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.secondaryColor.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${hostGames.length} ${hostGames.length == 1 ? "game" : "games"}',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (hostEmail != null && hostEmail.isNotEmpty && hostEmail != hostName) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                hostEmail,
+                                style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                if (active > 0)
+                                  _buildMiniStatusBadge('🟢 $active Active', Colors.green),
+                                if (completed > 0)
+                                  _buildMiniStatusBadge('✓ $completed Completed', Colors.blue),
+                                if (cancelled > 0)
+                                  _buildMiniStatusBadge('✗ $cancelled Cancelled', Colors.redAccent),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.secondaryColor,
+                          side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _selectedHostFilter = hostEmail ?? hostKey;
+                            _groupByHost = false;
+                          });
+                        },
+                        icon: const Icon(Icons.filter_alt_outlined, size: 13),
+                        label: const Text('Filter Host', style: TextStyle(fontSize: 11)),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        isCollapsed ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
+                        color: const Color(0xFF94A3B8),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Host Games Body
+              if (!isCollapsed) ...[
+                const Divider(height: 1, color: Color(0xFF2E334D)),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: hostGames.map((g) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _buildGameCard(g),
+                    )).toList(),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1215,11 +1530,37 @@ class _SuperAdminDashboardScreenState
                 const Icon(Icons.person_outline, size: 14, color: Color(0xFF94A3B8)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
-                    'Host: ${g['host_identifier'] ?? "Unknown"}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, color: Color(0xFFCBD5E1)),
+                  child: InkWell(
+                    onTap: () {
+                      final hostId = g['host_identifier'] as String? ?? g['host_email'] as String? ?? '';
+                      if (hostId.isNotEmpty) {
+                        setState(() {
+                          _selectedHostFilter = hostId;
+                          _groupByHost = false;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Host: ${g['host_identifier'] ?? "Unknown"}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFFCBD5E1),
+                              decoration: TextDecoration.underline,
+                              decorationColor: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.filter_alt, size: 11, color: Color(0xFF64748B)),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -1972,20 +2313,51 @@ class _SuperAdminDashboardScreenState
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Quick Action Button on Host Card
-                            OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppTheme.secondaryColor,
-                                side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              ),
-                              onPressed: () => _showGrantCreditsDialog(
-                                prefilledEmail: h['email'] as String?,
-                                prefilledUserId: h['user_id'] as String?,
-                                currentCredits: credits,
-                              ),
-                              icon: const Icon(Icons.add_circle_outline, size: 14),
-                              label: const Text('Add Credits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                            // Quick Action Buttons on Host Card
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E293B),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      side: const BorderSide(color: Color(0xFF475569)),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    final hostKey = h['email'] as String? ?? h['display_name'] as String? ?? h['user_id'] as String? ?? '';
+                                    setState(() {
+                                      _selectedHostFilter = hostKey;
+                                      _groupByHost = false;
+                                    });
+                                    _tabController.animateTo(0);
+                                  },
+                                  icon: const Icon(Icons.casino_outlined, size: 13, color: AppTheme.secondaryColor),
+                                  label: Text(
+                                    'View ${h['games_created_count'] ?? 0} Games',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.secondaryColor,
+                                    side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  ),
+                                  onPressed: () => _showGrantCreditsDialog(
+                                    prefilledEmail: h['email'] as String?,
+                                    prefilledUserId: h['user_id'] as String?,
+                                    currentCredits: credits,
+                                  ),
+                                  icon: const Icon(Icons.add_circle_outline, size: 13),
+                                  label: const Text('Add Credits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -3261,11 +3633,33 @@ class _SuperAdminDashboardScreenState
                                     spacing: 12,
                                     runSpacing: 4,
                                     children: [
-                                      Text(
-                                        '🎮 $gamesHosted hosted',
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Color(0xFF94A3B8)),
+                                      InkWell(
+                                        onTap: gamesHosted > 0
+                                            ? () {
+                                                final hostKey = email.isNotEmpty ? email : name;
+                                                setState(() {
+                                                  _selectedHostFilter = hostKey;
+                                                  _groupByHost = false;
+                                                });
+                                                _tabController.animateTo(0);
+                                              }
+                                            : null,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: gamesHosted > 0 ? AppTheme.primaryLight.withValues(alpha: 0.15) : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: gamesHosted > 0 ? Border.all(color: AppTheme.primaryLight.withValues(alpha: 0.4)) : null,
+                                          ),
+                                          child: Text(
+                                            '🎮 $gamesHosted hosted',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: gamesHosted > 0 ? FontWeight.bold : FontWeight.normal,
+                                              color: gamesHosted > 0 ? AppTheme.primaryLight : const Color(0xFF94A3B8),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                       Text(
                                         '🎟️ $gamesJoined joined',

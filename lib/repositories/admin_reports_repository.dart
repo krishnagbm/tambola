@@ -76,7 +76,7 @@ class AdminReportsRepository {
           .from('MPT_games')
           .select('*, MPT_admin_profiles(email), MPT_users(display_name)')
           .order('created_at', ascending: false)
-          .limit(50);
+          .limit(500);
 
       recentGames = (gamesRes as List).map((row) {
         final m = Map<String, dynamic>.from(row as Map);
@@ -106,7 +106,7 @@ class AdminReportsRepository {
       }
     } catch (_) {
       try {
-        final simpleGames = await _supabase.from('MPT_games').select().order('created_at', ascending: false).limit(50);
+        final simpleGames = await _supabase.from('MPT_games').select().order('created_at', ascending: false).limit(500);
         recentGames = List<Map<String, dynamic>>.from(simpleGames as List);
         totalGamesCount = recentGames.length;
       } catch (_) {}
@@ -119,7 +119,7 @@ class AdminReportsRepository {
           .from('MPT_admin_profiles')
           .select('*, MPT_admin_wallets(available_credits, credits_expire_at)')
           .order('created_at', ascending: false)
-          .limit(50);
+          .limit(100);
       recentHosts = (hostsRes as List).map((row) {
         final m = Map<String, dynamic>.from(row as Map);
         final wallet = m['MPT_admin_wallets'] as Map?;
