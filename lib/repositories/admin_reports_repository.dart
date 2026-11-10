@@ -51,14 +51,20 @@ class AdminReportsRepository {
       if (res is Map<String, dynamic> && res.isNotEmpty) {
         return res;
       }
-    } catch (e) {
-      // If RPC fails (e.g. migration pending, column mismatch, or permissions),
-      // we gracefully fall back to direct Supabase table queries so the dashboard never crashes!
+    } catch (_) {
       try {
-        return await _getReportsOverviewFallback(e);
-      } catch (fallbackError) {
-        // If even direct table query fails, rethrow the original RPC error
-        rethrow;
+        final res = await _supabase.rpc('mpt_get_admin_reports_overview');
+        if (res is Map<String, dynamic> && res.isNotEmpty) {
+          return res;
+        }
+      } catch (e) {
+        // If RPC fails (e.g. migration pending, column mismatch, or permissions),
+        // we gracefully fall back to direct Supabase table queries so the dashboard never crashes!
+        try {
+          return await _getReportsOverviewFallback(e);
+        } catch (fallbackError) {
+          rethrow;
+        }
       }
     }
     return await _getReportsOverviewFallback(null);

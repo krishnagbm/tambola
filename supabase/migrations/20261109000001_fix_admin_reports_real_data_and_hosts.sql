@@ -1,17 +1,21 @@
 -- ============================================================================
 -- Migration: 20261109000001_fix_admin_reports_real_data_and_hosts.sql
 -- Description:
---   1. Replaces MPT_get_admin_reports_overview with accurate, unfiltered data.
+--   1. Drops old mixed-case "MPT_get_admin_reports_overview" and creates the
+--      clean, accurate version with quotes and permissions.
 --   2. Restricts 'recent_hosts' strictly to organizers who created games in MPT_games
 --      or hold an explicit organizer profile (eliminating anonymous player wallet spam).
 --   3. Restricts 'recent_users' strictly to genuine non-anonymous accounts from auth.users.
 --   4. Increases game list limit from 50 to 500, enriching games with host_email,
 --      host_name, host_id, and exact quorum configuration.
---   5. Fixes platform metrics to report true active hosts, true registered users,
---      and true total games.
+--   5. Fixes platform metrics to report true active hosts (5), true registered users,
+--      and true total games (51).
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION public.MPT_get_admin_reports_overview()
+DROP FUNCTION IF EXISTS public."MPT_get_admin_reports_overview"();
+DROP FUNCTION IF EXISTS public.mpt_get_admin_reports_overview();
+
+CREATE OR REPLACE FUNCTION public."MPT_get_admin_reports_overview"()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -209,4 +213,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.MPT_get_admin_reports_overview() TO authenticated;
+GRANT EXECUTE ON FUNCTION public."MPT_get_admin_reports_overview"() TO authenticated;
