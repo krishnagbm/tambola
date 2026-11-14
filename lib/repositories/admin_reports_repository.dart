@@ -603,6 +603,97 @@ class AdminReportsRepository {
     }
   }
 
+  /// Fetch full host profile details, hosted games breakdown, registered games, and Stripe payment transactions
+  Future<Map<String, dynamic>> getAdminHostDetails(String userId, {String? email}) async {
+    // 1. Try uppercase RPC
+    try {
+      final res = await _supabase.rpc('MPT_get_admin_host_details', params: {
+        'p_user_id': userId.isNotEmpty ? userId : null,
+        'p_email': email != null && email.isNotEmpty ? email : null,
+      });
+      if (res is Map<String, dynamic> && res.isNotEmpty && res['error'] == null) {
+        return res;
+      }
+    } catch (_) {}
+
+    // 2. Try lowercase RPC
+    try {
+      final res = await _supabase.rpc('mpt_get_admin_host_details', params: {
+        'p_user_id': userId.isNotEmpty ? userId : null,
+        'p_email': email != null && email.isNotEmpty ? email : null,
+      });
+      if (res is Map<String, dynamic> && res.isNotEmpty && res['error'] == null) {
+        return res;
+      }
+    } catch (_) {}
+
+    // 3. Resilient Direct Table Queries Fallback
+    Map<String, dynamic> hostProfile = {};
+    try {
+      if (userId.isNotEmpty) {
+        final profileRes = await _supabase
+            .from('MPT_admin_profiles')
+            .select('*, MPT_admin_wallets(available_credits, credits_expire_at), MPT_users(display_name, avatar)')
+            .eq('user_id', userId)
+            .maybeSingle();
+        if (profileRes != null) {
+          hostProfile = Map<String, dynamic>.from(profileRes);
+          final w = hostProfile['MPT_admin_wallets'] as Map?;
+          final u = hostProfile['MPT_users'] as Map?;
+          hostProfile['available_credits'] = w?['available_credits'] ?? 0;
+          hostProfile['credits_expire_at'] = w?['credits_expire_at'];
+          hostProfile['display_name'] = u?['display_name'] ?? hostProfile['email'] ?? 'Organizer';
+          hostProfile['avatar'] = u?['avatar'] ?? 'avatar_lion';
+        }
+      }
+    } catch (_) {}
+
+    List<Map<String, dynamic>> games = [];
+    try {
+      if (userId.isNotEmpty) {
+        final gamesRes = await _supabase
+            .from('MPT_games')
+            .select()
+            .eq('admin_user_id', userId)
+            .order('created_at', ascending: false)
+            .limit(100);
+        games = List<Map<String, dynamic>>.from(gamesRes as List);
+      }
+    } catch (_) {}
+
+    List<Map<String, dynamic>> payments = [];
+    try {
+      var query = _supabase.from('MPT_payments').select();
+      if (userId.isNotEmpty && email != null && email.isNotEmpty) {
+        query = query.or('user_id.eq.$userId,email.eq.$email');
+      } else if (userId.isNotEmpty) {
+        query = query.eq('user_id', userId);
+      } else if (email != null && email.isNotEmpty) {
+        query = query.eq('email', email);
+      }
+      final paymentsRes = await query.order('created_at', ascending: false).limit(50);
+      payments = List<Map<String, dynamic>>.from(paymentsRes as List);
+    } catch (_) {}
+
+    int registrationsCount = 0;
+    try {
+      if (userId.isNotEmpty) {
+        final regRes = await _supabase
+            .from('MPT_game_registrations')
+            .select('id')
+            .eq('user_id', userId);
+        registrationsCount = (regRes as List).length;
+      }
+    } catch (_) {}
+
+    return {
+      'profile': hostProfile,
+      'games': games,
+      'payments': payments,
+      'games_joined_count': registrationsCount,
+    };
+  }
+
   /// Grant promotional or marketing free credits to a selected host
   Future<Map<String, dynamic>> grantCreditsToHost({
     String? targetUserId,

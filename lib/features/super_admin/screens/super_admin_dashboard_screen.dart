@@ -40,6 +40,9 @@ class _SuperAdminDashboardScreenState
   String _userSearchQuery = '';
   String _userTypeFilter = 'ALL'; // 'ALL', 'ORGANIZERS', 'PLAYERS'
 
+  // Cached executive dashboard data
+  Map<String, dynamic>? _lastDashboardData;
+
   @override
   void initState() {
     super.initState();
@@ -467,6 +470,7 @@ class _SuperAdminDashboardScreenState
         ),
       ),
       data: (data) {
+        _lastDashboardData = data;
         final metrics = (data['metrics'] as Map<String, dynamic>?) ??
             (data['overview'] as Map<String, dynamic>?) ??
             {};
@@ -1362,6 +1366,17 @@ class _SuperAdminDashboardScreenState
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Color(0xFF475569)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        onPressed: () => _showHostProfileDialog(context, firstGame, _lastDashboardData),
+                        icon: const Icon(Icons.account_circle_outlined, size: 13, color: AppTheme.secondaryColor),
+                        label: const Text('Host Profile', style: TextStyle(fontSize: 11)),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.secondaryColor,
                           side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.5)),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1530,40 +1545,61 @@ class _SuperAdminDashboardScreenState
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Icon(Icons.person_outline, size: 14, color: Color(0xFF94A3B8)),
-                const SizedBox(width: 4),
                 Expanded(
-                  child: InkWell(
-                    onTap: () {
-                      final hostId = g['host_identifier'] as String? ?? g['host_email'] as String? ?? '';
-                      if (hostId.isNotEmpty) {
-                        setState(() {
-                          _selectedHostFilter = hostId;
-                          _groupByHost = false;
-                        });
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            'Host: ${g['host_identifier'] ?? "Unknown"}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFCBD5E1),
-                              decoration: TextDecoration.underline,
-                              decorationColor: Color(0xFF64748B),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: InkWell(
+                          onTap: () => _showHostProfileDialog(context, g, _lastDashboardData),
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.account_circle_outlined, size: 14, color: AppTheme.secondaryColor),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    'Host: ${g['host_identifier'] ?? "Unknown"}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFFCBD5E1),
+                                      decoration: TextDecoration.underline,
+                                      decorationColor: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.filter_alt, size: 11, color: Color(0xFF64748B)),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () {
+                          final hostId = g['host_identifier'] as String? ?? g['host_email'] as String? ?? '';
+                          if (hostId.isNotEmpty) {
+                            setState(() {
+                              _selectedHostFilter = hostId;
+                              _groupByHost = false;
+                            });
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(4),
+                        child: const Tooltip(
+                          message: 'Filter games by this host',
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Icon(Icons.filter_alt, size: 12, color: Color(0xFF64748B)),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -2090,6 +2126,945 @@ class _SuperAdminDashboardScreenState
   }
 
   // ==========================================
+  // HOST PROFILE & DRILLDOWN DIALOG
+  // ==========================================
+  void _showHostProfileDialog(
+    BuildContext context,
+    Map<String, dynamic> hostSummary, [
+    Map<String, dynamic>? fullData,
+  ]) {
+    final activeData = fullData ?? _lastDashboardData ?? {};
+    final userId = (hostSummary['user_id'] as String? ??
+            hostSummary['admin_user_id'] as String? ??
+            hostSummary['id'] as String? ??
+            '')
+        .trim();
+    final email = (hostSummary['email'] as String? ??
+            hostSummary['host_email'] as String? ??
+            '')
+        .trim();
+    final displayName = (hostSummary['display_name'] as String? ??
+            hostSummary['name'] as String? ??
+            hostSummary['host_name'] as String? ??
+            hostSummary['host_identifier'] as String? ??
+            (email.isNotEmpty ? email : 'Organizer'))
+        .trim();
+    final role = (hostSummary['role'] as String? ?? 'HOST').toUpperCase();
+
+    // Cross-reference with in-memory users list
+    Map<String, dynamic>? matchedUser;
+    final usersList = (activeData['recent_users'] as List?) ?? [];
+    for (final raw in usersList) {
+      final u = raw as Map<String, dynamic>;
+      final uId = (u['user_id'] as String? ?? u['id'] as String? ?? '').trim();
+      final uEmail = (u['email'] as String? ?? '').trim().toLowerCase();
+      if ((userId.isNotEmpty && uId == userId) ||
+          (email.isNotEmpty && uEmail == email.toLowerCase())) {
+        matchedUser = u;
+        break;
+      }
+    }
+
+    // Cross-reference with in-memory payments
+    final paymentsList = (activeData['recent_payments'] as List?) ?? [];
+    final inMemoryPayments = paymentsList.where((raw) {
+      final p = raw as Map<String, dynamic>;
+      final pUid = (p['user_id'] as String? ?? '').trim();
+      final pEmail = (p['email'] as String? ?? '').trim().toLowerCase();
+      if (userId.isNotEmpty && pUid == userId) return true;
+      if (email.isNotEmpty && pEmail == email.toLowerCase()) return true;
+      return false;
+    }).map((e) => e as Map<String, dynamic>).toList();
+
+    // Cross-reference with in-memory games
+    final gamesList = (activeData['recent_games'] as List?) ?? [];
+    final inMemoryGames = gamesList.where((raw) {
+      final g = raw as Map<String, dynamic>;
+      final gAdmin = (g['admin_user_id'] as String? ?? '').trim();
+      final gEmail = (g['host_email'] as String? ?? '').trim().toLowerCase();
+      final gIdent = (g['host_identifier'] as String? ?? '').trim().toLowerCase();
+      if (userId.isNotEmpty && gAdmin == userId) return true;
+      if (email.isNotEmpty &&
+          (gEmail == email.toLowerCase() || gIdent == email.toLowerCase())) {
+        return true;
+      }
+      if (displayName.isNotEmpty && gIdent == displayName.toLowerCase()) {
+        return true;
+      }
+      return false;
+    }).map((e) => e as Map<String, dynamic>).toList();
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) {
+        return Dialog(
+          backgroundColor: AppTheme.darkCard,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 750, maxHeight: 720),
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: ref
+                  .read(adminReportsRepositoryProvider)
+                  .getAdminHostDetails(userId, email: email),
+              builder: (ctx, snapshot) {
+                final remoteData = snapshot.data ?? {};
+                final profile = (remoteData['profile'] as Map<String, dynamic>?) ?? {};
+
+                // Merged Profile Attributes
+                final effectiveEmail = (profile['email'] as String? ?? email).trim();
+                final effectiveName = (profile['display_name'] as String? ?? displayName).trim();
+                final effectiveRole = (profile['role'] as String? ?? role).toUpperCase();
+                final effectiveIsAdmin = effectiveRole == 'ADMIN';
+                final effectiveUserId = (profile['user_id'] as String? ?? userId).trim();
+                final registeredAt = profile['registered_at'] as String? ??
+                    hostSummary['registered_at'] as String? ??
+                    hostSummary['created_at'] as String? ??
+                    matchedUser?['registered_at'] as String? ??
+                    matchedUser?['created_at'] as String?;
+                final lastSignInAt = profile['last_sign_in_at'] as String? ??
+                    hostSummary['last_sign_in_at'] as String? ??
+                    matchedUser?['last_sign_in_at'] as String?;
+                final provider = profile['provider'] as String? ??
+                    hostSummary['provider'] as String? ??
+                    matchedUser?['provider'] as String? ??
+                    (effectiveEmail.toLowerCase().endsWith('@gmail.com') ? 'google' : 'email');
+                final credits = (profile['available_credits'] as num?)?.toInt() ??
+                    (hostSummary['available_credits'] as num?)?.toInt() ??
+                    (matchedUser?['credits_balance'] as num?)?.toInt() ??
+                    0;
+                final creditsExpireAt = profile['credits_expire_at'] as String? ??
+                    hostSummary['credits_expire_at'] as String?;
+
+                // Merged Games
+                final remoteGames = ((remoteData['games'] as List?) ?? [])
+                    .map((e) => e as Map<String, dynamic>)
+                    .toList();
+                final allGamesMap = <String, Map<String, dynamic>>{};
+                for (final g in inMemoryGames) {
+                  final gid = g['id'] as String? ?? '';
+                  if (gid.isNotEmpty) allGamesMap[gid] = g;
+                }
+                for (final g in remoteGames) {
+                  final gid = g['id'] as String? ?? '';
+                  if (gid.isNotEmpty) allGamesMap[gid] = g;
+                }
+                final hostGames = allGamesMap.values.toList()
+                  ..sort((a, b) {
+                    final ca = a['created_at'] as String? ?? '';
+                    final cb = b['created_at'] as String? ?? '';
+                    return cb.compareTo(ca);
+                  });
+
+                // Merged Payments
+                final remotePayments = ((remoteData['payments'] as List?) ?? [])
+                    .map((e) => e as Map<String, dynamic>)
+                    .toList();
+                final allPaymentsMap = <String, Map<String, dynamic>>{};
+                for (final p in inMemoryPayments) {
+                  final pid = p['id'] as String? ?? '';
+                  if (pid.isNotEmpty) allPaymentsMap[pid] = p;
+                }
+                for (final p in remotePayments) {
+                  final pid = p['id'] as String? ?? '';
+                  if (pid.isNotEmpty) allPaymentsMap[pid] = p;
+                }
+                final hostPayments = allPaymentsMap.values.toList()
+                  ..sort((a, b) {
+                    final ca = a['created_at'] as String? ?? '';
+                    final cb = b['created_at'] as String? ?? '';
+                    return cb.compareTo(ca);
+                  });
+
+                // Computed metrics
+                final gamesHostedCount = hostGames.isNotEmpty
+                    ? hostGames.length
+                    : ((profile['games_created_count'] as num?)?.toInt() ??
+                        (hostSummary['games_created_count'] as num?)?.toInt() ??
+                        (matchedUser?['games_hosted_count'] as num?)?.toInt() ??
+                        0);
+                final completedCount = hostGames
+                    .where((g) => (g['status'] as String? ?? '').toUpperCase() == 'COMPLETED')
+                    .length;
+                final activeCount = hostGames.where((g) => [
+                      'OPEN',
+                      'READY_TO_START',
+                      'STARTING',
+                      'IN_PROGRESS'
+                    ].contains((g['status'] as String? ?? '').toUpperCase())).length;
+                final cancelledCount = hostGames
+                    .where((g) => (g['status'] as String? ?? '').toUpperCase() == 'CANCELLED')
+                    .length;
+
+                final gamesJoinedCount = (profile['games_joined_count'] as num?)?.toInt() ??
+                    (remoteData['games_joined_count'] as num?)?.toInt() ??
+                    (hostSummary['games_joined_count'] as num?)?.toInt() ??
+                    (matchedUser?['games_joined_count'] as num?)?.toInt() ??
+                    0;
+
+                num totalPaidUsd = (profile['total_paid_usd'] as num?) ??
+                    (hostSummary['total_paid_usd'] as num?) ??
+                    0;
+                if (totalPaidUsd == 0 && hostPayments.isNotEmpty) {
+                  for (final p in hostPayments) {
+                    final st = (p['status'] as String? ?? '').toLowerCase();
+                    if (st == 'succeeded' || st == 'completed') {
+                      final amt = p['amount_usd'];
+                      if (amt is num) {
+                        totalPaidUsd += amt;
+                      } else if (amt != null) {
+                        totalPaidUsd += num.tryParse(amt.toString()) ?? 0;
+                      }
+                    }
+                  }
+                }
+
+                void copyToClipboard(String text, String label) {
+                  Clipboard.setData(ClipboardData(text: text));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: const Color(0xFF1E293B),
+                      behavior: SnackBarBehavior.floating,
+                      content: Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: AppTheme.accentSuccess, size: 16),
+                          const SizedBox(width: 8),
+                          Text('Copied $label to clipboard!'),
+                        ],
+                      ),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+
+                return DefaultTabController(
+                  length: 3,
+                  child: Column(
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF16192E),
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: effectiveIsAdmin
+                                  ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                  : AppTheme.primaryLight.withValues(alpha: 0.2),
+                              child: Icon(
+                                effectiveIsAdmin ? Icons.shield_outlined : Icons.person,
+                                color: effectiveIsAdmin ? AppTheme.secondaryColor : AppTheme.primaryLight,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          effectiveName,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: effectiveIsAdmin
+                                              ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                              : Colors.white10,
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          effectiveRole,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: effectiveIsAdmin ? AppTheme.secondaryColor : Colors.white70,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  // 1-Click Copy Email Pill
+                                  InkWell(
+                                    onTap: effectiveEmail.isNotEmpty
+                                        ? () => copyToClipboard(effectiveEmail, 'email "$effectiveEmail"')
+                                        : null,
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F172A),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: const Color(0xFF334155)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.email_outlined, size: 13, color: AppTheme.secondaryColor),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              effectiveEmail.isNotEmpty ? effectiveEmail : 'No Email on record',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          const Icon(Icons.copy_rounded, size: 12, color: AppTheme.secondaryColor),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white70),
+                              onPressed: () => Navigator.pop(dialogCtx),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Timestamps Banner Strip
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        color: const Color(0xFF0F172A),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today_outlined, size: 13, color: Color(0xFF94A3B8)),
+                            const SizedBox(width: 6),
+                            Text(
+                              registeredAt != null
+                                  ? 'Joined: ${Formatters.formatDate(DateTime.tryParse(registeredAt) ?? DateTime.now())}'
+                                  : 'Joined: N/A',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            ),
+                            const SizedBox(width: 16),
+                            const Icon(Icons.access_time_rounded, size: 13, color: Color(0xFF94A3B8)),
+                            const SizedBox(width: 6),
+                            Text(
+                              lastSignInAt != null
+                                  ? 'Last Active: ${Formatters.formatDate(DateTime.tryParse(lastSignInAt) ?? DateTime.now())}'
+                                  : (gamesHostedCount > 0 ? 'Last Active: Active Organizer' : 'Last Active: N/A'),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            ),
+                            const Spacer(),
+                            if (effectiveUserId.isNotEmpty)
+                              InkWell(
+                                onTap: () => copyToClipboard(effectiveUserId, 'User ID "$effectiveUserId"'),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'UID: ${effectiveUserId.substring(0, math.min(8, effectiveUserId.length))}...',
+                                        style: const TextStyle(
+                                          fontSize: 10.5,
+                                          fontFamily: 'monospace',
+                                          color: Color(0xFF64748B),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.copy_rounded, size: 11, color: Color(0xFF64748B)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      // 4 Summary Metric Cards
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                        child: Row(
+                          children: [
+                            // 1. Hosted Games
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131728),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF2E334D)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.sports_esports_outlined, size: 14, color: AppTheme.secondaryColor),
+                                        SizedBox(width: 6),
+                                        Text('Games Hosted', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '$gamesHostedCount',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '✓ $completedCount done • 🟢 $activeCount live',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // 2. Games Joined
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131728),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF2E334D)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.confirmation_num_outlined, size: 14, color: Color(0xFF38BDF8)),
+                                        SizedBox(width: 6),
+                                        Text('Games Joined', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '$gamesJoinedCount',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text('Player registrations', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // 3. Wallet Balance
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131728),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF2E334D)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.wallet_outlined, size: 14, color: AppTheme.secondaryColor),
+                                        SizedBox(width: 6),
+                                        Text('Wallet Credits', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '$credits',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      creditsExpireAt != null
+                                          ? 'Expires: ${Formatters.formatShortDate(DateTime.tryParse(creditsExpireAt) ?? DateTime.now())}'
+                                          : 'No expiry set',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+
+                            // 4. Stripe Purchases
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF131728),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF2E334D)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Row(
+                                      children: [
+                                        Icon(Icons.payments_outlined, size: 14, color: AppTheme.accentSuccess),
+                                        SizedBox(width: 6),
+                                        Text('Payments', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '\$${totalPaidUsd.toStringAsFixed(2)}',
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.accentSuccess),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${hostPayments.length} txns recorded',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Tabs
+                      Container(
+                        color: const Color(0xFF131728),
+                        child: TabBar(
+                          indicatorColor: AppTheme.secondaryColor,
+                          labelColor: AppTheme.secondaryColor,
+                          unselectedLabelColor: const Color(0xFF94A3B8),
+                          tabs: [
+                            Tab(text: 'Games Hosted (${hostGames.length})'),
+                            Tab(text: 'Stripe Payments (${hostPayments.length})'),
+                            const Tab(text: 'Account & Auth'),
+                          ],
+                        ),
+                      ),
+
+                      // Tab Views
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            // Tab 1: Games Hosted
+                            hostGames.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'No games hosted by this organizer yet.',
+                                      style: TextStyle(color: Colors.white60),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.all(14),
+                                    itemCount: hostGames.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                    itemBuilder: (context, idx) {
+                                      final g = hostGames[idx];
+                                      final st = (g['status'] as String? ?? 'OPEN').toUpperCase();
+                                      final stColor = _getStatusColor(st);
+                                      final code = g['invite_code'] as String? ?? '------';
+                                      final sched = g['scheduled_at'] != null
+                                          ? DateTime.tryParse(g['scheduled_at'].toString())
+                                          : null;
+                                      final confirmed = (g['confirmed_players_count'] as num?)?.toInt() ?? 0;
+                                      final gId = g['id'] as String? ?? '';
+
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0F172A),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFF1E293B)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1E293B),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                code,
+                                                style: const TextStyle(
+                                                  fontFamily: 'monospace',
+                                                  fontSize: 11.5,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppTheme.secondaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    g['name'] as String? ?? 'Untitled Game',
+                                                    style: const TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        '👥 $confirmed confirmed',
+                                                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                                      ),
+                                                      if (sched != null) ...[
+                                                        const SizedBox(width: 8),
+                                                        Text(
+                                                          '⏰ ${Formatters.formatShortDate(sched)}',
+                                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                                        ),
+                                                      ],
+                                                      if (g['created_at'] != null) ...[
+                                                        const SizedBox(width: 8),
+                                                        Text(
+                                                          '📅 ${Formatters.formatShortDate(DateTime.tryParse(g['created_at'].toString()) ?? DateTime.now())}',
+                                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                                        ),
+                                                      ],
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: stColor.withValues(alpha: 0.15),
+                                                borderRadius: BorderRadius.circular(4),
+                                                border: Border.all(color: stColor.withValues(alpha: 0.3)),
+                                              ),
+                                              child: Text(
+                                                st,
+                                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: stColor),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.analytics_outlined, size: 16, color: AppTheme.secondaryColor),
+                                              tooltip: 'Inspect Stats',
+                                              onPressed: () => _showGameInspectionDialog(context, g),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(Icons.tv, size: 16, color: Color(0xFF38BDF8)),
+                                              tooltip: 'Live TV',
+                                              onPressed: () => context.push('/live-display/$gId'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                            // Tab 2: Stripe Payments
+                            hostPayments.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'No Stripe payments recorded for this account.',
+                                      style: TextStyle(color: Colors.white60),
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    padding: const EdgeInsets.all(14),
+                                    itemCount: hostPayments.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                                    itemBuilder: (context, idx) {
+                                      final p = hostPayments[idx];
+                                      final amt = p['amount_usd'] ?? 0;
+                                      final curr = (p['currency'] as String? ?? 'USD').toUpperCase();
+                                      final pack = p['pack'] as String? ?? 'Credits';
+                                      final creditsGranted = p['credits'] ?? 0;
+                                      final pref = p['provider_ref'] as String? ?? '';
+                                      final isTest = p['is_test_mode'] == true ||
+                                          pref.contains('test') ||
+                                          pref.startsWith('pi_test') ||
+                                          pref.startsWith('cs_test');
+
+                                      return Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0F172A),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: const Color(0xFF1E293B)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 16,
+                                              backgroundColor: AppTheme.accentSuccess.withValues(alpha: 0.15),
+                                              child: const Icon(Icons.check, color: AppTheme.accentSuccess, size: 16),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        '\$$amt $curr',
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Container(
+                                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                                        decoration: BoxDecoration(
+                                                          color: isTest
+                                                              ? Colors.amber.withValues(alpha: 0.2)
+                                                              : Colors.green.withValues(alpha: 0.2),
+                                                          borderRadius: BorderRadius.circular(4),
+                                                        ),
+                                                        child: Text(
+                                                          isTest ? 'TEST MODE' : 'LIVE STRIPE',
+                                                          style: TextStyle(
+                                                            fontSize: 9.5,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: isTest ? Colors.amber : Colors.greenAccent,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    'Pack: $pack • Credits: +$creditsGranted',
+                                                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                                  ),
+                                                  if (pref.isNotEmpty) ...[
+                                                    const SizedBox(height: 3),
+                                                    InkWell(
+                                                      onTap: () => copyToClipboard(pref, 'Stripe Ref "$pref"'),
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            'Ref: $pref',
+                                                            style: const TextStyle(
+                                                              fontSize: 10,
+                                                              fontFamily: 'monospace',
+                                                              color: Color(0xFF64748B),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 4),
+                                                          const Icon(Icons.copy_rounded, size: 10, color: Color(0xFF64748B)),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                            if (p['created_at'] != null)
+                                              Text(
+                                                Formatters.formatShortDate(DateTime.tryParse(p['created_at'].toString()) ?? DateTime.now()),
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+
+                            // Tab 3: Account & Auth Meta
+                            ListView(
+                              padding: const EdgeInsets.all(16),
+                              children: [
+                                _buildProfileDetailTile('Email Address', effectiveEmail, canCopy: true),
+                                _buildProfileDetailTile('User ID (UUID)', effectiveUserId, canCopy: true, isMono: true),
+                                _buildProfileDetailTile('Display Name', effectiveName),
+                                _buildProfileDetailTile('Role in DabHousie', effectiveRole),
+                                _buildProfileDetailTile('Authentication Provider', provider.toUpperCase()),
+                                _buildProfileDetailTile(
+                                  'Account Created / Joined',
+                                  registeredAt != null
+                                      ? Formatters.formatDate(DateTime.tryParse(registeredAt) ?? DateTime.now())
+                                      : 'Unknown',
+                                ),
+                                _buildProfileDetailTile(
+                                  'Last Active / Sign-In',
+                                  lastSignInAt != null
+                                      ? Formatters.formatDate(DateTime.tryParse(lastSignInAt) ?? DateTime.now())
+                                      : (gamesHostedCount > 0 ? 'Active Organizer' : 'None recorded'),
+                                ),
+                                _buildProfileDetailTile('Current Wallet Balance', '$credits Credits'),
+                                _buildProfileDetailTile(
+                                  'Credits Expiration Date',
+                                  creditsExpireAt != null
+                                      ? Formatters.formatDate(DateTime.tryParse(creditsExpireAt) ?? DateTime.now())
+                                      : 'No expiration date set',
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Dialog Footer Actions
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF131728),
+                          border: Border(top: BorderSide(color: Color(0xFF2E334D))),
+                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                        ),
+                        child: Row(
+                          children: [
+                            if (effectiveEmail.isNotEmpty)
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppTheme.secondaryColor,
+                                  side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                                onPressed: () => copyToClipboard(effectiveEmail, 'email "$effectiveEmail"'),
+                                icon: const Icon(Icons.copy_rounded, size: 14),
+                                label: const Text('Copy Email', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                              ),
+                            const Spacer(),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E293B),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  side: const BorderSide(color: Color(0xFF475569)),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(dialogCtx);
+                                final filterKey = effectiveEmail.isNotEmpty
+                                    ? effectiveEmail
+                                    : (effectiveName.isNotEmpty ? effectiveName : effectiveUserId);
+                                setState(() {
+                                  _selectedHostFilter = filterKey;
+                                  _groupByHost = false;
+                                });
+                                _tabController.animateTo(0);
+                              },
+                              icon: const Icon(Icons.casino_outlined, size: 14, color: AppTheme.secondaryColor),
+                              label: Text(
+                                'View All $gamesHostedCount Games',
+                                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.secondaryColor,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(dialogCtx);
+                                _showGrantCreditsDialog(
+                                  prefilledEmail: effectiveEmail,
+                                  prefilledUserId: effectiveUserId,
+                                  currentCredits: credits,
+                                );
+                              },
+                              icon: const Icon(Icons.add_circle_outline, size: 14),
+                              label: const Text(
+                                'Add Credits',
+                                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileDetailTile(String title, String value, {bool canCopy = false, bool isMono = false}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF1E293B)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SelectableText(
+                value,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: isMono ? 'monospace' : null,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              if (canCopy && value.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.copy_rounded, size: 13, color: AppTheme.secondaryColor),
+                  tooltip: 'Copy $title',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: value));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF1E293B),
+                        behavior: SnackBarBehavior.floating,
+                        content: Text('Copied $title to clipboard!'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
   // TAB 2: REGISTERED HOSTS & CREDIT ACTIONS
   // ==========================================
   Widget _buildHostsTab(List hosts) {
@@ -2227,142 +3202,184 @@ class _SuperAdminDashboardScreenState
                           color: isAdmin ? AppTheme.secondaryColor.withValues(alpha: 0.5) : const Color(0xFF2E334D),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: isAdmin
-                                  ? AppTheme.secondaryColor.withValues(alpha: 0.2)
-                                  : AppTheme.primaryLight.withValues(alpha: 0.2),
-                              child: Icon(
-                                isAdmin ? Icons.shield_outlined : Icons.person,
-                                color: isAdmin ? AppTheme.secondaryColor : AppTheme.primaryLight,
+                      child: InkWell(
+                        onTap: () => _showHostProfileDialog(context, h, _lastDashboardData),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: isAdmin
+                                    ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                    : AppTheme.primaryLight.withValues(alpha: 0.2),
+                                child: Icon(
+                                  isAdmin ? Icons.shield_outlined : Icons.person,
+                                  color: isAdmin ? AppTheme.secondaryColor : AppTheme.primaryLight,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            h['email'] as String? ?? 'No Email',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (h['email'] != null && (h['email'] as String).isNotEmpty) ...[
+                                          const SizedBox(width: 4),
+                                          IconButton(
+                                            icon: const Icon(Icons.copy_rounded, size: 13, color: AppTheme.secondaryColor),
+                                            tooltip: 'Copy email address',
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                                            onPressed: () {
+                                              final em = h['email'] as String;
+                                              Clipboard.setData(ClipboardData(text: em));
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  backgroundColor: const Color(0xFF1E293B),
+                                                  behavior: SnackBarBehavior.floating,
+                                                  content: Text('Copied "$em" to clipboard!'),
+                                                  duration: const Duration(seconds: 2),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: isAdmin
+                                                ? AppTheme.secondaryColor.withValues(alpha: 0.2)
+                                                : Colors.white10,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            role.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: isAdmin ? AppTheme.secondaryColor : Colors.white70,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'User ID: ${h['user_id'] ?? ""}',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        fontFamily: 'monospace',
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 4,
+                                      children: [
+                                        Text(
+                                          '🎮 ${h['games_created_count'] ?? 0} games created',
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.secondaryColor.withValues(alpha: 0.15),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: Text(
+                                            '💳 $credits credits',
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
+                                          ),
+                                        ),
+                                        if (expiresAt != null)
+                                          Text(
+                                            '⏳ Expires: ${Formatters.formatShortDate(DateTime.parse(expiresAt))}',
+                                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Quick Action Buttons on Host Card
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          h['email'] as String? ?? 'No Email',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                        side: const BorderSide(color: Color(0xFF334155)),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: isAdmin
-                                              ? AppTheme.secondaryColor.withValues(alpha: 0.2)
-                                              : Colors.white10,
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          role.toUpperCase(),
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: isAdmin ? AppTheme.secondaryColor : Colors.white70,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                    ),
+                                    onPressed: () => _showHostProfileDialog(context, h, _lastDashboardData),
+                                    icon: const Icon(Icons.account_circle_outlined, size: 13, color: AppTheme.secondaryColor),
+                                    label: const Text('Host Profile', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'User ID: ${h['user_id'] ?? ""}',
-                                    style: const TextStyle(
-                                      fontSize: 10.5,
-                                      fontFamily: 'monospace',
-                                      color: Color(0xFF64748B),
+                                  const SizedBox(height: 6),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1E293B),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                        side: const BorderSide(color: Color(0xFF475569)),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      final hostKey = h['email'] as String? ?? h['display_name'] as String? ?? h['user_id'] as String? ?? '';
+                                      setState(() {
+                                        _selectedHostFilter = hostKey;
+                                        _groupByHost = false;
+                                      });
+                                      _tabController.animateTo(0);
+                                    },
+                                    icon: const Icon(Icons.casino_outlined, size: 13, color: AppTheme.secondaryColor),
+                                    label: Text(
+                                      'View ${h['games_created_count'] ?? 0} Games',
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 12,
-                                    runSpacing: 4,
-                                    children: [
-                                      Text(
-                                        '🎮 ${h['games_created_count'] ?? 0} games created',
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.secondaryColor.withValues(alpha: 0.15),
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                        child: Text(
-                                          '💳 $credits credits',
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.secondaryColor),
-                                        ),
-                                      ),
-                                      if (expiresAt != null)
-                                        Text(
-                                          '⏳ Expires: ${Formatters.formatShortDate(DateTime.parse(expiresAt))}',
-                                          style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
-                                        ),
-                                    ],
+                                  OutlinedButton.icon(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppTheme.secondaryColor,
+                                      side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    ),
+                                    onPressed: () => _showGrantCreditsDialog(
+                                      prefilledEmail: h['email'] as String?,
+                                      prefilledUserId: h['user_id'] as String?,
+                                      currentCredits: credits,
+                                    ),
+                                    icon: const Icon(Icons.add_circle_outline, size: 13),
+                                    label: const Text('Add Credits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            // Quick Action Buttons on Host Card
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1E293B),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
-                                      side: const BorderSide(color: Color(0xFF475569)),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    final hostKey = h['email'] as String? ?? h['display_name'] as String? ?? h['user_id'] as String? ?? '';
-                                    setState(() {
-                                      _selectedHostFilter = hostKey;
-                                      _groupByHost = false;
-                                    });
-                                    _tabController.animateTo(0);
-                                  },
-                                  icon: const Icon(Icons.casino_outlined, size: 13, color: AppTheme.secondaryColor),
-                                  label: Text(
-                                    'View ${h['games_created_count'] ?? 0} Games',
-                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                OutlinedButton.icon(
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: AppTheme.secondaryColor,
-                                    side: BorderSide(color: AppTheme.secondaryColor.withValues(alpha: 0.6)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  ),
-                                  onPressed: () => _showGrantCreditsDialog(
-                                    prefilledEmail: h['email'] as String?,
-                                    prefilledUserId: h['user_id'] as String?,
-                                    currentCredits: credits,
-                                  ),
-                                  icon: const Icon(Icons.add_circle_outline, size: 13),
-                                  label: const Text('Add Credits', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -3554,8 +4571,11 @@ class _SuperAdminDashboardScreenState
                                   : const Color(0xFF2E334D),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
+                      child: InkWell(
+                        onTap: () => _showHostProfileDialog(context, u, _lastDashboardData),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
                         child: Row(
                           children: [
                             CircleAvatar(
@@ -3725,8 +4745,9 @@ class _SuperAdminDashboardScreenState
                           ],
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  );
+                },
                 ),
         ),
       ],
