@@ -467,7 +467,9 @@ class _SuperAdminDashboardScreenState
         ),
       ),
       data: (data) {
-        final metrics = (data['metrics'] as Map<String, dynamic>?) ?? {};
+        final metrics = (data['metrics'] as Map<String, dynamic>?) ??
+            (data['overview'] as Map<String, dynamic>?) ??
+            {};
         final recentGames = (data['recent_games'] as List?) ?? [];
         final recentHosts = (data['recent_hosts'] as List?) ?? [];
         final recentPayments = (data['recent_payments'] as List?) ?? [];
@@ -1237,9 +1239,10 @@ class _SuperAdminDashboardScreenState
     );
   }
 
-  Widget _buildGroupedByHostView(List<Map<String, dynamic>> filteredGames) {
+  Widget _buildGroupedByHostView(List filteredGames) {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (final item in filteredGames) {
+    for (final rawItem in filteredGames) {
+      final item = rawItem as Map<String, dynamic>;
       final h = item['host_identifier'] as String? ?? item['host_email'] as String? ?? 'Unknown Host';
       grouped.putIfAbsent(h, () => []).add(item);
     }
