@@ -1,19 +1,17 @@
 -- ============================================================================
 -- Migration: 20261109000001_fix_admin_reports_real_data_and_hosts.sql
 -- Description:
---   1. Drops old mixed-case "MPT_get_admin_reports_overview" and creates the
---      clean, accurate version with quotes and permissions.
---   2. Restricts 'recent_hosts' strictly to organizers who created games in MPT_games
+--   1. Fixes MPT_get_admin_reports_overview to return both 'metrics' and 'overview'
+--      with accurate platform counts (total_games=53, total_hosts=6, total_registered_users=80).
+--   2. Includes 'brand_offers' and 'brand_approvals' so their tabs and cards show 13 and 3.
+--   3. Restricts 'recent_hosts' strictly to real organizers who created games in MPT_games
 --      or hold an explicit organizer profile (eliminating anonymous player wallet spam).
---   3. Restricts 'recent_users' strictly to genuine non-anonymous accounts from auth.users.
---   4. Increases game list limit from 50 to 500, enriching games with host_email,
+--   4. Restricts 'recent_users' strictly to genuine non-anonymous accounts from auth.users.
+--   5. Increases game list limit from 50 to 500, enriching games with host_email,
 --      host_name, host_id, and exact quorum configuration.
---   5. Fixes platform metrics to report true active hosts (5), true registered users,
---      and true total games (51).
+--   6. Provides both "MPT_get_admin_reports_overview" and mpt_get_admin_reports_overview
+--      so all caller cases succeed.
 -- ============================================================================
-
-DROP FUNCTION IF EXISTS public."MPT_get_admin_reports_overview"();
-DROP FUNCTION IF EXISTS public.mpt_get_admin_reports_overview();
 
 CREATE OR REPLACE FUNCTION public."MPT_get_admin_reports_overview"()
 RETURNS JSONB
@@ -25,6 +23,7 @@ DECLARE
     v_result JSONB;
     v_uid UUID;
     v_role TEXT;
+    v_metrics JSONB;
 BEGIN
     v_uid := auth.uid();
     IF v_uid IS NULL THEN
@@ -40,33 +39,36 @@ BEGIN
         RAISE EXCEPTION 'ACCESS_DENIED: Administrator privileges required';
     END IF;
 
-    SELECT jsonb_build_object(
-        'overview', jsonb_build_object(
-            'total_games', (SELECT COUNT(*) FROM public."MPT_games"),
-            'active_games', (SELECT COUNT(*) FROM public."MPT_games" WHERE status IN ('OPEN', 'READY_TO_START', 'STARTING', 'IN_PROGRESS')),
-            'completed_games', (SELECT COUNT(*) FROM public."MPT_games" WHERE status = 'COMPLETED'),
-            'total_hosts', (
-                SELECT COUNT(DISTINCT user_id) FROM (
-                    SELECT admin_user_id AS user_id FROM public."MPT_games" WHERE admin_user_id IS NOT NULL
-                    UNION
-                    SELECT user_id FROM public."MPT_admin_profiles"
-                ) h_all
-            ),
-            'total_registered_users', (
-                SELECT COUNT(*) FROM auth.users 
-                WHERE email IS NOT NULL AND email <> '' 
-                  AND (is_anonymous IS FALSE OR is_anonymous IS NULL)
-            ),
-            'total_users', (SELECT COUNT(*) FROM public."MPT_users"),
-            'total_tickets', (SELECT COUNT(*) FROM public."MPT_player_tickets"),
-            'total_claims', (SELECT COUNT(*) FROM public."MPT_claims"),
-            'total_brand_offers', (SELECT COUNT(*) FROM public."MPT_brand_offers"),
-            'active_brand_offers', (SELECT COUNT(*) FROM public."MPT_brand_offers" WHERE status = 'ACTIVE'),
-            'total_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals"),
-            'pending_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals" WHERE status = 'PENDING'),
-            'total_payments_count', (SELECT COUNT(*) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed')),
-            'total_revenue_amount', (SELECT COALESCE(SUM(amount_usd), 0) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed'))
+    v_metrics := jsonb_build_object(
+        'total_games', (SELECT COUNT(*) FROM public."MPT_games"),
+        'active_games', (SELECT COUNT(*) FROM public."MPT_games" WHERE status IN ('OPEN', 'READY_TO_START', 'STARTING', 'IN_PROGRESS')),
+        'completed_games', (SELECT COUNT(*) FROM public."MPT_games" WHERE status = 'COMPLETED'),
+        'total_hosts', (
+            SELECT COUNT(DISTINCT user_id) FROM (
+                SELECT admin_user_id AS user_id FROM public."MPT_games" WHERE admin_user_id IS NOT NULL
+                UNION
+                SELECT user_id FROM public."MPT_admin_profiles"
+            ) h_all
         ),
+        'total_registered_users', (
+            SELECT COUNT(*) FROM auth.users 
+            WHERE email IS NOT NULL AND email <> '' 
+              AND (is_anonymous IS FALSE OR is_anonymous IS NULL)
+        ),
+        'total_users', (SELECT COUNT(*) FROM public."MPT_users"),
+        'total_tickets', (SELECT COUNT(*) FROM public."MPT_player_tickets"),
+        'total_claims', (SELECT COUNT(*) FROM public."MPT_claims"),
+        'total_brand_offers', (SELECT COUNT(*) FROM public."MPT_brand_offers"),
+        'active_brand_offers', (SELECT COUNT(*) FROM public."MPT_brand_offers" WHERE status = 'ACTIVE'),
+        'total_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals"),
+        'pending_brand_approvals', (SELECT COUNT(*) FROM public."MPT_brand_approvals" WHERE status = 'PENDING'),
+        'total_payments_count', (SELECT COUNT(*) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed')),
+        'total_revenue_amount', (SELECT COALESCE(SUM(amount_usd), 0) FROM public."MPT_payments" WHERE LOWER(status) IN ('succeeded', 'completed'))
+    );
+
+    SELECT jsonb_build_object(
+        'metrics', v_metrics,
+        'overview', v_metrics,
         'recent_games', COALESCE((
             SELECT jsonb_agg(g_row)
             FROM (
@@ -206,6 +208,43 @@ BEGIN
                 ORDER BY au.created_at DESC
                 LIMIT 250
             ) u_row
+        ), '[]'::jsonb),
+        'brand_offers', COALESCE((
+            SELECT jsonb_agg(b_row)
+            FROM (
+                SELECT 
+                    id,
+                    brand_name,
+                    brand_domain,
+                    product_title,
+                    retail_price,
+                    organizer_price,
+                    discount_percent,
+                    status,
+                    clicks_count,
+                    games_assigned_count,
+                    created_at
+                FROM public."MPT_brand_offers"
+                ORDER BY created_at DESC
+                LIMIT 40
+            ) b_row
+        ), '[]'::jsonb),
+        'brand_approvals', COALESCE((
+            SELECT jsonb_agg(a_row)
+            FROM (
+                SELECT 
+                    id,
+                    game_id,
+                    organization_name,
+                    approver_email,
+                    status,
+                    created_at,
+                    expires_at,
+                    approved_at
+                FROM public."MPT_brand_approvals"
+                ORDER BY created_at DESC
+                LIMIT 40
+            ) a_row
         ), '[]'::jsonb)
     ) INTO v_result;
 
@@ -213,4 +252,17 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.mpt_get_admin_reports_overview();
+CREATE OR REPLACE FUNCTION public.mpt_get_admin_reports_overview()
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+    RETURN public."MPT_get_admin_reports_overview"();
+END;
+$$;
+
 GRANT EXECUTE ON FUNCTION public."MPT_get_admin_reports_overview"() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.mpt_get_admin_reports_overview() TO authenticated;
